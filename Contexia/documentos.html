@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Mail-Watcher & XML Ingestion - Contexia Intranet 4.0</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="./js/layout.js"></script>
+    <script src="./js/auth.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#195de6",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #3c4453;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body class="bg-white text-slate-900 min-h-screen flex flex-col font-display">
+    <!-- Top Navigation Bar -->
+    <header
+        class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-[#292e38] px-6 py-3 bg-white dark:bg-background-dark sticky top-0 z-50">
+        <div class="flex items-center gap-8">
+            <!-- Brand/Nav removed -->
+        </div>
+        <div class="flex flex-1 justify-end gap-4 items-center">
+            <div
+                class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-bold uppercase tracking-wider border border-emerald-500/20">
+                <span class="relative flex h-2 w-2">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                Watcher Live
+            </div>
+            <label class="flex flex-col min-w-40 h-10 max-w-64">
+                <div
+                    class="flex w-full flex-1 items-stretch rounded-lg h-full bg-slate-100 dark:bg-[#292e38] border border-slate-200 dark:border-transparent">
+                    <div class="text-slate-400 dark:text-[#9da6b8] flex items-center justify-center pl-4 rounded-l-lg">
+                        <span class="material-symbols-outlined text-xl">search</span>
+                    </div>
+                    <input
+                        class="w-full min-w-0 flex-1 bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#9da6b8] px-2 text-sm"
+                        placeholder="Search transactions..." value="" />
+                </div>
+            </label>
+            <div class="flex gap-2">
+                <button
+                    class="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-[#292e38] text-slate-600 dark:text-white hover:bg-slate-200 dark:hover:bg-[#3c4453] transition-colors">
+                    <span class="material-symbols-outlined text-xl">notifications</span>
+                </button>
+                <button
+                    class="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-[#292e38] text-slate-600 dark:text-white hover:bg-slate-200 dark:hover:bg-[#3c4453] transition-colors">
+                    <span class="material-symbols-outlined text-xl">settings</span>
+                </button>
+            </div>
+            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary/20"
+                data-alt="User profile avatar showing professional woman"
+                style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAI_G2j3z1kbT8v5CK6m7Wu_ilcfq9ABZTrFIlnGUnai4Saalf8P4yyUoneBYLu-SMC8pDlojRkhUVSoIqScuU4hYsvIh1qcaWBWO-OYBPyR9bTtpQ4UjoZxjqJhJrMUZHBtvgjekWwcMq4DDeOpc4qKo1MKvviRh3aaeEuW6yn_zo9gOfnJPU8jiX5p9uhrQQXyfKje68VT1gMuhVpH1jRPOvENg8d8FKtKHTOAZlZXuenokKrU8Ari5N4c6f4TE8hqdx0dlUUg0A");'>
+            </div>
+        </div>
+    </header>
+    <main class="flex-1 flex flex-col max-w-[1600px] mx-auto w-full px-6 py-6">
+        <!-- Breadcrumbs -->
+        <div class="flex flex-wrap items-center gap-2 mb-4">
+            <a class="text-slate-500 dark:text-[#9da6b8] text-sm font-medium flex items-center gap-1 hover:text-primary"
+                href="#">
+                <span class="material-symbols-outlined text-lg">folder_open</span>
+                Documents
+            </a>
+            <span class="text-slate-400 dark:text-[#9da6b8] text-sm font-medium">/</span>
+            <span class="text-slate-900 dark:text-white text-sm font-semibold">Mail-Watcher & XML Ingestion</span>
+        </div>
+        <!-- Page Heading -->
+        <div class="flex flex-wrap justify-between items-end gap-4 mb-8">
+            <div class="flex flex-col gap-1">
+                <h1 class="text-slate-900 dark:text-white text-4xl font-black leading-tight tracking-tight">Ingestion
+                    Monitor</h1>
+                <p class="text-slate-500 dark:text-[#9da6b8] text-base font-normal">Real-time automation flow for XML
+                    e-invoicing and payroll document capture.</p>
+            </div>
+            <div class="flex gap-3">
+                <button
+                    class="flex items-center justify-center rounded-lg h-11 px-6 bg-slate-100 dark:bg-[#292e38] text-slate-700 dark:text-white text-sm font-bold border border-slate-200 dark:border-transparent hover:bg-slate-200 dark:hover:bg-[#3c4453] transition-all">
+                    <span class="material-symbols-outlined mr-2">download</span>
+                    Export CSV
+                </button>
+                <button
+                    class="flex items-center justify-center rounded-lg h-11 px-6 bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
+                    <span class="material-symbols-outlined mr-2">refresh</span>
+                    Re-run Ingestion
+                </button>
+            </div>
+        </div>
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div
+                class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-[#111621] border border-slate-200 dark:border-[#3c4453] shadow-sm">
+                <div class="flex justify-between items-start">
+                    <p class="text-slate-500 dark:text-[#9da6b8] text-sm font-medium">Captured Today</p>
+                    <span class="material-symbols-outlined text-primary text-xl">mail</span>
+                </div>
+                <p class="text-slate-900 dark:text-white tracking-tight text-3xl font-bold">1,284</p>
+                <p class="text-emerald-500 text-sm font-semibold flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm">trending_up</span> +12% vs yesterday
+                </p>
+            </div>
+            <div
+                class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-[#111621] border border-slate-200 dark:border-[#3c4453] shadow-sm">
+                <div class="flex justify-between items-start">
+                    <p class="text-slate-500 dark:text-[#9da6b8] text-sm font-medium">XML Success Rate</p>
+                    <span class="material-symbols-outlined text-emerald-500 text-xl">check_circle</span>
+                </div>
+                <p class="text-slate-900 dark:text-white tracking-tight text-3xl font-bold">98.2%</p>
+                <p class="text-orange-500 text-sm font-semibold flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm">trending_down</span> -0.5% vs yesterday
+                </p>
+            </div>
+            <div
+                class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-[#111621] border border-slate-200 dark:border-[#3c4453] shadow-sm">
+                <div class="flex justify-between items-start">
+                    <p class="text-slate-500 dark:text-[#9da6b8] text-sm font-medium">PDF Conversions</p>
+                    <span class="material-symbols-outlined text-blue-400 text-xl">picture_as_pdf</span>
+                </div>
+                <p class="text-slate-900 dark:text-white tracking-tight text-3xl font-bold">450</p>
+                <p class="text-orange-500 text-sm font-semibold flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm">trending_down</span> -2% vs yesterday
+                </p>
+            </div>
+            <div
+                class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-[#111621] border border-slate-200 dark:border-[#3c4453] shadow-sm">
+                <div class="flex justify-between items-start">
+                    <p class="text-slate-500 dark:text-[#9da6b8] text-sm font-medium">Critical Errors</p>
+                    <span class="material-symbols-outlined text-red-500 text-xl">report</span>
+                </div>
+                <p class="text-slate-900 dark:text-white tracking-tight text-3xl font-bold">12</p>
+                <p class="text-slate-400 text-sm font-medium">Requires attention</p>
+            </div>
+        </div>
+        <!-- Main Content Area -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Table Section -->
+            <div class="lg:col-span-2 flex flex-col gap-4">
+                <!-- Filters -->
+                <div
+                    class="flex flex-wrap gap-3 bg-white dark:bg-[#111621] p-4 rounded-xl border border-slate-200 dark:border-[#3c4453] shadow-sm items-center">
+                    <span class="text-sm font-bold text-slate-700 dark:text-white mr-2">Filter by:</span>
+                    <button class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary text-white">All
+                        Documents</button>
+                    <button
+                        class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-[#292e38] text-slate-600 dark:text-[#9da6b8] hover:bg-slate-200 dark:hover:bg-[#3c4453]">Invoices
+                        (XML)</button>
+                    <button
+                        class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-[#292e38] text-slate-600 dark:text-[#9da6b8] hover:bg-slate-200 dark:hover:bg-[#3c4453]">Payroll</button>
+                    <button
+                        class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-[#292e38] text-slate-600 dark:text-[#9da6b8] hover:bg-slate-200 dark:hover:bg-[#3c4453] text-red-500">Errors</button>
+                    <div class="ml-auto flex items-center gap-2">
+                        <span class="text-xs text-slate-400">Date Range:</span>
+                        <select
+                            class="form-select text-xs bg-transparent border-slate-200 dark:border-[#3c4453] rounded-lg">
+                            <option>Today</option>
+                            <option>Yesterday</option>
+                            <option>Last 7 Days</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Data Table -->
+                <div
+                    class="bg-white dark:bg-[#111621] rounded-xl border border-slate-200 dark:border-[#3c4453] shadow-sm overflow-hidden flex-1">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600 dark:text-[#9da6b8]">
+                            <thead
+                                class="bg-slate-50 dark:bg-[#1e232e] text-xs uppercase font-bold text-slate-500 dark:text-[#9da6b8]">
+                                <tr>
+                                    <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4">Time</th>
+                                    <th class="px-6 py-4">Provider / Sender</th>
+                                    <th class="px-6 py-4">Type</th>
+                                    <th class="px-6 py-4 text-right">Amount</th>
+                                    <th class="px-6 py-4 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 dark:divide-[#292e38]">
+                                <!-- Row 1 -->
+                                <tr class="hover:bg-slate-50 dark:hover:bg-[#1e232e] transition-colors group">
+                                    <td class="px-6 py-4">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500">
+                                            <span class="size-1.5 rounded-full bg-emerald-500"></span> Parsed
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 font-medium">10:42 AM</td>
+                                    <td class="px-6 py-4 text-slate-900 dark:text-white font-semibold">Tigo Une S.A.
+                                        ESP<br><span class="text-xs font-normal text-slate-400">billing@tigo.com</span>
+                                    </td>
+                                    <td class="px-6 py-4">e-Invoice (XML)</td>
+                                    <td class="px-6 py-4 text-right font-bold text-slate-900 dark:text-white">$340,500
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="p-2 text-slate-400 hover:text-primary transition-colors"><span
+                                                class="material-symbols-outlined text-lg">visibility</span></button>
+                                    </td>
+                                </tr>
+                                <!-- Row 2 -->
+                                <tr class="hover:bg-slate-50 dark:hover:bg-[#1e232e] transition-colors group">
+                                    <td class="px-6 py-4">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500">
+                                            <span class="size-1.5 rounded-full bg-emerald-500"></span> Parsed
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 font-medium">10:15 AM</td>
+                                    <td class="px-6 py-4 text-slate-900 dark:text-white font-semibold">DistriHogar
+                                        SAS<br><span
+                                            class="text-xs font-normal text-slate-400">facturacion@distri.com</span>
+                                    </td>
+                                    <td class="px-6 py-4">e-Invoice (XML)</td>
+                                    <td class="px-6 py-4 text-right font-bold text-slate-900 dark:text-white">$1,250,500
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="p-2 text-slate-400 hover:text-primary transition-colors"><span
+                                                class="material-symbols-outlined text-lg">visibility</span></button>
+                                    </td>
+                                </tr>
+                                <!-- Row 3 - Error -->
+                                <tr class="bg-red-50/5 hover:bg-red-50/10 transition-colors group">
+                                    <td class="px-6 py-4">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-500">
+                                            <span class="size-1.5 rounded-full bg-red-500"></span> Error
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 font-medium">09:55 AM</td>
+                                    <td class="px-6 py-4 text-slate-900 dark:text-white font-semibold">Office Supplies
+                                        Ltd<br><span
+                                            class="text-xs font-normal text-slate-400">inv-reply@office.com</span></td>
+                                    <td class="px-6 py-4">Scan (PDF)</td>
+                                    <td class="px-6 py-4 text-right font-bold text-slate-900 dark:text-white">--</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="p-2 text-red-500 hover:text-red-600 transition-colors"><span
+                                                class="material-symbols-outlined text-lg">build</span></button>
+                                    </td>
+                                </tr>
+                                <!-- Row 4 -->
+                                <tr class="hover:bg-slate-50 dark:hover:bg-[#1e232e] transition-colors group">
+                                    <td class="px-6 py-4">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500">
+                                            <span class="size-1.5 rounded-full bg-emerald-500"></span> Stored
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 font-medium">09:30 AM</td>
+                                    <td class="px-6 py-4 text-slate-900 dark:text-white font-semibold">
+                                        Bancolombia<br><span
+                                            class="text-xs font-normal text-slate-400">alertas@bancolombia.com</span>
+                                    </td>
+                                    <td class="px-6 py-4">Bank Statement</td>
+                                    <td class="px-6 py-4 text-right font-bold text-slate-900 dark:text-white">--</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="p-2 text-slate-400 hover:text-primary transition-colors"><span
+                                                class="material-symbols-outlined text-lg">visibility</span></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- Detail / Logs Section -->
+            <div class="flex flex-col gap-6">
+                <!-- Log Console -->
+                <div
+                    class="bg-[#0f1219] rounded-xl border border-[#3c4453] shadow-lg overflow-hidden flex flex-col h-96 font-mono text-xs">
+                    <div class="px-4 py-2 border-b border-[#3c4453] bg-[#1e232e] flex items-center justify-between">
+                        <span class="text-[#9da6b8] font-bold">Live Ingestion Log</span>
+                        <div class="flex gap-1.5">
+                            <span class="size-2.5 rounded-full bg-red-500"></span>
+                            <span class="size-2.5 rounded-full bg-amber-500"></span>
+                            <span class="size-2.5 rounded-full bg-green-500"></span>
+                        </div>
+                    </div>
+                    <div class="p-4 overflow-y-auto custom-scrollbar flex-1 text-[#9da6b8] space-y-1">
+                        <p><span class="text-blue-400">[10:42:01]</span> Incoming mail from <span
+                                class="text-white">billing@tigo.com</span></p>
+                        <p><span class="text-blue-400">[10:42:02]</span> Attachment found: <span
+                                class="text-amber-400">invoice_FE9821.xml</span></p>
+                        <p><span class="text-blue-400">[10:42:03]</span> Validating DIAN signature...</p>
+                        <p><span class="text-green-400">[10:42:04]</span> Signature VALID. CUFE verified.</p>
+                        <p><span class="text-blue-400">[10:42:05]</span> Parsing line items (3 items found).</p>
+                        <p><span class="text-green-400">[10:42:06]</span> Successfully ingested to DB. ID: #TRX-99821
+                        </p>
+                        <p class="border-t border-slate-700 my-2"></p>
+                        <p><span class="text-blue-400">[09:55:12]</span> Incoming mail from <span
+                                class="text-white">inv-reply@office.com</span></p>
+                        <p><span class="text-blue-400">[09:55:13]</span> Attachment found: <span
+                                class="text-amber-400">scan_001.pdf</span></p>
+                        <p><span class="text-red-400">[09:55:15]</span> ERROR: PDF text extraction failed. Low
+                            confidence score (45%).</p>
+                        <p><span class="text-red-400">[09:55:15]</span> Moved to <span
+                                class="text-white">/Manual_Review</span> queue.</p>
+                    </div>
+                </div>
+                <!-- Selected Doc Preview Card (Placeholder) -->
+                <div
+                    class="bg-white dark:bg-[#111621] rounded-xl border border-slate-200 dark:border-[#3c4453] p-6 shadow-sm">
+                    <h3 class="font-bold text-slate-900 dark:text-white mb-4">Latest Error Detail</h3>
+                    <div
+                        class="p-4 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 mb-4">
+                        <div class="flex gap-3">
+                            <span class="material-symbols-outlined text-red-500">error</span>
+                            <div>
+                                <p class="text-sm font-bold text-red-600 dark:text-red-400">Parsing Failed</p>
+                                <p class="text-xs text-red-500/80 mt-1">scan_001.pdf contains unstructured image data.
+                                    OCR required.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        class="w-full py-2 rounded-lg bg-slate-100 dark:bg-[#292e38] text-slate-600 dark:text-white text-sm font-bold hover:bg-slate-200 dark:hover:bg-[#3c4453] transition-colors">Open
+                        in Manual Review Tool</button>
+                    <button
+                        class="w-full mt-2 py-2 rounded-lg border border-slate-200 dark:border-[#3c4453] text-slate-500 dark:text-[#9da6b8] text-sm font-medium hover:border-primary hover:text-primary transition-colors">Download
+                        Original</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+
+</html>

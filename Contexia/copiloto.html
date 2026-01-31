@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copiloto Fiscal & Legal IA - Contexia Intranet 4.0</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="./js/layout.js"></script>
+    <script src="./js/auth.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#195de6",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #292e38;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body class="bg-white text-slate-900 min-h-screen flex flex-col">
+    <!-- TopNavBar -->
+    <!-- TopNavBar Removed as per user request -->
+    <main class="flex-1 flex flex-col max-w-[1600px] mx-auto w-full px-4 lg:px-10 py-6">
+        <!-- Breadcrumbs -->
+        <div class="flex flex-wrap gap-2 py-2 mb-4">
+            <a href="#" class="text-slate-500 dark:text-[#9da6b8] text-sm font-medium hover:text-primary">Intranet
+                4.0</a>
+            <span class="text-slate-400 dark:text-[#9da6b8] text-sm font-medium">/</span>
+            <span class="text-slate-900 dark:text-white text-sm font-semibold">Copiloto Fiscal & Legal</span>
+        </div>
+        <div class="flex flex-col lg:flex-row gap-6 flex-1">
+            <!-- LEFT COLUMN: Chat Interface -->
+            <div
+                class="flex-[1.8] flex flex-col bg-white dark:bg-[#111621] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                <!-- Topic Selector (SegmentedButtons style) -->
+                <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col gap-4">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-xl font-bold flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">smart_toy</span>
+                            Asistente Inteligente
+                        </h1>
+                        <span
+                            class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-400 ring-1 ring-inset ring-green-600/20">
+                            En línea (IA 4.0)
+                        </span>
+                    </div>
+                    <div class="flex h-11 items-center justify-center rounded-lg bg-slate-100 dark:bg-[#292e38] p-1">
+                        <label
+                            class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-[#111318] has-[:checked]:shadow-sm has-[:checked]:text-primary dark:has-[:checked]:text-white text-slate-500 dark:text-[#9da6b8] text-sm font-medium transition-all">
+                            <span class="truncate">Tributario (Tax)</span>
+                            <input type="radio" name="chat-topic" value="Tax" class="invisible w-0" checked />
+                        </label>
+                        <label
+                            class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-[#111318] has-[:checked]:shadow-sm has-[:checked]:text-primary dark:has-[:checked]:text-white text-slate-500 dark:text-[#9da6b8] text-sm font-medium transition-all">
+                            <span class="truncate">Laboral</span>
+                            <input type="radio" name="chat-topic" value="Laboral" class="invisible w-0" />
+                        </label>
+                        <label
+                            class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-[#111318] has-[:checked]:shadow-sm has-[:checked]:text-primary dark:has-[:checked]:text-white text-slate-500 dark:text-[#9da6b8] text-sm font-medium transition-all">
+                            <span class="truncate">Contratos</span>
+                            <input type="radio" name="chat-topic" value="Contratos" class="invisible w-0" />
+                        </label>
+                    </div>
+                </div>
+                <!-- Chat History Area -->
+                <div class="flex-1 overflow-y-auto p-6 custom-scrollbar flex flex-col gap-6 max-h-[500px]">
+                    <!-- AI Message -->
+                    <div class="flex items-start gap-4 max-w-[85%]">
+                        <div class="bg-primary/10 rounded-full p-2 shrink-0">
+                            <span class="material-symbols-outlined text-primary text-xl">robot_2</span>
+                        </div>
+                        <div class="flex flex-col gap-1.5 items-start">
+                            <div class="flex items-center gap-2">
+                                <p
+                                    class="text-slate-500 dark:text-[#9da6b8] text-[12px] font-semibold uppercase tracking-wider">
+                                    Copiloto IA Fiscal</p>
+                                <span class="text-[10px] text-slate-400">10:42 AM</span>
+                            </div>
+                            <div
+                                class="text-sm md:text-base font-normal leading-relaxed flex rounded-2xl rounded-tl-none px-5 py-3.5 bg-slate-100 dark:bg-[#292e38] text-slate-800 dark:text-white shadow-sm">
+                                Hola, soy tu Copiloto Fiscal especializado en normativa colombiana. Puedo ayudarte con
+                                tus declaraciones de renta, IVA o dudas sobre la normativa de la DIAN. ¿En qué puedo
+                                asistirte hoy?
+                            </div>
+                        </div>
+                    </div>
+                    <!-- User Message -->
+                    <div class="flex items-start gap-4 justify-end">
+                        <div class="flex flex-col gap-1.5 items-end max-w-[85%]">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] text-slate-400">10:43 AM</span>
+                                <p
+                                    class="text-slate-500 dark:text-[#9da6b8] text-[12px] font-semibold uppercase tracking-wider">
+                                    Empresario (Tú)</p>
+                            </div>
+                            <div
+                                class="text-sm md:text-base font-normal leading-relaxed flex rounded-2xl rounded-tr-none px-5 py-3.5 bg-primary text-white shadow-md">
+                                ¿Cuál es la fecha límite para mi próxima declaración de IVA y qué documentos necesito
+                                preparar para la DIAN?
+                            </div>
+                        </div>
+                        <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 shrink-0 border border-primary/30"
+                            style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDx5y5r9wdCRUinVzkJD3xRHOIgwrAI-TMfso3IOI2BE6n4ZVcbXW5QQ_gYIbkO5-iQC-HyicUNzhYLLgY7qLv24TVI1WLMyG9D77S5I10kYvo426BNVxvKDoCFPf4xH9a6uefGl-xa1cSdBNvxNw1keRlnXqEgyNJmCyc5c8UtatqFCcUIvNCOmLXpHvvZNv_M-X-eh1dewWNg8xDk2oIO5hUW5o66qFi1YYhyR5fUUrIEb0tomUcfBsLI4V7LUj9SygAT0eWI1oo");'
+                            data-alt="User avatar small"></div>
+                    </div>
+                    <!-- AI Message -->
+                    <div class="flex items-start gap-4 max-w-[85%]">
+                        <div class="bg-primary/10 rounded-full p-2 shrink-0">
+                            <span class="material-symbols-outlined text-primary text-xl">robot_2</span>
+                        </div>
+                        <div class="flex flex-col gap-1.5 items-start">
+                            <div class="flex items-center gap-2">
+                                <p
+                                    class="text-slate-500 dark:text-[#9da6b8] text-[12px] font-semibold uppercase tracking-wider">
+                                    Copiloto IA Fiscal</p>
+                                <span class="text-[10px] text-slate-400">10:44 AM</span>
+                            </div>
+                            <div
+                                class="text-sm md:text-base font-normal leading-relaxed flex flex-col gap-3 rounded-2xl rounded-tl-none px-5 py-3.5 bg-slate-100 dark:bg-[#292e38] text-slate-800 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700/50">
+                                <p>De acuerdo con el calendario tributario 2024 para tu NIT terminado en <b>89</b>:</p>
+                                <ul class="list-disc ml-4 space-y-1">
+                                    <li><b>Fecha Límite:</b> 15 de Noviembre, 2024.</li>
+                                    <li><b>Formulario:</b> 300 (IVA Bimestral).</li>
+                                </ul>
+                                <p>Te recomiendo tener listos los certificados de retención de IVA y el listado de
+                                    facturación electrónica de este periodo. ¿Te gustaría que analice los archivos de tu
+                                    nube para generar un borrador?</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Input Area -->
+                <div class="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#111621]">
+                    <div class="relative flex flex-col gap-3">
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <button
+                                class="text-xs px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors border border-transparent">
+                                Calendario DIAN
+                            </button>
+                            <button
+                                class="text-xs px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors border border-transparent">
+                                Liquidación Nómina
+                            </button>
+                            <button
+                                class="text-xs px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors border border-transparent">
+                                Revisar Contrato
+                            </button>
+                        </div>
+                        <div
+                            class="flex items-end gap-3 bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-700 p-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+                            <button class="p-2 text-slate-400 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined">attach_file</span>
+                            </button>
+                            <textarea rows="1"
+                                class="flex-1 bg-transparent border-none focus:ring-0 text-sm md:text-base text-slate-800 dark:text-white placeholder:text-slate-400 py-2 resize-none max-h-32"
+                                placeholder="Escribe tu consulta legal o fiscal aquí..."></textarea>
+                            <button
+                                class="bg-primary hover:bg-primary/90 text-white rounded-lg p-2 flex items-center justify-center transition-all shadow-lg shadow-primary/20">
+                                <span class="material-symbols-outlined">send</span>
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-center text-slate-400">Copiloto IA puede cometer errores. Verifica
+                            siempre con tu contador asignado.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- RIGHT COLUMN: Context Panel -->
+            <div class="flex-[0.7] flex flex-col gap-6">
+                <!-- Company Summary Card -->
+                <div
+                    class="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-primary">corporate_fare</span>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 dark:text-white">Innova Tech S.A.S.</h3>
+                            <p class="text-xs text-slate-500">NIT: 901.455.789-1</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-700 pt-4">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold">Regimen</span>
+                            <span class="text-xs font-medium">Responsable IVA</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold">Ubicación</span>
+                            <span class="text-xs font-medium">Bogotá, D.C.</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Latest Tax Declarations -->
+                <div
+                    class="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
+                            <span class="material-symbols-outlined text-primary text-lg">description</span>
+                            Últimas Declaraciones
+                        </h3>
+                        <a href="#" class="text-xs text-primary font-semibold hover:underline">Ver todo</a>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <div
+                            class="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-background-dark/50 border border-slate-100 dark:border-slate-800 hover:border-primary/30 transition-colors cursor-pointer group">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-red-500">picture_as_pdf</span>
+                                <div>
+                                    <p class="text-xs font-semibold">Renta 2023</p>
+                                    <p class="text-[10px] text-slate-500">Presentada: 12 Oct 2024</p>
+                                </div>
+                            </div>
+                            <span
+                                class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors text-lg">download</span>
+                        </div>
+                        <div
+                            class="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-background-dark/50 border border-slate-100 dark:border-slate-800 hover:border-primary/30 transition-colors cursor-pointer group">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-green-600">table_view</span>
+                                <div>
+                                    <p class="text-xs font-semibold">IVA Bim 4</p>
+                                    <p class="text-[10px] text-slate-500">Presentada: 15 Sep 2024</p>
+                                </div>
+                            </div>
+                            <span
+                                class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors text-lg">download</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Payroll Status -->
+                <div
+                    class="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
+                            <span class="material-symbols-outlined text-primary text-lg">payments</span>
+                            Nómina & UGPP
+                        </h3>
+                        <span class="material-symbols-outlined text-slate-400 text-lg">info</span>
+                    </div>
+                    <div class="p-3 bg-primary/5 rounded-lg border border-primary/10 mb-4">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[11px] font-semibold text-primary uppercase">Nómina Octubre</span>
+                            <span class="text-[11px] bg-primary text-white px-1.5 py-0.5 rounded">Al día</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500">Transmisión electrónica realizada exitosamente a la DIAN
+                            el 05 Nov.</p>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-500">Empleados activos:</span>
+                            <span class="font-bold">24</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-500">Total Devengado:</span>
+                            <span class="font-bold">$42.500.000</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Legal Alerts -->
+                <div
+                    class="mt-auto bg-amber-50 dark:bg-amber-900/10 rounded-xl border border-amber-200 dark:border-amber-900/30 p-4">
+                    <div class="flex gap-3">
+                        <span class="material-symbols-outlined text-amber-600 dark:text-amber-500">warning</span>
+                        <div class="flex flex-col gap-1">
+                            <p class="text-xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wide">
+                                Alerta Legal</p>
+                            <p class="text-xs text-amber-700 dark:text-amber-300/80">3 contratos de trabajo a término
+                                fijo vencen en los próximos 15 días. ¿Deseas proyectar las prórrogas?</p>
+                            <button
+                                class="mt-2 text-[11px] font-bold text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1">
+                                Gestionar ahora <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Footer Meta -->
+    <footer class="mt-auto py-6 border-t border-slate-200 dark:border-slate-800 text-center">
+        <p class="text-xs text-slate-400">© 2024 Contexia Intranet 4.0 - Inteligencia de Negocios para PyMEs Colombianas
+        </p>
+    </footer>
+</body>
+
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centinela Fiscal - Contexia Intranet 4.0</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+
+    <!-- Alpine.js & Backend Simulation -->
+    <!-- Alpine.js & Backend Simulation -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="./js/layout.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/db.js"></script>
+    <script src="./js/api.js"></script>
+    <script src="./js/seed.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.seeder) window.seeder.run();
+        });
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('centinela', () => ({
+                alerts: [],
+                selectedAlert: null,
+                loading: true,
+
+                async init() {
+                    try {
+                        // For this demo, we use 'alerts' to simulate intercepted transactions
+                        // In a real app these entities might differ
+                        const allAlerts = await api.getAlerts();
+                        this.alerts = allAlerts;
+                        if (this.alerts.length > 0) this.selectedAlert = this.alerts[0];
+                    } catch (e) {
+                        console.error(e);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                formatMoney(val) {
+                    // Start with a base amount (mock)
+                    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val || 1500000);
+                },
+
+                select(alert) {
+                    this.selectedAlert = alert;
+                },
+
+                block() {
+                    if (!this.selectedAlert) return;
+                    alert(`Pago Bloqueado: ${this.selectedAlert.title}`);
+                    // Remove local
+                    this.alerts = this.alerts.filter(a => a.id !== this.selectedAlert.id);
+                    this.selectedAlert = this.alerts.length > 0 ? this.alerts[0] : null;
+                }
+            }))
+        })
+    </script>
+
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#195de6",
+                        "danger": "#ef4444",
+                        "warning": "#f59e0b",
+                        "success": "#10b981",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0B1120",
+                        "surface-dark": "#161b22",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+
+<body x-data="centinela" class="bg-white text-slate-900 min-h-screen flex flex-col font-display">
+
+    <!-- Header -->
+    <header
+        class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark px-6 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <h1 class="text-lg font-bold tracking-tight">Centinela Fiscal <span
+                    class="text-slate-400 font-normal ml-2 text-sm">Control Ex-Ante</span></h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <div
+                class="bg-indigo-500/10 text-indigo-500 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <span class="relative flex h-2 w-2">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                </span>
+                Monitoreo Activo
+            </div>
+            <div class="h-8 w-[1px] bg-slate-200 dark:bg-slate-700 mx-2"></div>
+            <div class="flex items-center gap-2">
+                <div class="size-8 rounded-full bg-slate-200 dark:bg-slate-700 bg-cover bg-center"
+                    style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBrRPo19wFJY7gwSo3x1P8_kQkly-A1dl-8oPMQipHw6vN6YHjF6W-bvL3vFEBaEVTSVeGNEksZcsXSRWKrjYAStnrWntu8lBOtLtVITG9WsAyKvZwlfVpQJe5pDBpFnKLCQB3MqX5dvZvz2hBZ3t2JF4NEkdkT4dmxky8zkU2IbvDCQK-pGLWVH4V8fCt5RavEnljOEaqtfDQPBMIsy8Iyl3NPHl2p2MYdCswAb-rgcFdhrwYyKam0s6SXTmYmt1tKaP8GYG_yM-0');">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 p-6 max-w-[1600px] mx-auto w-full flex flex-col gap-6">
+
+        <!-- KPIs Top Bar -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div
+                class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-semibold uppercase">Bloqueadas Hoy</p>
+                    <p class="text-2xl font-black text-danger">3</p>
+                </div>
+                <div class="size-10 rounded-full bg-danger/10 text-danger flex items-center justify-center">
+                    <span class="material-symbols-outlined">block</span>
+                </div>
+            </div>
+            <div
+                class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-semibold uppercase">Advertencias</p>
+                    <p class="text-2xl font-black text-warning">12</p>
+                </div>
+                <div class="size-10 rounded-full bg-warning/10 text-warning flex items-center justify-center">
+                    <span class="material-symbols-outlined">warning</span>
+                </div>
+            </div>
+            <div
+                class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-semibold uppercase">Resueltas Semana</p>
+                    <p class="text-2xl font-black text-success">45</p>
+                </div>
+                <div class="size-10 rounded-full bg-success/10 text-success flex items-center justify-center">
+                    <span class="material-symbols-outlined">task_alt</span>
+                </div>
+            </div>
+            <div
+                class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                <div class="flex flex-col">
+                    <p class="text-xs text-slate-500 font-semibold uppercase">Nivel Riesgo Global</p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <div class="h-2 w-24 bg-slate-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-success via-warning to-danger w-1/3"></div>
+                        </div>
+                        <span class="text-xs font-bold text-success">Bajo</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Split -->
+        <div class="flex flex-col lg:flex-row gap-6 flex-1 min-h-[500px]">
+
+            <!-- Left List: Intercepted Transactions -->
+            <div
+                class="flex-[2] bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden shadow-sm">
+                <!-- Toolbar -->
+                <div
+                    class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-[#1e232e]">
+                    <h2 class="font-bold text-slate-800 dark:text-white">Transacciones Interceptadas</h2>
+                    <div class="flex gap-2 text-xs">
+                        <button
+                            class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:border-primary/50 transition-colors">Filtrar</button>
+                        <button
+                            class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:border-primary/50 transition-colors">Exportar</button>
+                    </div>
+                </div>
+                <!-- List Header -->
+                <div
+                    class="grid grid-cols-12 gap-4 px-4 py-2 bg-slate-100 dark:bg-slate-800/50 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200 dark:border-slate-700">
+                    <div class="col-span-3">Fecha / Tipo</div>
+                    <div class="col-span-3">Tercero</div>
+                    <div class="col-span-2 text-right">Monto</div>
+                    <div class="col-span-3 text-center">Riesgo Detectado</div>
+                    <div class="col-span-1 text-center">Estado</div>
+                </div>
+                <!-- Items -->
+                <div class="flex-1 overflow-y-auto">
+                    <template x-for="alert in alerts" :key="alert.id">
+                        <div @click="select(alert)"
+                            class="grid grid-cols-12 gap-4 px-4 py-4 border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/30 cursor-pointer transition-colors group items-center border-l-4"
+                            :class="{
+                                'border-l-danger': alert.severity === 'high',
+                                'border-l-warning': alert.severity === 'medium',
+                                'border-l-slate-400': alert.severity === 'low',
+                                'bg-slate-50 dark:bg-slate-800/40': selectedAlert && selectedAlert.id === alert.id
+                            }">
+                            <div class="col-span-3">
+                                <p class="font-semibold text-sm" x-text="alert.date"></p>
+                                <span
+                                    class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 mt-1"
+                                    x-text="alert.type"></span>
+                            </div>
+                            <div class="col-span-3">
+                                <p class="text-sm font-medium truncate"
+                                    x-text="alert.description.substring(0, 25) + '...'"></p>
+                                <p class="text-xs text-slate-500">NIT: 900.123.456</p>
+                            </div>
+                            <div class="col-span-2 text-right">
+                                <p class="text-sm font-bold" x-text="formatMoney(alert.amount)"></p>
+                            </div>
+                            <div class="col-span-3">
+                                <div class="flex items-center gap-1.5 justify-center">
+                                    <span class="material-symbols-outlined text-lg"
+                                        :class="{'text-danger': alert.severity === 'high', 'text-warning': alert.severity === 'medium'}"
+                                        x-text="alert.severity === 'high' ? 'gpp_bad' : 'warning'"></span>
+                                    <span class="text-xs font-semibold"
+                                        :class="{'text-danger': alert.severity === 'high', 'text-warning': alert.severity === 'medium'}"
+                                        x-text="alert.title"></span>
+                                </div>
+                            </div>
+                            <div class="col-span-1 flex justify-center">
+                                <span class="rounded-full bg-slate-100 dark:bg-slate-700 p-1 text-slate-500">
+                                    <span class="material-symbols-outlined text-sm">lock</span>
+                                </span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Right Detail Panel -->
+            <div x-show="selectedAlert"
+                class="flex-[1] bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col shadow-lg ring-1 ring-black/5">
+                <div class="p-6 border-b border-slate-200 dark:border-slate-800 bg-warning/10 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-3xl text-warning">warning</span>
+                    <div>
+                        <h3 class="font-bold text-lg leading-none" x-text="selectedAlert.title"></h3>
+                        <p class="text-xs text-slate-500 mt-1 uppercase font-bold tracking-wider"
+                            x-text="'Prioridad ' + selectedAlert.severity"></p>
+                    </div>
+                </div>
+
+                <div class="p-6 flex-1 flex flex-col gap-6">
+                    <!-- Detail Grid -->
+                    <div class="grid grid-cols-2 gap-y-4 text-sm">
+                        <div>
+                            <span class="text-xs text-slate-400 uppercase font-semibold block mb-1">Beneficiario</span>
+                            <span class="font-medium text-slate-800 dark:text-white block">Proveedor X</span>
+                            <span class="text-xs text-slate-500">NIT 900.xxx.xxx</span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-400 uppercase font-semibold block mb-1">Monto
+                                Estimado</span>
+                            <span class="font-bold text-slate-800 dark:text-white"
+                                x-text="formatMoney(selectedAlert.amount)"></span>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="text-xs text-slate-400 uppercase font-semibold block mb-1">Detalle</span>
+                            <span class="font-medium text-slate-800 dark:text-white"
+                                x-text="selectedAlert.description"></span>
+                        </div>
+                    </div>
+
+                    <!-- AI Explanation Box -->
+                    <div
+                        class="bg-indigo-50 dark:bg-indigo-900/10 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/30">
+                        <div class="flex items-center gap-2 mb-2 text-indigo-600 dark:text-indigo-400">
+                            <span class="material-symbols-outlined text-sm">smart_toy</span>
+                            <span class="text-xs font-bold uppercase">Análisis Centinela AI</span>
+                        </div>
+                        <p class="text-sm text-indigo-900 dark:text-indigo-200 leading-relaxed">
+                            El sistema ha detectado una anomalía basada en el comportamiento histórico de este
+                            proveedor. Se recomienda verificar soportes antes de autorizar.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div
+                    class="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#1e232e] rounded-b-xl flex flex-col gap-3">
+                    <button @click="block"
+                        class="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-lg">gavel</span>
+                        Solicitar Aprobación Manual
+                    </button>
+                    <div class="flex gap-3">
+                        <button
+                            class="flex-1 py-2.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white font-medium text-sm hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
+                            Ignorar
+                        </button>
+                        <button @click="block"
+                            class="flex-1 py-2.5 rounded-lg border border-danger text-danger bg-danger/5 font-medium text-sm hover:bg-danger hover:text-white transition-colors">
+                            Bloquear
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+</body>
+
+</html>

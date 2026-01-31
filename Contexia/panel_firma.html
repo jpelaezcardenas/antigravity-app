@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Firma - Contexia Intranet 4.0</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="./js/layout.js"></script>
+    <script src="./js/auth.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#195de6",
+                        "success": "#10b981",
+                        "warning": "#f59e0b",
+                        "danger": "#ef4444",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0B1120",
+                        "surface-dark": "#161b22",
+                        "border-dark": "#30363d"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+
+<body x-data="firmPanel" class="bg-white text-slate-900 min-h-screen flex flex-col font-display">
+
+    <!-- Header -->
+    <header
+        class="bg-white dark:bg-surface-dark border-b border-slate-200 dark:border-border-dark px-6 py-3 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+        <div class="flex items-center gap-4">
+            <h1 class="font-bold text-lg">Panel de Firma <span class="text-slate-400 font-normal text-sm ml-2"
+                    x-text="labels[currentTab]"></span></h1>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex items-center gap-6">
+            <nav class="flex items-center gap-4">
+                <button @click="currentTab = 'dashboard'"
+                    :class="currentTab === 'dashboard' ? 'text-slate-900 dark:text-white border-primary border-b-2' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border-transparent'"
+                    class="text-sm font-bold pb-1 transition-all">
+                    Centro de Mando
+                </button>
+                <button @click="currentTab = 'tasks'"
+                    :class="currentTab === 'tasks' ? 'text-slate-900 dark:text-white border-primary border-b-2' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border-transparent'"
+                    class="text-sm font-bold pb-1 transition-all">
+                    Mis Tareas
+                </button>
+                <button @click="currentTab = 'reports'"
+                    :class="currentTab === 'reports' ? 'text-slate-900 dark:text-white border-primary border-b-2' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border-transparent'"
+                    class="text-sm font-bold pb-1 transition-all">
+                    Reportes Globales
+                </button>
+            </nav>
+            <div class="h-6 w-px bg-slate-200 dark:bg-slate-700"></div>
+            <div class="flex items-center gap-3">
+                <div class="text-right hidden md:block">
+                    <p class="text-xs font-bold text-slate-900 dark:text-white">María Contadora</p>
+                    <p class="text-[10px] text-slate-500">Socia Senior</p>
+                </div>
+                <div
+                    class="size-8 rounded-full bg-slate-200 dark:bg-slate-700 text-xs flex items-center justify-center font-bold">
+                    MC</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-[1920px] w-full mx-auto p-6 flex flex-col gap-6">
+
+        <!-- ====================== TAB: DASHBOARD (CENTRO DE MANDO) ====================== -->
+        <div x-show="currentTab === 'dashboard'" class="flex flex-col gap-6 flex-1">
+            <!-- Controls & KPI Preview -->
+            <div class="flex justify-between items-end">
+                <div
+                    class="flex bg-white dark:bg-surface-dark rounded-lg p-1 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <button @click="filter = 'mine'"
+                        :class="filter === 'mine' ? 'bg-primary text-white shadow-md' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
+                        class="px-4 py-1.5 rounded-md text-sm font-bold transition-all">Mis Clientes (12)</button>
+                    <button @click="filter = 'all'"
+                        :class="filter === 'all' ? 'bg-primary text-white shadow-md' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
+                        class="px-4 py-1.5 rounded-md text-sm font-bold transition-all">Cartera Completa (45)</button>
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex items-center gap-2 px-3 py-1 bg-red-500/10 rounded-full border border-red-500/20">
+                        <span class="size-2 rounded-full bg-red-500 animate-pulse"></span>
+                        <span class="text-xs font-bold text-red-600 dark:text-red-400">3 Críticos</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col xl:flex-row gap-6 flex-1">
+                <!-- Main Table -->
+                <div
+                    class="flex-[3] bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead
+                                class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+                                <tr>
+                                    <th class="px-6 py-4">Empresa / Sector</th>
+                                    <th class="px-6 py-4">Conciliación</th>
+                                    <th class="px-6 py-4">Pulso Diario</th>
+                                    <th class="px-6 py-4">Riesgo DIAN</th>
+                                    <th class="px-6 py-4 text-center">Alertas</th>
+                                    <th class="px-6 py-4"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                <template x-for="client in filteredClients" :key="client.id">
+                                    <tr
+                                        class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group border-b border-transparent dark:border-transparent">
+                                        <td class="px-6 py-4">
+                                            <div class="flex flex-col">
+                                                <span class="font-bold text-slate-700 dark:text-slate-200"
+                                                    x-text="client.name"></span>
+                                                <span class="text-xs text-slate-400"
+                                                    x-text="client.sector + ' • ' + client.city"></span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <span class="relative flex size-2.5">
+                                                    <span
+                                                        class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                                                        :class="{ 'bg-emerald-400': client.status === 'ok', 'bg-amber-400': client.status === 'warning', 'bg-red-500': client.status === 'critical' }"
+                                                        x-show="client.status === 'critical'"></span>
+                                                    <span class="relative inline-flex rounded-full size-2.5"
+                                                        :class="{ 'bg-emerald-500': client.status === 'ok', 'bg-amber-500': client.status === 'warning', 'bg-red-500': client.status === 'critical' }"></span>
+                                                </span>
+                                                <span class="text-xs font-medium text-slate-600 dark:text-slate-400"
+                                                    x-text="client.statusLabel"></span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-xs text-slate-500 dark:text-slate-500"
+                                                x-text="client.pulseUpdated ? 'Actualizado Hoy' : 'Hace 2 días'"></span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-1 font-semibold text-xs"
+                                                :class="{ 'text-emerald-600 dark:text-emerald-400': client.risk === 'Bajo', 'text-amber-600 dark:text-amber-400': client.risk === 'Medio', 'text-red-600 dark:text-red-400': client.risk === 'Alto' }">
+                                                <span class="material-symbols-outlined text-sm"
+                                                    x-text="client.risk === 'Bajo' ? 'shield' : (client.risk === 'Medio' ? 'warning' : 'gpp_bad')"></span>
+                                                <span x-text="client.risk"></span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span x-show="client.alerts > 0"
+                                                class="inline-flex items-center justify-center size-5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-[10px] border border-slate-200 dark:border-slate-700"
+                                                x-text="client.alerts"></span>
+                                            <span x-show="client.alerts === 0"
+                                                class="text-slate-300 dark:text-slate-700">-</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <div class="size-6 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] flex items-center justify-center font-bold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                                                    x-text="client.ownerInitials"></div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <button class="text-slate-400 hover:text-primary transition-colors"><span
+                                                    class="material-symbols-outlined">arrow_forward</span></button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Sidebar Tasks Summary (Original) -->
+                <div
+                    class="flex-1 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+                    <h3 class="font-bold text-slate-900 dark:text-white mb-4 text-sm uppercase tracking-wide">Tareas
+                        Urgentes</h3>
+                    <div class="space-y-3">
+                        <template x-for="task in urgentTasks" :key="task.id">
+                            <div
+                                class="bg-white dark:bg-surface-dark p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:border-primary/50 transition-all">
+                                <div class="flex justify-between items-start mb-1">
+                                    <span class="text-[10px] font-bold text-amber-600" x-text="task.tag"></span>
+                                </div>
+                                <p class="text-sm font-semibold leading-tight" x-text="task.title"></p>
+                                <p class="text-xs text-slate-500 mt-1" x-text="task.due"></p>
+                            </div>
+                        </template>
+                        <button @click="currentTab = 'tasks'"
+                            class="w-full py-2 text-xs font-bold text-primary hover:bg-primary/5 rounded-lg border border-transparent hover:border-primary/20 transition-all">Ver
+                            todas</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====================== TAB: TASKS (MIS TAREAS) ====================== -->
+        <div x-show="currentTab === 'tasks'" class="flex flex-col gap-6" style="display: none;">
+            <div
+                class="flex justify-between items-center bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="flex gap-4">
+                    <div class="relative">
+                        <span
+                            class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
+                        <input type="text" placeholder="Buscar tareas..."
+                            class="pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm w-64 focus:ring-primary focus:border-primary">
+                    </div>
+                    <select
+                        class="pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                        <option>Todas las Tareas</option>
+                        <option>Alta Prioridad</option>
+                        <option>Pendientes</option>
+                    </select>
+                </div>
+                <button
+                    class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 transition-all">
+                    <span class="material-symbols-outlined text-sm">add</span> Nueva Tarea
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Column: To Do -->
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-center justify-between px-1">
+                        <h3 class="font-bold text-sm text-slate-600 dark:text-slate-400">Pendientes</h3>
+                        <span class="text-slate-400 dark:text-slate-600 text-xs font-bold px-2 py-0.5">4</span>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <template x-for="task in allTasks.filter(t => t.status === 'todo')" :key="task.id">
+                            <div
+                                class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-move group">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        <span class="size-1.5 rounded-full" :class="{
+                                                'bg-red-500': task.priority === 'high',
+                                                'bg-indigo-500': task.priority === 'normal',
+                                                'bg-slate-400': task.priority === 'low'
+                                            }"></span>
+                                        <span
+                                            x-text="task.priority === 'high' ? 'Alta' : (task.priority === 'normal' ? 'Normal' : 'Baja')"></span>
+                                    </span>
+                                    <button class="text-slate-300 hover:text-slate-500 dark:hover:text-slate-200"><span
+                                            class="material-symbols-outlined text-base">more_horiz</span></button>
+                                </div>
+                                <h4 class="font-bold text-slate-900 dark:text-white mb-1" x-text="task.title"></h4>
+                                <p class="text-xs text-slate-500 mb-3" x-text="task.client"></p>
+                                <div
+                                    class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                                    <div class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                                        <span class="material-symbols-outlined text-sm">calendar_today</span> <span
+                                            x-text="task.due"></span>
+                                    </div>
+                                    <div
+                                        class="size-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 text-[10px] flex items-center justify-center font-bold">
+                                        MC</div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <!-- Column: In Progress -->
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-center justify-between px-1">
+                        <h3 class="font-bold text-sm text-slate-600 dark:text-slate-400">En Proceso</h3>
+                        <span class="text-slate-400 dark:text-slate-600 text-xs font-bold px-2 py-0.5">2</span>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <template x-for="task in allTasks.filter(t => t.status === 'in_progress')" :key="task.id">
+                            <div
+                                class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/50 shadow-sm cursor-move group">
+                                <h4 class="font-bold text-slate-900 dark:text-white mb-1" x-text="task.title"></h4>
+                                <p class="text-xs text-slate-500 mb-3" x-text="task.client"></p>
+                                <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mb-2">
+                                    <div class="bg-indigo-500 h-1.5 rounded-full" style="width: 60%"></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <!-- Column: Done -->
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-center justify-between px-1">
+                        <h3 class="font-bold text-sm text-slate-600 dark:text-slate-400">Completadas</h3>
+                        <span class="text-slate-400 dark:text-slate-600 text-xs font-bold px-2 py-0.5">5</span>
+                    </div>
+                    <div class="flex flex-col gap-3 opacity-60 hover:opacity-100 transition-opacity">
+                        <!-- Simplified Card for Done -->
+                        <div
+                            class="bg-white dark:bg-surface-dark p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-3">
+                            <span class="material-symbols-outlined text-emerald-500">check_circle</span>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-white line-through">Revisión
+                                    Mensual IVA</h4>
+                                <p class="text-[10px] text-slate-500">Constructora Elite</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====================== TAB: REPORTS (REPORTES GLOBALES) ====================== -->
+        <div x-show="currentTab === 'reports'" class="flex flex-col gap-6" style="display: none;">
+
+            <!-- Cards Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div
+                    class="bg-white dark:bg-surface-dark p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-xs uppercase font-bold text-slate-500 tracking-wider">Riesgo Total Cartera</p>
+                    <div class="flex items-end gap-2 mt-2">
+                        <h3 class="text-2xl font-bold text-slate-700 dark:text-slate-200">12%</h3>
+                        <span class="text-sm text-red-500 font-bold mb-1 flex items-center"><span
+                                class="material-symbols-outlined text-base">arrow_upward</span> +2%</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2">Clientes en categoría de riesgo ALTO.</p>
+                </div>
+                <div
+                    class="bg-white dark:bg-surface-dark p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-xs uppercase font-bold text-slate-500 tracking-wider">Productividad Firma</p>
+                    <div class="flex items-end gap-2 mt-2">
+                        <h3 class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">94%</h3>
+                        <span class="text-sm text-emerald-500 font-bold mb-1 flex items-center"><span
+                                class="material-symbols-outlined text-base">arrow_upward</span> +5%</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2">Tareas completadas a tiempo esta semana.</p>
+                </div>
+                <div
+                    class="bg-white dark:bg-surface-dark p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-xs uppercase font-bold text-slate-500 tracking-wider">Alertas Totales</p>
+                    <div class="flex items-end gap-2 mt-2">
+                        <h3 class="text-2xl font-bold text-slate-700 dark:text-slate-200">24</h3>
+                        <span class="text-sm text-slate-400 font-bold mb-1">Abiertas</span>
+                    </div>
+                    <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                        <div class="bg-amber-400 h-full" style="width: 45%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-96">
+                <!-- Risk Heatmap Chart -->
+                <div
+                    class="bg-white dark:bg-surface-dark p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+                    <h3 class="font-bold text-lg mb-4">Composición de Riesgo</h3>
+                    <div id="riskChart" class="flex-1 w-full"></div>
+                </div>
+                <!-- Productivity Chart -->
+                <div
+                    class="bg-white dark:bg-surface-dark p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+                    <h3 class="font-bold text-lg mb-4">Actividad Semanal</h3>
+                    <div id="activityChart" class="flex-1 w-full"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- App Logic -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('firmPanel', () => ({
+                currentTab: 'dashboard',
+                filter: 'mine',
+                labels: {
+                    dashboard: 'Vista General',
+                    tasks: 'Gestión de Tareas',
+                    reports: 'Analítica de Cartera'
+                },
+                clients: [
+                    { id: 1, name: 'Restaurante La Plaza', sector: 'Gastronómico', city: 'Medellín', status: 'critical', statusLabel: 'Crítico (-15d)', pulseUpdated: false, risk: 'Alto', alerts: 5, owner: 'María C.', ownerInitials: 'MC', mine: true },
+                    { id: 2, name: 'TechSolutions SAS', sector: 'Tecnología', city: 'Bogotá', status: 'ok', statusLabel: 'Al día', pulseUpdated: true, risk: 'Bajo', alerts: 0, owner: 'María C.', ownerInitials: 'MC', mine: true },
+                    { id: 3, name: 'Constructora Elite', sector: 'Construcción', city: 'Cali', status: 'warning', statusLabel: 'Rev. Pendiente', pulseUpdated: true, risk: 'Medio', alerts: 2, owner: 'Juan P.', ownerInitials: 'JP', mine: false },
+                    { id: 4, name: 'Comercializadora ABC', sector: 'Retail', city: 'Bogotá', status: 'ok', statusLabel: 'Al día', pulseUpdated: true, risk: 'Bajo', alerts: 1, owner: 'María C.', ownerInitials: 'MC', mine: true },
+                    { id: 5, name: 'Inversiones del Norte', sector: 'Financiero', city: 'Barranquilla', status: 'warning', statusLabel: 'Atrasado (3d)', pulseUpdated: false, risk: 'Medio', alerts: 3, owner: 'Carlos R.', ownerInitials: 'CR', mine: false },
+                ],
+                // Extended Task List
+                allTasks: [
+                    { id: 1, title: 'Resolver excepción bancaria', client: 'Restaurante La Plaza', priority: 'high', due: 'Hoy', status: 'todo' },
+                    { id: 2, title: 'Revisar alerta de proveedor ficticio', client: 'Restaurante La Plaza', priority: 'high', due: 'Urgente', status: 'todo' },
+                    { id: 3, title: 'Aprobar pago de nómina', client: 'TechSolutions SAS', priority: 'normal', due: 'Mañana', status: 'todo' },
+                    { id: 4, title: 'Conciliación Bancaria', client: 'Comercializadora ABC', priority: 'normal', due: 'Viernes', status: 'in_progress' },
+                    { id: 5, title: 'Auditoría Interna', client: 'Constructora Elite', priority: 'low', due: 'Próxima Semana', status: 'in_progress' },
+                ],
+
+                get filteredClients() {
+                    if (this.filter === 'mine') {
+                        return this.clients.filter(c => c.mine);
+                    }
+                    return this.clients;
+                },
+
+                get urgentTasks() {
+                    return this.allTasks.filter(t => t.priority === 'high' && t.status === 'todo');
+                },
+
+                init() {
+                    this.$watch('currentTab', (value) => {
+                        if (value === 'reports') {
+                            // Delay slightly to let the div become visible
+                            setTimeout(() => this.renderCharts(), 50);
+                        }
+                    })
+                },
+
+                renderCharts() {
+                    // Prevent double Render
+                    if (document.querySelector("#riskChart").innerHTML !== "") return;
+
+                    const riskOptions = {
+                        series: [3, 8, 34], // High, Medium, Low
+                        chart: { type: 'donut', height: 280, fontFamily: 'Inter' },
+                        labels: ['Alto Riesgo', 'Riesgo Medio', 'Bajo Riesgo'],
+                        colors: ['#F87171', '#FBBF24', '#34D399'], // Red-400, Amber-400, Emerald-400
+                        dataLabels: { enabled: false },
+                        legend: { position: 'bottom', fontSize: '12px', fontFamily: 'Inter', labels: { colors: '#94a3b8' } },
+                        stroke: { show: false }
+                    };
+                    new ApexCharts(document.querySelector("#riskChart"), riskOptions).render();
+
+                    const activityOptions = {
+                        series: [{
+                            name: 'Completadas',
+                            data: [12, 18, 14, 22, 19, 24, 8]
+                        }, {
+                            name: 'Nuevas',
+                            data: [8, 12, 10, 15, 12, 10, 4]
+                        }],
+                        chart: { type: 'bar', height: 280, fontFamily: 'Inter', toolbar: { show: false } },
+                        colors: ['#6366f1', '#e2e8f0'], // Indigo-500, Slate-200
+                        plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
+                        xaxis: { categories: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'], axisBorder: { show: false }, axisTicks: { show: false }, labels: { style: { colors: '#94a3b8' } } },
+                        yaxis: { labels: { style: { colors: '#94a3b8' } } },
+                        grid: { borderColor: '#f1f5f9', strokeDashArray: 4 },
+                        dataLabels: { enabled: false },
+                        legend: { show: false }
+                    };
+                    new ApexCharts(document.querySelector("#activityChart"), activityOptions).render();
+                }
+            }))
+        })
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</body>
+<!-- Client 2: Warning -->
+<tr class="hover:bg-slate-50 dark:hover:bg-[#1C2128] group transition-colors border-l-4 border-l-amber-500">
+    <td class="px-6 py-4">
+        <div class="flex flex-col">
+            <span class="font-bold text-slate-900 dark:text-white">Innova Servicios
+                SAS</span>
+            <span class="text-xs text-slate-500">Servicios • Bogotá</span>
+        </div>
+    </td>
+    <td class="px-6 py-4">
+        <span
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+            Atrasada (3 días)
+        </span>
+    </td>
+    <td class="px-6 py-4">
+        <span class="text-success text-xs font-bold flex items-center gap-1"><span
+                class="material-symbols-outlined text-sm inline">check</span>
+            Actualizado</span>
+    </td>
+    <td class="px-6 py-4">
+        <div class="flex items-center gap-1 font-bold text-amber-500">
+            MEDIO
+        </div>
+    </td>
+    <td class="px-6 py-4 text-center">
+        <span
+            class="inline-flex items-center justify-center size-6 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-400 font-bold text-xs">2</span>
+    </td>
+    <td class="px-6 py-4">
+        <div class="flex items-center gap-2">
+            <div
+                class="size-6 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center font-bold">
+                JP</div>
+            <span class="text-xs text-slate-600 dark:text-slate-400">Juan P.</span>
+        </div>
+    </td>
+    <td class="px-6 py-4 text-right">
+        <button
+            class="p-1 px-3 rounded-lg text-primary text-xs font-bold hover:bg-primary/10 transition-colors">Gestionar</button>
+    </td>
+</tr>
+
+<!-- Client 3: Good -->
+<tr class="hover:bg-slate-50 dark:hover:bg-[#1C2128] group transition-colors border-l-4 border-l-green-500">
+    <td class="px-6 py-4">
+        <div class="flex flex-col">
+            <span class="font-bold text-slate-900 dark:text-white">Comercializadora El
+                Sol</span>
+            <span class="text-xs text-slate-500">Comercio • Cali</span>
+        </div>
+    </td>
+    <td class="px-6 py-4">
+        <span
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+            Al Día
+        </span>
+    </td>
+    <td class="px-6 py-4">
+        <span class="text-success text-xs font-bold flex items-center gap-1"><span
+                class="material-symbols-outlined text-sm inline">check</span>
+            Actualizado</span>
+    </td>
+    <td class="px-6 py-4">
+        <div class="flex items-center gap-1 font-bold text-slate-400">
+            BAJO
+        </div>
+    </td>
+    <td class="px-6 py-4 text-center">
+        <span
+            class="inline-flex items-center justify-center size-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold text-xs">0</span>
+    </td>
+    <td class="px-6 py-4">
+        <div class="flex items-center gap-2">
+            <div
+                class="size-6 rounded-full bg-purple-500 text-white text-[10px] flex items-center justify-center font-bold">
+                MC</div>
+            <span class="text-xs text-slate-600 dark:text-slate-400">María C.</span>
+        </div>
+    </td>
+    <td class="px-6 py-4 text-right">
+        <button
+            class="p-1 px-3 rounded-lg text-slate-500 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Ver</button>
+    </td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Right: Task Board -->
+<div class="flex-[1] flex flex-col gap-6">
+    <div
+        class="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex-1 flex flex-col">
+        <h3 class="font-bold text-lg mb-4 flex justify-between items-center">
+            Tablero de Tareas
+            <button class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-400"><span
+                    class="material-symbols-outlined">add</span></button>
+        </h3>
+
+        <div class="flex flex-col gap-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
+            <!-- Task Item -->
+            <div
+                class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-primary/50 cursor-pointer transition-colors">
+                <div class="flex justify-between items-start mb-2">
+                    <span
+                        class="text-xs font-bold bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">Urgente</span>
+                    <span class="text-[10px] text-slate-400">Hoy</span>
+                </div>
+                <p class="text-xs text-slate-500 font-semibold mb-1">Restaurante La Plaza</p>
+                <p class="text-sm font-bold text-slate-900 dark:text-white leading-tight">Resolver bloqueo
+                    de cuenta por alerta DIAN</p>
+            </div>
+
+            <!-- Task Item -->
+            <div
+                class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-primary/50 cursor-pointer transition-colors">
+                <div class="flex justify-between items-start mb-2">
+                    <span
+                        class="text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded">Media</span>
+                    <span class="text-[10px] text-slate-400">Mañana</span>
+                </div>
+                <p class="text-xs text-slate-500 font-semibold mb-1">Innova Servicios</p>
+                <p class="text-sm font-bold text-slate-900 dark:text-white leading-tight">Revisar proyección
+                    de impuestos de Renta</p>
+            </div>
+
+            <!-- Task Item -->
+            <div
+                class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-primary/50 cursor-pointer transition-colors">
+                <div class="flex justify-between items-start mb-2">
+                    <span
+                        class="text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-500 px-1.5 py-0.5 rounded">Baja</span>
+                    <span class="text-[10px] text-slate-400">Viernes</span>
+                </div>
+                <p class="text-xs text-slate-500 font-semibold mb-1">General</p>
+                <p class="text-sm font-bold text-slate-900 dark:text-white leading-tight">Actualizar
+                    parámetros de reglas de conciliación</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+</main>
+
+</body>
+
+</html>
