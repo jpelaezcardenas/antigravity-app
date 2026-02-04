@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conciliación Bancaria - Contexia</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+
+    <!-- Alpine.js & Backend Simulation -->
+    <!-- Alpine.js & Backend Simulation -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="./js/layout.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/db.js"></script>
+    <script src="./js/api.js"></script>
+    <script src="./js/seed.js"></script>
+    <script>
+        // Ensure data exists
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.seeder) window.seeder.run();
+        });
+        // seeder.run(); // Handled in event listener
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('conciliacion', () => ({
+                exceptions: [],
+                loading: true,
+
+                async init() {
+                    try {
+                        this.exceptions = await api.getExceptions();
+                    } catch (e) {
+                        console.error("Error", e);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async resolve(id, action) {
+                    // Optimistic UI update
+                    const index = this.exceptions.findIndex(e => e.id === id);
+                    if (index !== -1) {
+                        this.exceptions.splice(index, 1);
+                        await api.resolveException(id, action);
+                    }
+                },
+
+                formatMoney(val) {
+                    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
+                }
+            }))
+        })
+    </script>
+
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2DD4BF",
+                        "primary-light": "#5EEAD4",
+                        "secondary": "#0F172A",
+                        "accent": "#F97316",
+                        "violet": "#8B5CF6",
+                        "success": "#10b981",
+                        "warning": "#F97316",
+                        "danger": "#ef4444",
+                        "background-light": "#F8FAFB",
+                        "background-dark": "#020617",
+                        "surface-dark": "#1E293B",
+                        "border-dark": "#334155"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'float-delayed': 'float 6s ease-in-out 3s infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+
+<body x-data="conciliacion"
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display">
+
+    <!-- Top Navigation with Steps -->
+    <header
+        class="bg-white dark:bg-surface-dark border-b border-slate-200 dark:border-border-dark px-6 py-4 shadow-sm sticky top-0 z-50">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight leading-none text-slate-900 dark:text-white">
+                        Conciliación Bancaria</h1>
+                    <p class="text-xs text-slate-500 mt-1">Bancolombia Ahorros ****9021</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    <span class="material-symbols-outlined text-lg">history</span> Historial
+                </button>
+                <button
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all">
+                    <span class="material-symbols-outlined text-lg">play_arrow</span>
+                    Ejecutar Automático
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress Stepper -->
+        <div class="relative flex items-center justify-between w-full max-w-3xl mx-auto">
+            <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 dark:bg-slate-700 -z-10"></div>
+
+            <!-- Step 1 Done -->
+            <div class="flex flex-col items-center bg-white dark:bg-surface-dark px-2">
+                <div
+                    class="size-8 rounded-full bg-success text-white flex items-center justify-center font-bold text-sm shadow-sm ring-4 ring-white dark:ring-surface-dark">
+                    <span class="material-symbols-outlined text-lg">check</span>
+                </div>
+                <span class="text-xs font-semibold mt-2 text-success">Carga de Datos</span>
+            </div>
+
+            <!-- Step 2 Done -->
+            <div class="flex flex-col items-center bg-white dark:bg-surface-dark px-2">
+                <div
+                    class="size-8 rounded-full bg-success text-white flex items-center justify-center font-bold text-sm shadow-sm ring-4 ring-white dark:ring-surface-dark">
+                    <span class="material-symbols-outlined text-lg">check</span>
+                </div>
+                <span class="text-xs font-semibold mt-2 text-success">Matching IA</span>
+            </div>
+
+            <!-- Step 3 Current -->
+            <div class="flex flex-col items-center bg-white dark:bg-surface-dark px-2">
+                <div
+                    class="size-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shadow-lg ring-4 ring-white dark:ring-surface-dark animate-pulse">
+                    3
+                </div>
+                <span class="text-xs font-bold mt-2 text-primary">Revisión Excepciones</span>
+            </div>
+
+            <!-- Step 4 Pending -->
+            <div class="flex flex-col items-center bg-white dark:bg-surface-dark px-2">
+                <div
+                    class="size-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 flex items-center justify-center font-bold text-sm ring-4 ring-white dark:ring-surface-dark">
+                    4
+                </div>
+                <span class="text-xs font-medium mt-2 text-slate-400">Cierre</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-[1600px] w-full mx-auto p-6 flex flex-col gap-6">
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div
+                class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-border-dark flex items-center gap-4 shadow-sm">
+                <div
+                    class="size-14 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-3xl">done_all</span>
+                </div>
+                <div>
+                    <h3 class="text-3xl font-black text-slate-900 dark:text-white">85%</h3>
+                    <p class="text-sm text-slate-500 font-medium">Conciliado Automáticamente</p>
+                </div>
+            </div>
+
+            <div
+                class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-border-dark flex items-center gap-4 shadow-sm ring-2 ring-warning/50">
+                <div class="size-14 rounded-full bg-warning/10 text-warning flex items-center justify-center">
+                    <span class="material-symbols-outlined text-3xl">rule</span>
+                </div>
+                <div>
+                    <h3 class="text-3xl font-black text-slate-900 dark:text-white" x-text="exceptions.length">0</h3>
+                    <p class="text-sm text-slate-500 font-bold text-warning">Excepciones Pendientes</p>
+                </div>
+            </div>
+
+            <div
+                class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-border-dark flex items-center gap-4 shadow-sm">
+                <div
+                    class="size-14 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-3xl">difference</span>
+                </div>
+                <div>
+                    <h3 class="text-3xl font-black text-slate-900 dark:text-white">$450K</h3>
+                    <p class="text-sm text-slate-500 font-medium">Diferencia Neta en Caja</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div
+            class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-2xl flex-1 flex flex-col shadow-sm overflow-hidden min-h-[500px]">
+
+            <!-- Tabs -->
+            <div class="flex items-center gap-6 px-6 border-b border-slate-200 dark:border-border-dark">
+                <button
+                    class="py-4 text-sm font-semibold border-b-2 border-transparent hover:text-primary transition-colors text-slate-500">
+                    Conciliados (142)
+                </button>
+                <button class="py-4 text-sm font-bold border-b-2 border-warning text-warning flex items-center gap-2">
+                    Excepciones (<span x-text="exceptions.length"></span>)
+                    <span class="bg-warning text-white text-[10px] px-1.5 py-0.5 rounded-full"
+                        x-show="exceptions.length > 0">Action Required</span>
+                </button>
+            </div>
+
+            <!-- Content Area: Exceptions Table -->
+            <div class="flex-1 overflow-x-auto">
+                <div x-show="loading" class="p-10 flex justify-center text-slate-400">
+                    Cargando excepciones...
+                </div>
+
+                <div x-show="!loading && exceptions.length === 0"
+                    class="p-10 flex flex-col items-center justify-center text-slate-400 h-full">
+                    <span class="material-symbols-outlined text-4xl mb-2">check_circle</span>
+                    <p>Todo está conciliado.</p>
+                </div>
+
+                <table class="w-full text-left text-sm whitespace-nowrap" x-show="exceptions.length > 0">
+                    <thead
+                        class="bg-slate-50 dark:bg-[#1C2128] text-slate-500 uppercase text-[11px] font-bold tracking-wider">
+                        <tr>
+                            <th class="px-6 py-4">Fecha</th>
+                            <th class="px-6 py-4">Descripción Banco</th>
+                            <th class="px-6 py-4 text-right">Monto</th>
+                            <th class="px-6 py-4 text-center">Motivo Excepción</th>
+                            <th class="px-6 py-4">Sugerencia IA</th>
+                            <th class="px-6 py-4 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 dark:divide-border-dark">
+                        <template x-for="item in exceptions" :key="item.id">
+                            <tr class="hover:bg-slate-50 dark:hover:bg-[#1C2128] group transition-colors">
+                                <td class="px-6 py-4 text-slate-600 dark:text-slate-400" x-text="item.date"></td>
+                                <td class="px-6 py-4 max-w-xs truncate font-medium text-slate-900 dark:text-white"
+                                    x-text="item.description"></td>
+                                <td class="px-6 py-4 text-right font-bold text-slate-900 dark:text-white"
+                                    x-text="formatMoney(item.amount)"></td>
+                                <td class="px-6 py-4 text-center">
+                                    <span
+                                        class="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-bold"
+                                        x-text="item.reason || 'Desconocido'">
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2 text-primary font-medium text-xs"
+                                        x-show="item.reason === 'no_support'">
+                                        <span class="material-symbols-outlined text-sm">smart_toy</span>
+                                        Crear Gasto "Caja Menor"
+                                    </div>
+                                    <div class="flex flex-col text-xs" x-show="item.reason === 'amount_mismatch'">
+                                        <span class="text-slate-500">Factura #9921 por $...</span>
+                                        <span class="text-amber-500 font-bold">Diferencia detectada</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center flex items-center justify-center gap-2">
+                                    <button @click="resolve(item.id, 'accept_suggestion')"
+                                        class="size-8 flex items-center justify-center rounded-lg bg-success/10 text-success hover:bg-success hover:text-white transition-all"
+                                        title="Aceptar Sugerencia">
+                                        <span class="material-symbols-outlined text-lg">check</span>
+                                    </button>
+                                    <button
+                                        class="size-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                                        title="Ver Detalles">
+                                        <span class="material-symbols-outlined text-lg">visibility</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Pagination -->
+            <div class="px-6 py-4 border-t border-slate-200 dark:border-border-dark flex items-center justify-between">
+                <span class="text-sm text-slate-500" x-text="`Mostrando ${exceptions.length} excepciones`"></span>
+                <div class="flex gap-2">
+                    <button
+                        class="px-3 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 text-sm disabled:opacity-50"
+                        disabled>Anterior</button>
+                    <button
+                        class="px-3 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-white text-sm hover:bg-slate-200 dark:hover:bg-slate-700">Siguiente</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+</body>
+
+</html>

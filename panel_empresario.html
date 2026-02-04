@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel del Empresario - Contexia</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="./js/layout.js"></script>
+    <script src="./js/auth.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#5A9A8B",
+                        "primary-light": "#7AB5A7",
+                        "secondary": "#1E3D59",
+                        "accent": "#E19A4D",
+                        "background-light": "#F8FAFB",
+                        "background-dark": "#0F2A42",
+                        "card-dark": "#162536",
+                        "success": "#10b981",
+                        "warning": "#E19A4D",
+                        "danger": "#ef4444"
+                    },
+                    fontFamily: {
+                        "display": ["Outfit", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem", "2xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-image: linear-gradient(to right, #5A9A8B, #7AB5A7);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .dark .glass-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
+
+    <main class="w-full max-w-5xl mx-auto px-4 py-6 space-y-8">
+        <!-- Breadcrumbs -->
+        <div class="flex flex-wrap gap-2 py-2">
+            <span class="text-slate-900 dark:text-white text-sm font-semibold">Panel del Empresario</span>
+        </div>
+
+        <!-- Hero Section: Natural Language Narrative -->
+        <section class="glass-card rounded-3xl p-8 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                <span class="material-symbols-outlined text-[120px] text-primary">psychology</span>
+            </div>
+
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-4 leading-tight">
+                Hola Carlos. <br>
+                <span class="gradient-text">Tu negocio está saludable hoy.</span>
+            </h1>
+
+            <p class="text-lg text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
+                Has vendido <strong class="text-slate-900 dark:text-white">$45M</strong> este mes con un margen del
+                <strong class="text-success">22%</strong>.
+                Si mantienes este ritmo, cerrarás el mes con <strong
+                    class="text-slate-900 dark:text-white">$12M</strong> en caja libre después de pagar impuestos.
+            </p>
+
+            <div class="mt-8 flex flex-wrap gap-4">
+                <div
+                    class="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700 min-w-[140px] shadow-sm">
+                    <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Caja Hoy</p>
+                    <p class="text-2xl font-black text-slate-900 dark:text-white">$18.5M</p>
+                </div>
+                <div
+                    class="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700 min-w-[140px] shadow-sm">
+                    <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Impuesto Est.</p>
+                    <p class="text-2xl font-black text-slate-900 dark:text-white">$4.2M</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Access Mosaic -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Benchmarking Card -->
+            <a href="#"
+                class="group bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div
+                    class="size-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined text-2xl">pie_chart</span>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">¿En qué se va tu dinero?</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 leading-snug">
+                    Compara tus gastos con otros restaurantes de la zona.
+                </p>
+                <div class="mt-4 flex items-center text-primary text-sm font-bold">
+                    Ver Benchmarking <span class="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+                </div>
+            </a>
+
+            <!-- Tax Radar Card -->
+            <a href="#"
+                class="group bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div
+                    class="size-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined text-2xl">radar</span>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Radar Fiscal</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 leading-snug">
+                    Monitorea riesgos con la DIAN antes de que sean problemas.
+                </p>
+                <div class="mt-4 flex items-center text-primary text-sm font-bold">
+                    Revisar Riesgos <span class="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+                </div>
+            </a>
+
+            <!-- Simulator Card -->
+            <a href="#"
+                class="group bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div
+                    class="size-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined text-2xl">savings</span>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Simulador de Inversión</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 leading-snug">
+                    Planea compras futuras y mira cómo afectan tu flujo de caja.
+                </p>
+                <div class="mt-4 flex items-center text-primary text-sm font-bold">
+                    Proyectar ahora <span class="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+                </div>
+            </a>
+        </section>
+
+        <!-- Plain Language Alerts -->
+        <section>
+            <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Avisos Importantes</h2>
+            <div class="space-y-4">
+                <!-- Alert Item -->
+                <div
+                    class="flex items-start gap-4 p-4 rounded-xl bg-white dark:bg-card-dark border-l-4 border-l-warning border-y border-r border-slate-200 dark:border-slate-800 shadow-sm">
+                    <span class="material-symbols-outlined text-warning shrink-0">warning_amber</span>
+                    <div>
+                        <p class="text-slate-900 dark:text-white font-medium">Tu IVA de este bimestre viene un poco
+                            alto.</p>
+                        <p class="text-sm text-slate-500 mt-1">Se estima un pago de $8.5M en 15 días. Te sugerimos ir
+                            guardando caja desde esta semana.</p>
+                    </div>
+                </div>
+
+                <!-- Alert Item -->
+                <div
+                    class="flex items-start gap-4 p-4 rounded-xl bg-white dark:bg-card-dark border-l-4 border-l-primary border-y border-r border-slate-200 dark:border-slate-800 shadow-sm">
+                    <span class="material-symbols-outlined text-primary shrink-0">lightbulb</span>
+                    <div>
+                        <p class="text-slate-900 dark:text-white font-medium">Oportunidad de ahorro en energía.</p>
+                        <p class="text-sm text-slate-500 mt-1">Estás gastando un 12% más que negocios similares en tu
+                            zona. Revisa los turnos de encendido de equipos.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+</body>
+
+</html>

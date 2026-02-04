@@ -1,0 +1,6 @@
+Vercel CLI 50.9.6
+
+  Visit https://vercel.com/oauth/device?user_code=GGXP-KLTV
+  Press [ENTER] to open the browser
+Waiting for authentication...
+^C

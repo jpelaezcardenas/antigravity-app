@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copiloto Fiscal & Legal IA - Contexia</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="./js/layout.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2DD4BF",
+                        "primary-light": "#5EEAD4",
+                        "secondary": "#0F172A",
+                        "accent": "#F97316",
+                        "violet": "#8B5CF6",
+                        "background-light": "#F8FAFB",
+                        "background-dark": "#020617",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'float-delayed': 'float 6s ease-in-out 3s infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #292e38;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body class="bg-white text-slate-900 min-h-screen flex flex-col">
+    <!-- TopNavBar -->
+    <!-- TopNavBar Removed as per user request -->
+    <main class="flex-1 flex flex-col max-w-[1600px] mx-auto w-full px-4 lg:px-10 py-6" x-data="{ 
+        user: window.auth.getUser(),
+        init() {
+            // Dynamic personalization logic
+        }
+    }">
+        <!-- Breadcrumbs -->
+        <div class="flex flex-wrap gap-2 py-2 mb-4">
+            <span class="text-slate-900 dark:text-white text-sm font-semibold">Copiloto Fiscal & Legal</span>
+            <span class="text-slate-400 text-sm">/</span>
+            <span class="text-teal text-sm font-medium"
+                x-text="user.role === 'empresa' ? 'Visión Estratégica' : 'Panel Tesorería'"></span>
+        </div>
+        <div class="flex flex-col lg:flex-row gap-6 flex-1">
+            <!-- LEFT COLUMN: Chat Interface -->
+            <div
+                class="flex-[1.8] flex flex-col bg-white dark:bg-[#111621] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                <!-- Topic Selector (SegmentedButtons style) -->
+                <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col gap-4">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-xl font-bold flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">smart_toy</span>
+                            Asistente Inteligente
+                        </h1>
+                        <span
+                            class="inline-flex items-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 px-2.5 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-400 ring-1 ring-inset ring-indigo-600/20 gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                            Motor OpenClaw AI
+                        </span>
+                    </div>
+
+                    <!-- Role-based Topics -->
+                    <div class="flex h-11 items-center justify-center rounded-lg bg-slate-100 dark:bg-[#292e38] p-1">
+                        <!-- Common -->
+                        <label
+                            class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-[#111318] has-[:checked]:shadow-sm has-[:checked]:text-primary dark:has-[:checked]:text-white text-slate-500 dark:text-[#9da6b8] text-sm font-medium transition-all">
+                            <span class="truncate">Tributario</span>
+                            <input type="radio" name="chat-topic" value="Tax" class="invisible w-0" checked />
+                        </label>
+
+                        <!-- Empresa Specific -->
+                        <template x-if="user.role === 'empresa'">
+                            <label
+                                class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-[#111318] has-[:checked]:shadow-sm has-[:checked]:text-primary dark:has-[:checked]:text-white text-slate-500 dark:text-[#9da6b8] text-sm font-medium transition-all">
+                                <span class="truncate">Estrategia</span>
+                                <input type="radio" name="chat-topic" value="Strategy" class="invisible w-0" />
+                            </label>
+                        </template>
+
+                        <!-- Contador Specific -->
+                        <template x-if="user.role === 'contador'">
+                            <label
+                                class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-[#111318] has-[:checked]:shadow-sm has-[:checked]:text-primary dark:has-[:checked]:text-white text-slate-500 dark:text-[#9da6b8] text-sm font-medium transition-all">
+                                <span class="truncate">Nómina & UGPP</span>
+                                <input type="radio" name="chat-topic" value="Payroll" class="invisible w-0" />
+                            </label>
+                        </template>
+
+                        <label
+                            class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-[#111318] has-[:checked]:shadow-sm has-[:checked]:text-primary dark:has-[:checked]:text-white text-slate-500 dark:text-[#9da6b8] text-sm font-medium transition-all">
+                            <span class="truncate">Legal</span>
+                            <input type="radio" name="chat-topic" value="Legal" class="invisible w-0" />
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Chat History Area -->
+                <div class="flex-1 overflow-y-auto p-6 custom-scrollbar flex flex-col gap-6 max-h-[500px]">
+                    <!-- AI WELCOME MESSAGE (PERSONALIZED) -->
+                    <div class="flex items-start gap-4 max-w-[85%]">
+                        <div class="bg-indigo-500/10 rounded-full p-2 shrink-0">
+                            <!-- OpenClaw Logo/Icon Representation -->
+                            <span class="material-symbols-outlined text-indigo-500 text-xl">psychology</span>
+                        </div>
+                        <div class="flex flex-col gap-1.5 items-start">
+                            <div class="flex items-center gap-2">
+                                <p
+                                    class="text-slate-500 dark:text-[#9da6b8] text-[12px] font-semibold uppercase tracking-wider">
+                                    OpenClaw Bot</p>
+                                <span class="text-[10px] text-slate-400">Ahora</span>
+                            </div>
+                            <div
+                                class="text-sm md:text-base font-normal leading-relaxed flex rounded-2xl rounded-tl-none px-5 py-3.5 bg-slate-100 dark:bg-[#292e38] text-slate-800 dark:text-white shadow-sm">
+                                <!-- Dynamic Greeting -->
+                                <p x-show="user.role === 'empresa'">
+                                    Hola <span x-text="user.name.split(' ')[0]" class="font-bold"></span>, soy tu
+                                    <b>Copiloto Estratégico</b>. He analizado el flujo de caja de <span
+                                        x-text="user.company"></span> y detecto oportunidades de optimización fiscal
+                                    para este trimestre. ¿Revisamos el informe de riesgos?
+                                </p>
+                                <p x-show="user.role === 'contador'">
+                                    Hola <span x-text="user.name.split(' ')[0]" class="font-bold"></span>, bienvenida.
+                                    Soy tu <b>Asistente de Tesorería</b>. Tengo listos los borradores de nómina y 3
+                                    alertas de vencimientos DIAN para revisar. ¿Empezamos por las conciliaciones
+                                    pendientes?
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#111621]">
+                    <div class="relative flex flex-col gap-3">
+                        <!-- Suggested Actions -->
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <template x-if="user.role === 'empresa'">
+                                <button
+                                    class="text-xs px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors border border-transparent">
+                                    Estado de Resultados
+                                </button>
+                            </template>
+                            <template x-if="user.role === 'contador'">
+                                <button
+                                    class="text-xs px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors border border-transparent">
+                                    Certificados Retención
+                                </button>
+                            </template>
+                            <button
+                                class="text-xs px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors border border-transparent">
+                                Consultar Normativa
+                            </button>
+                        </div>
+
+                        <div
+                            class="flex items-end gap-3 bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-700 p-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+                            <button class="p-2 text-slate-400 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined">attach_file</span>
+                            </button>
+                            <textarea rows="1"
+                                class="flex-1 bg-transparent border-none focus:ring-0 text-sm md:text-base text-slate-800 dark:text-white placeholder:text-slate-400 py-2 resize-none max-h-32"
+                                :placeholder="user.role === 'empresa' ? 'Pregunta sobre estrategia, riesgos o flujo de caja...' : 'Pregunta sobre asientos, nómina o vencimientos...'"></textarea>
+                            <button
+                                class="bg-primary hover:bg-primary/90 text-white rounded-lg p-2 flex items-center justify-center transition-all shadow-lg shadow-primary/20">
+                                <span class="material-symbols-outlined">send</span>
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-center text-slate-400">
+                            Powered by <a href="https://openclaw.ai" target="_blank"
+                                class="text-indigo-400 hover:text-indigo-300 font-medium">OpenClaw</a> &bull; ClawDBot
+                            v2.4
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Context Panel (Personalized) -->
+            <div class="flex-[0.7] flex flex-col gap-6">
+                <!-- Company Summary Card -->
+                <div
+                    class="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
+                            <!-- Dynamic Logo -->
+                            <template x-if="user.role === 'empresa'">
+                                <img :src="user.companyLogo" class="w-full h-full object-cover">
+                            </template>
+                            <template x-if="user.role === 'contador'">
+                                <span class="material-symbols-outlined text-primary">account_balance</span>
+                            </template>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 dark:text-white" x-text="user.company"></h3>
+                            <p class="text-xs text-slate-500" x-text="user.companyNit"></p>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Stats based on Role -->
+                    <div class="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-700 pt-4">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold"
+                                x-text="user.role === 'empresa' ? 'Patrimonio' : 'Pendientes'"></span>
+                            <span class="text-xs font-medium"
+                                x-text="user.role === 'empresa' ? '$ 1.2B COP' : '15 Facturas'"></span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold"
+                                x-text="user.role === 'empresa' ? 'Riesgo Fiscal' : 'Prox. Vencimiento'"></span>
+                            <span class="text-xs font-medium text-green-500"
+                                x-text="user.role === 'empresa' ? 'Bajo (2%)' : 'IVA (15 Nov)'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conditional Content -->
+                <template x-if="user.role === 'contador'">
+                    <div
+                        class="bg-amber-50 dark:bg-amber-900/10 rounded-xl border border-amber-200 dark:border-amber-900/30 p-4">
+                        <p class="text-xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wide mb-1">
+                            ⚠️ Alerta Tesorería
+                        </p>
+                        <p class="text-xs text-amber-700 dark:text-amber-300/80">
+                            Detectada inconsistencia en Nómina vs PILA del mes anterior. Revisa el reporte detallado.
+                        </p>
+                    </div>
+                </template>
+
+                <template x-if="user.role === 'empresa'">
+                    <div
+                        class="bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-900/30 p-4">
+                        <p class="text-xs font-bold text-blue-800 dark:text-blue-400 uppercase tracking-wide mb-1">
+                            💡 Insight Estratégico
+                        </p>
+                        <p class="text-xs text-blue-700 dark:text-blue-300/80">
+                            Tu flujo de caja permite una inversión de hasta $50M sin afectar la liquidez operativa del
+                            mes.
+                        </p>
+                    </div>
+                </template>
+
+            </div>
+        </div>
+    </main>
+    <!-- Footer Meta -->
+    <footer class="mt-auto py-6 border-t border-slate-200 dark:border-slate-800 text-center">
+        <p class="text-xs text-slate-400">© 2024 Contexia - GPS de flujo de caja, impuestos y riesgo regulatorio para
+            PyMEs Latinoamericanas
+        </p>
+    </footer>
+</body>
+
+</html>

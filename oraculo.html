@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Riesgo - Contexia</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="./js/layout.js"></script>
+    <script src="./js/auth.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2DD4BF",
+                        "primary-light": "#5EEAD4",
+                        "secondary": "#0F172A",
+                        "accent": "#F97316",
+                        "violet": "#8B5CF6",
+                        "background-light": "#F8FAFB",
+                        "background-dark": "#020617",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'float-delayed': 'float 6s ease-in-out 3s infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1c1f26;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #3c4453;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body class="bg-white text-slate-900 min-h-screen flex">
+    <!-- SideNavBar (Removed, using layout.js) -->
+
+    <div
+        class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#292e38] rounded-lg cursor-pointer transition-colors">
+        <span class="material-symbols-outlined">description</span>
+        <p class="text-sm font-medium">Reportes</p>
+    </div>
+    <div
+        class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#292e38] rounded-lg cursor-pointer transition-colors mt-4 border-t border-slate-100 dark:border-slate-800 pt-4">
+        <span class="material-symbols-outlined">settings</span>
+        <p class="text-sm font-medium">Configuración</p>
+    </div>
+    </nav>
+    </div>
+    <button
+        class="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-slate-200 dark:bg-[#292e38] text-slate-700 dark:text-white text-sm font-bold hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
+        <span class="material-symbols-outlined text-sm">logout</span>
+        <span class="truncate">Cerrar Sesión</span>
+    </button>
+    </div>
+    </aside>
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col overflow-x-hidden">
+        <!-- TopNavBar -->
+        <header
+            class="flex items-center justify-between border-b border-slate-200 dark:border-[#292e38] px-8 py-4 bg-white dark:bg-background-dark sticky top-0 z-10">
+            <div class="flex items-center gap-8">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-lg font-bold tracking-tight">Análisis de Riesgo</h2>
+                </div>
+                <div class="hidden md:flex items-center gap-6">
+                    <a href="#" class="text-primary text-sm font-medium border-b-2 border-primary pb-1">Resumen</a>
+                    <a href="#"
+                        class="text-slate-500 dark:text-slate-400 text-sm font-medium hover:text-primary">Simulador</a>
+                    <a href="#"
+                        class="text-slate-500 dark:text-slate-400 text-sm font-medium hover:text-primary">Historial</a>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative hidden sm:block">
+                    <span
+                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+                    <input type="text" placeholder="Buscar métrica..."
+                        class="bg-slate-100 dark:bg-[#292e38] border-none rounded-lg pl-10 pr-4 py-2 text-sm w-64 focus:ring-1 focus:ring-primary outline-none">
+                </div>
+                <button class="p-2 rounded-lg bg-slate-100 dark:bg-[#292e38] text-slate-600 dark:text-white">
+                    <span class="material-symbols-outlined">notifications</span>
+                </button>
+                <div
+                    class="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs border border-primary/30">
+                    JD
+                </div>
+            </div>
+        </header>
+        <div class="p-8 max-w-7xl mx-auto w-full">
+            <!-- Breadcrumbs -->
+            <nav class="flex items-center gap-2 text-sm mb-6">
+                <span class="font-medium">Análisis de Riesgos</span>
+            </nav>
+            <!-- Main Score Card (Hero) -->
+            <section class="mb-8">
+                <div
+                    class="bg-white dark:bg-[#1c1f26] rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex flex-col lg:flex-row gap-8 items-center">
+                    <div class="relative size-48 flex-shrink-0 flex items-center justify-center">
+                        <!-- SVG Circular Progress Placeholder -->
+                        <svg class="size-full -rotate-90" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" fill="transparent" stroke="currentColor" stroke-width="8"
+                                class="text-slate-100 dark:text-slate-800"></circle>
+                            <circle cx="50" cy="50" r="45" fill="transparent" stroke="currentColor" stroke-width="8"
+                                stroke-dasharray="282.7" stroke-dashoffset="33.9" class="text-primary"></circle>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-5xl font-black text-primary">88</span>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Score</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 text-center lg:text-left">
+                        <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-4 gap-4">
+                            <div>
+                                <h3 class="text-2xl font-bold mb-1">Contexia Bank Score</h3>
+                                <p class="text-slate-500 dark:text-[#9da6b8]">Actualizado hace 2 horas • Basado en
+                                    estados financieros Q3 2023</p>
+                            </div>
+                            <div
+                                class="inline-flex items-center self-center lg:self-start bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-4 py-1.5 rounded-full text-sm font-bold border border-green-200 dark:border-green-500/20">
+                                <span class="material-symbols-outlined text-lg mr-1">verified</span> Excelente
+                            </div>
+                        </div>
+                        <p class="text-slate-600 dark:text-slate-300 max-w-2xl text-lg leading-relaxed">
+                            Tu salud financiera es óptima. Mantienes un equilibrio saludable entre deuda y flujo de
+                            caja, lo que te posiciona en el decil superior para la obtención de nuevas líneas de crédito
+                            corporativo.
+                        </p>
+                        <div class="mt-6 flex flex-wrap gap-3 justify-center lg:justify-start">
+                            <button
+                                class="bg-primary text-white px-6 py-2.5 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 hover:brightness-110 transition-all">
+                                Ver Detalles del Score
+                            </button>
+                            <button
+                                class="bg-slate-100 dark:bg-[#292e38] text-slate-700 dark:text-white px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
+                                Comparar con Sector
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Secondary KPIs -->
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div
+                    class="bg-white dark:bg-[#111621] p-6 rounded-xl border border-slate-200 dark:border-[#3c4453] shadow-sm flex flex-col gap-2">
+                    <div class="flex justify-between items-start">
+                        <p class="text-slate-500 dark:text-[#9da6b8] text-sm font-medium">Riesgo de Liquidez</p>
+                        <span class="material-symbols-outlined text-[#5A9A8B]">water_drop</span>
+                    </div>
+                    <p class="text-3xl font-bold tracking-tight">12%</p>
+                    <div class="flex items-center gap-1 text-[#fa6238] text-sm font-semibold">
+                        <span class="material-symbols-outlined text-sm">trending_down</span>
+                        <span>-2% vs mes anterior</span>
+                    </div>
+                </div>
+                <div
+                    class="bg-white dark:bg-[#111621] p-6 rounded-xl border border-slate-200 dark:border-[#3c4453] shadow-sm flex flex-col gap-2">
+                    <div class="flex justify-between items-start">
+                        <p class="text-slate-500 dark:text-[#9da6b8] text-sm font-medium">Riesgo Fiscal</p>
+                        <span class="material-symbols-outlined text-[#1E3D59]">account_balance</span>
+                    </div>
+                    <p class="text-3xl font-bold tracking-tight">5%</p>
+                    <div class="flex items-center gap-1 text-[#0bda5e] text-sm font-semibold">
+                        <span class="material-symbols-outlined text-sm">trending_up</span>
+                        <span>+1% vs mes anterior</span>
+                    </div>
+                </div>
+                <div
+                    class="bg-white dark:bg-[#111621] p-6 rounded-xl border border-slate-200 dark:border-[#3c4453] shadow-sm flex flex-col gap-2">
+                    <div class="flex justify-between items-start">
+                        <p class="text-slate-500 dark:text-[#9da6b8] text-sm font-medium">Riesgo Operacional</p>
+                        <span class="material-symbols-outlined text-[#E19A4D]">precision_manufacturing</span>
+                    </div>
+                    <p class="text-3xl font-bold tracking-tight">18%</p>
+                    <div class="flex items-center gap-1 text-[#fa6238] text-sm font-semibold">
+                        <span class="material-symbols-outlined text-sm">trending_down</span>
+                        <span>-4% vs mes anterior</span>
+                    </div>
+                </div>
+            </section>
+            <!-- Main Dashboard Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+                <!-- Left: Risk Drivers -->
+                <section class="lg:col-span-5 flex flex-col gap-4">
+                    <h4 class="text-lg font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">analytics</span>
+                        Drivers de Riesgo Detectados
+                    </h4>
+                    <div
+                        class="bg-white dark:bg-[#1c1f26] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                        <div
+                            class="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Factores Críticos</p>
+                        </div>
+                        <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <div
+                                class="p-4 flex gap-4 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
+                                <div
+                                    class="size-10 rounded-lg bg-red-100 dark:bg-red-500/10 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">
+                                    <span class="material-symbols-outlined">warning</span>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-bold mb-1">Alta volatilidad de caja</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">Variaciones superiores al 15%
+                                        semanal en saldos operativos.</p>
+                                </div>
+                            </div>
+                            <div
+                                class="p-4 flex gap-4 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
+                                <div
+                                    class="size-10 rounded-lg bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center flex-shrink-0 text-amber-600 dark:text-amber-400">
+                                    <span class="material-symbols-outlined">inventory_2</span>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-bold mb-1">Baja rotación de inventarios</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">Promedio de permanencia subió
+                                        de 45 a 62 días.</p>
+                                </div>
+                            </div>
+                            <div
+                                class="p-4 flex gap-4 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
+                                <div
+                                    class="size-10 rounded-lg bg-[#5A9A8B]/10 flex items-center justify-center flex-shrink-0 text-[#5A9A8B]">
+                                    <span class="material-symbols-outlined">payments</span>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-bold mb-1">Concentración de proveedores</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">El 60% de tus compras se
+                                        concentran en 2 proveedores.</p>
+                                </div>
+                            </div>
+                            <div
+                                class="p-4 flex gap-4 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
+                                <div
+                                    class="size-10 rounded-lg bg-green-100 dark:bg-green-500/10 flex items-center justify-center flex-shrink-0 text-green-600 dark:text-green-400">
+                                    <span class="material-symbols-outlined">query_stats</span>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-bold mb-1">Ebitda Proyectado Positivo</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">Tu proyección indica
+                                        crecimiento del 12% para el Q4.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- Right: Bank Report Preview -->
+                <section class="lg:col-span-7 flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-lg font-bold flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">description</span>
+                            Vista Previa: Reporte Bancario
+                        </h4>
+                        <button class="text-primary text-sm font-bold hover:underline">Ver completo</button>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-[#1c1f26] rounded-xl border border-slate-200 dark:border-slate-800 p-6 flex flex-col h-full shadow-lg relative overflow-hidden">
+                        <!-- Abstract pattern overlay -->
+                        <div class="absolute top-0 right-0 p-4 opacity-10">
+                            <span class="material-symbols-outlined text-[120px]">account_balance</span>
+                        </div>
+                        <div class="mb-6">
+                            <h5 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Ratios
+                                Financieros Clave</h5>
+                            <div class="grid grid-cols-2 gap-y-6 gap-x-8">
+                                <div class="flex flex-col gap-1 border-l-2 border-primary pl-4">
+                                    <span class="text-xs text-slate-500 dark:text-slate-400">Prueba Ácida</span>
+                                    <span class="text-xl font-bold">1.42</span>
+                                    <span class="text-[10px] text-green-500 font-bold uppercase">Meta: &gt; 1.0</span>
+                                </div>
+                                <div class="flex flex-col gap-1 border-l-2 border-slate-300 dark:border-slate-700 pl-4">
+                                    <span class="text-xs text-slate-500 dark:text-slate-400">Deuda/Patrimonio</span>
+                                    <span class="text-xl font-bold">0.65</span>
+                                    <span class="text-[10px] text-slate-400 font-bold uppercase">Meta: &lt; 0.8</span>
+                                </div>
+                                <div class="flex flex-col gap-1 border-l-2 border-slate-300 dark:border-slate-700 pl-4">
+                                    <span class="text-xs text-slate-500 dark:text-slate-400">Margen Operativo</span>
+                                    <span class="text-xl font-bold">22.4%</span>
+                                    <span class="text-[10px] text-green-500 font-bold uppercase">Meta: &gt; 18%</span>
+                                </div>
+                                <div class="flex flex-col gap-1 border-l-2 border-slate-300 dark:border-slate-700 pl-4">
+                                    <span class="text-xs text-slate-500 dark:text-slate-400">Cobertura Intereses</span>
+                                    <span class="text-xl font-bold">4.8x</span>
+                                    <span class="text-[10px] text-slate-400 font-bold uppercase">Meta: &gt; 3.0</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="mt-auto bg-slate-50 dark:bg-white/5 rounded-lg p-4 border border-slate-200 dark:border-slate-800/50 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="bg-red-500/20 text-red-500 size-10 rounded flex items-center justify-center">
+                                    <span class="material-symbols-outlined">picture_as_pdf</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold leading-none">Reporte_Riesgo_Oct2023.pdf</p>
+                                    <p class="text-xs text-slate-500 mt-1">PDF • 2.4 MB • Generado ayer</p>
+                                </div>
+                            </div>
+                            <button
+                                class="bg-primary hover:bg-blue-600 text-white flex items-center gap-2 px-4 py-2 rounded font-bold text-sm transition-colors">
+                                <span class="material-symbols-outlined text-sm">download</span>
+                                Descargar
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <!-- Evolution Chart (Mockup) -->
+            <section class="flex flex-col gap-4">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h4 class="text-lg font-bold flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">timeline</span>
+                            Evolución Histórica del Score
+                        </h4>
+                        <p class="text-sm text-slate-500">Trayectoria de los últimos 12 meses</p>
+                    </div>
+                    <div class="flex bg-slate-100 dark:bg-[#292e38] p-1 rounded-lg">
+                        <button class="px-4 py-1 text-xs font-bold rounded bg-white dark:bg-[#3c4453] shadow-sm">12
+                            Meses</button>
+                        <button class="px-4 py-1 text-xs font-bold rounded text-slate-500">6 Meses</button>
+                    </div>
+                </div>
+                <div
+                    class="bg-white dark:bg-[#1c1f26] rounded-xl border border-slate-200 dark:border-slate-800 p-8 h-64 flex items-end justify-between gap-2 relative">
+                    <!-- Chart Grid Lines -->
+                    <div
+                        class="absolute inset-x-8 inset-y-12 border-b border-slate-100 dark:border-slate-800/50 flex flex-col justify-between pointer-events-none">
+                        <div class="w-full border-t border-slate-100 dark:border-slate-800/50"></div>
+                        <div class="w-full border-t border-slate-100 dark:border-slate-800/50"></div>
+                        <div class="w-full border-t border-slate-100 dark:border-slate-800/50"></div>
+                    </div>
+                    <!-- Chart Bars/Points Mockup -->
+                    <div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+                        <div
+                            class="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm h-32 group-hover:bg-primary/40 transition-colors">
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-500">OCT 22</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+                        <div
+                            class="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm h-36 group-hover:bg-primary/40 transition-colors">
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-500">NOV 22</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+                        <div
+                            class="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm h-40 group-hover:bg-primary/40 transition-colors">
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-500">DIC 22</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+                        <div
+                            class="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm h-32 group-hover:bg-primary/40 transition-colors">
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-500">ENE 23</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+                        <div
+                            class="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm h-28 group-hover:bg-primary/40 transition-colors">
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-500">FEB 23</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+                        <div
+                            class="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm h-36 group-hover:bg-primary/40 transition-colors">
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-500">MAR 23</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+                        <div
+                            class="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm h-44 group-hover:bg-primary/40 transition-colors">
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-500">ABR 23</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+                        <div
+                            class="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm h-48 group-hover:bg-primary/40 transition-colors">
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-500">MAY 23</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+                        <div
+                            class="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm h-40 group-hover:bg-primary/40 transition-colors">
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-500">JUN 23</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+                        <div
+                            class="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm h-44 group-hover:bg-primary/40 transition-colors">
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-500">JUL 23</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+                        <div
+                            class="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm h-48 group-hover:bg-primary/40 transition-colors">
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-500">AGO 23</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+                        <div
+                            class="w-full bg-primary rounded-t-sm h-52 shadow-[0_0_15px_rgba(25,93,230,0.3)] transition-transform hover:scale-105">
+                        </div>
+                        <span class="text-[10px] font-bold text-primary">SEP 23</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <!-- Footer Footer (Simple) -->
+        <footer class="mt-auto px-8 py-6 border-t border-slate-200 dark:border-slate-800 text-center">
+            <p class="text-xs text-slate-500">Contexia © 2024 - GPS de flujo de caja, impuestos y riesgo regulatorio
+                para PyMEs Latinoamericanas</p>
+        </footer>
+    </main>
+</body>
+
+</html>
