@@ -4,13 +4,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Contexia Intranet 4.0</title>
+    <title>Login - Contexia</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="./js/auth.js"></script> <!-- Auth Logic -->
+    <script src="./js/auth.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "teal": "#5A9A8B",
+                        "teal-dark": "#4A8A7B",
+                        "navy": "#1E3D59",
+                        "navy-dark": "#0F2A42",
+                        "orange": "#E19A4D",
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -18,69 +33,118 @@
     </style>
 </head>
 
-<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4">
+<body class="bg-navy-dark text-white min-h-screen flex items-center justify-center p-4">
 
-    <div class="max-w-md w-full bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-700" x-data="{ 
+    <div class="max-w-md w-full" x-data="{ 
             username: '', 
             password: '', 
             error: '',
             loading: false,
+            selectedRole: null,
+            
+            roles: [
+                { id: 'empresa', label: 'Empresa', icon: 'store', desc: 'Dueño de negocio', user: 'empresa', pass: 'empresa' },
+                { id: 'contador', label: 'Contador', icon: 'business_center', desc: 'Contador o firma', user: 'contador', pass: 'contador' },
+                { id: 'admin', label: 'Administrador', icon: 'analytics', desc: 'Admin del sistema', user: 'admin', pass: 'admin' }
+            ],
+            
+            selectRole(role) {
+                this.selectedRole = role;
+                this.username = role.user;
+                this.password = role.pass;
+                this.error = '';
+            },
+            
             login() {
+                if (!this.username || !this.password) {
+                    this.error = 'Ingresa usuario y contraseña';
+                    return;
+                }
                 this.loading = true;
                 this.error = '';
-                // Simulate network delay
                 setTimeout(() => {
                     const result = window.auth.login(this.username, this.password);
                     if (result.success) {
-                        window.location.href = 'pulso_diario.html';
+                        window.location.href = result.homePage;
                     } else {
                         this.error = result.message;
                         this.loading = false;
                     }
-                }, 800);
+                }, 600);
             }
          }">
 
+        <!-- Logo & Title -->
         <div class="text-center mb-8">
-            <div
-                class="size-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white mx-auto mb-4 shadow-lg shadow-indigo-500/30">
-                <span class="material-symbols-outlined text-2xl">lock</span>
+            <div class="flex items-center justify-center gap-3 mb-4">
+                <img src="./assets/img/logo.png" alt="Contexia" class="h-12 w-auto">
+                <span class="text-2xl font-bold tracking-tight">Contexia</span>
             </div>
-            <h1 class="text-2xl font-bold tracking-tight">Bienvenido a Contexia</h1>
-            <p class="text-slate-400 text-sm mt-2">Ingresa tus credenciales para acceder</p>
+            <p class="text-slate-400 text-sm">GPS de flujo de caja, impuestos y riesgo regulatorio</p>
         </div>
 
-        <form @submit.prevent="login" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Usuario</label>
-                <input type="text" x-model="username"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
-                    placeholder="admin">
+        <!-- Role Selection Cards -->
+        <div class="mb-6">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 text-center">Selecciona tu perfil
+            </p>
+            <div class="grid grid-cols-3 gap-3">
+                <template x-for="role in roles" :key="role.id">
+                    <button @click="selectRole(role)"
+                        :class="selectedRole?.id === role.id ? 'bg-teal border-teal text-white' : 'bg-navy border-slate-700 hover:border-teal/50'"
+                        class="p-4 rounded-xl border transition-all flex flex-col items-center gap-2 group">
+                        <span class="material-symbols-outlined text-2xl"
+                            :class="selectedRole?.id === role.id ? 'text-white' : 'text-teal'"
+                            x-text="role.icon"></span>
+                        <span class="text-sm font-bold" x-text="role.label"></span>
+                        <span class="text-[10px] text-slate-400"
+                            :class="selectedRole?.id === role.id ? 'text-white/70' : ''" x-text="role.desc"></span>
+                    </button>
+                </template>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Contraseña</label>
-                <input type="password" x-model="password"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
-                    placeholder="admin">
+        </div>
+
+        <!-- Login Form -->
+        <div class="bg-navy rounded-2xl shadow-2xl p-6 border border-slate-700">
+            <form @submit.prevent="login" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Usuario</label>
+                    <input type="text" x-model="username"
+                        class="w-full bg-navy-dark border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-teal focus:border-transparent transition-all outline-none"
+                        placeholder="Ingresa tu usuario">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Contraseña</label>
+                    <input type="password" x-model="password"
+                        class="w-full bg-navy-dark border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-teal focus:border-transparent transition-all outline-none"
+                        placeholder="Ingresa tu contraseña">
+                </div>
+
+                <!-- Error Message -->
+                <div x-show="error" x-transition
+                    class="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-2 rounded-lg flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg">error</span>
+                    <span x-text="error"></span>
+                </div>
+
+                <button type="submit" :disabled="loading"
+                    class="w-full bg-teal hover:bg-teal-dark text-white font-bold py-3 rounded-lg transition-all shadow-lg shadow-teal/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span x-show="!loading">Ingresar</span>
+                    <span x-show="loading"
+                        class="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                </button>
+            </form>
+
+            <!-- Quick Access Hint -->
+            <div class="mt-4 pt-4 border-t border-slate-700">
+                <p class="text-xs text-slate-500 text-center">
+                    <span class="text-teal">Tip:</span> Selecciona un perfil arriba para autocompletar credenciales de
+                    demo
+                </p>
             </div>
+        </div>
 
-            <!-- Error Message -->
-            <div x-show="error" x-transition
-                class="bg-red-500/10 border border-red-500/20 text-red-500 text-sm px-4 py-2 rounded-lg flex items-center gap-2">
-                <span class="material-symbols-outlined text-lg">error</span>
-                <span x-text="error"></span>
-            </div>
-
-            <button type="submit" :disabled="loading"
-                class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-lg transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                <span x-show="!loading">Ingresar</span>
-                <span x-show="loading"
-                    class="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-            </button>
-        </form>
-
-        <p class="text-center text-xs text-slate-500 mt-8">
-            Contexia Intranet 4.0 &bull; Secure Access
+        <p class="text-center text-xs text-slate-600 mt-6">
+            Contexia &bull; GPS financiero para PyMEs Latinoamericanas
         </p>
 
     </div>

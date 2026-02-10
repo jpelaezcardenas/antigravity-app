@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesorería y Pagos - Contexia Intranet 4.0</title>
+    <title>Tesorería y Pagos - Contexia</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
@@ -17,14 +17,17 @@
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#195de6",
+                        "primary": "#5A9A8B",
+                        "primary-light": "#7AB5A7",
+                        "secondary": "#1E3D59",
+                        "accent": "#E19A4D",
                         "success": "#10b981",
-                        "warning": "#f59e0b",
+                        "warning": "#E19A4D",
                         "danger": "#ef4444",
-                        "background-light": "#f6f6f8",
-                        "background-dark": "#0B1120",
-                        "surface-dark": "#161b22",
-                        "border-dark": "#30363d"
+                        "background-light": "#F8FAFB",
+                        "background-dark": "#0F2A42",
+                        "surface-dark": "#162536",
+                        "border-dark": "#2D4A63"
                     },
                     fontFamily: {
                         "display": ["Inter", "sans-serif"]
@@ -42,7 +45,7 @@
     <header
         class="bg-white dark:bg-surface-dark border-b border-slate-200 dark:border-border-dark px-6 py-3 shadow-sm sticky top-0 z-50 flex justify-between items-center">
         <div class="flex items-center gap-4">
-            <div class="size-8 bg-purple-600 rounded-lg flex items-center justify-center text-white">
+            <div class="size-8 bg-[#5A9A8B] rounded-lg flex items-center justify-center text-white">
                 <span class="material-symbols-outlined text-xl">payments</span>
             </div>
             <h1 class="font-bold text-lg">Tesorería <span class="text-slate-400 font-normal">Agenda de Pagos</span></h1>
@@ -63,9 +66,9 @@
                 <h3 class="text-2xl font-black text-slate-900 dark:text-white">$18.5M</h3>
             </div>
             <div
-                class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm border-l-4 border-l-purple-500">
+                class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm border-l-4 border-l-[#5A9A8B]">
                 <p class="text-xs text-slate-500 uppercase font-bold mb-1">Pagos a 7 Días</p>
-                <h3 class="text-2xl font-black text-purple-600 dark:text-purple-400">$5.2M</h3>
+                <h3 class="text-2xl font-black text-[#5A9A8B]">$5.2M</h3>
             </div>
             <div
                 class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -99,13 +102,12 @@
                         <span
                             class="absolute -left-[21px] mt-1 size-2.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
                         <p class="text-xs font-bold text-slate-400 uppercase mb-1">Mañana, 26 Oct</p>
-                        <div
-                            class="p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-100 dark:border-purple-900/30">
+                        <div class="p-3 bg-[#5A9A8B]/10 rounded-lg border border-[#5A9A8B]/20">
                             <div class="flex justify-between items-start">
-                                <p class="font-bold text-sm text-purple-900 dark:text-purple-200">Proveedores Varios</p>
+                                <p class="font-bold text-sm text-[#1E3D59]">Proveedores Varios</p>
                                 <span class="text-xs font-bold">$3.2M</span>
                             </div>
-                            <p class="text-xs text-purple-700 dark:text-purple-400 mt-1">Coca-Cola, Bavaria</p>
+                            <p class="text-xs text-[#5A9A8B] mt-1">Coca-Cola, Bavaria</p>
                         </div>
                     </div>
 
@@ -213,7 +215,7 @@
                         <svg class="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="none">
                             <path
                                 d="M0,80 C50,70 100,50 150,90 C200,130 250,140 300,110 C350,80 400,60 450,150 C500,180 550,160 600,120"
-                                fill="none" stroke="#195de6" stroke-width="3" />
+                                fill="none" stroke="#5A9A8B" stroke-width="3" />
                             <!-- Danger Zone Highlight -->
                             <circle cx="450" cy="150" r="4" fill="#ef4444" />
                         </svg>

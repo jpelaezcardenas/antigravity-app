@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pulso Diario - Contexia Intranet 4.0</title>
+    <title>Flujo de Caja - Contexia</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
@@ -140,14 +140,22 @@
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#195de6",
+                        "primary": "#5A9A8B",
+                        "primary-light": "#7AB5A7",
+                        "primary-dark": "#3D7A6D",
+                        "secondary": "#1E3D59",
+                        "secondary-light": "#2C5577",
+                        "secondary-dark": "#0F2A42",
+                        "accent": "#E19A4D",
+                        "accent-light": "#F0B76D",
+                        "accent-dark": "#C47D32",
                         "success": "#10b981",
-                        "warning": "#f59e0b",
+                        "warning": "#E19A4D",
                         "danger": "#ef4444",
-                        "background-light": "#f6f6f8",
-                        "background-dark": "#0B1120",
-                        "surface-dark": "#161b22",
-                        "border-dark": "#30363d"
+                        "background-light": "#F8FAFB",
+                        "background-dark": "#0F2A42",
+                        "surface-dark": "#162536",
+                        "border-dark": "#2D4A63"
                     },
                     fontFamily: {
                         "display": ["Inter", "sans-serif"]
@@ -165,7 +173,7 @@
     <header
         class="bg-white dark:bg-surface-dark border-b border-slate-200 dark:border-border-dark px-6 py-3 shadow-sm sticky top-0 z-50 flex justify-between items-center">
         <div class="flex items-center gap-4">
-            <h1 class="font-bold text-lg">Pulso Diario</h1>
+            <h1 class="font-bold text-lg">Flujo de Caja</h1>
         </div>
         <div class="flex items-center gap-4">
             <!-- Company Selector -->
@@ -197,7 +205,7 @@
 
         <!-- KPI Row -->
         <!-- Neuroaccounting KPI Row -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <!-- Card 1: Cash (Safety) -->
             <div
                 class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-full transition-all hover:-translate-y-1 hover:shadow-md">
@@ -222,6 +230,51 @@
                 </div>
             </div>
 
+            <!-- Card: Sales (Growth) -->
+            <div
+                class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-full transition-all hover:-translate-y-1 hover:shadow-md">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Ventas Ayer</p>
+                        <h3 class="text-3xl font-black text-slate-900 dark:text-white flex items-baseline gap-1">
+                            <span x-text="formatShortMoney(data.salesYesterday)">$0</span>
+                            <span class="text-sm font-medium text-slate-400">COP</span>
+                        </h3>
+                    </div>
+                    <div class="size-10 rounded-xl bg-[#5A9A8B]/10 flex items-center justify-center text-[#5A9A8B]">
+                        <span class="material-symbols-outlined">payments</span>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center gap-1.5 text-xs font-bold text-[#5A9A8B]">
+                    <span class="material-symbols-outlined text-base">check_circle</span>
+                    <span>Meta Cumplida</span>
+                    <span class="ml-auto text-[10px] text-slate-400 font-normal">Ayer</span>
+                </div>
+            </div>
+
+            <!-- Card: Purchases/Expenses (Control) -->
+            <div
+                class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-full transition-all hover:-translate-y-1 hover:shadow-md">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Compras Ayer</p>
+                        <h3 class="text-3xl font-black text-slate-900 dark:text-white flex items-baseline gap-1">
+                            <span x-text="formatShortMoney(data.expensesYesterday)">$0</span>
+                            <span class="text-sm font-medium text-slate-400">COP</span>
+                        </h3>
+                    </div>
+                    <div
+                        class="size-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                        <span class="material-symbols-outlined">shopping_cart</span>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400">
+                    <span class="material-symbols-outlined text-base">trending_flat</span>
+                    <span>Estable</span>
+                    <span class="ml-auto text-[10px] text-slate-400 font-normal">Ayer</span>
+                </div>
+            </div>
+
             <!-- Card 2: Pending Invoices (Operational) -->
             <a href="conciliacion.html"
                 class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-full transition-all hover:-translate-y-1 hover:shadow-md group cursor-pointer">
@@ -232,15 +285,15 @@
                         <h3 class="text-3xl font-black text-slate-900 dark:text-white">24</h3>
                     </div>
                     <div
-                        class="size-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                        class="size-10 rounded-xl bg-[#5A9A8B]/10 flex items-center justify-center text-[#5A9A8B] group-hover:bg-[#5A9A8B] group-hover:text-white transition-colors">
                         <span class="material-symbols-outlined">receipt_long</span>
                     </div>
                 </div>
                 <div class="mt-4 flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                    <span class="size-1.5 rounded-full bg-blue-500"></span>
+                    <span class="size-1.5 rounded-full bg-[#5A9A8B]"></span>
                     <span>Requiere conciliación</span>
                     <span
-                        class="ml-auto material-symbols-outlined text-slate-300 text-sm group-hover:text-blue-500 transition-colors">arrow_forward</span>
+                        class="ml-auto material-symbols-outlined text-slate-300 text-sm group-hover:text-[#5A9A8B] transition-colors">arrow_forward</span>
                 </div>
             </a>
 

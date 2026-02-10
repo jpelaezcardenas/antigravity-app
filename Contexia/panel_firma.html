@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Firma - Contexia Intranet 4.0</title>
+    <title>Panel de Firma - Contexia</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
@@ -18,14 +18,17 @@
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#195de6",
+                        "primary": "#5A9A8B",
+                        "primary-light": "#7AB5A7",
+                        "secondary": "#1E3D59",
+                        "accent": "#E19A4D",
                         "success": "#10b981",
-                        "warning": "#f59e0b",
+                        "warning": "#E19A4D",
                         "danger": "#ef4444",
-                        "background-light": "#f6f6f8",
-                        "background-dark": "#0B1120",
-                        "surface-dark": "#161b22",
-                        "border-dark": "#30363d"
+                        "background-light": "#F8FAFB",
+                        "background-dark": "#0F2A42",
+                        "surface-dark": "#162536",
+                        "border-dark": "#2D4A63"
                     },
                     fontFamily: {
                         "display": ["Inter", "sans-serif"]
@@ -112,7 +115,7 @@
                                 <tr>
                                     <th class="px-6 py-4">Empresa / Sector</th>
                                     <th class="px-6 py-4">Conciliación</th>
-                                    <th class="px-6 py-4">Pulso Diario</th>
+                                    <th class="px-6 py-4">Flujo de Caja</th>
                                     <th class="px-6 py-4">Riesgo DIAN</th>
                                     <th class="px-6 py-4 text-center">Alertas</th>
                                     <th class="px-6 py-4"></th>
@@ -243,7 +246,7 @@
                                         class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                         <span class="size-1.5 rounded-full" :class="{
                                                 'bg-red-500': task.priority === 'high',
-                                                'bg-indigo-500': task.priority === 'normal',
+                                                'bg-[#5A9A8B]': task.priority === 'normal',
                                                 'bg-slate-400': task.priority === 'low'
                                             }"></span>
                                         <span
@@ -261,7 +264,7 @@
                                             x-text="task.due"></span>
                                     </div>
                                     <div
-                                        class="size-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 text-[10px] flex items-center justify-center font-bold">
+                                        class="size-6 rounded-full bg-[#5A9A8B]/10 text-[#5A9A8B] text-[10px] flex items-center justify-center font-bold">
                                         MC</div>
                                 </div>
                             </div>
@@ -277,11 +280,11 @@
                     <div class="flex flex-col gap-3">
                         <template x-for="task in allTasks.filter(t => t.status === 'in_progress')" :key="task.id">
                             <div
-                                class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/50 shadow-sm cursor-move group">
+                                class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-[#5A9A8B]/30 shadow-sm cursor-move group">
                                 <h4 class="font-bold text-slate-900 dark:text-white mb-1" x-text="task.title"></h4>
                                 <p class="text-xs text-slate-500 mb-3" x-text="task.client"></p>
                                 <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mb-2">
-                                    <div class="bg-indigo-500 h-1.5 rounded-full" style="width: 60%"></div>
+                                    <div class="bg-[#5A9A8B] h-1.5 rounded-full" style="width: 60%"></div>
                                 </div>
                             </div>
                         </template>
@@ -437,7 +440,7 @@
                             data: [8, 12, 10, 15, 12, 10, 4]
                         }],
                         chart: { type: 'bar', height: 280, fontFamily: 'Inter', toolbar: { show: false } },
-                        colors: ['#6366f1', '#e2e8f0'], // Indigo-500, Slate-200
+                        colors: ['#5A9A8B', '#e2e8f0'], // Teal, Slate-200
                         plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
                         xaxis: { categories: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'], axisBorder: { show: false }, axisTicks: { show: false }, labels: { style: { colors: '#94a3b8' } } },
                         yaxis: { labels: { style: { colors: '#94a3b8' } } },
@@ -484,7 +487,7 @@
     <td class="px-6 py-4">
         <div class="flex items-center gap-2">
             <div
-                class="size-6 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center font-bold">
+                class="size-6 rounded-full bg-[#5A9A8B] text-white text-[10px] flex items-center justify-center font-bold">
                 JP</div>
             <span class="text-xs text-slate-600 dark:text-slate-400">Juan P.</span>
         </div>
@@ -527,7 +530,7 @@
     <td class="px-6 py-4">
         <div class="flex items-center gap-2">
             <div
-                class="size-6 rounded-full bg-purple-500 text-white text-[10px] flex items-center justify-center font-bold">
+                class="size-6 rounded-full bg-[#5A9A8B] text-white text-[10px] flex items-center justify-center font-bold">
                 MC</div>
             <span class="text-xs text-slate-600 dark:text-slate-400">María C.</span>
         </div>

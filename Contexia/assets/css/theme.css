@@ -1,0 +1,159 @@
+/* ====================================
+   Contexia Intranet 4.0 - Global Theme
+   Based on Logo Color Palette
+   ==================================== */
+
+:root {
+    /* Primary Colors (from Logo) */
+    --cx-teal: #5A9A8B;
+    --cx-teal-light: #7AB5A7;
+    --cx-teal-dark: #3D7A6D;
+    
+    --cx-navy: #1E3D59;
+    --cx-navy-light: #2C5577;
+    --cx-navy-dark: #0F2A42;
+    
+    --cx-orange: #E19A4D;
+    --cx-orange-light: #F0B76D;
+    --cx-orange-dark: #C47D32;
+    
+    /* Semantic Colors */
+    --cx-primary: var(--cx-teal);
+    --cx-secondary: var(--cx-navy);
+    --cx-accent: var(--cx-orange);
+    
+    --cx-success: #10B981;
+    --cx-warning: var(--cx-orange);
+    --cx-danger: #EF4444;
+    --cx-info: var(--cx-teal);
+    
+    /* Backgrounds */
+    --cx-bg-light: #F8FAFB;
+    --cx-bg-dark: var(--cx-navy-dark);
+    --cx-surface-dark: #162536;
+    
+    /* Text */
+    --cx-text-primary: #1E293B;
+    --cx-text-secondary: #64748B;
+    --cx-text-light: #F8FAFC;
+    
+    /* Borders */
+    --cx-border-light: #E2E8F0;
+    --cx-border-dark: #2D4A63;
+}
+
+/* Global Body Styles */
+body {
+    font-family: 'Inter', 'Outfit', system-ui, sans-serif;
+}
+
+/* Sidebar Override */
+#cx-sidebar {
+    background: linear-gradient(180deg, var(--cx-navy) 0%, var(--cx-navy-dark) 100%) !important;
+    border-right-color: var(--cx-border-dark) !important;
+}
+
+#cx-sidebar .text-indigo-400,
+#cx-sidebar .text-indigo-600 {
+    color: var(--cx-teal-light) !important;
+}
+
+#cx-sidebar .bg-indigo-600\/10 {
+    background-color: rgba(90, 154, 139, 0.15) !important;
+}
+
+#cx-sidebar .border-indigo-600\/50 {
+    border-color: rgba(90, 154, 139, 0.5) !important;
+}
+
+/* Button Primary Override */
+.bg-primary,
+[class*="bg-primary"] {
+    background-color: var(--cx-teal) !important;
+}
+
+.text-primary,
+[class*="text-primary"] {
+    color: var(--cx-teal) !important;
+}
+
+.hover\:bg-primary:hover {
+    background-color: var(--cx-teal-dark) !important;
+}
+
+/* Accent/Warning with Orange */
+.bg-warning,
+[class*="bg-warning"] {
+    background-color: var(--cx-orange) !important;
+}
+
+.text-warning,
+[class*="text-warning"] {
+    color: var(--cx-orange) !important;
+}
+
+/* Links */
+a.text-primary:hover,
+button.text-primary:hover {
+    color: var(--cx-teal-dark) !important;
+}
+
+/* Focus states */
+:focus-visible {
+    outline-color: var(--cx-teal);
+}
+
+/* Form elements */
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--cx-teal) !important;
+    box-shadow: 0 0 0 3px rgba(90, 154, 139, 0.2) !important;
+}
+
+/* Gradient Accents */
+.cx-gradient-primary {
+    background: linear-gradient(135deg, var(--cx-teal) 0%, var(--cx-navy) 100%);
+}
+
+.cx-gradient-accent {
+    background: linear-gradient(135deg, var(--cx-orange) 0%, var(--cx-teal) 100%);
+}
+
+/* Card Hover Effects */
+.cx-card-hover {
+    transition: all 0.3s ease;
+}
+
+.cx-card-hover:hover {
+    border-color: var(--cx-teal) !important;
+    box-shadow: 0 10px 40px -10px rgba(90, 154, 139, 0.3);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--cx-bg-light);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--cx-teal-light);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--cx-teal);
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+    background: var(--cx-navy-dark);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: var(--cx-navy-light);
+}
