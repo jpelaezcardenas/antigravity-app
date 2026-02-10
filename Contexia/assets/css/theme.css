@@ -49,7 +49,7 @@ body {
 
 /* Sidebar Override */
 #cx-sidebar {
-    background: linear-gradient(180deg, var(--cx-navy) 0%, var(--cx-navy-dark) 100%) !important;
+    background: var(--cx-navy-dark) !important;
     border-right-color: var(--cx-border-dark) !important;
 }
 

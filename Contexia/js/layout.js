@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         #cx-sidebar {
             width: 260px;
             flex-shrink: 0;
-            background: linear-gradient(180deg, #1E3D59 0%, #0F2A42 100%);
+            background: #0F2A42;
             border-right: 1px solid #2D4A63;
             display: flex;
             flex-direction: column;
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.createElement('aside');
     sidebar.id = 'cx-sidebar';
     sidebar.innerHTML = `
-        <div class="h-16 shrink-0 flex items-center gap-3 px-6 border-b border-[#2D4A63] bg-[#1E3D59]/80 backdrop-blur">
+        <div class="h-16 shrink-0 flex items-center gap-3 px-6 border-b border-[#2D4A63] bg-[#0F2A42]">
             <img src="./assets/img/logo.png" alt="Contexia Logo" class="h-10 w-auto object-contain">
             <span class="font-bold text-lg tracking-tight text-white">Contexia</span>
         </div>
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ${buildNavigation()}
         </nav>
 
-        <div class="p-4 border-t border-[#2D4A63] bg-[#1E3D59]/50">
+        <div class="p-4 border-t border-[#2D4A63] bg-[#0F2A42]">
             <button onclick="window.auth.logout()" class="flex items-center gap-3 w-full px-3 py-2 text-slate-300 hover:text-white hover:bg-[#2D4A63] rounded-lg transition-colors group">
                 <span class="material-symbols-outlined group-hover:text-[#E19A4D] transition-colors">logout</span>
                 <span class="text-sm font-medium">Cerrar Sesión</span>
