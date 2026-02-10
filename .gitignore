@@ -39,3 +39,7 @@ cookies.json
 
 # VS Code
 .vscode/
+
+# Vercel
+.vercel
+

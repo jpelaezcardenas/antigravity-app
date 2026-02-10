@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flujo de Caja - Contexia</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+
+    <!-- Alpine.js & Backend Simulation -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="./js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+    <!-- Load Mock Backend (Order Matters) -->
+    <!-- Load Mock Backend (Order Matters) -->
+    <script src="./js/layout.js"></script>
+    <script src="./js/db.js"></script>
+    <script src="./js/api.js"></script>
+    <script src="./js/seed.js"></script>
+
+    <script>
+        // Initialize Seeder
+        // Wait for scripts to load if needed, but since they are sync they should be ready
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.seeder) window.seeder.run();
+        });
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('dashboard', () => ({
+                data: {
+                    salesYesterday: 0,
+                    expensesYesterday: 0,
+                    netMovement: 0,
+                    cashToday: 0
+                },
+                movements: [],
+                loading: true,
+
+                async init() {
+                    console.log("Dashboard initializing...");
+                    try {
+                        this.data = await api.getPulse();
+                        this.movements = await api.getRecentMovements();
+                        this.initChart();
+                    } catch (e) {
+                        console.error("Error fetching data", e);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                initChart() {
+                    const options = {
+                        series: [{
+                            name: 'Ingresos',
+                            data: [31, 40, 28, 51, 42, 109, 100]
+                        }, {
+                            name: 'Egresos',
+                            data: [11, 32, 45, 32, 34, 52, 41]
+                        }],
+                        chart: {
+                            height: 320,
+                            type: 'area',
+                            fontFamily: 'Inter, sans-serif',
+                            zoom: { enabled: false },
+                            toolbar: { show: false }
+                        },
+                        dataLabels: { enabled: false },
+                        stroke: { curve: 'smooth', width: 2 },
+                        // Neuroaccounting Colors: Emerald (Safety) & Rose (Alert)
+                        colors: ['#10B981', '#F43F5E'],
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shadeIntensity: 1,
+                                opacityFrom: 0.3,
+                                opacityTo: 0.05,
+                                stops: [0, 90, 100]
+                            }
+                        },
+                        xaxis: {
+                            categories: ['01 Feb', '05 Feb', '10 Feb', '15 Feb', '20 Feb', '25 Feb', '28 Feb'],
+                            axisBorder: { show: false },
+                            axisTicks: { show: false },
+                            labels: {
+                                style: { colors: '#94a3b8', fontSize: '10px' }
+                            }
+                        },
+                        yaxis: {
+                            labels: {
+                                style: { colors: '#94a3b8', fontSize: '10px' },
+                                formatter: (val) => { return "$" + val + "M" }
+                            }
+                        },
+                        grid: {
+                            show: true,
+                            borderColor: '#e2e8f0',
+                            strokeDashArray: 4,
+                            padding: { top: 0, right: 0, bottom: 0, left: 10 }
+                        },
+                        theme: { mode: document.documentElement.classList.contains('dark') ? 'dark' : 'light' },
+                        legend: {
+                            position: 'top',
+                            horizontalAlign: 'right',
+                            offsetY: -20
+                        },
+                        tooltip: {
+                            x: { format: 'dd/MM/yy' },
+                        },
+                    };
+
+                    // Dark mode adjustment check
+                    if (document.documentElement.classList.contains('dark')) {
+                        options.grid.borderColor = '#1e293b';
+                    }
+
+                    const chart = new ApexCharts(document.querySelector("#neuroChart"), options);
+                    chart.render();
+                },
+
+                formatMoney(val) {
+                    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
+                },
+
+                formatShortMoney(val) {
+                    if (Math.abs(val) > 1000000) return (val / 1000000).toFixed(1) + 'M';
+                    return (val / 1000).toFixed(1) + 'K';
+                }
+            }))
+        })
+    </script>
+
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2DD4BF",
+                        "primary-light": "#5EEAD4",
+                        "primary-dark": "#14B8A6",
+                        "secondary": "#0F172A",
+                        "secondary-light": "#1E293B",
+                        "secondary-dark": "#020617",
+                        "accent": "#F97316",
+                        "accent-light": "#FB923C",
+                        "accent-dark": "#EA580C",
+                        "violet": "#8B5CF6",
+                        "success": "#10b981",
+                        "warning": "#F97316",
+                        "danger": "#ef4444",
+                        "background-light": "#F8FAFB",
+                        "background-dark": "#020617",
+                        "surface-dark": "#1E293B",
+                        "border-dark": "#334155"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'float-delayed': 'float 6s ease-in-out 3s infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+
+<body x-data="dashboard"
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display">
+
+    <!-- Top Navigation -->
+    <header
+        class="bg-white dark:bg-surface-dark border-b border-slate-200 dark:border-border-dark px-6 py-3 shadow-sm sticky top-0 z-50 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <h1 class="font-bold text-lg">Flujo de Caja</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <!-- Company Selector -->
+            <button
+                class="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors">
+                <span class="material-symbols-outlined text-lg">storefront</span>
+                Restaurante La Plaza
+                <span class="material-symbols-outlined text-lg">expand_more</span>
+            </button>
+            <!-- Date Selector -->
+            <button
+                class="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors">
+                <span class="material-symbols-outlined text-lg">calendar_today</span>
+                Hoy, <span x-text="new Date().toLocaleDateString('es-CO', {month:'short', day:'numeric'})"></span>
+                <span class="material-symbols-outlined text-lg">expand_more</span>
+            </button>
+            <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+            <div class="size-8 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-[1600px] w-full mx-auto p-6 flex flex-col gap-6">
+
+        <!-- Loading State -->
+        <div x-show="loading"
+            class="fixed inset-0 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+
+        <!-- KPI Row -->
+        <!-- Neuroaccounting KPI Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Card 1: Cash (Safety) -->
+            <div
+                class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-full transition-all hover:-translate-y-1 hover:shadow-md">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Efectivo
+                            Disponible</p>
+                        <h3 class="text-3xl font-black text-slate-900 dark:text-white flex items-baseline gap-1">
+                            <span x-text="formatShortMoney(data.cashToday)">$14.5M</span>
+                            <span class="text-sm font-medium text-slate-400">COP</span>
+                        </h3>
+                    </div>
+                    <div
+                        class="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                        <span class="material-symbols-outlined">attach_money</span>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <span class="material-symbols-outlined text-base">trending_up</span>
+                    <span>+12% vs semana anterior</span>
+                    <span class="ml-auto text-[10px] text-slate-400 font-normal">Hoy</span>
+                </div>
+            </div>
+
+            <!-- Card: Sales (Growth) -->
+            <div
+                class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-full transition-all hover:-translate-y-1 hover:shadow-md">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Ventas Ayer</p>
+                        <h3 class="text-3xl font-black text-slate-900 dark:text-white flex items-baseline gap-1">
+                            <span x-text="formatShortMoney(data.salesYesterday)">$0</span>
+                            <span class="text-sm font-medium text-slate-400">COP</span>
+                        </h3>
+                    </div>
+                    <div class="size-10 rounded-xl bg-[#5A9A8B]/10 flex items-center justify-center text-[#5A9A8B]">
+                        <span class="material-symbols-outlined">payments</span>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center gap-1.5 text-xs font-bold text-[#5A9A8B]">
+                    <span class="material-symbols-outlined text-base">check_circle</span>
+                    <span>Meta Cumplida</span>
+                    <span class="ml-auto text-[10px] text-slate-400 font-normal">Ayer</span>
+                </div>
+            </div>
+
+            <!-- Card: Purchases/Expenses (Control) -->
+            <div
+                class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-full transition-all hover:-translate-y-1 hover:shadow-md">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Compras Ayer</p>
+                        <h3 class="text-3xl font-black text-slate-900 dark:text-white flex items-baseline gap-1">
+                            <span x-text="formatShortMoney(data.expensesYesterday)">$0</span>
+                            <span class="text-sm font-medium text-slate-400">COP</span>
+                        </h3>
+                    </div>
+                    <div
+                        class="size-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                        <span class="material-symbols-outlined">shopping_cart</span>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400">
+                    <span class="material-symbols-outlined text-base">trending_flat</span>
+                    <span>Estable</span>
+                    <span class="ml-auto text-[10px] text-slate-400 font-normal">Ayer</span>
+                </div>
+            </div>
+
+            <!-- Card 2: Pending Invoices (Operational) -->
+            <a href="conciliacion.html"
+                class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-full transition-all hover:-translate-y-1 hover:shadow-md group cursor-pointer">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Facturas
+                            Pendientes</p>
+                        <h3 class="text-3xl font-black text-slate-900 dark:text-white">24</h3>
+                    </div>
+                    <div
+                        class="size-10 rounded-xl bg-[#5A9A8B]/10 flex items-center justify-center text-[#5A9A8B] group-hover:bg-[#5A9A8B] group-hover:text-white transition-colors">
+                        <span class="material-symbols-outlined">receipt_long</span>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                    <span class="size-1.5 rounded-full bg-[#5A9A8B]"></span>
+                    <span>Requiere conciliación</span>
+                    <span
+                        class="ml-auto material-symbols-outlined text-slate-300 text-sm group-hover:text-[#5A9A8B] transition-colors">arrow_forward</span>
+                </div>
+            </a>
+
+            <!-- Card 3: DIAN Risk (Tranquility) -->
+            <a href="centinela.html"
+                class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-full transition-all hover:-translate-y-1 hover:shadow-md group cursor-pointer">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Riesgo DIAN</p>
+                        <h3 class="text-3xl font-black text-emerald-600 dark:text-emerald-400" x-text="'Bajo'">Low</h3>
+                    </div>
+                    <div
+                        class="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                        <span class="material-symbols-outlined">shield_check</span>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                    <span class="material-symbols-outlined text-sm text-emerald-500">check_circle</span>
+                    <span>Sin bloqueos detectados</span>
+                </div>
+            </a>
+
+            <!-- Card 4: Taxes (Urgency) -->
+            <a href="tesoreria.html"
+                class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-full transition-all hover:-translate-y-1 hover:shadow-md group cursor-pointer">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Impuestos por
+                            Pagar</p>
+                        <h3 class="text-3xl font-black text-slate-900 dark:text-white flex items-baseline gap-1">
+                            <span>$4.2M</span>
+                            <span class="text-sm font-medium text-slate-400">COP</span>
+                        </h3>
+                    </div>
+                    <div
+                        class="size-10 rounded-xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-600 dark:text-orange-400 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+                        <span class="material-symbols-outlined">calendar_clock</span>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center gap-1.5 text-xs font-bold text-orange-600 dark:text-orange-400">
+                    <span class="material-symbols-outlined text-sm">warning</span>
+                    <span>Vence en 5 días (Rete)</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Main Chart Section -->
+        <div
+            class="bg-white dark:bg-surface-dark p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-96 relative overflow-hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg">Ingresos vs Egresos (Últimos 30 días)</h3>
+                <!-- Legend handled by chart -->
+            </div>
+            <!-- Neuroaccounting Chart Container -->
+            <div id="neuroChart" class="w-full h-full"></div>
+        </div>
+
+        <!-- Split Section: Movements vs Alerts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
+
+            <!-- Left: Key Movements -->
+            <div
+                class="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+                <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                    <h3 class="font-bold text-lg">Movimientos Recientes</h3>
+                    <button class="text-xs text-primary font-bold hover:underline">Ver Todo</button>
+                </div>
+                <div class="flex-1 overflow-x-auto">
+                    <table class="w-full text-left text-sm last:border-b-0">
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <template x-for="m in movements" :key="m.id">
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="size-8 rounded-full flex items-center justify-center"
+                                                :class="m.type === 'income' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30' : 'bg-slate-100 text-slate-500 dark:bg-slate-800'">
+                                                <span class="material-symbols-outlined text-sm"
+                                                    x-text="m.type === 'income' ? 'arrow_downward' : 'arrow_upward'"></span>
+                                            </div>
+                                            <div>
+                                                <p class="font-semibold text-slate-900 dark:text-white"
+                                                    x-text="m.description"></p>
+                                                <p class="text-xs text-slate-500" x-text="m.category + ' • ' + m.date">
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-right font-bold"
+                                        :class="m.type === 'income' ? 'text-success' : 'text-slate-900 dark:text-white'"
+                                        x-text="formatMoney(m.amount)">
+                                    </td>
+                                </tr>
+                            </template>
+                            <!-- Empty state -->
+                            <tr x-show="movements.length === 0">
+                                <td colspan="2" class="px-6 py-4 text-center text-slate-500">No hay movimientos
+                                    recientes.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right: Alerts -->
+            <div
+                class="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+                <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                    <h3 class="font-bold text-lg flex items-center gap-2">
+                        Alertas Activas
+                        <span class="bg-danger text-white text-[10px] px-1.5 py-0.5 rounded-full">3 Altas</span>
+                    </h3>
+                </div>
+                <div class="p-4 flex flex-col gap-3">
+                    <!-- Critical Alert -->
+                    <div
+                        class="bg-red-50 dark:bg-red-900/10 border-l-4 border-red-500 p-4 rounded-r-lg flex items-start gap-3">
+                        <span class="material-symbols-outlined text-red-500 mt-0.5">error</span>
+                        <div>
+                            <p class="text-sm font-bold text-red-700 dark:text-red-400">Riesgo Fiscal ALTO</p>
+                            <p class="text-xs text-red-600/80 dark:text-red-400/70 mt-1">Proveedor "Servicios X"
+                                reportado en boletín de deudores morosos DIAN hoy.</p>
+                        </div>
+                    </div>
+
+                    <!-- Warning Alert -->
+                    <div
+                        class="bg-amber-50 dark:bg-amber-900/10 border-l-4 border-amber-500 p-4 rounded-r-lg flex items-start gap-3">
+                        <span class="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
+                        <div>
+                            <p class="text-sm font-bold text-amber-700 dark:text-amber-400">Liquidez Estrecha</p>
+                            <p class="text-xs text-amber-600/80 dark:text-amber-400/70 mt-1">Proyección de caja negativa
+                                para el próximo viernes 30 Oct.</p>
+                        </div>
+                    </div>
+
+                    <!-- Info Alert -->
+                    <div
+                        class="bg-slate-50 dark:bg-slate-800 border-l-4 border-slate-400 p-4 rounded-r-lg flex items-start gap-3">
+                        <span class="material-symbols-outlined text-slate-500 mt-0.5">info</span>
+                        <div>
+                            <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Documento Pendiente</p>
+                            <p class="text-xs text-slate-500 mt-1">Falta rut del proveedor nuevo ingresado ayer.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+</body>
+
+</html>
