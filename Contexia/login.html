@@ -44,8 +44,7 @@
             
             roles: [
                 { id: 'empresa', label: 'Empresa', icon: 'store', desc: 'Dueño de negocio', user: 'empresa', pass: 'empresa' },
-                { id: 'contador', label: 'Contador', icon: 'business_center', desc: 'Contador o firma', user: 'contador', pass: 'contador' },
-                { id: 'admin', label: 'Administrador', icon: 'analytics', desc: 'Admin del sistema', user: 'admin', pass: 'admin' }
+                { id: 'contador', label: 'Contador', icon: 'business_center', desc: 'Contador o firma', user: 'contador', pass: 'contador' }
             ],
             
             selectRole(role) {
@@ -76,10 +75,11 @@
 
         <!-- Logo & Title -->
         <div class="text-center mb-8">
-            <div class="flex items-center justify-center gap-3 mb-4">
+            <a href="https://contexia-web-app.vercel.app"
+                class="flex items-center justify-center gap-3 mb-4 hover:opacity-80 transition-opacity inline-flex text-decoration-none text-white">
                 <img src="./assets/img/logo.png" alt="Contexia" class="h-12 w-auto">
                 <span class="text-2xl font-bold tracking-tight">Contexia</span>
-            </div>
+            </a>
             <p class="text-slate-400 text-sm">GPS de flujo de caja, impuestos y riesgo regulatorio</p>
         </div>
 
@@ -87,7 +87,7 @@
         <div class="mb-6">
             <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 text-center">Selecciona tu perfil
             </p>
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-2 gap-3">
                 <template x-for="role in roles" :key="role.id">
                     <button @click="selectRole(role)"
                         :class="selectedRole?.id === role.id ? 'bg-teal border-teal text-white' : 'bg-navy border-slate-700 hover:border-teal/50'"
