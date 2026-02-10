@@ -8,35 +8,35 @@
     --cx-teal: #5A9A8B;
     --cx-teal-light: #7AB5A7;
     --cx-teal-dark: #3D7A6D;
-    
+
     --cx-navy: #1E3D59;
     --cx-navy-light: #2C5577;
     --cx-navy-dark: #0F2A42;
-    
+
     --cx-orange: #E19A4D;
     --cx-orange-light: #F0B76D;
     --cx-orange-dark: #C47D32;
-    
+
     /* Semantic Colors */
     --cx-primary: var(--cx-teal);
     --cx-secondary: var(--cx-navy);
     --cx-accent: var(--cx-orange);
-    
+
     --cx-success: #10B981;
     --cx-warning: var(--cx-orange);
     --cx-danger: #EF4444;
     --cx-info: var(--cx-teal);
-    
+
     /* Backgrounds */
     --cx-bg-light: #F8FAFB;
     --cx-bg-dark: var(--cx-navy-dark);
     --cx-surface-dark: #162536;
-    
+
     /* Text */
     --cx-text-primary: #1E293B;
     --cx-text-secondary: #64748B;
     --cx-text-light: #F8FAFC;
-    
+
     /* Borders */
     --cx-border-light: #E2E8F0;
     --cx-border-dark: #2D4A63;
@@ -49,7 +49,7 @@ body {
 
 /* Sidebar Override */
 #cx-sidebar {
-    background: var(--cx-navy-dark) !important;
+    background: #0f172a !important;
     border-right-color: var(--cx-border-dark) !important;
 }
 

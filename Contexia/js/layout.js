@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         #cx-sidebar {
             width: 260px;
             flex-shrink: 0;
-            background: #0F2A42;
+            background: #0f172a;
             border-right: 1px solid #2D4A63;
             display: flex;
             flex-direction: column;
@@ -184,16 +184,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.createElement('aside');
     sidebar.id = 'cx-sidebar';
     sidebar.innerHTML = `
-        <div class="h-16 shrink-0 flex items-center gap-3 px-6 border-b border-[#2D4A63] bg-[#0F2A42]">
+        <a href="https://contexia-web-app.vercel.app" class="h-16 shrink-0 flex items-center gap-3 px-6 border-b border-[#2D4A63] bg-[#0f172a] hover:bg-[#1E3D59] transition-colors cursor-pointer block text-decoration-none">
             <img src="./assets/img/logo.png" alt="Contexia Logo" class="h-10 w-auto object-contain">
             <span class="font-bold text-lg tracking-tight text-white">Contexia</span>
-        </div>
+        </a>
         
         <nav class="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
             ${buildNavigation()}
         </nav>
 
-        <div class="p-4 border-t border-[#2D4A63] bg-[#0F2A42]">
+        <div class="p-4 border-t border-[#2D4A63] bg-[#0f172a]">
             <button onclick="window.auth.logout()" class="flex items-center gap-3 w-full px-3 py-2 text-slate-300 hover:text-white hover:bg-[#2D4A63] rounded-lg transition-colors group">
                 <span class="material-symbols-outlined group-hover:text-[#E19A4D] transition-colors">logout</span>
                 <span class="text-sm font-medium">Cerrar Sesión</span>

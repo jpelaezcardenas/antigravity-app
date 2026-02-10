@@ -18,7 +18,7 @@ window.auth = {
                 company: 'DistriFuXion AI',
                 companyNit: '900.123.456-7',
                 companyLogo: './assets/img/companies/distrifuxion-ai.png',
-                email: 'carlos@distribucionai.com',
+                email: 'carlos@example.com',
                 avatar: 'CM',
                 homePage: 'panel_empresario.html'
             }
@@ -34,24 +34,9 @@ window.auth = {
                 companyNit: 'T.P. 123456-T',
                 companyLogo: './assets/img/profiles/tatiana-barbosa.jpg',
                 professionalCard: 'T.P. 123456-T',
-                email: 'tatiana@barbosacontadores.com',
+                email: 'tatiana@example.com',
                 avatar: 'TB',
                 homePage: 'panel_firma.html'
-            }
-        },
-        admin: {
-            username: 'admin',
-            password: 'admin',
-            profile: {
-                name: 'Juan Peláez',
-                role: 'admin',
-                roleLabel: 'Administrador',
-                company: 'Juan Peláez',
-                companyNit: 'C.C. 1.234.567.890',
-                companyLogo: './assets/img/profiles/juan-pelaez.jpg',
-                email: 'juan.pelaez@contexia.co',
-                avatar: 'JP',
-                homePage: 'pulso_diario.html'
             }
         }
     },
