@@ -1,0 +1,41 @@
+# Python binaries and virtual environments
+bin/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Distribution / builds
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Large files
+*.zip
+
+# Sensitive files
+cookies.json
+
+# VS Code
+.vscode/
