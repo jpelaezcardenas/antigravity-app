@@ -265,8 +265,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>
             </svg>
         </button>
-        <img src="./assets/img/logo.png" alt="Contexia" style="height:28px; width:auto;">
-        <span style="font-weight:700; font-size:16px; letter-spacing:-0.5px;">Contexia</span>
+        <a href="landing.html" style="display:flex; align-items:center; gap:8px; text-decoration:none; color:white;">
+            <img src="./assets/img/logo.png" alt="Contexia" style="height:28px; width:auto;">
+            <span style="font-weight:700; font-size:16px; letter-spacing:-0.5px;">Contexia</span>
+        </a>
     `;
     document.body.insertBefore(mobileTopBar, document.body.firstChild);
 
