@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 0. Inject Global Theme CSS
     const themeLink = document.createElement('link');
     themeLink.rel = 'stylesheet';
-    themeLink.href = './assets/css/theme.css';
+    themeLink.href = './assets/css/theme.css?v=2';
     document.head.appendChild(themeLink);
 
     // Get current user and role
