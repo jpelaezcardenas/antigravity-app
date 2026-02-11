@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.createElement('aside');
     sidebar.id = 'cx-sidebar';
     sidebar.innerHTML = `
-        <a href="https://contexia-web-app.vercel.app" class="h-16 shrink-0 flex items-center gap-3 px-6 border-b border-[#2D4A63] bg-[#0f172a] hover:bg-[#1E3D59] transition-colors cursor-pointer block text-decoration-none">
+        <a href="index.html" class="h-16 shrink-0 flex items-center gap-3 px-6 border-b border-[#2D4A63] bg-[#0f172a] hover:bg-[#1E3D59] transition-colors cursor-pointer block text-decoration-none">
             <img src="./assets/img/logo.png" alt="Contexia Logo" class="h-10 w-auto object-contain">
             <span class="font-bold text-lg tracking-tight text-white">Contexia</span>
         </a>
