@@ -84,32 +84,51 @@
                 </div>
 
                 <!-- Navigation & Actions (Right Grouped) -->
-                <div class="hidden md:flex items-center gap-8">
+                <div class="hidden md:flex items-center gap-6">
                     <!-- Links -->
-                    <div class="flex items-baseline space-x-8">
+                    <div class="flex items-center space-x-1">
                         <a href="#soluciones"
-                            class="text-slate-600 dark:text-slate-300 hover:text-teal dark:hover:text-teal px-3 py-2 rounded-md text-sm font-medium transition-colors">Servicios</a>
+                            class="relative text-slate-300 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition-all duration-300 group">
+                            Servicios
+                            <span
+                                class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-teal to-violet rounded-full group-hover:w-3/4 transition-all duration-300"></span>
+                        </a>
                         <a href="#soluciones"
-                            class="text-slate-600 dark:text-slate-300 hover:text-teal dark:hover:text-teal px-3 py-2 rounded-md text-sm font-medium transition-colors">Soluciones</a>
+                            class="relative text-slate-300 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition-all duration-300 group">
+                            Soluciones
+                            <span
+                                class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-teal to-violet rounded-full group-hover:w-3/4 transition-all duration-300"></span>
+                        </a>
                     </div>
 
-                    <!-- Buttons -->
-                    <div class="flex items-center gap-4">
+                    <!-- Divider -->
+                    <div class="w-px h-6 bg-gradient-to-b from-transparent via-slate-600 to-transparent"></div>
 
-                        <!-- Acceso -->
+                    <!-- Buttons -->
+                    <div class="flex items-center gap-3">
+
+                        <!-- Acceso (Premium) -->
                         <a href="login.html"
-                            class="bg-teal hover:bg-teal-dark text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg hover:shadow-teal/20 flex items-center gap-2">
+                            class="relative group flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white overflow-hidden transition-all duration-300 hover:shadow-[0_0_25px_-5px_rgba(45,212,191,0.4)]">
+                            <!-- Gradient background -->
+                            <div
+                                class="absolute inset-0 bg-gradient-to-r from-teal to-teal/80 group-hover:from-teal group-hover:to-violet transition-all duration-500">
+                            </div>
+                            <!-- Shine effect -->
+                            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%]"
+                                style="transition: transform 0.8s ease;"></div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" class="w-4 h-4">
+                                stroke="currentColor"
+                                class="relative w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
                             </svg>
-                            Acceso
+                            <span class="relative">Acceso</span>
                         </a>
 
-                        <!-- Theme Toggle (Last) -->
+                        <!-- Theme Toggle (Premium) -->
                         <button id="theme-toggle" type="button"
-                            class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200 dark:focus:ring-slate-700 rounded-lg text-sm p-2.5 ml-2">
+                            class="relative p-2.5 rounded-xl text-slate-400 hover:text-teal border border-transparent hover:border-white/10 hover:bg-white/5 focus:outline-none transition-all duration-300 hover:shadow-[0_0_15px_-5px_rgba(45,212,191,0.3)]">
                             <!-- Dark Icon (Moon) -->
                             <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor"
                                 viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
