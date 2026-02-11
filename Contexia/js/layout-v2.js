@@ -76,9 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
             flex-direction: column;
             color: white;
             transition: transform 0.3s ease;
-            z-index: 50;
+            z-index: 9999;
         }
-        /* Main content wrapper */
+        /* Main content wrapper - creates isolated stacking context */
         #cx-main-content {
             flex: 1;
             display: flex;
@@ -89,6 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
             height: 100vh;
             position: relative;
             color: #1e293b;
+            z-index: 1;
+            isolation: isolate;
         }
         .dark #cx-main-content {
             background-color: #f8fafc;
@@ -125,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
             position: fixed;
             inset: 0;
             background: rgba(0,0,0,0.5);
-            z-index: 45;
+            z-index: 9998;
         }
 
         /* Mobile styles */
@@ -140,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 bottom: 0;
                 width: 280px;
                 transform: translateX(-100%);
-                z-index: 50;
+                z-index: 9999;
             }
             #cx-sidebar.open {
                 transform: translateX(0);
