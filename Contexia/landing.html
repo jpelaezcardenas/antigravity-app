@@ -414,32 +414,48 @@
         </div>
 
         <!-- Statistic Banner -->
-        <div class="w-full bg-teal py-16">
-            <div class="max-w-7xl mx-auto px-6 lg:px-8">
-                <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-
-                    <!-- Left: Statistic -->
-                    <div class="lg:w-1/3 text-center lg:text-left">
-                        <span class="text-6xl font-black text-white block">90%</span>
-                        <h3 class="text-xl lg:text-2xl font-bold text-navy-dark dark:text-white mt-2 leading-tight">de
-                            las PYMES están pagando más impuestos</h3>
-                    </div>
-
-                    <!-- Divider -->
-                    <div class="hidden lg:block w-px h-24 bg-white/30"></div>
-
-                    <!-- Right: Text -->
-                    <div class="lg:w-2/3 text-center lg:text-left">
-                        <p class="text-lg lg:text-xl text-white font-medium leading-relaxed">
-                            Hoy, cerca del 90% de las PYMES están pagando más impuestos de lo que la ley exige.
-                            Regalando capital al Estado, no por mala fe, sino por la incapacidad de tomar decisiones
-                            estratégicas a tiempo.
-                        </p>
-                    </div>
-
-                </div>
+        <div class="w-full bg-teal py-20">
+            <div class="max-w-7xl mx-auto px-6 lg:px-8 text-center">
+                <span id="stat-counter" class="text-8xl sm:text-9xl font-black text-white block"
+                    style="font-variant-numeric: tabular-nums;">0%</span>
+                <p class="text-lg text-white/80 font-medium mt-4 max-w-lg mx-auto">de las PYMES están pagando más
+                    impuestos de lo que la ley exige</p>
             </div>
         </div>
+
+        <script>
+            // Count-up animation for the 90% stat
+            (function () {
+                const counter = document.getElementById('stat-counter');
+                if (!counter) return;
+                let animated = false;
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && !animated) {
+                            animated = true;
+                            let current = 0;
+                            const target = 90;
+                            const duration = 2000;
+                            const steps = 60;
+                            const increment = target / steps;
+                            const stepTime = duration / steps;
+
+                            const timer = setInterval(() => {
+                                current += increment;
+                                if (current >= target) {
+                                    current = target;
+                                    clearInterval(timer);
+                                }
+                                counter.textContent = Math.round(current) + '%';
+                            }, stepTime);
+                        }
+                    });
+                }, { threshold: 0.5 });
+
+                observer.observe(counter);
+            })();
+        </script>
 
         <!-- Features Grid (Numbi style) -->
         <div id="soluciones" class="bg-navy-dark/50 py-24 sm:py-32 relative">
