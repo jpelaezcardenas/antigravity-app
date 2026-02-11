@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
             display: flex;
             flex-direction: column;
             color: white;
-            transition: all 0.3s ease;
+            transition: transform 0.3s ease;
             z-index: 50;
         }
         /* Main content wrapper */
@@ -112,6 +112,56 @@ document.addEventListener('DOMContentLoaded', () => {
             background: rgba(225, 154, 77, 0.2);
             color: #E19A4D;
             margin-left: auto;
+        }
+
+        /* Mobile top bar (hidden on desktop) */
+        #cx-mobile-topbar {
+            display: none;
+        }
+
+        /* Sidebar backdrop overlay */
+        #cx-sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 45;
+        }
+
+        /* Mobile styles */
+        @media (max-width: 767px) {
+            body {
+                flex-direction: column !important;
+            }
+            #cx-sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 280px;
+                transform: translateX(-100%);
+                z-index: 50;
+            }
+            #cx-sidebar.open {
+                transform: translateX(0);
+            }
+            #cx-sidebar-backdrop.open {
+                display: block;
+            }
+            #cx-mobile-topbar {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px 16px;
+                background: #0f172a;
+                border-bottom: 1px solid #2D4A63;
+                color: white;
+                z-index: 40;
+                flex-shrink: 0;
+            }
+            #cx-main-content {
+                height: calc(100vh - 56px);
+            }
         }
     `;
     document.head.appendChild(style);
@@ -204,7 +254,45 @@ document.addEventListener('DOMContentLoaded', () => {
     // Insert Sidebar at the very beginning of body
     document.body.insertBefore(sidebar, document.body.firstChild);
 
-    // 5. Create Top Bar with Company Info (positioned at top right of main content)
+    // 5a. Create Mobile Top Bar (hamburger + logo, visible only on mobile)
+    const mobileTopBar = document.createElement('div');
+    mobileTopBar.id = 'cx-mobile-topbar';
+    mobileTopBar.innerHTML = `
+        <button id="cx-mobile-toggle" style="background:none; border:none; color:white; cursor:pointer; padding:4px;">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>
+            </svg>
+        </button>
+        <img src="./assets/img/logo.png" alt="Contexia" style="height:28px; width:auto;">
+        <span style="font-weight:700; font-size:16px; letter-spacing:-0.5px;">Contexia</span>
+    `;
+    document.body.insertBefore(mobileTopBar, document.body.firstChild);
+
+    // 5b. Create Backdrop overlay
+    const backdrop = document.createElement('div');
+    backdrop.id = 'cx-sidebar-backdrop';
+    document.body.appendChild(backdrop);
+
+    // 5c. Mobile toggle logic
+    function toggleSidebar() {
+        sidebar.classList.toggle('open');
+        backdrop.classList.toggle('open');
+    }
+
+    document.getElementById('cx-mobile-toggle').addEventListener('click', toggleSidebar);
+    backdrop.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking a nav link on mobile
+    sidebar.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth < 768) {
+                sidebar.classList.remove('open');
+                backdrop.classList.remove('open');
+            }
+        });
+    });
+
+    // 6. Create Top Bar with Company Info (positioned at top right of main content)
     const topBar = document.createElement('div');
     topBar.id = 'cx-topbar';
     topBar.className = 'sticky top-0 z-40 bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-end';
