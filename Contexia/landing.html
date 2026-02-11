@@ -1,0 +1,503 @@
+﻿<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contexia - GPS de Flujo de Caja e Impuestos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        "teal": "#2DD4BF",
+                        "teal-dark": "#14B8A6",
+                        "navy": "#0F172A",
+                        "navy-dark": "#020617",
+                        "orange": "#F97316",
+                        "violet": "#8B5CF6",
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'float-delayed': 'float 6s ease-in-out 3s infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(30px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, #5A9A8B, #4A8A7B);
+            /* teal to teal-dark */
+        }
+    </style>
+</head>
+
+<body
+    class="bg-indigo-50 dark:bg-navy-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+    <!-- Navbar -->
+    <nav
+        class="w-full border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-navy-dark/90 backdrop-blur fixed top-0 z-50 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+
+                <!-- Logo Section (Left) -->
+                <div class="flex flex-shrink-0">
+                    <a href="#" class="flex items-center gap-3 group">
+                        <img src="./assets/img/logo.png" alt="Contexia"
+                            class="h-10 w-auto transition-transform group-hover:scale-105">
+                        <span class="text-2xl font-black tracking-tight gradient-text">
+                            Contexia
+                        </span>
+                    </a>
+                </div>
+
+                <!-- Navigation & Actions (Right Grouped) -->
+                <div class="hidden md:flex items-center gap-8">
+                    <!-- Links -->
+                    <div class="flex items-baseline space-x-8">
+                        <a href="#soluciones"
+                            class="text-slate-600 dark:text-slate-300 hover:text-teal dark:hover:text-teal px-3 py-2 rounded-md text-sm font-medium transition-colors">Servicios</a>
+                        <a href="#soluciones"
+                            class="text-slate-600 dark:text-slate-300 hover:text-teal dark:hover:text-teal px-3 py-2 rounded-md text-sm font-medium transition-colors">Soluciones</a>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="flex items-center gap-4">
+                        <!-- Asesor├¡a Gratis (WhatsApp) -->
+                        <a href="https://wa.me/573018948151?text=Hola,%20quisiera%20asesor%C3%ADa%20gratis%20sobre%20Contexia"
+                            target="_blank"
+                            class="bg-[#25D366] hover:bg-[#128C7E] text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg hover:shadow-green-500/20 hidden md:flex items-center gap-2">
+                            Asesor├¡a gratis
+                        </a>
+
+                        <!-- Acceso -->
+                        <a href="login.html"
+                            class="bg-teal hover:bg-teal-dark text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg hover:shadow-teal/20 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                            </svg>
+                            Acceso
+                        </a>
+
+                        <!-- Theme Toggle (Last) -->
+                        <button id="theme-toggle" type="button"
+                            class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200 dark:focus:ring-slate-700 rounded-lg text-sm p-2.5 ml-2">
+                            <!-- Dark Icon (Moon) -->
+                            <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor"
+                                viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                            </svg>
+                            <!-- Light Icon (Sun) -->
+                            <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor"
+                                viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z"
+                                    fill-rule="evenodd" clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ... (rest of body content handled in next chunk due to size if needed, but here focusing on nav and whatsapp button) ... -->
+    <!-- Actually, I need to replace the WHOLE content to be safe and avoid context errors again, or split carefully. -->
+    <!-- Let's replace just the Navbar first to match lines 44-82 -->
+
+
+    <!-- Hero Section -->
+    <main class="flex-grow pt-20">
+        <div class="relative overflow-hidden">
+            <!-- Background effects -->
+            <!-- Background effects -->
+            <div class="absolute top-0 left-1/4 w-96 h-96 bg-teal/20 rounded-full blur-[128px] -z-10 animate-float">
+            </div>
+            <div
+                class="absolute bottom-0 right-1/4 w-96 h-96 bg-violet/20 rounded-full blur-[128px] -z-10 animate-float-delayed">
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 lg:pt-32">
+                <div class="grid lg:grid-cols-2 gap-12 items-center">
+
+                    <!-- Left Column: Hero Text -->
+                    <div class="text-left">
+                        <h1
+                            class="max-w-2xl font-display text-5xl font-black tracking-tight text-white sm:text-7xl drop-shadow-sm">
+                            Tu <span
+                                class="bg-gradient-to-r from-teal to-violet bg-clip-text text-transparent">tranquilidad
+                                financiera</span> <br> automatizada con IA
+                        </h1>
+                        <p class="mt-6 max-w-xl text-lg tracking-tight text-slate-400">
+                            Contexia es el GPS de flujo de caja, impuestos y riesgo regulatorio para PyMEs.
+                            Olv├¡date de las sorpresas con la DIAN y toma el control de tu empresa.
+                        </p>
+                        <div class="mt-10 flex gap-x-6">
+                            <a href="https://wa.me/573018948151?text=Hola,%20quiero%20comenzar%20ahora%20con%20Contexia"
+                                target="_blank"
+                                class="rounded-xl bg-teal px-8 py-3.5 text-base font-bold text-white shadow-sm hover:bg-teal-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal transition-all hover:scale-105">
+                                Comenzar Ahora
+                            </a>
+                            <a href="#soluciones"
+                                class="rounded-xl px-8 py-3.5 text-base font-semibold text-white ring-1 ring-slate-700 hover:ring-teal transition-all">
+                                Ver Soluciones <span aria-hidden="true">ΓåÆ</span>
+                            </a>
+                        </div>
+
+                        <!-- Trusted by placeholder -->
+                        <!-- Trusted by section moved below -->
+                    </div>
+
+                    <!-- Right Column: Scheduling Card -->
+                    <div class="relative">
+                        <div
+                            class="bg-white dark:bg-navy-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-8 max-w-md mx-auto lg:mx-0 lg:ml-auto shadow-2xl relative overflow-hidden group hover:border-teal/50 transition-all transform lg:translate-x-4">
+
+                            <!-- Decorative Title inside card for context -->
+                            <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2 text-center">Programa una
+                                consulta gratuita
+                            </h3>
+                            <p class="text-sm text-slate-400 mb-6 text-center">Comun├¡cate con nuestro equipo de
+                                especialistas</p>
+
+                            <!-- WhatsApp Icon Circle -->
+                            <div
+                                class="mx-auto w-16 h-16 bg-[#25D366]/10 rounded-full flex items-center justify-center mb-6 group-hover:bg-[#25D366]/20 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#25D366"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z" />
+                                </svg>
+                            </div>
+
+                            <!-- Checklist -->
+                            <ul class="text-left space-y-3 mb-8 px-4">
+                                <li class="flex items-center gap-3 text-slate-300 text-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                        class="w-5 h-5 text-[#25D366]">
+                                        <path fill-rule="evenodd"
+                                            d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    Respuesta instant├ínea
+                                </li>
+                                <li class="flex items-center gap-3 text-slate-300 text-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                        class="w-5 h-5 text-[#25D366]">
+                                        <path fill-rule="evenodd"
+                                            d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    Sin formularios ni demoras
+                                </li>
+                                <li class="flex items-center gap-3 text-slate-300 text-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                        class="w-5 h-5 text-[#25D366]">
+                                        <path fill-rule="evenodd"
+                                            d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    Orientaci├│n personalizada
+                                </li>
+                            </ul>
+
+                            <!-- Button -->
+                            <a href="https://wa.me/573018948151?text=Hola,%20quisiera%20agendar%20una%20asesor%C3%ADa%20gratis"
+                                target="_blank"
+                                class="block w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-3 rounded-xl transition-all shadow-lg hover:shadow-green-500/30 text-center flex items-center justify-center gap-2 group-hover:scale-[1.02]">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z" />
+                                </svg>
+                                Conversemos por WhatsApp
+                            </a>
+                            <p class="text-xs text-slate-500 mt-4">Sin obligaci├│n - Respuesta en minutos</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <!-- Trusted Companies Section (Full Width, Distinct Background) -->
+            <div
+                class="w-full bg-slate-50 dark:bg-[#162e44] border-t border-b border-slate-200 dark:border-slate-700 py-16 transition-colors duration-300 mt-20">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <p class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-8">Algunas de las empresas
+                        que conf├¡an en Contexia</p>
+                    <div class="flex flex-wrap justify-center gap-6 opacity-80">
+                        <!-- Company Badges -->
+                        <span
+                            class="px-6 py-3 bg-white dark:bg-navy-dark border border-slate-200 dark:border-slate-700 rounded-xl text-base font-semibold text-slate-700 dark:text-slate-300 shadow-sm transition-transform hover:scale-105">
+                            Nia Cano
+                        </span>
+                        <span
+                            class="px-6 py-3 bg-white dark:bg-navy-dark border border-slate-200 dark:border-slate-700 rounded-xl text-base font-semibold text-slate-700 dark:text-slate-300 shadow-sm transition-transform hover:scale-105">
+                            Repuestos Don Alvaro
+                        </span>
+                        <span
+                            class="px-6 py-3 bg-white dark:bg-navy-dark border border-slate-200 dark:border-slate-700 rounded-xl text-base font-semibold text-slate-700 dark:text-slate-300 shadow-sm transition-transform hover:scale-105">
+                            Medic
+                        </span>
+                        <span
+                            class="px-6 py-3 bg-white dark:bg-navy-dark border border-slate-200 dark:border-slate-700 rounded-xl text-base font-semibold text-slate-700 dark:text-slate-300 shadow-sm transition-transform hover:scale-105">
+                            Lava-autos LD
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Statistic Banner -->
+        <div class="w-full bg-teal py-16">
+            <div class="max-w-7xl mx-auto px-6 lg:px-8">
+                <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+
+                    <!-- Left: Statistic -->
+                    <div class="lg:w-1/3 text-center lg:text-left">
+                        <span class="text-6xl font-black text-white block">90%</span>
+                        <h3 class="text-xl lg:text-2xl font-bold text-navy-dark dark:text-white mt-2 leading-tight">de
+                            las PYMES est├ín pagando m├ís impuestos</h3>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="hidden lg:block w-px h-24 bg-white/30"></div>
+
+                    <!-- Right: Text -->
+                    <div class="lg:w-2/3 text-center lg:text-left">
+                        <p class="text-lg lg:text-xl text-white font-medium leading-relaxed">
+                            Hoy, cerca del 90% de las PYMES est├ín pagando m├ís impuestos de lo que la ley exige.
+                            Regalando capital al Estado, no por mala fe, sino por la incapacidad de tomar decisiones
+                            estrat├⌐gicas a tiempo.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Grid (Numbi style) -->
+        <div id="soluciones" class="bg-navy-dark/50 py-24 sm:py-32 relative">
+            <div class="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent">
+            </div>
+
+            <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                <div class="mx-auto max-w-2xl lg:text-center">
+                    <h2 class="text-base font-semibold leading-7 text-teal uppercase tracking-wide">Plataforma
+                        Integral
+                    </h2>
+                    <p class="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">Soluci├│n H├¡brida de
+                        Contadores y abogados expertos y la Automatizaci├│n End-to-End del ciclo del dinero</p>
+                    <p class="mt-6 text-lg leading-8 text-slate-400">
+                        Para que el empresario deje de operar con miedo a la DIAN o a la iliquidez, y empiece a
+                        gerenciar con datos.
+                    </p>
+                </div>
+                <div class="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
+                    <dl class="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
+
+                        <!-- Feature 1: Or├ículo de Riesgo -->
+                        <div
+                            class="relative flex flex-col p-8 rounded-2xl border border-white/10 transition-all duration-500 group hover:-translate-y-2 hover:scale-[1.02] bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl hover:border-teal/60 hover:shadow-[0_0_60px_-12px_rgba(45,212,191,0.5)] animate-[fadeInUp_0.6s_ease-out_0.1s_both]">
+                            <!-- Animated gradient overlay -->
+                            <div
+                                class="absolute inset-0 rounded-2xl bg-gradient-to-br from-teal/20 via-violet/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                            </div>
+                            <dt class="relative flex items-center gap-x-3 text-xl font-bold leading-7 text-white">
+                                <span
+                                    class="h-12 w-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-teal to-teal/60 text-white shadow-lg shadow-teal/30 group-hover:shadow-teal/50 group-hover:scale-110 transition-all duration-300 mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 22.5 21 12H12.75l7.5-7.5" />
+                                    </svg>
+                                </span>
+                                An├ílisis de Riesgo
+                            </dt>
+                            <dd class="relative mt-4 flex flex-auto flex-col text-base leading-7 text-slate-300">
+                                <p class="flex-auto">Monitoreo en tiempo real de tu salud financiera y scoring
+                                    bancario.
+                                    Antic├¡pate a problemas de liquidez.</p>
+                            </dd>
+                            <!-- Pulsing corner accent -->
+                            <div class="absolute top-4 right-4 w-2 h-2 rounded-full bg-teal animate-pulse"></div>
+                        </div>
+
+                        <!-- Feature 2: Centinela Fiscal -->
+                        <div
+                            class="relative flex flex-col p-8 rounded-2xl border border-white/10 transition-all duration-500 group hover:-translate-y-2 hover:scale-[1.02] bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl hover:border-violet/60 hover:shadow-[0_0_60px_-12px_rgba(139,92,246,0.5)] animate-[fadeInUp_0.6s_ease-out_0.3s_both]">
+                            <!-- Animated gradient overlay -->
+                            <div
+                                class="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet/20 via-teal/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                            </div>
+                            <dt class="relative flex items-center gap-x-3 text-xl font-bold leading-7 text-white">
+                                <span
+                                    class="h-12 w-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-violet to-violet/60 text-white shadow-lg shadow-violet/30 group-hover:shadow-violet/50 group-hover:scale-110 transition-all duration-300 mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M9 12.75L11.25 15 15 9.75M21 12c0 5.523-4.477 10-10 10S1 17.523 1 12 5.477 2 11 2s10 4.477 10 10z" />
+                                    </svg>
+                                </span>
+                                Centinela Fiscal
+                            </dt>
+                            <dd class="relative mt-4 flex flex-auto flex-col text-base leading-7 text-slate-300">
+                                <p class="flex-auto">Control ex-ante de impuestos. Valida facturas y detecta
+                                    inconsistencias antes que la DIAN lo haga.</p>
+                            </dd>
+                            <!-- Pulsing corner accent -->
+                            <div class="absolute top-4 right-4 w-2 h-2 rounded-full bg-violet animate-pulse"></div>
+                        </div>
+
+                        <!-- Feature 3: Copiloto IA -->
+                        <div
+                            class="relative flex flex-col p-8 rounded-2xl border border-white/10 transition-all duration-500 group hover:-translate-y-2 hover:scale-[1.02] bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl hover:border-orange/60 hover:shadow-[0_0_60px_-12px_rgba(249,115,22,0.5)] animate-[fadeInUp_0.6s_ease-out_0.5s_both]">
+                            <!-- Animated gradient overlay -->
+                            <div
+                                class="absolute inset-0 rounded-2xl bg-gradient-to-br from-orange/20 via-teal/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                            </div>
+                            <dt class="relative flex items-center gap-x-3 text-xl font-bold leading-7 text-white">
+                                <span
+                                    class="h-12 w-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-orange to-orange/60 text-white shadow-lg shadow-orange/30 group-hover:shadow-orange/50 group-hover:scale-110 transition-all duration-300 mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                                    </svg>
+                                </span>
+                                Copiloto IA
+                            </dt>
+                            <dd class="relative mt-4 flex flex-auto flex-col text-base leading-7 text-slate-300">
+                                <p class="flex-auto">Tu asistente tributario y legal disponible 24/7. Resuelve dudas
+                                    complejas en segundos.</p>
+                            </dd>
+                            <!-- Pulsing corner accent -->
+                            <div class="absolute top-4 right-4 w-2 h-2 rounded-full bg-orange animate-pulse"></div>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+
+
+    </main>
+
+    <!-- Footer -->
+    <footer
+        class="bg-indigo-50 dark:bg-navy-dark border-t border-slate-200 dark:border-slate-800 transition-colors duration-300"
+        aria-labelledby="footer-heading">
+        <h2 id="footer-heading" class="sr-only">Footer</h2>
+        <div class="mx-auto max-w-7xl px-6 pb-8 pt-16 sm:pt-24 lg:px-8 lg:pt-32">
+            <div class="xl:grid xl:grid-cols-3 xl:gap-8">
+                <div class="space-y-8">
+                    <a href="#" class="flex items-center gap-3">
+                        <img src="./assets/img/logo.png" alt="Contexia" class="h-8 w-auto grayscale opacity-70">
+                        <span class="text-2xl font-black tracking-tight gradient-text opacity-70">Contexia</span>
+                    </a>
+                    <p class="text-sm leading-6 text-slate-500 dark:text-slate-400">
+                        GPS de flujo de caja, impuestos y riesgo regulatorio para PyMEs.
+                    </p>
+                    <div class="flex space-x-6">
+                        <!-- Socials -->
+                    </div>
+                </div>
+            </div>
+            <div class="mt-16 border-t border-slate-800 pt-8 sm:mt-20 lg:mt-24">
+                <p class="text-xs leading-5 text-slate-500">&copy; 2026 Contexia Inc. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Floating Button -->
+    <a href="https://wa.me/573018948151?text=Hola,%20me%20interesa%20Contexia" target="_blank" rel="noopener noreferrer"
+        class="fixed bottom-6 right-6 bg-[#25D366] hover:bg-[#128C7E] text-white p-4 rounded-full shadow-lg hover:shadow-green-500/30 transition-all hover:scale-110 z-50 flex items-center justify-center group">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+            <path
+                d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z" />
+        </svg>
+        <span
+            class="absolute right-full mr-3 bg-white text-slate-800 px-2 py-1 rounded text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-sm">
+            ┬íHablemos!
+        </span>
+    </a>
+
+    <script>
+        var themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        var themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+        // Change the icons inside the button based on previous settings
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            themeToggleLightIcon.classList.remove('hidden');
+        } else {
+            themeToggleDarkIcon.classList.remove('hidden');
+        }
+
+        var themeToggleBtn = document.getElementById('theme-toggle');
+
+        themeToggleBtn.addEventListener('click', function () {
+
+            // toggle icons inside button
+            themeToggleDarkIcon.classList.toggle('hidden');
+            themeToggleLightIcon.classList.toggle('hidden');
+
+            // if set via local storage previously
+            if (localStorage.getItem('color-theme')) {
+                if (localStorage.getItem('color-theme') === 'light') {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('color-theme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('color-theme', 'light');
+                }
+
+                // if NOT set via local storage previously
+            } else {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('color-theme', 'light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('color-theme', 'dark');
+                }
+            }
+
+        });
+    </script>
+</body>
+
+</html>
