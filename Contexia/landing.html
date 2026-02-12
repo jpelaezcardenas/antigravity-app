@@ -594,25 +594,306 @@
                             </li>
                         </ul>
                     </div>
-                    <div class="relative">
-                        <div class="absolute -inset-4 bg-gradient-to-tr from-orange/20 to-transparent blur-2xl -z-10">
-                        </div>
-                        <div class="bg-navy-dark border border-slate-800 rounded-3xl p-1 shadow-2xl overflow-hidden">
-                            <!-- Simple Graphic suggesting cashflow problem -->
-                            <div class="bg-slate-900/50 p-6 rounded-2xl">
-                                <div class="flex items-center justify-between mb-8">
-                                    <div class="h-2 w-24 bg-slate-800 rounded"></div>
-                                    <div class="h-6 w-6 rounded-full bg-orange/20 animate-pulse"></div>
-                                </div>
-                                <div class="space-y-4">
-                                    <div class="h-8 w-full bg-gradient-to-r from-orange/50 to-transparent rounded">
+                    <!-- Improved Dashboard Container -->
+                    <div class="relative lg:ml-8">
+                        <!-- Decorative glow -->
+                        <div class="absolute -inset-4 bg-gradient-to-tr from-teal/10 to-violet/10 blur-3xl -z-10"></div>
+
+                        <!-- Main Dashboard Frame -->
+                        <div
+                            class="bg-[#0c1622] border border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden text-white font-sans scale-95 lg:scale-100 origin-top">
+                            <!-- Dashboard Header -->
+                            <div class="flex items-center justify-between mb-8">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 bg-teal/20 rounded-xl flex items-center justify-center border border-teal/30">
+                                        <svg class="w-6 h-6 text-teal" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
                                     </div>
-                                    <div class="h-8 w-3/4 bg-slate-800 rounded"></div>
-                                    <div class="h-8 w-1/2 bg-slate-800 rounded"></div>
+                                    <div>
+                                        <h3 class="text-sm font-bold">Mail-Watcher <span
+                                                class="ml-2 px-2 py-0.5 rounded-full bg-teal/10 text-[10px] text-teal border border-teal/20 uppercase">Online</span>
+                                        </h3>
+                                        <p class="text-[10px] text-slate-500">Monitoreo inteligente de facturas • Flujo
+                                            de caja automatizado</p>
+                                    </div>
                                 </div>
-                                <div class="mt-8 pt-6 border-t border-slate-800 flex justify-between">
-                                    <div class="h-4 w-12 bg-slate-800 rounded"></div>
-                                    <div class="h-4 w-12 bg-orange/30 rounded"></div>
+                                <button
+                                    class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/50 text-[11px] font-bold hover:bg-slate-700 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    Sincronizar
+                                </button>
+                            </div>
+
+                            <!-- Summary Stats Grid -->
+                            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                                <div class="bg-slate-900/40 border border-slate-800/50 p-4 rounded-2xl">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span
+                                            class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Ventas
+                                            de Ayer</span>
+                                        <div class="p-1 rounded bg-teal/10 text-teal"><svg class="w-3 h-3" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                            </svg></div>
+                                    </div>
+                                    <div class="text-xl font-black">$6,240,000</div>
+                                    <div class="text-[10px] text-teal font-bold mt-1">+12.5% vs día anterior</div>
+                                </div>
+                                <div class="bg-slate-900/40 border border-slate-800/50 p-4 rounded-2xl">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span
+                                            class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Egresos
+                                            de Ayer</span>
+                                        <div class="p-1 rounded bg-orange/10 text-orange"><svg class="w-3 h-3"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                                            </svg></div>
+                                    </div>
+                                    <div class="text-xl font-black">$2,890,000</div>
+                                    <div class="text-[10px] text-orange font-bold mt-1">-3.2% vs día anterior</div>
+                                </div>
+                                <div class="bg-slate-900/40 border border-slate-800/50 p-4 rounded-2xl">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span
+                                            class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Efectivo
+                                            Disponible</span>
+                                        <div class="p-1 rounded bg-violet/10 text-violet"><svg class="w-3 h-3"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                            </svg></div>
+                                    </div>
+                                    <div class="text-xl font-black">$14,350,000</div>
+                                    <div class="text-[10px] text-slate-500 mt-1">Actualizado 8:00 AM</div>
+                                </div>
+                                <div class="bg-slate-900/40 border border-slate-800/50 p-4 rounded-2xl">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span
+                                            class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Facturas
+                                            Pendientes</span>
+                                        <div class="p-1 rounded bg-yellow-500/10 text-yellow-500"><svg class="w-3 h-3"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg></div>
+                                    </div>
+                                    <div class="text-xl font-black">3</div>
+                                    <div class="text-[10px] text-slate-500 mt-1">2 XML, 1 PDF</div>
+                                </div>
+                            </div>
+
+                            <!-- Dashboard Body -->
+                            <div class="grid lg:grid-cols-12 gap-6">
+                                <!-- Main Column -->
+                                <div class="lg:col-span-8 space-y-6">
+                                    <!-- Cash Flow Chart Mock -->
+                                    <div class="bg-[#0f1d2d] border border-slate-800 rounded-2xl p-6">
+                                        <div class="flex items-center justify-between mb-6">
+                                            <div>
+                                                <h4 class="text-sm font-bold">Flujo de Caja</h4>
+                                                <p class="text-[10px] text-slate-500">Ingresos vs Egresos — última
+                                                    semana</p>
+                                            </div>
+                                            <div class="flex items-center gap-4 text-[10px] font-bold">
+                                                <span class="flex items-center gap-1.5"><span
+                                                        class="w-2 h-2 rounded-full bg-teal"></span> Ingresos</span>
+                                                <span class="flex items-center gap-1.5"><span
+                                                        class="w-2 h-2 rounded-full bg-orange"></span> Egresos</span>
+                                            </div>
+                                        </div>
+                                        <!-- Chart SVG Placeholder (Realistic path) -->
+                                        <div class="relative h-40 w-full overflow-hidden">
+                                            <svg viewBox="0 0 400 100" class="h-full w-full overflow-visible">
+                                                <!-- Grid Lines -->
+                                                <line x1="0" y1="20" x2="400" y2="20" stroke="#1e293b"
+                                                    stroke-dasharray="2,2" />
+                                                <line x1="0" y1="50" x2="400" y2="50" stroke="#1e293b"
+                                                    stroke-dasharray="2,2" />
+                                                <line x1="0" y1="80" x2="400" y2="80" stroke="#1e293b"
+                                                    stroke-dasharray="2,2" />
+
+                                                <!-- Ingresos Path (Teal) -->
+                                                <path d="M0,50 Q50,45 80,42 T160,55 T240,30 T320,60 T400,75" fill="none"
+                                                    stroke="#14b8a6" stroke-width="2.5" />
+                                                <path
+                                                    d="M0,50 Q50,45 80,42 T160,55 T240,30 T320,60 T400,75 L400,100 L0,100 Z"
+                                                    fill="url(#tealGradient)" opacity="0.1" />
+
+                                                <!-- Egresos Path (Orange) -->
+                                                <path d="M0,65 Q50,62 80,60 T160,65 T240,75 T320,85 T400,90" fill="none"
+                                                    stroke="#fb923c" stroke-width="2.5" />
+
+                                                <defs>
+                                                    <linearGradient id="tealGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                        <stop offset="0%" stop-color="#14b8a6" />
+                                                        <stop offset="100%" stop-color="transparent" />
+                                                    </linearGradient>
+                                                </defs>
+                                            </svg>
+                                            <!-- Labels -->
+                                            <div
+                                                class="absolute bottom-0 inset-x-0 flex justify-between text-[8px] text-slate-600 px-1 uppercase font-bold">
+                                                <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Invoices List -->
+                                    <div class="bg-[#0f1d2d] border border-slate-800 rounded-2xl p-6">
+                                        <div class="flex items-center justify-between mb-6">
+                                            <h4 class="text-sm font-bold">Facturas Recientes</h4>
+                                            <a href="#"
+                                                class="text-[10px] text-slate-500 hover:text-white uppercase font-bold tracking-wider">Ver
+                                                todas</a>
+                                        </div>
+                                        <div class="space-y-4">
+                                            <div
+                                                class="grid grid-cols-12 text-[9px] uppercase font-bold text-slate-600 pb-2 border-b border-slate-800">
+                                                <div class="col-span-5">Proveedor</div>
+                                                <div class="col-span-3 text-right">Monto</div>
+                                                <div class="col-span-4 text-right">Estado</div>
+                                            </div>
+                                            <div class="grid grid-cols-12 items-center text-[10px] py-1">
+                                                <div class="col-span-5 font-bold truncate">Distribuidora Nacional S.A.
+                                                </div>
+                                                <div class="col-span-3 text-right font-bold">$2,450,000</div>
+                                                <div class="col-span-4 text-right">
+                                                    <span
+                                                        class="px-2 py-0.5 rounded-full bg-teal/10 text-teal border border-teal/20 text-[9px]">Procesada</span>
+                                                </div>
+                                            </div>
+                                            <div
+                                                class="grid grid-cols-12 items-center text-[10px] py-1 border-t border-slate-800/50">
+                                                <div class="col-span-5 font-bold truncate">TechParts Colombia</div>
+                                                <div class="col-span-3 text-right font-bold">$890,500</div>
+                                                <div class="col-span-4 text-right">
+                                                    <span
+                                                        class="px-2 py-0.5 rounded-full bg-teal/10 text-teal border border-teal/20 text-[9px]">Procesada</span>
+                                                </div>
+                                            </div>
+                                            <div
+                                                class="grid grid-cols-12 items-center text-[10px] py-1 border-t border-slate-800/50 opacity-60">
+                                                <div class="col-span-5 font-bold truncate">Alimentos del Valle</div>
+                                                <div class="col-span-3 text-right font-bold">$1,200,000</div>
+                                                <div class="col-span-4 text-right">
+                                                    <span
+                                                        class="px-2 py-0.5 rounded-full bg-orange/10 text-orange border border-orange/20 text-[9px]">Pendiente</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Side Column -->
+                                <div class="lg:col-span-4 space-y-6">
+                                    <!-- Workflow Status -->
+                                    <div class="bg-[#0f1d2d] border border-slate-800 rounded-2xl p-5">
+                                        <h4 class="text-xs font-bold mb-4">Estado de Workflows</h4>
+                                        <div class="space-y-4">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-3">
+                                                    <div
+                                                        class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+                                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                                            stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-[10px] font-bold">Gmail Trigger</p>
+                                                        <p class="text-[8px] text-slate-500">Monitoreo activo</p>
+                                                    </div>
+                                                </div>
+                                                <div class="w-1.5 h-1.5 rounded-full bg-teal animate-pulse"></div>
+                                            </div>
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-3">
+                                                    <div
+                                                        class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+                                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                                            stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a2 2 0 00-1.96 1.414l-.547 2.188a2 2 0 00.75 2.227l1.722 1.258a1 1 0 001.213-.106l1.258-1.258a1 1 0 00-.106-1.213l-1.258-1.258z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-[10px] font-bold">Extracción AI</p>
+                                                        <p class="text-[8px] text-slate-500">Completado hace 5 min</p>
+                                                    </div>
+                                                </div>
+                                                <div class="w-1.5 h-1.5 rounded-full bg-teal"></div>
+                                            </div>
+                                            <div class="flex items-center justify-between opacity-50">
+                                                <div class="flex items-center gap-3">
+                                                    <div
+                                                        class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+                                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                                            stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-[10px] font-bold">Cash Flow Nocturno</p>
+                                                        <p class="text-[8px] text-slate-500">Estatus: Durmiendo</p>
+                                                    </div>
+                                                </div>
+                                                <div class="w-1.5 h-1.5 rounded-full bg-slate-700"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Daily Summary Card -->
+                                    <div
+                                        class="bg-gradient-to-br from-slate-900 to-indigo-950 border border-indigo-500/20 rounded-2xl p-5 shadow-lg shadow-indigo-500/5">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h4 class="text-xs font-black uppercase tracking-tighter">Resumen Diario
+                                            </h4>
+                                            <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                            </svg>
+                                        </div>
+                                        <div class="space-y-3 mb-6">
+                                            <div class="flex justify-between items-center text-[10px]">
+                                                <span class="text-slate-400">Ventas POS Ayer</span>
+                                                <span class="font-bold">$6,240,000 <span
+                                                        class="text-teal ml-1">↑</span></span>
+                                            </div>
+                                            <div class="flex justify-between items-center text-[10px]">
+                                                <span class="text-slate-400">Transacciones Nequi</span>
+                                                <span class="font-bold">$1,850,000 <span
+                                                        class="text-teal ml-1">↑</span></span>
+                                            </div>
+                                            <div class="flex justify-between items-center text-[10px]">
+                                                <span class="text-slate-400">Gastos Clasificados AI</span>
+                                                <span class="font-bold text-orange">$2,100,000</span>
+                                            </div>
+                                        </div>
+                                        <button
+                                            class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black rounded-xl transition-all flex items-center justify-center gap-2 group">
+                                            Enviar resumen por WhatsApp
+                                            <svg class="w-3 h-3 group-hover:translate-x-1 transition-transform"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                                    d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
