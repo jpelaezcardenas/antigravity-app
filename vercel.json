@@ -1,19 +1,11 @@
 {
     "name": "contexia-web-app",
     "version": 2,
-    "cleanUrls": true,
-    "trailingSlash": false,
     "redirects": [
         {
             "source": "/",
             "destination": "/landing.html",
             "permanent": false
-        }
-    ],
-    "rewrites": [
-        {
-            "source": "/(.*)",
-            "destination": "/$1"
         }
     ]
 }
