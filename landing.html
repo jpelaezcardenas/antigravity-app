@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contexia - GPS de Flujo de Caja e Impuestos</title>
+    <meta name="description" content="Contexia es el GPS de flujo de caja, impuestos y riesgo regulatorio para PyMEs colombianas. Automatiza tu gestión financiera con IA.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: {
+                colors: { teal: '#2DD4BF', 'teal-dark': '#14B8A6', navy: '#0F172A', 'navy-dark': '#020617', orange: '#F97316', violet: '#8B5CF6' },
+                animation: { 'float': 'float 6s ease-in-out infinite', 'pulse-slow': 'pulse 4s cubic-bezier(0.4,0,0.6,1) infinite' },
+                keyframes: { float: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-20px)' } } }
+            }}
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .gradient-text { background-clip: text; -webkit-background-clip: text; color: transparent; background-image: linear-gradient(to right, #2DD4BF, #8B5CF6); }
+        .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+        .card-glow:hover { box-shadow: 0 0 40px -10px rgba(45,212,191,0.15); }
+    </style>
+</head>
+<body class="bg-[#020617] text-slate-100 min-h-screen flex flex-col">
+
+<!-- Navbar -->
+<nav class="w-full border-b border-slate-800 bg-[#020617]/90 backdrop-blur-xl fixed top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-20">
+            <a href="#" class="flex items-center gap-3 group">
+                <img src="./assets/img/logo.png" alt="Contexia" class="h-10 w-auto transition-transform group-hover:scale-105">
+                <span class="text-2xl font-black tracking-tight gradient-text">Contexia</span>
+            </a>
+            <div class="hidden md:flex items-center gap-6">
+                <a href="#soluciones" class="text-slate-300 hover:text-white px-4 py-2 text-sm font-semibold transition-all">Soluciones</a>
+                <a href="#servicios" class="text-slate-300 hover:text-white px-4 py-2 text-sm font-semibold transition-all">Servicios</a>
+                <a href="#faq" class="text-slate-300 hover:text-white px-4 py-2 text-sm font-semibold transition-all">FAQ</a>
+                <a href="login.html" class="relative group flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white overflow-hidden hover:shadow-[0_0_25px_-5px_rgba(45,212,191,0.4)] transition-all duration-300">
+                    <div class="absolute inset-0 bg-gradient-to-r from-teal to-teal/80 group-hover:from-teal group-hover:to-violet transition-all duration-500"></div>
+                    <svg class="relative w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                    <span class="relative">Acceso</span>
+                </a>
+            </div>
+            <button id="mobile-menu-btn" class="md:hidden text-slate-300 hover:text-white p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        </div>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-slate-800 px-4 pb-4 space-y-2">
+        <a href="#soluciones" class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">Soluciones</a>
+        <a href="#servicios" class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">Servicios</a>
+        <a href="#faq" class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">FAQ</a>
+        <a href="login.html" class="block bg-gradient-to-r from-teal to-teal/80 text-white text-center py-2.5 rounded-xl text-sm font-bold mt-2">Acceso a Plataforma</a>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section class="pt-32 pb-20 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-teal/5 via-transparent to-transparent"></div>
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 relative">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <div class="fade-in">
+                <h1 class="text-5xl md:text-6xl lg:text-7xl font-black leading-[1.1] mb-8">Tu <span class="gradient-text">tranquilidad financiera</span> automatizada con IA</h1>
+                <p class="text-lg text-slate-400 mb-10 max-w-xl">Contexia es el GPS de flujo de caja, impuestos y riesgo regulatorio para PyMEs. Olvídate de las sorpresas con la DIAN y toma el control de tu empresa.</p>
+                <div class="flex flex-wrap gap-4">
+                    <a href="https://wa.me/573018948151?text=Hola,%20quiero%20comenzar%20ahora%20con%20Contexia" class="px-8 py-4 bg-gradient-to-r from-teal to-teal-dark rounded-2xl text-white font-bold text-lg hover:shadow-[0_0_30px_-5px_rgba(45,212,191,0.5)] transition-all">Comenzar Ahora</a>
+                    <a href="#soluciones" class="px-8 py-4 border border-slate-700 rounded-2xl text-slate-300 font-semibold hover:border-teal hover:text-teal transition-all">Ver Soluciones →</a>
+                </div>
+            </div>
+            <div class="fade-in">
+                <div class="bg-slate-900/60 backdrop-blur border border-slate-700 rounded-3xl p-8 max-w-md mx-auto">
+                    <h3 class="text-xl font-bold text-white text-center mb-2">Programa una consulta gratuita</h3>
+                    <p class="text-slate-400 text-sm text-center mb-6">Comunícate con nuestro equipo de especialistas</p>
+                    <div class="flex justify-center mb-6">
+                        <div class="w-16 h-16 bg-[#25D366]/10 rounded-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.322 0-4.476-.744-6.24-2.008l-.436-.326-2.642.886.886-2.642-.326-.436A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
+                        </div>
+                    </div>
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-center gap-3 text-sm"><svg class="w-5 h-5 text-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span class="text-white font-medium">Respuesta instantánea</span></li>
+                        <li class="flex items-center gap-3 text-sm"><svg class="w-5 h-5 text-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span class="text-white font-medium">Sin formularios ni demoras</span></li>
+                        <li class="flex items-center gap-3 text-sm"><svg class="w-5 h-5 text-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span class="text-white font-medium">Orientación personalizada</span></li>
+                    </ul>
+                    <div class="flex items-center gap-3">
+                        <a href="https://wa.me/573018948151?text=Hola,%20quisiera%20agendar%20una%20asesoría%20gratis" class="flex-1 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3.5 rounded-xl transition-all">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+                            Conversemos por WhatsApp
+                        </a>
+                    </div>
+                    <p class="text-xs text-slate-500 text-center mt-3">Sin obligación - Respuesta en minutos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Social Proof / Empresas -->
+<section class="py-20 bg-[#0a1220] relative">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 text-center fade-in">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-teal/30 bg-teal/5 mb-8">
+            <span class="w-2 h-2 bg-teal rounded-full animate-pulse"></span>
+            <span class="text-teal text-xs font-bold uppercase tracking-widest">Empresas Activas</span>
+        </div>
+        <h2 class="text-3xl md:text-4xl font-black mb-4">Empresas que ya confían en <span class="text-teal">Contexia</span></h2>
+        <p class="text-slate-400 mb-12 max-w-xl mx-auto">Cada día más negocios toman el control de su flujo de caja e impuestos con nuestra plataforma</p>
+        <div class="flex flex-wrap justify-center gap-4 mb-8">
+            <div class="flex items-center gap-3 px-6 py-4 rounded-2xl border border-slate-700/50 bg-slate-800/30">
+                <div class="w-10 h-10 rounded-xl bg-teal/10 flex items-center justify-center"><svg class="w-5 h-5 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div>
+                <div class="text-left"><p class="text-white font-bold text-sm">Sion</p><p class="text-slate-500 text-xs uppercase">Comercio</p></div>
+            </div>
+            <div class="flex items-center gap-3 px-6 py-4 rounded-2xl border border-slate-700/50 bg-slate-800/30">
+                <div class="w-10 h-10 rounded-xl bg-violet/10 flex items-center justify-center"><svg class="w-5 h-5 text-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+                <div class="text-left"><p class="text-white font-bold text-sm">Repuestos Don Alvaro</p><p class="text-slate-500 text-xs uppercase">Autopartes</p></div>
+            </div>
+            <div class="flex items-center gap-3 px-6 py-4 rounded-2xl border border-slate-700/50 bg-slate-800/30">
+                <div class="w-10 h-10 rounded-xl bg-pink-500/10 flex items-center justify-center"><svg class="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>
+                <div class="text-left"><p class="text-white font-bold text-sm">Medic</p><p class="text-slate-500 text-xs uppercase">Salud</p></div>
+            </div>
+            <div class="flex items-center gap-3 px-6 py-4 rounded-2xl border border-slate-700/50 bg-slate-800/30">
+                <div class="w-10 h-10 rounded-xl bg-orange/10 flex items-center justify-center"><svg class="w-5 h-5 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg></div>
+                <div class="text-left"><p class="text-white font-bold text-sm">Lava-autos LD</p><p class="text-slate-500 text-xs uppercase">Servicios</p></div>
+            </div>
+        </div>
+        <div class="flex flex-wrap justify-center gap-4 mb-10">
+            <div class="flex items-center gap-3 px-6 py-4 rounded-2xl border border-slate-700/50 bg-slate-800/30">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center"><svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg></div>
+                <div class="text-left"><p class="text-white font-bold text-sm">Carnicería Los López</p><p class="text-slate-500 text-xs uppercase">Alimentos</p></div>
+            </div>
+        </div>
+        <div class="flex items-center justify-center gap-3">
+            <div class="flex -space-x-2">
+                <span class="w-8 h-8 rounded-full bg-teal flex items-center justify-center text-xs font-bold text-white">S</span>
+                <span class="w-8 h-8 rounded-full bg-orange flex items-center justify-center text-xs font-bold text-white">R</span>
+                <span class="w-8 h-8 rounded-full bg-violet flex items-center justify-center text-xs font-bold text-white">M</span>
+                <span class="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white">L</span>
+                <span class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-white">C</span>
+            </div>
+            <p class="text-sm text-slate-400"><span class="text-white font-bold">5+ empresas</span> ya automatizaron su gestión fiscal</p>
+        </div>
+    </div>
+</section>
+
+<!-- Pain Points -->
+<section class="py-24 relative">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="text-center mb-16 fade-in">
+            <h2 class="text-3xl md:text-4xl font-black mb-4">La Realidad del Empresario</h2>
+            <p class="text-slate-400 max-w-2xl mx-auto">Gestionar una PyME no debería sentirse como un asalto constante a tu tranquilidad</p>
+            <p class="text-slate-500 mt-2">Sabemos que tu prioridad es vender y crecer, pero el día a día te arrastra a incendios operativos y miedos regulatorios.</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8 fade-in">
+            <div class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 hover:border-red-500/30 transition-all card-glow">
+                <div class="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6"><svg class="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+                <h4 class="text-xl font-bold text-white mb-3">¿Falta de liquidez?</h4>
+                <p class="text-slate-400 text-sm">No sabes cuánto dinero real tendrás mañana para pagar nómina.</p>
+            </div>
+            <div class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 hover:border-amber-500/30 transition-all card-glow">
+                <div class="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6"><svg class="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></div>
+                <h4 class="text-xl font-bold text-white mb-3">¿Miedo a la DIAN?</h4>
+                <p class="text-slate-400 text-sm">Vives con la incertidumbre de sanciones por errores que ni siquiera conoces.</p>
+            </div>
+            <div class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 hover:border-blue-500/30 transition-all card-glow">
+                <div class="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6"><svg class="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+                <h4 class="text-xl font-bold text-white mb-3">¿Decisiones a ciegas?</h4>
+                <p class="text-slate-400 text-sm">Tomas riesgos sin datos, confiando solo en tu intuición o en reportes atrasados.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Solution Pillars -->
+<section class="py-24 bg-[#0a1220] relative">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 text-center fade-in">
+        <h2 class="text-3xl md:text-4xl font-black mb-4">La Solución Inteligente</h2>
+        <p class="text-lg text-slate-400 mb-4">Unimos IA de Vanguardia con el Talento de Expertos</p>
+        <p class="text-slate-500 max-w-2xl mx-auto mb-16">Contexia no es solo un software; es una capa de inteligencia financiera y legal que trabaja mientras tú duermes.</p>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="p-8 rounded-3xl border border-white/10 bg-white/5 text-center card-glow transition-all">
+                <div class="w-16 h-16 rounded-2xl bg-teal/10 flex items-center justify-center mx-auto mb-6"><svg class="w-8 h-8 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+                <h3 class="text-xl font-bold text-white mb-3">Automatización 4.0</h3>
+                <p class="text-slate-400 text-sm">Tus bancos, ERP y la DIAN conectados en tiempo real. Adiós a la digitación manual y errores humanos.</p>
+            </div>
+            <div class="p-8 rounded-3xl border border-white/10 bg-white/5 text-center card-glow transition-all">
+                <div class="w-16 h-16 rounded-2xl bg-violet/10 flex items-center justify-center mx-auto mb-6"><svg class="w-8 h-8 text-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div>
+                <h3 class="text-xl font-bold text-white mb-3">Inteligencia Artificial</h3>
+                <p class="text-slate-400 text-sm">Modelos entrenados para predecir tu flujo de caja y detectar riesgos fiscales antes de que ocurran.</p>
+            </div>
+            <div class="p-8 rounded-3xl border border-white/10 bg-white/5 text-center card-glow transition-all">
+                <div class="w-16 h-16 rounded-2xl bg-orange/10 flex items-center justify-center mx-auto mb-6"><svg class="w-8 h-8 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>
+                <h3 class="text-xl font-bold text-white mb-3">Talento Humano Experto</h3>
+                <p class="text-slate-400 text-sm">No estás solo ante la pantalla. CFOs y abogados tributaristas respaldan cada dato y decisión.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Product Modules -->
+<section id="soluciones" class="py-24 relative">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 fade-in">
+        <div class="text-center mb-16">
+            <h2 class="text-base font-semibold text-teal uppercase tracking-wider mb-4">Módulos de Producto</h2>
+            <h3 class="text-3xl md:text-4xl font-black mb-4">Inteligencia que trabaja por ti</h3>
+            <p class="text-slate-400 max-w-2xl mx-auto">Seis herramientas diseñadas para que dejes de operar con miedo y empieces a gerenciar con datos reales.</p>
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="group p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-teal/30 transition-all card-glow">
+                <div class="w-12 h-12 rounded-xl bg-teal/10 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
+                <h4 class="text-lg font-bold text-white mb-3">GPS de Flujo de Caja Diario</h4>
+                <p class="text-slate-400 text-sm">Ventas, gastos y caja real de hoy con proyección de liquidez a corto plazo cada mañana.</p>
+            </div>
+            <div class="group p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-violet/30 transition-all card-glow">
+                <div class="w-12 h-12 rounded-xl bg-violet/10 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+                <h4 class="text-lg font-bold text-white mb-3">Centinela Fiscal (Pre-DIAN)</h4>
+                <p class="text-slate-400 text-sm">Valida cada transacción antes de enviarla a la DIAN, bloqueando errores y riesgos de sanciones.</p>
+            </div>
+            <div class="group p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-orange/30 transition-all card-glow">
+                <div class="w-12 h-12 rounded-xl bg-orange/10 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+                <h4 class="text-lg font-bold text-white mb-3">Radar Predictivo de Impuestos</h4>
+                <p class="text-slate-400 text-sm">Proyecta tus pagos y sugiere estrategias legales para reducir la carga al mínimo permitido.</p>
+            </div>
+            <div class="group p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-blue-500/30 transition-all card-glow">
+                <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg></div>
+                <h4 class="text-lg font-bold text-white mb-3">Radar de Competitividad</h4>
+                <p class="text-slate-400 text-sm">Compara tus indicadores con el sector y detecta sobrecostos e ineficiencias ocultas.</p>
+            </div>
+            <div class="group p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-emerald-500/30 transition-all card-glow">
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg></div>
+                <h4 class="text-lg font-bold text-white mb-3">Copiloto Fiscal 24/7</h4>
+                <p class="text-slate-400 text-sm">Asistente de IA entrenado en normativa colombiana. Resuelve dudas citando artículos reales.</p>
+            </div>
+            <div class="group p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-cyan-500/30 transition-all card-glow">
+                <div class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mb-6"><svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></div>
+                <h4 class="text-lg font-bold text-white mb-3">Conciliación Bancaria 4.0</h4>
+                <p class="text-slate-400 text-sm">Descarga y cruza movimientos de bancos de madrugada, enfocándote solo en excepciones.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Expert Services -->
+<section id="servicios" class="py-24 bg-[#0a1220] relative">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 fade-in">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-4xl font-black mb-4">Talento Experto</h2>
+            <p class="text-slate-400 max-w-2xl mx-auto">No estás solo ante la complejidad. Tu CFO y Escudo Legal te respaldan.</p>
+            <p class="text-slate-500 mt-2 max-w-3xl mx-auto text-sm">Combinamos la precisión de nuestra IA con la visión estratégica de directores financieros y abogados de élite. Cumplimiento normativo total (DIAN, NIIF) bajo una sola suscripción.</p>
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 relative overflow-hidden group hover:border-teal/30 transition-all">
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-teal to-teal-dark"></div>
+                <h4 class="text-lg font-bold text-white mb-3">CFO as a Service</h4>
+                <p class="text-slate-400 text-sm">Director financiero por suscripción que usa los datos de Contexia para planear, priorizar y acompañar tus decisiones clave.</p>
+            </div>
+            <div class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 relative overflow-hidden group hover:border-violet/30 transition-all">
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-violet to-purple-600"></div>
+                <h4 class="text-lg font-bold text-white mb-3">Escudo Legal Tributario</h4>
+                <p class="text-slate-400 text-sm">Abogados tributaristas que revisan tus movimientos, responden requerimientos y te blindan proactivamente ante la DIAN.</p>
+            </div>
+            <div class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 relative overflow-hidden group hover:border-orange/30 transition-all">
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-orange to-amber-500"></div>
+                <h4 class="text-lg font-bold text-white mb-3">Auditoría Fiscal Preventiva</h4>
+                <p class="text-slate-400 text-sm">Revisión proactiva de tu contabilidad para detectar y corregir riesgos antes de que se conviertan en multas costosas.</p>
+            </div>
+            <div class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 relative overflow-hidden group hover:border-cyan-500/30 transition-all">
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
+                <h4 class="text-lg font-bold text-white mb-3">Contabilidad 4.0</h4>
+                <p class="text-slate-400 text-sm">Puesta en marcha de bots, conexiones con ERPs y bancos para que tu operación contable funcione en piloto automático.</p>
+            </div>
+            <div class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 relative overflow-hidden group hover:border-emerald-500/30 transition-all">
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-green-500"></div>
+                <h4 class="text-lg font-bold text-white mb-3">Plan Maestro de Optimización</h4>
+                <p class="text-slate-400 text-sm">Estrategia integral para que tu PyME pague solo lo estrictamente necesario por ley y reinvierta el ahorro en crecimiento real.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="py-24 bg-[#0a1622] relative">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 fade-in">
+        <div class="text-center mb-16">
+            <h2 class="text-base font-semibold text-teal uppercase tracking-wider mb-4">Preguntas Frecuentes</h2>
+            <h3 class="text-3xl md:text-4xl font-black">Resolvemos tus dudas</h3>
+        </div>
+        <div class="max-w-3xl mx-auto divide-y divide-slate-800">
+            <div class="py-6">
+                <h4 class="text-lg font-bold text-white mb-2">¿Cuál es el precio de <span class="text-teal">Contexia</span>?</h4>
+                <p class="text-slate-400 text-sm">Manejamos planes por suscripción mensual adaptados al tamaño de tu operación. Sin costos ocultos ni sorpresas, pagas por el valor y la tranquilidad que recibes.</p>
+            </div>
+            <div class="py-6">
+                <h4 class="text-lg font-bold text-white mb-2">¿Qué tan segura está mi información?</h4>
+                <p class="text-slate-400 text-sm">Usamos cifrado de grado bancario y protocolos de seguridad de última generación. Tu información financiera es confidencial y solo tú tienes el control sobre quién accede a ella.</p>
+            </div>
+            <div class="py-6">
+                <h4 class="text-lg font-bold text-white mb-2">¿Se integra con mi ERP o bancos actuales?</h4>
+                <p class="text-slate-400 text-sm">Sí, <span class="text-teal">Contexia</span> es agnóstico. Nos conectamos con los principales bancos de Colombia y los ERPs más usados del mercado para automatizar el flujo de datos.</p>
+            </div>
+            <div class="py-6">
+                <h4 class="text-lg font-bold text-white mb-2">¿Cómo accedo a mis números si estoy en el camino o fuera de la oficina?</h4>
+                <p class="text-slate-400 text-sm">Contexia te permite ver tu dashboard financiero completo desde cualquier dispositivo, en tiempo real. Además, contarás con un bot de WhatsApp que te alerta sobre cambios críticos, solicita documentos faltantes, responde consultas rápidas sobre tu caja e impuestos, y te da acceso a tu CFO virtual para conversaciones más profundas sobre estrategia financiera, sin esperar a una reunión presencial.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="py-24 relative">
+    <div class="max-w-4xl mx-auto px-6 lg:px-8 text-center fade-in">
+        <h2 class="text-3xl md:text-4xl font-black mb-6">¿Listo para tomar el control total de tu PyME?</h2>
+        <p class="text-slate-400 mb-10 max-w-2xl mx-auto">Únete a cientos de empresarios que ya gerencian con datos y duermen tranquilos sin miedo a la DIAN.</p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <a href="https://wa.me/573018948151?text=Hola,%20me%20interesa%20una%20demo%20de%20Contexia" class="px-10 py-4 bg-gradient-to-r from-teal to-teal-dark rounded-2xl text-white font-bold text-lg hover:shadow-[0_0_30px_-5px_rgba(45,212,191,0.5)] transition-all">Agendar Demo Gratuita</a>
+            <p class="text-slate-500 text-sm italic max-w-xs">Después de agendar, un consultor senior te contactará para entender tu caso y mostrarte cómo <span class="text-teal">Contexia</span> se adapta a tu PyME.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-[#0c1e30] border-t border-slate-800">
+    <div class="mx-auto max-w-7xl px-6 pt-16 pb-8 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+            <div class="col-span-2 md:col-span-1">
+                <a href="#" class="flex items-center gap-2 mb-4">
+                    <img src="./assets/img/logo.png" alt="Contexia" class="h-8 w-auto">
+                    <span class="text-xl font-black gradient-text">Contexia</span>
+                </a>
+                <p class="text-sm text-slate-400 mb-4">El mejor equipo contable de Colombia. Contadores con experiencia con tecnología avanzada.</p>
+                <a href="https://linkedin.com" class="text-slate-400 hover:text-white transition-colors"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-white mb-4">Servicios</h3>
+                <ul class="space-y-2 text-sm text-slate-400">
+                    <li><a href="#soluciones" class="hover:text-teal transition-colors">Contabilidad</a></li>
+                    <li><a href="#soluciones" class="hover:text-teal transition-colors">Impuestos</a></li>
+                    <li><a href="#soluciones" class="hover:text-teal transition-colors">Nómina</a></li>
+                    <li><a href="#soluciones" class="hover:text-teal transition-colors">Creación de Empresas</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-white mb-4">Soluciones</h3>
+                <ul class="space-y-2 text-sm text-slate-400">
+                    <li><a href="#soluciones" class="hover:text-teal transition-colors">Startups & Tech</a></li>
+                    <li><a href="#soluciones" class="hover:text-teal transition-colors">E-commerce</a></li>
+                    <li><a href="#soluciones" class="hover:text-teal transition-colors">Comercio Minorista</a></li>
+                    <li><a href="#soluciones" class="hover:text-teal transition-colors">Servicios</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-white mb-4">Recursos</h3>
+                <ul class="space-y-2 text-sm text-slate-400">
+                    <li><a href="#" class="hover:text-teal transition-colors">Blog</a></li>
+                    <li><a href="#" class="hover:text-teal transition-colors">Guías</a></li>
+                    <li><a href="#" class="hover:text-teal transition-colors">Calculadoras</a></li>
+                    <li><a href="#" class="hover:text-teal transition-colors">Calendario Tributario</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-white mb-4">Empresa</h3>
+                <ul class="space-y-2 text-sm text-slate-400">
+                    <li><a href="#" class="hover:text-teal transition-colors">Por qué Contexia</a></li>
+                    <li><a href="#" class="hover:text-teal transition-colors">Nosotros</a></li>
+                    <li><a href="#" class="hover:text-teal transition-colors">Casos de éxito</a></li>
+                    <li><a href="#faq" class="hover:text-teal transition-colors">FAQ</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p class="text-xs text-slate-500">© 2026 Contexia SAS. Todos los derechos reservados.</p>
+            <p class="text-xs text-slate-500">jpelaezcardenas@gmail.com · Envigado, Colombia</p>
+            <div class="flex items-center gap-4 text-xs text-slate-500">
+                <a href="#" class="hover:text-slate-300 transition-colors">Términos</a>
+                <a href="#" class="hover:text-slate-300 transition-colors">Privacidad</a>
+                <a href="#" class="hover:text-slate-300 transition-colors">Seguridad</a>
+                <a href="https://wa.me/573018948151?text=Hola,%20me%20interesa%20Contexia" class="text-teal hover:text-teal-dark transition-colors font-semibold">Hablemos por WhatsApp</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Floating WhatsApp Button -->
+<a href="https://wa.me/573018948151?text=Hola,%20me%20interesa%20Contexia" class="fixed bottom-6 right-6 w-14 h-14 bg-[#25D366] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform z-50" title="WhatsApp">
+    <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+</a>
+
+<!-- Scripts -->
+<script>
+    // Mobile menu toggle
+    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+        document.getElementById('mobile-menu')?.classList.toggle('hidden');
+    });
+
+    // Scroll reveal animation
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // Close mobile menu on link click
+    document.querySelectorAll('#mobile-menu a').forEach(link => {
+        link.addEventListener('click', () => {
+            document.getElementById('mobile-menu')?.classList.add('hidden');
+        });
+    });
+</script>
+</body>
+</html>
