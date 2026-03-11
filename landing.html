@@ -48,6 +48,43 @@
         .card-glow:hover {
             box-shadow: 0 0 40px -10px rgba(45, 212, 191, 0.15);
         }
+
+        .logo-blend {
+            mix-blend-mode: lighten;
+        }
+
+        .logo-lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(2, 6, 23, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+            animation: fadeIn 0.3s ease;
+        }
+        .logo-lightbox.active { display: flex; }
+        .logo-lightbox img {
+            max-width: 90vw;
+            max-height: 80vh;
+            border-radius: 1rem;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            animation: zoomIn 0.35s cubic-bezier(0.16,1,0.3,1);
+        }
+        .logo-lightbox .close-btn {
+            position: absolute; top: 1.5rem; right: 1.5rem;
+            width: 2.5rem; height: 2.5rem; border-radius: 50%;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; font-size: 1.25rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .logo-lightbox .close-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 
@@ -57,9 +94,9 @@
     <nav class="w-full border-b border-slate-800 bg-[#020617]/90 backdrop-blur-xl fixed top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-20">
-                <a href="#" class="flex items-center group">
+                <a href="javascript:void(0)" onclick="openLogoLightbox()" class="flex items-center group" title="Click para ver el logo completo">
                     <img src="./assets/img/logo.png" alt="Contexia - GPS for Cash Flow & Tax Risk"
-                        class="h-14 w-auto transition-transform group-hover:scale-105">
+                        class="h-14 w-auto transition-transform group-hover:scale-105 logo-blend">
                 </a>
                 <div class="hidden md:flex items-center gap-6">
                     <a href="#soluciones"
@@ -541,8 +578,8 @@
         <div class="mx-auto max-w-7xl px-6 pt-16 pb-8 lg:px-8">
             <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
                 <div class="col-span-2 md:col-span-1">
-                    <a href="#" class="flex items-center mb-4">
-                        <img src="./assets/img/logo.png" alt="Contexia - GPS for Cash Flow & Tax Risk" class="h-12 w-auto">
+                    <a href="javascript:void(0)" onclick="openLogoLightbox()" class="flex items-center mb-4" title="Click para ver el logo completo">
+                        <img src="./assets/img/logo.png" alt="Contexia - GPS for Cash Flow & Tax Risk" class="h-12 w-auto logo-blend">
                     </a>
                     <p class="text-sm text-slate-400 mb-4">El mejor equipo contable de Colombia. Contadores con
                         experiencia con tecnología avanzada.</p>
@@ -636,6 +673,30 @@
             link.addEventListener('click', () => {
                 document.getElementById('mobile-menu')?.classList.add('hidden');
             });
+        });
+    </script>
+
+    <!-- Logo Lightbox Modal -->
+    <div id="logo-lightbox" class="logo-lightbox" onclick="closeLogoLightbox(event)">
+        <button class="close-btn" onclick="closeLogoLightbox(event)" aria-label="Cerrar">&times;</button>
+        <img src="./assets/img/logo.png" alt="Contexia - GPS for Cash Flow & Tax Risk">
+    </div>
+    <script>
+        function openLogoLightbox() {
+            document.getElementById('logo-lightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeLogoLightbox(e) {
+            if (e.target === document.getElementById('logo-lightbox') || e.target.classList.contains('close-btn')) {
+                document.getElementById('logo-lightbox').classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('logo-lightbox').classList.remove('active');
+                document.body.style.overflow = '';
+            }
         });
     </script>
 </body>
