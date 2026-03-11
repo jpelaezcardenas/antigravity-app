@@ -58,9 +58,7 @@
             position: fixed;
             inset: 0;
             z-index: 9999;
-            background: rgba(2, 6, 23, 0.92);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: #020617;
             align-items: center;
             justify-content: center;
             cursor: zoom-out;
@@ -71,8 +69,8 @@
             max-width: 90vw;
             max-height: 80vh;
             border-radius: 1rem;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
             animation: zoomIn 0.35s cubic-bezier(0.16,1,0.3,1);
+            mix-blend-mode: lighten;
         }
         .logo-lightbox .close-btn {
             position: absolute; top: 1.5rem; right: 1.5rem;
@@ -96,7 +94,7 @@
             <div class="flex items-center justify-between h-20">
                 <a href="javascript:void(0)" onclick="openLogoLightbox()" class="flex items-center group" title="Click para ver el logo completo">
                     <img src="./assets/img/logo.png" alt="Contexia - GPS for Cash Flow & Tax Risk"
-                        class="h-20 w-auto transition-transform group-hover:scale-105 logo-blend">
+                        class="h-24 w-auto transition-transform group-hover:scale-105 logo-blend">
                 </a>
                 <div class="hidden md:flex items-center gap-6">
                     <a href="#soluciones"
@@ -579,7 +577,7 @@
             <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
                 <div class="col-span-2 md:col-span-1">
                     <a href="javascript:void(0)" onclick="openLogoLightbox()" class="flex items-center mb-4" title="Click para ver el logo completo">
-                        <img src="./assets/img/logo.png" alt="Contexia - GPS for Cash Flow & Tax Risk" class="h-16 w-auto logo-blend">
+                        <img src="./assets/img/logo.png" alt="Contexia - GPS for Cash Flow & Tax Risk" class="h-20 w-auto logo-blend">
                     </a>
                     <p class="text-sm text-slate-400 mb-4">El mejor equipo contable de Colombia. Contadores con
                         experiencia con tecnología avanzada.</p>
