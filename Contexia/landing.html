@@ -5,41 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contexia - GPS de Flujo de Caja e Impuestos</title>
+    <meta name="description"
+        content="Contexia es el GPS de flujo de caja, impuestos y riesgo regulatorio para PyMEs colombianas. Automatiza tu gestión financiera con IA.">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: {
-                        "teal": "#2DD4BF",
-                        "teal-dark": "#14B8A6",
-                        "navy": "#0F172A",
-                        "navy-dark": "#020617",
-                        "orange": "#F97316",
-                        "violet": "#8B5CF6",
-                    },
-                    animation: {
-                        'float': 'float 6s ease-in-out infinite',
-                        'float-delayed': 'float 6s ease-in-out 3s infinite',
-                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-20px)' },
-                        },
-                        fadeInUp: {
-                            '0%': { opacity: '0', transform: 'translateY(30px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        }
-                    }
+                    colors: { teal: '#2DD4BF', 'teal-dark': '#14B8A6', navy: '#0F172A', 'navy-dark': '#020617', orange: '#F97316', violet: '#8B5CF6' },
+                    animation: { 'float': 'float 6s ease-in-out infinite', 'pulse-slow': 'pulse 4s cubic-bezier(0.4,0,0.6,1) infinite' },
+                    keyframes: { float: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-20px)' } } }
                 }
             }
         }
     </script>
-
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -53,12 +34,25 @@
             background-image: linear-gradient(to right, #2DD4BF, #8B5CF6);
         }
 
-        /* Make logo black background blend with page */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .card-glow:hover {
+            box-shadow: 0 0 40px -10px rgba(45, 212, 191, 0.15);
+        }
+
         .logo-blend {
             mix-blend-mode: lighten;
         }
 
-        /* Lightbox modal */
         .logo-lightbox {
             display: none;
             position: fixed;
@@ -70,1353 +64,1379 @@
             cursor: zoom-out;
             animation: fadeIn 0.3s ease;
         }
-        .logo-lightbox.active {
-            display: flex;
-        }
+        .logo-lightbox.active { display: flex; }
         .logo-lightbox img {
             max-width: 90vw;
             max-height: 80vh;
             border-radius: 1rem;
-            animation: zoomIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: zoomIn 0.35s cubic-bezier(0.16,1,0.3,1);
             mix-blend-mode: lighten;
         }
         .logo-lightbox .close-btn {
-            position: absolute;
-            top: 1.5rem;
-            right: 1.5rem;
-            width: 2.5rem;
-            height: 2.5rem;
+            position: absolute; top: 1.5rem; right: 1.5rem;
+            width: 2.5rem; height: 2.5rem; border-radius: 50%;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; font-size: 1.25rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .logo-lightbox .close-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+
+        /* Interview Section Styles */
+        .interview-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(45, 212, 191, 0.1);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .interview-card:hover {
+            border-color: rgba(45, 212, 191, 0.25);
+            box-shadow: 0 0 40px -12px rgba(45, 212, 191, 0.12);
+        }
+        .interview-textarea {
+            width: 100%;
+            min-height: 120px;
+            background: rgba(2, 6, 23, 0.7);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            border-radius: 1rem;
+            padding: 1rem;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            resize: vertical;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .interview-textarea:focus {
+            outline: none;
+            border-color: rgba(45, 212, 191, 0.5);
+            box-shadow: 0 0 20px -8px rgba(45, 212, 191, 0.2);
+        }
+        .interview-textarea::placeholder {
+            color: rgba(148, 163, 184, 0.5);
+        }
+        .record-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.75rem;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            background: rgba(2, 6, 23, 0.6);
+            color: #94a3b8;
+        }
+        .record-btn:hover {
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.05);
+        }
+        .record-btn.recording {
+            border-color: rgba(239, 68, 68, 0.6);
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            animation: recording-pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes recording-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+            50% { box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.15); }
+        }
+        .record-dot {
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            font-size: 1.25rem;
+            background: #64748b;
+            transition: background 0.3s;
+        }
+        .record-btn.recording .record-dot {
+            background: #ef4444;
+            animation: dot-blink 1s ease-in-out infinite;
+        }
+        @keyframes dot-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .audio-playback {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(45, 212, 191, 0.05);
+            border: 1px solid rgba(45, 212, 191, 0.15);
+            border-radius: 0.75rem;
+        }
+        .audio-playback.has-audio {
             display: flex;
+        }
+        .audio-playback audio {
+            height: 32px;
+            flex: 1;
+        }
+        .delete-audio-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .delete-audio-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+        .question-number {
+            display: inline-flex;
             align-items: center;
             justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .interview-progress-bar {
+            height: 4px;
+            background: rgba(100, 116, 139, 0.2);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .interview-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2DD4BF, #8B5CF6);
+            border-radius: 999px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 0%;
+        }
+        .record-timer {
+            font-size: 0.75rem;
+            font-variant-numeric: tabular-nums;
+            color: #ef4444;
+            margin-left: 0.25rem;
+            display: none;
+        }
+        .record-btn.recording .record-timer {
+            display: inline;
+        }
+        .interview-submit-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2.5rem;
+            background: linear-gradient(135deg, #2DD4BF, #14B8A6);
+            color: white;
+            font-weight: 700;
+            font-size: 1.0625rem;
+            border-radius: 1rem;
+            border: none;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s;
         }
-        .logo-lightbox .close-btn:hover {
-            background: rgba(255,255,255,0.2);
-            transform: scale(1.1);
+        .interview-submit-btn:hover {
+            box-shadow: 0 0 30px -5px rgba(45, 212, 191, 0.5);
+            transform: translateY(-2px);
         }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        .interview-submit-btn:active {
+            transform: translateY(0);
         }
-        @keyframes zoomIn {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
+        .interview-success {
+            display: none;
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+        .interview-success.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        /* Accordion styles */
+        .accordion-header {
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s;
+        }
+        .accordion-header:hover {
+            opacity: 0.9;
+        }
+        .accordion-chevron {
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+        }
+        .interview-card.open .accordion-chevron {
+            transform: rotate(180deg);
+        }
+        .accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding-top: 0;
+        }
+        .interview-card.open .accordion-body {
+            max-height: 500px;
+            padding-top: 1rem;
+        }
+        .interview-card {
+            padding: 1.25rem 2rem;
+        }
+        .interview-card.open {
+            padding: 2rem;
         }
     </style>
 </head>
 
-<body
-    class="bg-indigo-50 dark:bg-navy-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+<body class="bg-[#020617] text-slate-100 min-h-screen flex flex-col">
 
     <!-- Navbar -->
-    <nav
-        class="w-full border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-navy-dark/90 backdrop-blur fixed top-0 z-50 transition-colors duration-300">
+    <nav class="w-full border-b border-slate-800 bg-[#020617]/90 backdrop-blur-xl fixed top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-            <!-- Desktop Layout -->
-            <div class="hidden md:flex items-center justify-between h-20">
-                <!-- Logo -->
-                <div class="flex flex-shrink-0">
-                    <a href="javascript:void(0)" onclick="openLogoLightbox()" class="flex items-center gap-3 group" title="Click para ver el logo completo">
-                        <div class="h-[60px] w-[44px] overflow-hidden flex justify-center flex-shrink-0">
-                            <img src="./assets/img/logo.png" alt="Contexia"
-                                class="w-[110px] h-auto max-w-none flex-shrink-0 logo-blend transition-transform group-hover:scale-110">
-                        </div>
-                        <span class="text-2xl font-bold gradient-text">Contexia</span>
-                    </a>
-                </div>
-
-                <!-- Nav + Actions -->
-                <div class="flex items-center gap-6">
-                    <a href="#soluciones"
-                        class="relative text-slate-300 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition-all duration-300 group">
-                        Soluciones
-                        <span
-                            class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-teal to-violet rounded-full group-hover:w-3/4 transition-all duration-300"></span>
-                    </a>
-                    <a href="#servicios"
-                        class="relative text-slate-300 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition-all duration-300 group">
-                        Servicios
-                        <span
-                            class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-teal to-violet rounded-full group-hover:w-3/4 transition-all duration-300"></span>
-                    </a>
-                    <a href="#faq"
-                        class="relative text-slate-300 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition-all duration-300 group">
-                        FAQ
-                        <span
-                            class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-teal to-violet rounded-full group-hover:w-3/4 transition-all duration-300"></span>
-                    </a>
-                    <div class="w-px h-6 bg-gradient-to-b from-transparent via-slate-600 to-transparent"></div>
-                    <div class="flex items-center gap-3">
-                        <a href="login.html"
-                            class="relative group flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white overflow-hidden transition-all duration-300 hover:shadow-[0_0_25px_-5px_rgba(45,212,191,0.4)]">
-                            <div
-                                class="absolute inset-0 bg-gradient-to-r from-teal to-teal/80 group-hover:from-teal group-hover:to-violet transition-all duration-500">
-                            </div>
-                            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%]"
-                                style="transition: transform 0.8s ease;"></div>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor"
-                                class="relative w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-                            </svg>
-                            <span class="relative">Acceso</span>
-                        </a>
-
+            <div class="flex items-center justify-between h-20">
+                <a href="javascript:void(0)" onclick="openLogoLightbox()" class="flex items-center gap-3 group" title="Click para ver el logo completo">
+                    <div class="h-[38px] w-[40px] overflow-hidden flex justify-center items-start flex-shrink-0">
+                        <img src="./assets/img/logo.png" alt="Contexia"
+                            class="w-[78px] h-auto max-w-none flex-shrink-0 logo-blend transition-transform group-hover:scale-110"
+                            style="margin-top: 0px;">
                     </div>
-                </div>
-            </div>
-
-            <!-- Mobile Layout: 3-column grid for perfect centering -->
-            <div class="grid grid-cols-3 items-center h-16 md:hidden">
-                <!-- Left: Hamburger -->
-                <div class="flex justify-start">
-                    <button id="mobile-menu-btn" type="button"
-                        class="p-2 -ml-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
-                        <svg id="mobile-menu-icon-open" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                        </svg>
-                        <svg id="mobile-menu-icon-close" class="w-6 h-6 hidden" fill="none" viewBox="0 0 24 24"
-                            stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Center: Logo -->
-                <div class="flex justify-center">
-                    <a href="javascript:void(0)" onclick="openLogoLightbox()" class="flex items-center gap-2" title="Click para ver el logo completo">
-                        <div class="h-[40px] w-[30px] overflow-hidden flex justify-center flex-shrink-0">
-                            <img src="./assets/img/logo.png" alt="Contexia"
-                                class="w-[74px] h-auto max-w-none flex-shrink-0 logo-blend">
+                    <div class="flex flex-col justify-center" style="margin-top: -2px;">
+                        <span class="text-white font-bold text-lg tracking-[0.25em] leading-tight" style="font-family: 'Orbitron', 'Rajdhani', 'Share Tech', sans-serif;">CONTEXIA</span>
+                        <span class="text-slate-400 text-[9px] tracking-[0.18em] uppercase leading-tight" style="font-family: 'Rajdhani', 'Share Tech', sans-serif;">GPS for Cash Flow & Tax Risk</span>
+                    </div>
+                </a>
+                <div class="hidden md:flex items-center gap-6">
+                    <a href="#soluciones"
+                        class="text-slate-300 hover:text-white px-4 py-2 text-sm font-semibold transition-all">Soluciones</a>
+                    <a href="#servicios"
+                        class="text-slate-300 hover:text-white px-4 py-2 text-sm font-semibold transition-all">Servicios</a>
+                    <a href="#entrevista"
+                        class="text-slate-300 hover:text-white px-4 py-2 text-sm font-semibold transition-all">Entrevista</a>
+                    <a href="#faq"
+                        class="text-slate-300 hover:text-white px-4 py-2 text-sm font-semibold transition-all">FAQ</a>
+                    <a href="login.html"
+                        class="relative group flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white overflow-hidden hover:shadow-[0_0_25px_-5px_rgba(45,212,191,0.4)] transition-all duration-300">
+                        <div
+                            class="absolute inset-0 bg-gradient-to-r from-teal to-teal/80 group-hover:from-teal group-hover:to-violet transition-all duration-500">
                         </div>
-                        <span class="text-lg font-bold gradient-text">Contexia</span>
+                        <svg class="relative w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                        </svg>
+                        <span class="relative">Acceso</span>
                     </a>
                 </div>
-
-                <!-- Right: Empty for balance (or could add a small icon) -->
-                <div class="flex justify-end"></div>
-            </div>
-
-        </div>
-
-        <!-- Mobile Menu Panel (premium dropdown) -->
-        <div id="mobile-menu" class="hidden md:hidden bg-navy-dark/98 backdrop-blur-xl border-t border-white/5">
-            <!-- Decorative gradient line -->
-            <div class="h-px bg-gradient-to-r from-transparent via-teal/50 to-transparent"></div>
-            <div class="px-5 py-5 space-y-1">
-                <a href="#soluciones"
-                    class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/5 transition-all duration-200">
-                    <svg class="w-5 h-5 text-teal/70" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                    </svg>
-                    Soluciones
-                </a>
-                <a href="#servicios"
-                    class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/5 transition-all duration-200">
-                    <svg class="w-5 h-5 text-teal/70" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Servicios
-                </a>
-                <a href="#faq"
-                    class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/5 transition-all duration-200">
-                    <svg class="w-5 h-5 text-teal/70" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
-                    </svg>
-                    FAQ
-                </a>
-                <div class="py-2">
-                    <div class="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
-                </div>
-                <a href="login.html"
-                    class="flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-teal to-teal/80 shadow-lg shadow-teal/10 transition-all duration-200 hover:shadow-teal/25 active:scale-[0.98]">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                        stroke="currentColor" class="w-4 h-4">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-                    </svg>
-                    Acceso a Plataforma
-                </a>
+                <button id="mobile-menu-btn" class="md:hidden text-slate-300 hover:text-white p-2"><svg class="w-6 h-6"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                    </svg></button>
             </div>
         </div>
-
-        <script>
-            document.getElementById('mobile-menu-btn').addEventListener('click', function () {
-                const menu = document.getElementById('mobile-menu');
-                const iconOpen = document.getElementById('mobile-menu-icon-open');
-                const iconClose = document.getElementById('mobile-menu-icon-close');
-                menu.classList.toggle('hidden');
-                iconOpen.classList.toggle('hidden');
-                iconClose.classList.toggle('hidden');
-            });
-        </script>
+        <div id="mobile-menu" class="hidden md:hidden border-t border-slate-800 px-4 pb-4 space-y-2">
+            <a href="#soluciones"
+                class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">Soluciones</a>
+            <a href="#servicios" class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">Servicios</a>
+            <a href="#entrevista" class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">Entrevista</a>
+            <a href="#faq" class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">FAQ</a>
+            <a href="login.html"
+                class="block bg-gradient-to-r from-teal to-teal/80 text-white text-center py-2.5 rounded-xl text-sm font-bold mt-2">Acceso
+                a Plataforma</a>
+        </div>
     </nav>
 
-    <!-- ... (rest of body content handled in next chunk due to size if needed, but here focusing on nav and whatsapp button) ... -->
-    <!-- Actually, I need to replace the WHOLE content to be safe and avoid context errors again, or split carefully. -->
-    <!-- Let's replace just the Navbar first to match lines 44-82 -->
-
-
-    <!-- Hero Section -->
-    <main class="flex-grow pt-20">
-        <div class="relative overflow-hidden">
-            <!-- Background effects -->
-            <!-- Background effects -->
-            <div class="absolute top-0 left-1/4 w-96 h-96 bg-teal/20 rounded-full blur-[128px] -z-10 animate-float">
+    <!-- Entrevista Rápida -->
+    <section id="entrevista" class="pt-32 pb-20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-violet/5 via-transparent to-teal/5 pointer-events-none"></div>
+        <div class="max-w-4xl mx-auto px-6 lg:px-8 relative">
+            <div class="text-center mb-12 fade-in">
+                <h2 class="text-3xl md:text-4xl font-black mb-4">¿Te estresa la <span class="gradient-text">DIAN</span> cada vez que vendes online?</h2>
+                <p class="text-white text-xl font-semibold mb-2">Queremos escucharte.</p>
+                <p class="text-slate-400 max-w-2xl mx-auto text-lg">Cuéntanos cómo manejas hoy tus impuestos y obligaciones con la DIAN, ¡Gracias por ayudar!</p>
+                <div class="mt-6 flex items-center justify-center gap-6 text-sm text-slate-500">
+                    <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> ~5 minutos</span>
+                    <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> 100% anónimo</span>
+                    <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg> Escribe o graba</span>
+                </div>
             </div>
-            <div
-                class="absolute bottom-0 right-1/4 w-96 h-96 bg-violet/20 rounded-full blur-[128px] -z-10 animate-float-delayed">
+
+            <!-- Progress Bar -->
+            <div class="mb-10 fade-in">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs text-slate-500 font-medium">Progreso</span>
+                    <span id="interview-progress-text" class="text-xs text-teal font-bold">0 / 10</span>
+                </div>
+                <div class="interview-progress-bar">
+                    <div id="interview-progress-fill" class="interview-progress-fill"></div>
+                </div>
             </div>
 
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 lg:pt-32">
-                <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <!-- Interview Form -->
+            <form id="interview-form" class="space-y-4 fade-in">
 
-                    <!-- Left Column: Hero Text -->
-                    <div class="text-left">
-                        <h1
-                            class="max-w-2xl font-display text-5xl font-black tracking-tight text-white sm:text-7xl drop-shadow-sm">
-                            Tu <span
-                                class="bg-gradient-to-r from-teal to-violet bg-clip-text text-transparent">tranquilidad
-                                financiera</span> <br> automatizada con IA
-                        </h1>
-                        <p class="mt-6 max-w-xl text-lg tracking-tight text-slate-400">
-                            Contexia es el GPS de flujo de caja, impuestos y riesgo regulatorio para PyMEs.
-                            Olvídate de las sorpresas con la DIAN y toma el control de tu empresa.
-                        </p>
-                        <div class="mt-10 flex gap-x-6">
-                            <a href="https://wa.me/573018948151?text=Hola,%20quiero%20comenzar%20ahora%20con%20Contexia"
-                                target="_blank"
-                                class="rounded-xl bg-teal px-8 py-3.5 text-base font-bold text-white shadow-sm hover:bg-teal-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal transition-all hover:scale-105">
-                                Comenzar Ahora
-                            </a>
-                            <a href="#soluciones"
-                                class="rounded-xl px-8 py-3.5 text-base font-semibold text-white ring-1 ring-slate-700 hover:ring-teal transition-all">
-                                Ver Soluciones <span aria-hidden="true">→</span>
-                            </a>
-                        </div>
-
-                        <!-- Trusted by placeholder -->
-                        <!-- Trusted by section moved below -->
+                <!-- Pregunta 1 -->
+                <div class="interview-card" data-question="1">
+                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
+                        <span class="question-number bg-teal/10 text-teal">1</span>
+                        <p class="text-white font-semibold leading-relaxed flex-1">Cuéntame cómo fue tu proceso de formalizar tu emprendimiento: ¿qué pasos seguiste y en qué momento te sentiste perdido?</p>
+                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
+                    <div class="accordion-body">
+                        <textarea class="interview-textarea" id="q1" name="q1" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
+                        <div class="flex items-center justify-between mt-3">
+                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q1')">
+                                <span class="record-dot"></span>
+                                <span class="record-label">Grabar respuesta</span>
+                                <span class="record-timer">00:00</span>
+                            </button>
+                        </div>
+                        <div class="audio-playback" id="audio-q1"></div>
+                    </div>
+                </div>
 
-                    <!-- Right Column: Scheduling Card -->
-                    <div class="relative">
-                        <div
-                            class="bg-white dark:bg-navy-dark border border-slate-200 dark:border-slate-700 rounded-3xl p-8 max-w-md mx-auto lg:mx-0 lg:ml-auto shadow-2xl relative overflow-hidden group hover:border-teal/50 transition-all transform lg:translate-x-4">
+                <!-- Pregunta 2 -->
+                <div class="interview-card" data-question="2">
+                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
+                        <span class="question-number bg-violet/10 text-violet">2</span>
+                        <p class="text-white font-semibold leading-relaxed flex-1">¿Qué fue lo que más te asustó al pensar en la DIAN o en la Cámara de Comercio cuando empezaste?</p>
+                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div class="accordion-body">
+                        <textarea class="interview-textarea" id="q2" name="q2" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
+                        <div class="flex items-center justify-between mt-3">
+                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q2')">
+                                <span class="record-dot"></span>
+                                <span class="record-label">Grabar respuesta</span>
+                                <span class="record-timer">00:00</span>
+                            </button>
+                        </div>
+                        <div class="audio-playback" id="audio-q2"></div>
+                    </div>
+                </div>
 
-                            <!-- Decorative Title inside card for context -->
-                            <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2 text-center">Programa una
-                                consulta gratuita
-                            </h3>
-                            <p class="text-sm text-slate-400 mb-6 text-center">Comunícate con nuestro equipo de
-                                especialistas</p>
+                <!-- Pregunta 3 -->
+                <div class="interview-card" data-question="3">
+                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
+                        <span class="question-number bg-orange/10 text-orange">3</span>
+                        <p class="text-white font-semibold leading-relaxed flex-1">Describe una situación específica donde hayas sentido miedo a cometer un error tributario... ¿qué pasó después?</p>
+                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div class="accordion-body">
+                        <textarea class="interview-textarea" id="q3" name="q3" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
+                        <div class="flex items-center justify-between mt-3">
+                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q3')">
+                                <span class="record-dot"></span>
+                                <span class="record-label">Grabar respuesta</span>
+                                <span class="record-timer">00:00</span>
+                            </button>
+                        </div>
+                        <div class="audio-playback" id="audio-q3"></div>
+                    </div>
+                </div>
 
-                            <!-- WhatsApp Icon Circle -->
-                            <div
-                                class="mx-auto w-16 h-16 bg-[#25D366]/10 rounded-full flex items-center justify-center mb-6 group-hover:bg-[#25D366]/20 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#25D366"
-                                    viewBox="0 0 16 16">
+                <!-- Pregunta 4 -->
+                <div class="interview-card" data-question="4">
+                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
+                        <span class="question-number bg-blue-500/10 text-blue-400">4</span>
+                        <p class="text-white font-semibold leading-relaxed flex-1">¿Cuánto tiempo y plata has gastado hasta ahora solo en trámites legales o contables? ¿Valió la pena?</p>
+                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div class="accordion-body">
+                        <textarea class="interview-textarea" id="q4" name="q4" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
+                        <div class="flex items-center justify-between mt-3">
+                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q4')">
+                                <span class="record-dot"></span>
+                                <span class="record-label">Grabar respuesta</span>
+                                <span class="record-timer">00:00</span>
+                            </button>
+                        </div>
+                        <div class="audio-playback" id="audio-q4"></div>
+                    </div>
+                </div>
+
+                <!-- Pregunta 5 -->
+                <div class="interview-card" data-question="5">
+                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
+                        <span class="question-number bg-red-500/10 text-red-400">5</span>
+                        <p class="text-white font-semibold leading-relaxed flex-1">¿Alguna vez has recibido una notificación, multa o advertencia de la DIAN? Si sí, ¿cómo te hizo sentir y qué hiciste?</p>
+                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div class="accordion-body">
+                        <textarea class="interview-textarea" id="q5" name="q5" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
+                        <div class="flex items-center justify-between mt-3">
+                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q5')">
+                                <span class="record-dot"></span>
+                                <span class="record-label">Grabar respuesta</span>
+                                <span class="record-timer">00:00</span>
+                            </button>
+                        </div>
+                        <div class="audio-playback" id="audio-q5"></div>
+                    </div>
+                </div>
+
+                <!-- Pregunta 6 -->
+                <div class="interview-card" data-question="6">
+                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
+                        <span class="question-number bg-emerald-500/10 text-emerald-400">6</span>
+                        <p class="text-white font-semibold leading-relaxed flex-1">Si pudieras retroceder al día uno, ¿qué información o ayuda te habría evitado estrés o errores?</p>
+                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div class="accordion-body">
+                        <textarea class="interview-textarea" id="q6" name="q6" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
+                        <div class="flex items-center justify-between mt-3">
+                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q6')">
+                                <span class="record-dot"></span>
+                                <span class="record-label">Grabar respuesta</span>
+                                <span class="record-timer">00:00</span>
+                            </button>
+                        </div>
+                        <div class="audio-playback" id="audio-q6"></div>
+                    </div>
+                </div>
+
+                <!-- Pregunta 7 -->
+                <div class="interview-card" data-question="7">
+                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
+                        <span class="question-number bg-pink-500/10 text-pink-400">7</span>
+                        <p class="text-white font-semibold leading-relaxed flex-1">¿Cómo manejas hoy tus impuestos y obligaciones? ¿Lo haces solo, con contador, app... o lo pospones?</p>
+                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div class="accordion-body">
+                        <textarea class="interview-textarea" id="q7" name="q7" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
+                        <div class="flex items-center justify-between mt-3">
+                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q7')">
+                                <span class="record-dot"></span>
+                                <span class="record-label">Grabar respuesta</span>
+                                <span class="record-timer">00:00</span>
+                            </button>
+                        </div>
+                        <div class="audio-playback" id="audio-q7"></div>
+                    </div>
+                </div>
+
+                <!-- Pregunta 8 -->
+                <div class="interview-card" data-question="8">
+                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
+                        <span class="question-number bg-amber-500/10 text-amber-400">8</span>
+                        <p class="text-white font-semibold leading-relaxed flex-1">¿Qué tan importante es para ti pagar lo mínimo posible de impuestos sin meterte en problemas? ¿Por qué?</p>
+                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div class="accordion-body">
+                        <textarea class="interview-textarea" id="q8" name="q8" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
+                        <div class="flex items-center justify-between mt-3">
+                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q8')">
+                                <span class="record-dot"></span>
+                                <span class="record-label">Grabar respuesta</span>
+                                <span class="record-timer">00:00</span>
+                            </button>
+                        </div>
+                        <div class="audio-playback" id="audio-q8"></div>
+                    </div>
+                </div>
+
+                <!-- Pregunta 9 -->
+                <div class="interview-card" data-question="9">
+                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
+                        <span class="question-number bg-cyan-500/10 text-cyan-400">9</span>
+                        <p class="text-white font-semibold leading-relaxed flex-1">¿Conoces a otros emprendedores que hayan "quemado" plata por no saber cómo estructurar la empresa? ¿Qué les pasó?</p>
+                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div class="accordion-body">
+                        <textarea class="interview-textarea" id="q9" name="q9" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
+                        <div class="flex items-center justify-between mt-3">
+                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q9')">
+                                <span class="record-dot"></span>
+                                <span class="record-label">Grabar respuesta</span>
+                                <span class="record-timer">00:00</span>
+                            </button>
+                        </div>
+                        <div class="audio-playback" id="audio-q9"></div>
+                    </div>
+                </div>
+
+                <!-- Pregunta 10 -->
+                <div class="interview-card" data-question="10">
+                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
+                        <span class="question-number bg-teal/10 text-teal">10</span>
+                        <p class="text-white font-semibold leading-relaxed flex-1">Imagina que existiera una herramienta que te guiara desde cero en RUT, régimen, facturación, proyecciones fiscales... ¿qué tendría que tener para que la usaras ya?</p>
+                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div class="accordion-body">
+                        <textarea class="interview-textarea" id="q10" name="q10" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
+                        <div class="flex items-center justify-between mt-3">
+                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q10')">
+                                <span class="record-dot"></span>
+                                <span class="record-label">Grabar respuesta</span>
+                                <span class="record-timer">00:00</span>
+                            </button>
+                        </div>
+                        <div class="audio-playback" id="audio-q10"></div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="text-center pt-8">
+                    <button type="submit" class="interview-submit-btn">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                        Enviar Respuestas
+                    </button>
+                    <p class="text-xs text-slate-500 mt-3">Tus respuestas son completamente anónimas y nos ayudan a crear mejores soluciones</p>
+                </div>
+            </form>
+
+            <!-- Success State -->
+            <div id="interview-success" class="interview-success fade-in">
+                <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-teal/10 flex items-center justify-center">
+                    <svg class="w-10 h-10 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-black text-white mb-3">¡Gracias por tu tiempo!</h3>
+                <p class="text-slate-400 max-w-md mx-auto">Tus respuestas son invaluables para crear soluciones reales para emprendedores como tú. 🚀</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Hero -->
+    <section class="pt-32 pb-20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-teal/5 via-transparent to-transparent"></div>
+        <div class="max-w-7xl mx-auto px-6 lg:px-8 relative">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="fade-in">
+                    <h1 class="text-5xl md:text-6xl lg:text-7xl font-black leading-[1.1] mb-8">Tu <span
+                            class="gradient-text">tranquilidad financiera</span> automatizada con IA</h1>
+                    <p class="text-lg text-slate-400 mb-10 max-w-xl">Contexia es el GPS de flujo de caja, impuestos y
+                        riesgo regulatorio para PyMEs. Olvídate de las sorpresas con la DIAN y toma el control de tu
+                        empresa.</p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="https://wa.me/573018948151?text=Hola,%20quiero%20comenzar%20ahora%20con%20Contexia"
+                            class="px-8 py-4 bg-gradient-to-r from-teal to-teal-dark rounded-2xl text-white font-bold text-lg hover:shadow-[0_0_30px_-5px_rgba(45,212,191,0.5)] transition-all">Comenzar
+                            Ahora</a>
+                        <a href="#soluciones"
+                            class="px-8 py-4 border border-slate-700 rounded-2xl text-slate-300 font-semibold hover:border-teal hover:text-teal transition-all">Ver
+                            Soluciones →</a>
+                    </div>
+                </div>
+                <div class="fade-in">
+                    <div class="bg-slate-900/60 backdrop-blur border border-slate-700 rounded-3xl p-8 max-w-md mx-auto">
+                        <h3 class="text-xl font-bold text-white text-center mb-2">Programa una consulta gratuita</h3>
+                        <p class="text-slate-400 text-sm text-center mb-6">Comunícate con nuestro equipo de
+                            especialistas</p>
+                        <div class="flex justify-center mb-6">
+                            <div class="w-16 h-16 bg-[#25D366]/10 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24">
                                     <path
-                                        d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z" />
+                                        d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                                    <path
+                                        d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.322 0-4.476-.744-6.24-2.008l-.436-.326-2.642.886.886-2.642-.326-.436A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z" />
                                 </svg>
                             </div>
-
-                            <!-- Checklist -->
-                            <ul class="text-left space-y-3 mb-8 px-4">
-                                <li class="flex items-center gap-3 text-slate-300 text-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                        class="w-5 h-5 text-[#25D366]">
-                                        <path fill-rule="evenodd"
-                                            d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-                                            clip-rule="evenodd" />
-                                    </svg>
-                                    Respuesta instantánea
-                                </li>
-                                <li class="flex items-center gap-3 text-slate-300 text-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                        class="w-5 h-5 text-[#25D366]">
-                                        <path fill-rule="evenodd"
-                                            d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-                                            clip-rule="evenodd" />
-                                    </svg>
-                                    Sin formularios ni demoras
-                                </li>
-                                <li class="flex items-center gap-3 text-slate-300 text-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                        class="w-5 h-5 text-[#25D366]">
-                                        <path fill-rule="evenodd"
-                                            d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-                                            clip-rule="evenodd" />
-                                    </svg>
-                                    Orientación personalizada
-                                </li>
-                            </ul>
-
-                            <!-- Button -->
-                            <a href="https://wa.me/573018948151?text=Hola,%20quisiera%20agendar%20una%20asesor%C3%ADa%20gratis"
-                                target="_blank"
-                                class="block w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-3 rounded-xl transition-all shadow-lg hover:shadow-green-500/30 text-center flex items-center justify-center gap-2 group-hover:scale-[1.02]">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                    viewBox="0 0 16 16">
+                        </div>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-center gap-3 text-sm"><svg class="w-5 h-5 text-teal flex-shrink-0"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7" />
+                                </svg><span class="text-white font-medium">Respuesta instantánea</span></li>
+                            <li class="flex items-center gap-3 text-sm"><svg class="w-5 h-5 text-teal flex-shrink-0"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7" />
+                                </svg><span class="text-white font-medium">Sin formularios ni demoras</span></li>
+                            <li class="flex items-center gap-3 text-sm"><svg class="w-5 h-5 text-teal flex-shrink-0"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7" />
+                                </svg><span class="text-white font-medium">Orientación personalizada</span></li>
+                        </ul>
+                        <div class="flex items-center gap-3">
+                            <a href="https://wa.me/573018948151?text=Hola,%20quisiera%20agendar%20una%20asesoría%20gratis"
+                                class="flex-1 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3.5 rounded-xl transition-all">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                     <path
-                                        d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z" />
+                                        d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
                                 </svg>
                                 Conversemos por WhatsApp
                             </a>
-                            <p class="text-xs text-slate-500 mt-4">Sin obligación - Respuesta en minutos</p>
                         </div>
-
+                        <p class="text-xs text-slate-500 text-center mt-3">Sin obligación - Respuesta en minutos</p>
                     </div>
                 </div>
             </div>
-            <!-- Trusted Companies Section (Premium) -->
-            <div class="w-full relative py-24 mt-20 overflow-hidden">
-                <!-- Background with gradient overlay -->
-                <div class="absolute inset-0 bg-gradient-to-b from-navy-dark via-[#0c1e30] to-navy-dark"></div>
-                <!-- Decorative gradient lines -->
-                <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal/40 to-transparent">
+        </div>
+    </section>
+
+    <!-- Social Proof / Empresas -->
+    <section class="py-20 bg-[#0a1220] relative">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8 text-center fade-in">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-teal/30 bg-teal/5 mb-8">
+                <span class="w-2 h-2 bg-teal rounded-full animate-pulse"></span>
+                <span class="text-teal text-xs font-bold uppercase tracking-widest">Empresas Activas</span>
+            </div>
+            <h2 class="text-3xl md:text-4xl font-black mb-4">Empresas que ya confían en <span
+                    class="text-teal">Contexia</span></h2>
+            <p class="text-slate-400 mb-12 max-w-xl mx-auto">Cada día más negocios toman el control de su flujo de caja
+                e impuestos con nuestra plataforma</p>
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <div class="flex items-center gap-3 px-6 py-4 rounded-2xl border border-slate-700/50 bg-slate-800/30">
+                    <div class="w-10 h-10 rounded-xl bg-teal/10 flex items-center justify-center"><svg
+                            class="w-5 h-5 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg></div>
+                    <div class="text-left">
+                        <p class="text-white font-bold text-sm">Sion</p>
+                        <p class="text-slate-500 text-xs uppercase">Comercio</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 px-6 py-4 rounded-2xl border border-slate-700/50 bg-slate-800/30">
+                    <div class="w-10 h-10 rounded-xl bg-violet/10 flex items-center justify-center"><svg
+                            class="w-5 h-5 text-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg></div>
+                    <div class="text-left">
+                        <p class="text-white font-bold text-sm">Repuestos Don Alvaro</p>
+                        <p class="text-slate-500 text-xs uppercase">Autopartes</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 px-6 py-4 rounded-2xl border border-slate-700/50 bg-slate-800/30">
+                    <div class="w-10 h-10 rounded-xl bg-pink-500/10 flex items-center justify-center"><svg
+                            class="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg></div>
+                    <div class="text-left">
+                        <p class="text-white font-bold text-sm">Medic</p>
+                        <p class="text-slate-500 text-xs uppercase">Salud</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 px-6 py-4 rounded-2xl border border-slate-700/50 bg-slate-800/30">
+                    <div class="w-10 h-10 rounded-xl bg-orange/10 flex items-center justify-center"><svg
+                            class="w-5 h-5 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg></div>
+                    <div class="text-left">
+                        <p class="text-white font-bold text-sm">Lava-autos LD</p>
+                        <p class="text-slate-500 text-xs uppercase">Servicios</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-wrap justify-center gap-4 mb-10">
+                <div class="flex items-center gap-3 px-6 py-4 rounded-2xl border border-slate-700/50 bg-slate-800/30">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center"><svg
+                            class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+                        </svg></div>
+                    <div class="text-left">
+                        <p class="text-white font-bold text-sm">Carnicería Los López</p>
+                        <p class="text-slate-500 text-xs uppercase">Alimentos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center justify-center gap-3">
+                <div class="flex -space-x-2">
+                    <span
+                        class="w-8 h-8 rounded-full bg-teal flex items-center justify-center text-xs font-bold text-white">S</span>
+                    <span
+                        class="w-8 h-8 rounded-full bg-orange flex items-center justify-center text-xs font-bold text-white">R</span>
+                    <span
+                        class="w-8 h-8 rounded-full bg-violet flex items-center justify-center text-xs font-bold text-white">M</span>
+                    <span
+                        class="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white">L</span>
+                    <span
+                        class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-white">C</span>
+                </div>
+                <p class="text-sm text-slate-400"><span class="text-white font-bold">5+ empresas</span> ya automatizaron
+                    su gestión fiscal</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pain Points -->
+    <section class="py-24 relative">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-3xl md:text-4xl font-black mb-4">La Realidad del Empresario</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">Gestionar una PyME no debería sentirse como un asalto
+                    constante a tu tranquilidad</p>
+                <p class="text-slate-500 mt-2">Sabemos que tu prioridad es vender y crecer, pero el día a día te
+                    arrastra a incendios operativos y miedos regulatorios.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 fade-in">
+                <div
+                    class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 hover:border-red-500/30 transition-all card-glow">
+                    <div class="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6"><svg
+                            class="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg></div>
+                    <h4 class="text-xl font-bold text-white mb-3">¿Falta de liquidez?</h4>
+                    <p class="text-slate-400 text-sm">No sabes cuánto dinero real tendrás mañana para pagar nómina.</p>
                 </div>
                 <div
-                    class="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-violet/40 to-transparent">
-                </div>
-                <!-- Ambient glow effects -->
-                <div class="absolute top-1/2 left-1/4 w-64 h-64 bg-teal/5 rounded-full blur-[100px] -translate-y-1/2">
+                    class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 hover:border-amber-500/30 transition-all card-glow">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6"><svg
+                            class="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg></div>
+                    <h4 class="text-xl font-bold text-white mb-3">¿Miedo a la DIAN?</h4>
+                    <p class="text-slate-400 text-sm">Vives con la incertidumbre de sanciones por errores que ni
+                        siquiera conoces.</p>
                 </div>
                 <div
-                    class="absolute top-1/2 right-1/4 w-64 h-64 bg-violet/5 rounded-full blur-[100px] -translate-y-1/2">
+                    class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 hover:border-blue-500/30 transition-all card-glow">
+                    <div class="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6"><svg
+                            class="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg></div>
+                    <h4 class="text-xl font-bold text-white mb-3">¿Decisiones a ciegas?</h4>
+                    <p class="text-slate-400 text-sm">Tomas riesgos sin datos, confiando solo en tu intuición o en
+                        reportes atrasados.</p>
                 </div>
-
-                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <!-- Section Header -->
-                    <div class="mb-12">
-                        <div
-                            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal/10 border border-teal/20 mb-6">
-                            <div class="w-1.5 h-1.5 rounded-full bg-teal animate-pulse"></div>
-                            <span class="text-xs font-bold text-teal uppercase tracking-widest">Empresas Activas</span>
-                        </div>
-                        <h3 class="text-2xl sm:text-3xl font-bold text-white mb-3">
-                            Empresas que ya confían en
-                            <span
-                                class="bg-gradient-to-r from-teal to-violet bg-clip-text text-transparent">Contexia</span>
-                        </h3>
-                        <p class="text-slate-400 text-sm max-w-md mx-auto">Cada día más negocios toman el control de su
-                            flujo de caja e impuestos con nuestra plataforma</p>
-                    </div>
-
-                    <!-- Company Cards Grid -->
-                    <div class="flex flex-wrap justify-center gap-5 max-w-4xl mx-auto">
-
-                        <!-- Sion -->
-                        <div class="group relative flex items-center gap-3 px-6 py-4 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm hover:border-teal/40 hover:bg-white/10 hover:shadow-[0_0_30px_-8px_rgba(45,212,191,0.3)] transition-all duration-500 cursor-default"
-                            style="animation: fadeInUp 0.6s ease-out 0.1s both">
-                            <div
-                                class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal/20 to-teal/5 flex items-center justify-center border border-teal/20 group-hover:border-teal/40 group-hover:scale-110 transition-all duration-300">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-teal" fill="none"
-                                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016A3.001 3.001 0 0021 9.349m-18 0V7.5a1.5 1.5 0 011.5-1.5h15a1.5 1.5 0 011.5 1.5v1.849" />
-                                </svg>
-                            </div>
-                            <div class="text-left">
-                                <span
-                                    class="text-base font-bold text-white group-hover:text-teal transition-colors">Sion</span>
-                                <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Comercio</p>
-                            </div>
-                        </div>
-
-                        <!-- Repuestos Don Alvaro -->
-                        <div class="group relative flex items-center gap-3 px-6 py-4 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm hover:border-violet/40 hover:bg-white/10 hover:shadow-[0_0_30px_-8px_rgba(139,92,246,0.3)] transition-all duration-500 cursor-default"
-                            style="animation: fadeInUp 0.6s ease-out 0.2s both">
-                            <div
-                                class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet/20 to-violet/5 flex items-center justify-center border border-violet/20 group-hover:border-violet/40 group-hover:scale-110 transition-all duration-300">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-violet" fill="none"
-                                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M11.42 15.17l-5.1-5.1a1.5 1.5 0 010-2.12l.71-.71a1.5 1.5 0 012.12 0l3.57 3.57 7.07-7.07a1.5 1.5 0 012.12 0l.71.71a1.5 1.5 0 010 2.12l-8.49 8.49a1.5 1.5 0 01-2.12 0z" />
-                                </svg>
-                            </div>
-                            <div class="text-left">
-                                <span
-                                    class="text-base font-bold text-white group-hover:text-violet transition-colors">Repuestos
-                                    Don Alvaro</span>
-                                <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Autopartes
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Medic -->
-                        <div class="group relative flex items-center gap-3 px-6 py-4 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm hover:border-teal/40 hover:bg-white/10 hover:shadow-[0_0_30px_-8px_rgba(45,212,191,0.3)] transition-all duration-500 cursor-default"
-                            style="animation: fadeInUp 0.6s ease-out 0.3s both">
-                            <div
-                                class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal/20 to-teal/5 flex items-center justify-center border border-teal/20 group-hover:border-teal/40 group-hover:scale-110 transition-all duration-300">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-teal" fill="none"
-                                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                                </svg>
-                            </div>
-                            <div class="text-left">
-                                <span
-                                    class="text-base font-bold text-white group-hover:text-teal transition-colors">Medic</span>
-                                <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Salud</p>
-                            </div>
-                        </div>
-
-                        <!-- Lava-autos LD -->
-                        <div class="group relative flex items-center gap-3 px-6 py-4 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm hover:border-orange/40 hover:bg-white/10 hover:shadow-[0_0_30px_-8px_rgba(249,115,22,0.3)] transition-all duration-500 cursor-default"
-                            style="animation: fadeInUp 0.6s ease-out 0.4s both">
-                            <div
-                                class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange/20 to-orange/5 flex items-center justify-center border border-orange/20 group-hover:border-orange/40 group-hover:scale-110 transition-all duration-300">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-orange" fill="none"
-                                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
-                                </svg>
-                            </div>
-                            <div class="text-left">
-                                <span
-                                    class="text-base font-bold text-white group-hover:text-orange transition-colors">Lava-autos
-                                    LD</span>
-                                <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Servicios</p>
-                            </div>
-                        </div>
-
-                        <!-- Carnicería Los López -->
-                        <div class="group relative flex items-center gap-3 px-6 py-4 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm hover:border-violet/40 hover:bg-white/10 hover:shadow-[0_0_30px_-8px_rgba(139,92,246,0.3)] transition-all duration-500 cursor-default"
-                            style="animation: fadeInUp 0.6s ease-out 0.5s both">
-                            <div
-                                class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet/20 to-violet/5 flex items-center justify-center border border-violet/20 group-hover:border-violet/40 group-hover:scale-110 transition-all duration-300">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-violet" fill="none"
-                                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                                </svg>
-                            </div>
-                            <div class="text-left">
-                                <span
-                                    class="text-base font-bold text-white group-hover:text-violet transition-colors">Carnicería
-                                    Los López</span>
-                                <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Alimentos</p>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- Trust counter -->
-                    <div class="mt-12 flex items-center justify-center gap-3">
-                        <div class="flex -space-x-2">
-                            <div
-                                class="w-8 h-8 rounded-full bg-gradient-to-br from-teal to-teal/60 border-2 border-navy-dark flex items-center justify-center text-[10px] font-bold text-white">
-                                S</div>
-                            <div
-                                class="w-8 h-8 rounded-full bg-gradient-to-br from-violet to-violet/60 border-2 border-navy-dark flex items-center justify-center text-[10px] font-bold text-white">
-                                R</div>
-                            <div
-                                class="w-8 h-8 rounded-full bg-gradient-to-br from-teal to-teal/60 border-2 border-navy-dark flex items-center justify-center text-[10px] font-bold text-white">
-                                M</div>
-                            <div
-                                class="w-8 h-8 rounded-full bg-gradient-to-br from-orange to-orange/60 border-2 border-navy-dark flex items-center justify-center text-[10px] font-bold text-white">
-                                L</div>
-                            <div
-                                class="w-8 h-8 rounded-full bg-gradient-to-br from-violet to-violet/60 border-2 border-navy-dark flex items-center justify-center text-[10px] font-bold text-white">
-                                C</div>
-                        </div>
-                        <p class="text-sm text-slate-400">
-                            <span class="text-white font-bold">5+ empresas</span> ya automatizaron su gestión fiscal
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Statistic Banner -->
-        <div class="w-full bg-teal py-20">
-            <div class="max-w-7xl mx-auto px-6 lg:px-8 text-center">
-                <span id="stat-counter" class="text-8xl sm:text-9xl font-black text-white block"
-                    style="font-variant-numeric: tabular-nums;">0%</span>
-                <p class="text-lg text-white/80 font-medium mt-4 max-w-lg mx-auto">de las PYMES están pagando más
-                    impuestos de lo que la ley exige</p>
             </div>
         </div>
+    </section>
 
-        <script>
-            // Count-up animation for the 90% stat
-            (function () {
-                const counter = document.getElementById('stat-counter');
-                if (!counter) return;
-                let animated = false;
-
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting && !animated) {
-                            animated = true;
-                            let current = 0;
-                            const target = 90;
-                            const duration = 2000;
-                            const steps = 60;
-                            const increment = target / steps;
-                            const stepTime = duration / steps;
-
-                            const timer = setInterval(() => {
-                                current += increment;
-                                if (current >= target) {
-                                    current = target;
-                                    clearInterval(timer);
-                                }
-                                counter.textContent = Math.round(current) + '%';
-                            }, stepTime);
-                        }
-                    });
-                }, { threshold: 0.5 });
-
-                observer.observe(counter);
-            })();
-        </script>
-
-        <!-- The Problem Section -->
-        <section class="py-24 bg-[#0a1622] relative overflow-hidden">
-            <div class="max-w-7xl mx-auto px-6 lg:px-8">
-                <div class="grid lg:grid-cols-2 gap-16 items-center">
-                    <div>
-                        <h2 class="text-base font-semibold leading-7 text-teal uppercase tracking-wide">La Realidad
-                            del Empresario</h2>
-                        <p class="mt-2 text-4xl font-black tracking-tight text-white mb-6">Gestionar una PyME no debería
-                            sentirse como un <span class="gradient-text">asalto constante</span> a tu tranquilidad</p>
-                        <p class="text-lg text-slate-400 leading-relaxed mb-8">
-                            Sabemos que tu prioridad es vender y crecer, pero el día a día te arrastra a incendios
-                            operativos y miedos regulatorios.
-                        </p>
-                        <ul class="space-y-6">
-                            <li class="flex gap-4">
-                                <span
-                                    class="flex-shrink-0 w-6 h-6 rounded-full bg-teal/10 flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-teal" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </span>
-                                <div>
-                                    <h4 class="font-bold text-white">¿Falta de liquidez?</h4>
-                                    <p class="text-sm text-slate-400">No sabes cuánto dinero real tendrás mañana para
-                                        pagar nómina.</p>
-                                </div>
-                            </li>
-                            <li class="flex gap-4">
-                                <span
-                                    class="flex-shrink-0 w-6 h-6 rounded-full bg-teal/10 flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-teal" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </span>
-                                <div>
-                                    <h4 class="font-bold text-white">¿Miedo a la DIAN?</h4>
-                                    <p class="text-sm text-slate-400">Vives con la incertidumbre de sanciones por
-                                        errores que ni siquiera conoces.</p>
-                                </div>
-                            </li>
-                            <li class="flex gap-4">
-                                <span
-                                    class="flex-shrink-0 w-6 h-6 rounded-full bg-teal/10 flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-teal" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </span>
-                                <div>
-                                    <h4 class="font-bold text-white">¿Decisiones a ciegas?</h4>
-                                    <p class="text-sm text-slate-400">Tomas riesgos sin datos, confiando solo en tu
-                                        intuición o en reportes atrasados.</p>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-                    <!-- Improved Dashboard Container -->
-                    <div class="relative lg:ml-8">
-                        <!-- Decorative glow -->
-                        <div class="absolute -inset-4 bg-gradient-to-tr from-teal/10 to-violet/10 blur-3xl -z-10"></div>
-
-                        <!-- Main Dashboard Frame -->
-                        <div
-                            class="bg-[#0c1622] border border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden text-white font-sans scale-95 lg:scale-100 origin-top">
-                            <!-- Dashboard Header -->
-                            <div class="flex items-center justify-between mb-8">
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-10 h-10 bg-teal/20 rounded-xl flex items-center justify-center border border-teal/30">
-                                        <svg class="w-6 h-6 text-teal" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-sm font-bold gradient-text">Contexia <span
-                                                class="ml-2 px-2 py-0.5 rounded-full bg-teal/10 text-[10px] text-teal border border-teal/20 uppercase">Online</span>
-                                        </h3>
-                                        <p class="text-[10px] text-slate-500">Monitoreo inteligente de facturas • Flujo
-                                            de caja automatizado</p>
-                                    </div>
-                                </div>
-                                <button
-                                    class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/50 text-[11px] font-bold hover:bg-slate-700 transition-colors">
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                    Sincronizar
-                                </button>
-                            </div>
-
-                            <!-- Summary Stats Grid -->
-                            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                                <div class="bg-slate-900/40 border border-slate-800/50 px-3 py-4 rounded-2xl">
-                                    <div class="flex justify-between items-start mb-2">
-                                        <span
-                                            class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Ventas
-                                            de Ayer</span>
-                                        <div class="p-1 rounded bg-teal/10 text-teal"><svg class="w-3 h-3" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                            </svg></div>
-                                    </div>
-                                    <div class="text-lg font-black tracking-tight truncate" title="$6,240,000">
-                                        $6,240,000</div>
-                                    <div class="text-[10px] text-teal font-bold mt-1">+12.5% vs día anterior</div>
-                                </div>
-                                <div class="bg-slate-900/40 border border-slate-800/50 px-3 py-4 rounded-2xl">
-                                    <div class="flex justify-between items-start mb-2">
-                                        <span
-                                            class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Egresos
-                                            de Ayer</span>
-                                        <div class="p-1 rounded bg-orange/10 text-orange"><svg class="w-3 h-3"
-                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
-                                            </svg></div>
-                                    </div>
-                                    <div class="text-lg font-black tracking-tight truncate" title="$2,890,000">
-                                        $2,890,000</div>
-                                    <div class="text-[10px] text-orange font-bold mt-1">-3.2% vs día anterior</div>
-                                </div>
-                                <div class="bg-slate-900/40 border border-slate-800/50 px-3 py-4 rounded-2xl">
-                                    <div class="flex justify-between items-start mb-2">
-                                        <span
-                                            class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Efectivo
-                                            Disponible</span>
-                                        <div class="p-1 rounded bg-violet/10 text-violet"><svg class="w-3 h-3"
-                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                            </svg></div>
-                                    </div>
-                                    <div class="text-lg font-black tracking-tight truncate" title="$14,350,000">
-                                        $14,350,000</div>
-                                    <div class="text-[10px] text-slate-500 mt-1">Actualizado 8:00 AM</div>
-                                </div>
-                                <div class="bg-slate-900/40 border border-slate-800/50 px-3 py-4 rounded-2xl">
-                                    <div class="flex justify-between items-start mb-2">
-                                        <span
-                                            class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Facturas
-                                            Pendientes</span>
-                                        <div class="p-1 rounded bg-yellow-500/10 text-yellow-500"><svg class="w-3 h-3"
-                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg></div>
-                                    </div>
-                                    <div class="text-lg font-black tracking-tight truncate" title="3">3</div>
-                                    <div class="text-[10px] text-slate-500 mt-1">2 XML, 1 PDF</div>
-                                </div>
-                            </div>
-
-                            <!-- Dashboard Body -->
-                            <div class="grid lg:grid-cols-12 gap-6">
-                                <!-- Main Column -->
-                                <div class="lg:col-span-8 space-y-6">
-                                    <!-- Cash Flow Chart Mock -->
-                                    <div class="bg-[#0f1d2d] border border-slate-800 rounded-2xl p-6">
-                                        <div class="flex items-center justify-between mb-6">
-                                            <div>
-                                                <h4 class="text-sm font-bold">Flujo de Caja</h4>
-                                                <p class="text-[10px] text-slate-500">Ingresos vs Egresos — última
-                                                    semana</p>
-                                            </div>
-                                            <div class="flex items-center gap-4 text-[10px] font-bold">
-                                                <span class="flex items-center gap-1.5"><span
-                                                        class="w-2 h-2 rounded-full bg-teal"></span> Ingresos</span>
-                                                <span class="flex items-center gap-1.5"><span
-                                                        class="w-2 h-2 rounded-full bg-orange"></span> Egresos</span>
-                                            </div>
-                                        </div>
-                                        <!-- Chart SVG Placeholder (Realistic path) -->
-                                        <div class="relative h-40 w-full overflow-hidden">
-                                            <svg viewBox="0 0 400 100" class="h-full w-full overflow-visible">
-                                                <!-- Grid Lines -->
-                                                <line x1="0" y1="20" x2="400" y2="20" stroke="#1e293b"
-                                                    stroke-dasharray="2,2" />
-                                                <line x1="0" y1="50" x2="400" y2="50" stroke="#1e293b"
-                                                    stroke-dasharray="2,2" />
-                                                <line x1="0" y1="80" x2="400" y2="80" stroke="#1e293b"
-                                                    stroke-dasharray="2,2" />
-
-                                                <!-- Ingresos Path (Teal) -->
-                                                <path d="M0,50 Q50,45 80,42 T160,55 T240,30 T320,60 T400,75" fill="none"
-                                                    stroke="#14b8a6" stroke-width="2.5" />
-                                                <path
-                                                    d="M0,50 Q50,45 80,42 T160,55 T240,30 T320,60 T400,75 L400,100 L0,100 Z"
-                                                    fill="url(#tealGradient)" opacity="0.1" />
-
-                                                <!-- Egresos Path (Orange) -->
-                                                <path d="M0,65 Q50,62 80,60 T160,65 T240,75 T320,85 T400,90" fill="none"
-                                                    stroke="#fb923c" stroke-width="2.5" />
-
-                                                <defs>
-                                                    <linearGradient id="tealGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                                        <stop offset="0%" stop-color="#14b8a6" />
-                                                        <stop offset="100%" stop-color="transparent" />
-                                                    </linearGradient>
-                                                </defs>
-                                            </svg>
-                                            <!-- Labels -->
-                                            <div
-                                                class="absolute bottom-0 inset-x-0 flex justify-between text-[8px] text-slate-600 px-1 uppercase font-bold">
-                                                <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Invoices List -->
-                                    <div class="bg-[#0f1d2d] border border-slate-800 rounded-2xl p-6">
-                                        <div class="flex items-center justify-between mb-6">
-                                            <h4 class="text-sm font-bold">Facturas Recientes</h4>
-                                            <a href="#"
-                                                class="text-[10px] text-slate-500 hover:text-white uppercase font-bold tracking-wider">Ver
-                                                todas</a>
-                                        </div>
-                                        <div class="space-y-4">
-                                            <div
-                                                class="grid grid-cols-12 text-[9px] uppercase font-bold text-slate-600 pb-2 border-b border-slate-800">
-                                                <div class="col-span-5">Proveedor</div>
-                                                <div class="col-span-3 text-right">Monto</div>
-                                                <div class="col-span-4 text-right">Estado</div>
-                                            </div>
-                                            <div class="grid grid-cols-12 items-center text-[10px] py-1">
-                                                <div class="col-span-5 font-bold truncate">Distribuidora Nacional S.A.
-                                                </div>
-                                                <div class="col-span-3 text-right font-bold">$2,450,000</div>
-                                                <div class="col-span-4 text-right">
-                                                    <span
-                                                        class="px-2 py-0.5 rounded-full bg-teal/10 text-teal border border-teal/20 text-[9px]">Procesada</span>
-                                                </div>
-                                            </div>
-                                            <div
-                                                class="grid grid-cols-12 items-center text-[10px] py-1 border-t border-slate-800/50">
-                                                <div class="col-span-5 font-bold truncate">TechParts Colombia</div>
-                                                <div class="col-span-3 text-right font-bold">$890,500</div>
-                                                <div class="col-span-4 text-right">
-                                                    <span
-                                                        class="px-2 py-0.5 rounded-full bg-teal/10 text-teal border border-teal/20 text-[9px]">Procesada</span>
-                                                </div>
-                                            </div>
-                                            <div
-                                                class="grid grid-cols-12 items-center text-[10px] py-1 border-t border-slate-800/50 opacity-60">
-                                                <div class="col-span-5 font-bold truncate">Alimentos del Valle</div>
-                                                <div class="col-span-3 text-right font-bold">$1,200,000</div>
-                                                <div class="col-span-4 text-right">
-                                                    <span
-                                                        class="px-2 py-0.5 rounded-full bg-orange/10 text-orange border border-orange/20 text-[9px]">Pendiente</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Side Column -->
-                                <div class="lg:col-span-4 space-y-6">
-                                    <!-- Workflow Status -->
-                                    <div class="bg-[#0f1d2d] border border-slate-800 rounded-2xl p-5">
-                                        <h4 class="text-xs font-bold mb-4">Estado de Workflows</h4>
-                                        <div class="space-y-4">
-                                            <div class="flex items-center justify-between">
-                                                <div class="flex items-center gap-3">
-                                                    <div
-                                                        class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
-                                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                                            stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8" />
-                                                        </svg>
-                                                    </div>
-                                                    <div>
-                                                        <p class="text-[10px] font-bold">Gmail Trigger</p>
-                                                        <p class="text-[8px] text-slate-500">Monitoreo activo</p>
-                                                    </div>
-                                                </div>
-                                                <div class="w-1.5 h-1.5 rounded-full bg-teal animate-pulse"></div>
-                                            </div>
-                                            <div class="flex items-center justify-between">
-                                                <div class="flex items-center gap-3">
-                                                    <div
-                                                        class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
-                                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                                            stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a2 2 0 00-1.96 1.414l-.547 2.188a2 2 0 00.75 2.227l1.722 1.258a1 1 0 001.213-.106l1.258-1.258a1 1 0 00-.106-1.213l-1.258-1.258z" />
-                                                        </svg>
-                                                    </div>
-                                                    <div>
-                                                        <p class="text-[10px] font-bold">Extracción AI</p>
-                                                        <p class="text-[8px] text-slate-500">Completado hace 5 min</p>
-                                                    </div>
-                                                </div>
-                                                <div class="w-1.5 h-1.5 rounded-full bg-teal"></div>
-                                            </div>
-                                            <div class="flex items-center justify-between opacity-50">
-                                                <div class="flex items-center gap-3">
-                                                    <div
-                                                        class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
-                                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                                            stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                    </div>
-                                                    <div>
-                                                        <p class="text-[10px] font-bold">Cash Flow Nocturno</p>
-                                                        <p class="text-[8px] text-slate-500">Estatus: Durmiendo</p>
-                                                    </div>
-                                                </div>
-                                                <div class="w-1.5 h-1.5 rounded-full bg-slate-700"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Daily Summary Card -->
-                                    <div
-                                        class="bg-gradient-to-br from-slate-900 to-indigo-950 border border-indigo-500/20 rounded-2xl p-5 shadow-lg shadow-indigo-500/5">
-                                        <div class="flex items-center justify-between mb-4">
-                                            <h4 class="text-xs font-black uppercase tracking-tighter">Resumen Diario
-                                            </h4>
-                                            <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                            </svg>
-                                        </div>
-                                        <div class="space-y-3 mb-6">
-                                            <div class="flex justify-between items-center text-[10px]">
-                                                <span class="text-slate-400">Ventas POS Ayer</span>
-                                                <span class="font-bold">$6,240,000 <span
-                                                        class="text-teal ml-1">↑</span></span>
-                                            </div>
-                                            <div class="flex justify-between items-center text-[10px]">
-                                                <span class="text-slate-400">Transacciones Nequi</span>
-                                                <span class="font-bold">$1,850,000 <span
-                                                        class="text-teal ml-1">↑</span></span>
-                                            </div>
-                                            <div class="flex justify-between items-center text-[10px]">
-                                                <span class="text-slate-400">Gastos Clasificados AI</span>
-                                                <span class="font-bold text-orange">$2,100,000</span>
-                                            </div>
-                                        </div>
-                                        <button
-                                            class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black rounded-xl transition-all flex items-center justify-center gap-2 group">
-                                            Enviar resumen por WhatsApp
-                                            <svg class="w-3 h-3 group-hover:translate-x-1 transition-transform"
-                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
-                                                    d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Solution Pillars -->
+    <section class="py-24 bg-[#0a1220] relative">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8 text-center fade-in">
+            <h2 class="text-3xl md:text-4xl font-black mb-4">La Solución Inteligente</h2>
+            <p class="text-lg text-slate-400 mb-4">Unimos IA de Vanguardia con el Talento de Expertos</p>
+            <p class="text-slate-500 max-w-2xl mx-auto mb-16">Contexia no es solo un software; es una capa de
+                inteligencia financiera y legal que trabaja mientras tú duermes.</p>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="p-8 rounded-3xl border border-white/10 bg-white/5 text-center card-glow transition-all">
+                    <div class="w-16 h-16 rounded-2xl bg-teal/10 flex items-center justify-center mx-auto mb-6"><svg
+                            class="w-8 h-8 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg></div>
+                    <h3 class="text-xl font-bold text-white mb-3">Automatización 4.0</h3>
+                    <p class="text-slate-400 text-sm">Tus bancos, ERP y la DIAN conectados en tiempo real. Adiós a la
+                        digitación manual y errores humanos.</p>
+                </div>
+                <div class="p-8 rounded-3xl border border-white/10 bg-white/5 text-center card-glow transition-all">
+                    <div class="w-16 h-16 rounded-2xl bg-violet/10 flex items-center justify-center mx-auto mb-6"><svg
+                            class="w-8 h-8 text-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg></div>
+                    <h3 class="text-xl font-bold text-white mb-3">Inteligencia Artificial</h3>
+                    <p class="text-slate-400 text-sm">Modelos entrenados para predecir tu flujo de caja y detectar
+                        riesgos fiscales antes de que ocurran.</p>
+                </div>
+                <div class="p-8 rounded-3xl border border-white/10 bg-white/5 text-center card-glow transition-all">
+                    <div class="w-16 h-16 rounded-2xl bg-orange/10 flex items-center justify-center mx-auto mb-6"><svg
+                            class="w-8 h-8 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg></div>
+                    <h3 class="text-xl font-bold text-white mb-3">Talento Humano Experto</h3>
+                    <p class="text-slate-400 text-sm">No estás solo ante la pantalla. CFOs y abogados tributaristas
+                        respaldan cada dato y decisión.</p>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Vision Section: How Contexia Resolves it -->
-        <section class="py-24 bg-navy-dark relative">
-            <div class="max-w-7xl mx-auto px-6 lg:px-8">
-                <div class="text-center max-w-3xl mx-auto mb-16">
-                    <h2 class="text-base font-semibold leading-7 text-teal uppercase tracking-wide">La Solución
-                        Inteligente</h2>
-                    <p class="mt-2 text-4xl font-black tracking-tight text-white sm:text-5xl">Unimos <span
-                            class="gradient-text">IA de Vanguardia</span> con el Talento de Expertos</p>
-                    <p class="mt-6 text-lg text-slate-400">
-                        <span class="gradient-text">Contexia</span> no es solo un software; es una capa de inteligencia
-                        financiera y legal que trabaja
-                        mientras tú duermes.
+    <!-- Product Modules -->
+    <section id="soluciones" class="py-24 relative">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8 fade-in">
+            <div class="text-center mb-16">
+                <h2 class="text-base font-semibold text-teal uppercase tracking-wider mb-4">Módulos de Producto</h2>
+                <h3 class="text-3xl md:text-4xl font-black mb-4">Inteligencia que trabaja por ti</h3>
+                <p class="text-slate-400 max-w-2xl mx-auto">Seis herramientas diseñadas para que dejes de operar con
+                    miedo y empieces a gerenciar con datos reales.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div
+                    class="group p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-teal/30 transition-all card-glow">
+                    <div class="w-12 h-12 rounded-xl bg-teal/10 flex items-center justify-center mb-6"><svg
+                            class="w-6 h-6 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg></div>
+                    <h4 class="text-lg font-bold text-white mb-3">GPS de Flujo de Caja Diario</h4>
+                    <p class="text-slate-400 text-sm">Ventas, gastos y caja real de hoy con proyección de liquidez a
+                        corto plazo cada mañana.</p>
+                </div>
+                <div
+                    class="group p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-violet/30 transition-all card-glow">
+                    <div class="w-12 h-12 rounded-xl bg-violet/10 flex items-center justify-center mb-6"><svg
+                            class="w-6 h-6 text-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg></div>
+                    <h4 class="text-lg font-bold text-white mb-3">Centinela Fiscal (Pre-DIAN)</h4>
+                    <p class="text-slate-400 text-sm">Valida cada transacción antes de enviarla a la DIAN, bloqueando
+                        errores y riesgos de sanciones.</p>
+                </div>
+                <div
+                    class="group p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-orange/30 transition-all card-glow">
+                    <div class="w-12 h-12 rounded-xl bg-orange/10 flex items-center justify-center mb-6"><svg
+                            class="w-6 h-6 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg></div>
+                    <h4 class="text-lg font-bold text-white mb-3">Radar Predictivo de Impuestos</h4>
+                    <p class="text-slate-400 text-sm">Proyecta tus pagos y sugiere estrategias legales para reducir la
+                        carga al mínimo permitido.</p>
+                </div>
+                <div
+                    class="group p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-blue-500/30 transition-all card-glow">
+                    <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-6"><svg
+                            class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                        </svg></div>
+                    <h4 class="text-lg font-bold text-white mb-3">Radar de Competitividad</h4>
+                    <p class="text-slate-400 text-sm">Compara tus indicadores con el sector y detecta sobrecostos e
+                        ineficiencias ocultas.</p>
+                </div>
+                <div
+                    class="group p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-emerald-500/30 transition-all card-glow">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-6"><svg
+                            class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg></div>
+                    <h4 class="text-lg font-bold text-white mb-3">Copiloto Fiscal 24/7</h4>
+                    <p class="text-slate-400 text-sm">Asistente de IA entrenado en normativa colombiana. Resuelve dudas
+                        citando artículos reales.</p>
+                </div>
+                <div
+                    class="group p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-cyan-500/30 transition-all card-glow">
+                    <div class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mb-6"><svg
+                            class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg></div>
+                    <h4 class="text-lg font-bold text-white mb-3">Conciliación Bancaria 4.0</h4>
+                    <p class="text-slate-400 text-sm">Descarga y cruza movimientos de bancos de madrugada, enfocándote
+                        solo en excepciones.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Expert Services -->
+    <section id="servicios" class="py-24 bg-[#0a1220] relative">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8 fade-in">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-black mb-4">Talento Experto</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">No estás solo ante la complejidad. Tu CFO y Escudo Legal te
+                    respaldan.</p>
+                <p class="text-slate-500 mt-2 max-w-3xl mx-auto text-sm">Combinamos la precisión de nuestra IA con la
+                    visión estratégica de directores financieros y abogados de élite. Cumplimiento normativo total
+                    (DIAN, NIIF) bajo una sola suscripción.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div
+                    class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 relative overflow-hidden group hover:border-teal/30 transition-all">
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-teal to-teal-dark"></div>
+                    <h4 class="text-lg font-bold text-white mb-3">CFO as a Service</h4>
+                    <p class="text-slate-400 text-sm">Director financiero por suscripción que usa los datos de Contexia
+                        para planear, priorizar y acompañar tus decisiones clave.</p>
+                </div>
+                <div
+                    class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 relative overflow-hidden group hover:border-violet/30 transition-all">
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-violet to-purple-600"></div>
+                    <h4 class="text-lg font-bold text-white mb-3">Escudo Legal Tributario</h4>
+                    <p class="text-slate-400 text-sm">Abogados tributaristas que revisan tus movimientos, responden
+                        requerimientos y te blindan proactivamente ante la DIAN.</p>
+                </div>
+                <div
+                    class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 relative overflow-hidden group hover:border-orange/30 transition-all">
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-orange to-amber-500"></div>
+                    <h4 class="text-lg font-bold text-white mb-3">Auditoría Fiscal Preventiva</h4>
+                    <p class="text-slate-400 text-sm">Revisión proactiva de tu contabilidad para detectar y corregir
+                        riesgos antes de que se conviertan en multas costosas.</p>
+                </div>
+                <div
+                    class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 relative overflow-hidden group hover:border-cyan-500/30 transition-all">
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
+                    <h4 class="text-lg font-bold text-white mb-3">Contabilidad 4.0</h4>
+                    <p class="text-slate-400 text-sm">Puesta en marcha de bots, conexiones con ERPs y bancos para que tu
+                        operación contable funcione en piloto automático.</p>
+                </div>
+                <div
+                    class="p-8 rounded-3xl border border-slate-800 bg-slate-900/40 relative overflow-hidden group hover:border-emerald-500/30 transition-all">
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-green-500">
+                    </div>
+                    <h4 class="text-lg font-bold text-white mb-3">Plan Maestro de Optimización</h4>
+                    <p class="text-slate-400 text-sm">Estrategia integral para que tu PyME pague solo lo estrictamente
+                        necesario por ley y reinvierta el ahorro en crecimiento real.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="py-24 bg-[#0a1622] relative">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8 fade-in">
+            <div class="text-center mb-16">
+                <h2 class="text-base font-semibold text-teal uppercase tracking-wider mb-4">Preguntas Frecuentes</h2>
+                <h3 class="text-3xl md:text-4xl font-black">Resolvemos tus dudas</h3>
+            </div>
+            <div class="max-w-3xl mx-auto divide-y divide-slate-800">
+                <div class="py-6">
+                    <h4 class="text-lg font-bold text-white mb-2">¿Cuál es el precio de <span
+                            class="text-teal">Contexia</span>?</h4>
+                    <p class="text-slate-400 text-sm">Manejamos planes por suscripción mensual adaptados al tamaño de tu
+                        operación. Sin costos ocultos ni sorpresas, pagas por el valor y la tranquilidad que recibes.
                     </p>
                 </div>
-
-                <div class="grid md:grid-cols-3 gap-8">
-                    <div
-                        class="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-teal/50 transition-colors">
-                        <div class="w-12 h-12 rounded-2xl bg-teal/10 flex items-center justify-center mb-6">
-                            <svg class="w-6 h-6 text-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-4">Automatización 4.0</h3>
-                        <p class="text-slate-400 text-sm">Tus bancos, ERP y la DIAN conectados en tiempo real. Adiós a
-                            la digitación manual y errores humanos.</p>
-                    </div>
-                    <div
-                        class="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-teal/50 transition-colors">
-                        <div class="w-12 h-12 rounded-2xl bg-teal/10 flex items-center justify-center mb-6">
-                            <svg class="w-6 h-6 text-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-4">Inteligencia Artificial</h3>
-                        <p class="text-slate-400 text-sm">Modelos entrenados para predecir tu flujo de caja y detectar
-                            riesgos fiscales antes de que ocurran.</p>
-                    </div>
-                    <div
-                        class="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-teal/50 transition-colors">
-                        <div class="w-12 h-12 rounded-2xl bg-teal/10 flex items-center justify-center mb-6">
-                            <svg class="w-6 h-6 text-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-4">Talento Humano Experto</h3>
-                        <p class="text-slate-400 text-sm">No estás solo ante la pantalla. CFOs y abogados tributaristas
-                            respaldan cada dato y decisión.</p>
-                    </div>
+                <div class="py-6">
+                    <h4 class="text-lg font-bold text-white mb-2">¿Qué tan segura está mi información?</h4>
+                    <p class="text-slate-400 text-sm">Usamos cifrado de grado bancario y protocolos de seguridad de
+                        última generación. Tu información financiera es confidencial y solo tú tienes el control sobre
+                        quién accede a ella.</p>
                 </div>
-            </div>
-        </section>
-
-        <!-- Features Grid (Expanded Soluciones) -->
-        <div id="soluciones" class="bg-[#0a1622] py-24 sm:py-32 relative">
-            <div class="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent">
-            </div>
-
-            <div class="mx-auto max-w-7xl px-6 lg:px-8">
-                <div class="mx-auto max-w-2xl lg:text-center mb-16">
-                    <h2 class="text-base font-semibold leading-7 text-teal uppercase tracking-wide">Módulos de Producto
-                    </h2>
-                    <p class="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">Inteligencia que trabaja
-                        por ti</p>
-                    <p class="mt-6 text-lg leading-8 text-slate-400">
-                        Seis herramientas diseñadas para que dejes de operar con miedo y empieces a gerenciar con datos
-                        reales.
-                    </p>
+                <div class="py-6">
+                    <h4 class="text-lg font-bold text-white mb-2">¿Se integra con mi ERP o bancos actuales?</h4>
+                    <p class="text-slate-400 text-sm">Sí, <span class="text-teal">Contexia</span> es agnóstico. Nos
+                        conectamos con los principales bancos de Colombia y los ERPs más usados del mercado para
+                        automatizar el flujo de datos.</p>
                 </div>
-
-                <div class="mx-auto grid max-w-2xl grid-cols-1 gap-x-8 gap-y-12 lg:max-w-none lg:grid-cols-3">
-
-                    <!-- 1. GPS de Flujo de Caja -->
-                    <div
-                        class="group relative p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-teal/50 transition-all">
-                        <div
-                            class="w-12 h-12 rounded-xl bg-teal/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                            <svg class="w-6 h-6 text-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 100-2h-1a1 1 0 100 2h1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 100-2H4a1 1 0 100 2h1zM8 16v-1h4v1m2 0v1a2 2 0 01-2 2H8a2 2 0 01-2-2v-1m12 4H4a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v12a2 2 0 01-2 2z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-2">GPS de Flujo de Caja Diario</h3>
-                        <p class="text-sm text-slate-400">Ventas, gastos y caja real de hoy con proyección de liquidez a
-                            corto plazo cada mañana.</p>
-                    </div>
-
-                    <!-- 2. Centinela Fiscal -->
-                    <div
-                        class="group relative p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-violet/50 transition-all">
-                        <div
-                            class="w-12 h-12 rounded-xl bg-violet/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                            <svg class="w-6 h-6 text-violet" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-2">Centinela Fiscal (Pre-DIAN)</h3>
-                        <p class="text-sm text-slate-400">Valida cada transacción antes de enviarla a la DIAN,
-                            bloqueando errores y riesgos de sanciones.</p>
-                    </div>
-
-                    <!-- 3. Radar Predictivo -->
-                    <div
-                        class="group relative p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-orange/50 transition-all">
-                        <div
-                            class="w-12 h-12 rounded-xl bg-orange/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                            <svg class="w-6 h-6 text-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-2">Radar Predictivo de Impuestos</h3>
-                        <p class="text-sm text-slate-400">Proyecta tus pagos y sugiere estrategias legales para reducir
-                            la carga al mínimo permitido.</p>
-                    </div>
-
-                    <!-- 4. Radar de Competitividad -->
-                    <div
-                        class="group relative p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-teal/50 transition-all">
-                        <div
-                            class="w-12 h-12 rounded-xl bg-teal/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                            <svg class="w-6 h-6 text-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-2">Radar de Competitividad</h3>
-                        <p class="text-sm text-slate-400">Compara tus indicadores con el sector y detecta sobrecostos e
-                            ineficiencias ocultas.</p>
-                    </div>
-
-                    <!-- 5. Copiloto Fiscal -->
-                    <div
-                        class="group relative p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-violet/50 transition-all">
-                        <div
-                            class="w-12 h-12 rounded-xl bg-violet/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                            <svg class="w-6 h-6 text-violet" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-2">Copiloto Fiscal 24/7</h3>
-                        <p class="text-sm text-slate-400">Asistente de IA entrenado en normativa colombiana. Resuelve
-                            dudas citando artículos reales.</p>
-                    </div>
-
-                    <!-- 6. Conciliación Automática -->
-                    <div
-                        class="group relative p-8 rounded-3xl border border-white/10 bg-white/5 hover:border-orange/50 transition-all">
-                        <div
-                            class="w-12 h-12 rounded-xl bg-orange/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                            <svg class="w-6 h-6 text-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-2">Conciliación Bancaria 4.0</h3>
-                        <p class="text-sm text-slate-400">Descarga y cruza movimientos de bancos de madrugada,
-                            enfocándote solo en excepciones.</p>
-                    </div>
-
+                <div class="py-6">
+                    <h4 class="text-lg font-bold text-white mb-2">¿Cómo accedo a mis números si estoy en el camino o
+                        fuera de la oficina?</h4>
+                    <p class="text-slate-400 text-sm">Contexia te permite ver tu dashboard financiero completo desde
+                        cualquier dispositivo, en tiempo real. Además, contarás con un bot de WhatsApp que te alerta
+                        sobre cambios críticos, solicita documentos faltantes, responde consultas rápidas sobre tu caja
+                        e impuestos, y te da acceso a tu CFO virtual para conversaciones más profundas sobre estrategia
+                        financiera, sin esperar a una reunión presencial.</p>
                 </div>
             </div>
         </div>
-        <!-- Servicios Section (Expert Talent) -->
-        <section id="servicios" class="py-24 bg-navy-dark relative overflow-hidden">
-            <div class="max-w-7xl mx-auto px-6 lg:px-8">
-                <div class="grid lg:grid-cols-2 gap-16 items-center mb-16">
-                    <div>
-                        <h2 class="text-base font-semibold leading-7 text-teal uppercase tracking-wide">Talento Experto
-                        </h2>
-                        <p class="mt-2 text-4xl font-black tracking-tight text-white mb-6">No estás solo ante la
-                            complejidad. <span class="gradient-text">Tu CFO y Escudo Legal</span> te respaldan.</p>
-                        <p class="text-lg text-slate-400 leading-relaxed">
-                            Combinamos la precisión de nuestra IA con la visión estratégica de directores financieros y
-                            abogados de élite. Cumplimiento normativo total (DIAN, NIIF) bajo una sola suscripción.
-                        </p>
-                    </div>
-                    <div class="flex justify-center">
-                        <div
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal/10 border border-teal/20 text-teal text-sm font-bold">
-                            <span class="w-2 h-2 rounded-full bg-teal animate-pulse"></span>
-                            Cumplimiento Normativo Garantizado
+    </section>
+
+
+    <!-- CTA -->
+    <section class="py-24 relative">
+        <div class="max-w-4xl mx-auto px-6 lg:px-8 text-center fade-in">
+            <h2 class="text-3xl md:text-4xl font-black mb-6">¿Listo para tomar el control total de tu PyME?</h2>
+            <p class="text-slate-400 mb-10 max-w-2xl mx-auto">Únete a cientos de empresarios que ya gerencian con datos
+                y duermen tranquilos sin miedo a la DIAN.</p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <a href="https://wa.me/573018948151?text=Hola,%20me%20interesa%20una%20demo%20de%20Contexia"
+                    class="px-10 py-4 bg-gradient-to-r from-teal to-teal-dark rounded-2xl text-white font-bold text-lg hover:shadow-[0_0_30px_-5px_rgba(45,212,191,0.5)] transition-all">Agendar
+                    Demo Gratuita</a>
+                <p class="text-slate-500 text-sm italic max-w-xs">Después de agendar, un consultor senior te contactará
+                    para entender tu caso y mostrarte cómo <span class="text-teal">Contexia</span> se adapta a tu PyME.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-[#0c1e30] border-t border-slate-800">
+        <div class="mx-auto max-w-7xl px-6 pt-16 pb-8 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+                <div class="col-span-2 md:col-span-1">
+                    <a href="javascript:void(0)" onclick="openLogoLightbox()" class="flex items-center mb-4" title="Click para ver el logo completo">
+                        <div class="h-[64px] w-[50px] overflow-hidden flex justify-center items-start flex-shrink-0">
+                            <img src="./assets/img/logo.png" alt="Contexia"
+                                class="w-[125px] h-auto max-w-none flex-shrink-0 logo-blend"
+                                style="margin-top: -2px;">
                         </div>
-                    </div>
-                </div>
-
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <!-- CFO as a Service -->
-                    <div
-                        class="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 hover:bg-slate-800/50 transition-all">
-                        <h4 class="text-xl font-bold text-white mb-4">CFO as a Service</h4>
-                        <p class="text-slate-400 text-sm mb-6">Director financiero por suscripción que usa los datos de
-                            Contexia para planear, priorizar y acompañar tus decisiones clave.</p>
-                        <div class="h-1 w-12 bg-teal rounded"></div>
-                    </div>
-
-                    <!-- Escudo Legal -->
-                    <div
-                        class="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 hover:bg-slate-800/50 transition-all">
-                        <h4 class="text-xl font-bold text-white mb-4">Escudo Legal Tributario</h4>
-                        <p class="text-slate-400 text-sm mb-6">Abogados tributaristas que revisan tus movimientos,
-                            responden requerimientos y te blindan proactivamente ante la DIAN.</p>
-                        <div class="h-1 w-12 bg-violet rounded"></div>
-                    </div>
-
-                    <!-- Auditoría Preventiva -->
-                    <div
-                        class="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 hover:bg-slate-800/50 transition-all">
-                        <h4 class="text-xl font-bold text-white mb-4">Auditoría Fiscal Preventiva</h4>
-                        <p class="text-slate-400 text-sm mb-6">Revisión proactiva de tu contabilidad para detectar y
-                            corregir riesgos antes de que se conviertan en multas costosas.</p>
-                        <div class="h-1 w-12 bg-orange rounded"></div>
-                    </div>
-
-                    <!-- Contabilidad 4.0 -->
-                    <div
-                        class="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 hover:bg-slate-800/50 transition-all">
-                        <h4 class="text-xl font-bold text-white mb-4">Contabilidad 4.0</h4>
-                        <p class="text-slate-400 text-sm mb-6">Puesta en marcha de bots, conexiones con ERPs y bancos
-                            para que tu operación contable funcione en piloto automático.</p>
-                        <div class="h-1 w-12 bg-teal rounded"></div>
-                    </div>
-
-                    <!-- Plan Maestro -->
-                    <div
-                        class="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 hover:bg-slate-800/50 transition-all lg:col-span-2">
-                        <h4 class="text-xl font-bold text-white mb-4">Plan Maestro de Optimización</h4>
-                        <p class="text-slate-400 text-sm mb-6">Estrategia integral para que tu PyME pague solo lo
-                            estrictamente necesario por ley y reinvierta el ahorro en crecimiento real.</p>
-                        <div class="h-1 w-12 bg-violet rounded"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <!-- FAQ Section -->
-        <section id="faq" class="py-24 bg-[#0a1622] relative">
-            <div class="max-w-7xl mx-auto px-6 lg:px-8">
-                <div class="text-center mb-16">
-                    <h2 class="text-base font-semibold text-teal uppercase">Preguntas Frecuentes</h2>
-                    <p class="mt-2 text-3xl font-bold text-white">Resolvemos tus dudas</p>
-                </div>
-
-                <div class="max-w-3xl mx-auto divide-y divide-slate-800">
-                    <div class="py-6">
-                        <h4 class="text-lg font-bold text-white mb-2">¿Cuál es el precio de <span
-                                class="gradient-text">Contexia</span>?</h4>
-                        <p class="text-slate-400 text-sm">Manejamos planes por suscripción mensual adaptados al tamaño
-                            de tu operación. Sin costos ocultos ni sorpresas, pagas por el valor y la tranquilidad que
-                            recibes.</p>
-                    </div>
-                    <div class="py-6">
-                        <h4 class="text-lg font-bold text-white mb-2">¿Qué tan segura está mi información?</h4>
-                        <p class="text-slate-400 text-sm">Usamos cifrado de grado bancario y protocolos de seguridad de
-                            última generación. Tu información financiera es confidencial y solo tú tienes el control
-                            sobre quién accede a ella.</p>
-                    </div>
-                    <div class="py-6">
-                        <h4 class="text-lg font-bold text-white mb-2">¿Se integra con mi ERP o bancos actuales?</h4>
-                        <p class="text-slate-400 text-sm">Sí, <span class="gradient-text">Contexia</span> es agnóstico.
-                            Nos conectamos con los principales
-                            bancos de Colombia y los ERPs más usados del mercado para automatizar el flujo de datos.</p>
-                    </div>
-                    <div class="py-6">
-                        <h4 class="text-lg font-bold text-white mb-2">¿Cómo accedo a mis números si estoy en el camino o
-                            fuera de la oficina?</h4>
-                        <p class="text-slate-400 text-sm"><span class="gradient-text">Contexia</span> te permite ver tu
-                            dashboard financiero completo desde
-                            cualquier dispositivo, en tiempo real. Además, contarás con un bot de WhatsApp que te alerta
-                            sobre cambios críticos, solicita documentos faltantes, responde consultas rápidas sobre tu
-                            caja e impuestos, y te da acceso a tu CFO virtual para conversaciones más profundas sobre
-                            estrategia financiera, sin esperar a una reunión presencial.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Final CTA Section -->
-        <section class="py-24 relative overflow-hidden bg-navy-dark">
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(45,212,191,0.1),transparent_70%)]">
-            </div>
-            <div class="max-w-7xl mx-auto px-6 lg:px-8 text-center relative z-10">
-                <h2 class="text-4xl font-black text-white mb-8">¿Listo para tomar el control total de tu PyME?</h2>
-                <p class="text-xl text-slate-400 mb-12 max-w-2xl mx-auto">Únete a cientos de empresarios que ya
-                    gerencian con datos y duermen tranquilos sin miedo a la DIAN.</p>
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
-                    <a href="https://wa.me/573018948151?text=Hola,%20me%20interesa%20una%20demo%20de%20Contexia"
-                        target="_blank"
-                        class="px-8 py-4 bg-teal text-navy font-black rounded-2xl hover:bg-teal-dark transition-all hover:scale-105 shadow-[0_0_30px_-5px_rgba(45,212,191,0.4)]">
-                        Agendar Demo Gratuita
                     </a>
-                    <div class="text-sm text-slate-500 italic max-w-xs text-left">
-                        <p>Después de agendar, un consultor senior te contactará para entender tu caso y mostrarte cómo
-                            <span class="gradient-text">Contexia</span> se adapta a tu PyME.
-                        </p>
-                    </div>
+                    <p class="text-sm text-slate-400 mb-4">El mejor equipo contable de Colombia. Contadores con
+                        experiencia con tecnología avanzada.</p>
+                    <a href="https://linkedin.com" class="text-slate-400 hover:text-white transition-colors"><svg
+                            class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                        </svg></a>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white mb-4">Servicios</h3>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="#soluciones" class="hover:text-teal transition-colors">Contabilidad</a></li>
+                        <li><a href="#soluciones" class="hover:text-teal transition-colors">Impuestos</a></li>
+                        <li><a href="#soluciones" class="hover:text-teal transition-colors">Nómina</a></li>
+                        <li><a href="#soluciones" class="hover:text-teal transition-colors">Creación de Empresas</a>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white mb-4">Soluciones</h3>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="#soluciones" class="hover:text-teal transition-colors">Startups & Tech</a></li>
+                        <li><a href="#soluciones" class="hover:text-teal transition-colors">E-commerce</a></li>
+                        <li><a href="#soluciones" class="hover:text-teal transition-colors">Comercio Minorista</a></li>
+                        <li><a href="#soluciones" class="hover:text-teal transition-colors">Servicios</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white mb-4">Recursos</h3>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="#" class="hover:text-teal transition-colors">Blog</a></li>
+                        <li><a href="#" class="hover:text-teal transition-colors">Guías</a></li>
+                        <li><a href="#" class="hover:text-teal transition-colors">Calculadoras</a></li>
+                        <li><a href="#" class="hover:text-teal transition-colors">Calendario Tributario</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white mb-4">Empresa</h3>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="#" class="hover:text-teal transition-colors">Por qué Contexia</a></li>
+                        <li><a href="#" class="hover:text-teal transition-colors">Nosotros</a></li>
+                        <li><a href="#" class="hover:text-teal transition-colors">Casos de éxito</a></li>
+                        <li><a href="#faq" class="hover:text-teal transition-colors">FAQ</a></li>
+                    </ul>
                 </div>
             </div>
-        </section>
-        <footer class="bg-[#0c1e30] border-t border-slate-800" aria-labelledby="footer-heading">
-            <h2 id="footer-heading" class="sr-only">Footer</h2>
-
-            <!-- Main Footer -->
-            <div class="mx-auto max-w-7xl px-6 pt-16 pb-8 lg:px-8">
-                <div class="grid grid-cols-2 md:grid-cols-6 gap-8 lg:gap-12">
-
-                    <!-- Brand Column -->
-                    <div class="col-span-2">
-                        <a href="javascript:void(0)" onclick="openLogoLightbox()" class="flex items-center gap-3 mb-4" title="Click para ver el logo completo">
-                            <div class="h-[50px] w-[37px] overflow-hidden flex justify-center flex-shrink-0">
-                                <img src="./assets/img/logo.png" alt="Contexia"
-                                    class="w-[92px] h-auto max-w-none flex-shrink-0 logo-blend">
-                            </div>
-                            <span class="text-xl font-bold gradient-text">Contexia</span>
-                        </a>
-                        <p class="text-sm leading-relaxed text-slate-400 max-w-xs">
-                            El mejor equipo contable de Colombia. Contadores con experiencia con tecnología avanzada.
-                        </p>
-                        <!-- Social Icons -->
-                        <div class="flex items-center gap-4 mt-6">
-                            <a href="https://www.linkedin.com/in/juandavidpelaezcardenas/" target="_blank"
-                                class="text-slate-500 hover:text-white transition-colors" aria-label="LinkedIn">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path
-                                        d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Servicios -->
-                    <div>
-                        <h3 class="text-sm font-bold text-white mb-4 tracking-wide">Servicios</h3>
-                        <ul class="space-y-3">
-                            <li><a href="#soluciones"
-                                    class="text-sm text-slate-400 hover:text-teal transition-colors">Contabilidad</a>
-                            </li>
-                            <li><a href="#soluciones"
-                                    class="text-sm text-slate-400 hover:text-teal transition-colors">Impuestos</a></li>
-                            <li><a href="#soluciones"
-                                    class="text-sm text-slate-400 hover:text-teal transition-colors">Nómina</a></li>
-                            <li><a href="#soluciones"
-                                    class="text-sm text-slate-400 hover:text-teal transition-colors">Creación de
-                                    Empresas</a></li>
-                        </ul>
-                    </div>
-
-                    <!-- Soluciones -->
-                    <div>
-                        <h3 class="text-sm font-bold text-white mb-4 tracking-wide">Soluciones</h3>
-                        <ul class="space-y-3">
-                            <li><a href="#soluciones"
-                                    class="text-sm text-slate-400 hover:text-teal transition-colors">Startups & Tech</a>
-                            </li>
-                            <li><a href="#soluciones"
-                                    class="text-sm text-slate-400 hover:text-teal transition-colors">E-commerce</a></li>
-                            <li><a href="#soluciones"
-                                    class="text-sm text-slate-400 hover:text-teal transition-colors">Comercio
-                                    Minorista</a>
-                            </li>
-                            <li><a href="#soluciones"
-                                    class="text-sm text-slate-400 hover:text-teal transition-colors">Servicios</a></li>
-                        </ul>
-                    </div>
-
-                    <!-- Recursos -->
-                    <div>
-                        <h3 class="text-sm font-bold text-white mb-4 tracking-wide">Recursos</h3>
-                        <ul class="space-y-3">
-                            <li><a href="#" class="text-sm text-slate-400 hover:text-teal transition-colors">Blog</a>
-                            </li>
-                            <li><a href="#" class="text-sm text-slate-400 hover:text-teal transition-colors">Guías</a>
-                            </li>
-                            <li><a href="#"
-                                    class="text-sm text-slate-400 hover:text-teal transition-colors">Calculadoras</a>
-                            </li>
-                            <li><a href="#" class="text-sm text-slate-400 hover:text-teal transition-colors">Calendario
-                                    Tributario</a></li>
-                        </ul>
-                    </div>
-
-                    <!-- Empresa -->
-                    <div>
-                        <h3 class="text-sm font-bold text-white mb-4 tracking-wide">Empresa</h3>
-                        <ul class="space-y-3">
-                            <li><a href="#" class="text-sm text-slate-400 hover:text-teal transition-colors">Por qué
-                                    <span class="gradient-text">Contexia</span></a></li>
-                            <li><a href="#"
-                                    class="text-sm text-slate-400 hover:text-teal transition-colors">Nosotros</a>
-                            </li>
-                            <li><a href="#" class="text-sm text-slate-400 hover:text-teal transition-colors">Casos de
-                                    éxito</a></li>
-                            <li><a href="#" class="text-sm text-slate-400 hover:text-teal transition-colors">FAQ</a>
-                            </li>
-                        </ul>
-                    </div>
-
+            <div class="border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                <p class="text-xs text-slate-500">© 2026 Contexia SAS. Todos los derechos reservados.</p>
+                <p class="text-xs text-slate-500">growth@contexia.online · Antioquia, Colombia</p>
+                <div class="flex items-center gap-4 text-xs text-slate-500">
+                    <a href="#" class="hover:text-slate-300 transition-colors">Términos</a>
+                    <a href="#" class="hover:text-slate-300 transition-colors">Privacidad</a>
+                    <a href="#" class="hover:text-slate-300 transition-colors">Seguridad</a>
+                    <a href="https://wa.me/573018948151?text=Hola,%20me%20interesa%20Contexia"
+                        class="text-teal hover:text-teal-dark transition-colors font-semibold">Hablemos por WhatsApp</a>
                 </div>
             </div>
+        </div>
+    </footer>
 
-            <!-- Bottom Bar -->
-            <div class="border-t border-slate-800">
-                <div class="mx-auto max-w-7xl px-6 py-6 lg:px-8">
-                    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                        <!-- Copyright -->
-                        <p class="text-xs text-slate-500">&copy; 2026 <span class="gradient-text">Contexia</span>
-                            SAS. Todos los derechos reservados.</p>
+    <!-- Floating WhatsApp Button -->
+    <a href="https://wa.me/573018948151?text=Hola,%20me%20interesa%20Contexia"
+        class="fixed bottom-6 right-6 w-14 h-14 bg-[#25D366] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform z-50"
+        title="WhatsApp">
+        <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path
+                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+        </svg>
+    </a>
 
-                        <!-- Contact -->
-                        <p class="text-xs text-slate-500">growth@contexia.online · Antioquia, Colombia</p>
+    <!-- Scripts -->
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+            document.getElementById('mobile-menu')?.classList.toggle('hidden');
+        });
 
-                        <!-- Legal + WhatsApp -->
-                        <div class="flex items-center gap-6">
-                            <a href="#"
-                                class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Términos</a>
-                            <a href="#"
-                                class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Privacidad</a>
-                            <a href="#"
-                                class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Seguridad</a>
-                            <a href="https://wa.me/573018948151?text=Hola,%20me%20interesa%20Contexia" target="_blank"
-                                class="text-xs font-bold text-[#25D366] hover:text-[#128C7E] transition-colors">Hablemos
-                                por
-                                WhatsApp</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </footer>
+        // Scroll reveal animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-        <!-- WhatsApp Floating Button -->
-        <a href="https://wa.me/573018948151?text=Hola,%20me%20interesa%20Contexia" target="_blank"
-            rel="noopener noreferrer"
-            class="fixed bottom-6 right-6 bg-[#25D366] hover:bg-[#128C7E] text-white p-4 rounded-full shadow-lg hover:shadow-green-500/30 transition-all hover:scale-110 z-50 flex items-center justify-center group">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
-                <path
-                    d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z" />
-            </svg>
-            <span
-                class="absolute right-full mr-3 bg-white text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-md">
-                Hablemos por WhatsApp
-            </span>
-        </a>
+        // Close mobile menu on link click
+        document.querySelectorAll('#mobile-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                document.getElementById('mobile-menu')?.classList.add('hidden');
+            });
+        });
+    </script>
+
+    <!-- Interview Audio Recording & Form Logic -->
+    <script>
+        // Accordion toggle
+        function toggleAccordion(headerEl) {
+            const card = headerEl.closest('.interview-card');
+            const isOpen = card.classList.contains('open');
+            // Close all others
+            document.querySelectorAll('.interview-card.open').forEach(c => {
+                if (c !== card) c.classList.remove('open');
+            });
+            // Toggle this one
+            if (isOpen) {
+                card.classList.remove('open');
+            } else {
+                card.classList.add('open');
+                // Scroll into view smoothly
+                setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+            }
+        }
+
+        // ============================================
+        // GOOGLE APPS SCRIPT URL - REEMPLAZAR CON TU URL
+        // ============================================
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4MvXpRWbbM79IYBpUPv3JsX1-PoGY7MQvhksyrzDEMe5nn5jbjjdhjmivQftBYsd9/exec';
+
+        // Audio recording state
+        const recorders = {};
+        const audioBlobs = {};
+        const timerIntervals = {};
+        const audioTranscripts = {};
+        const speechRecognitions = {};
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        async function toggleRecording(btn, questionId) {
+            if (btn.classList.contains('recording')) {
+                stopRecording(btn, questionId);
+            } else {
+                await startRecording(btn, questionId);
+            }
+        }
+
+        async function startRecording(btn, questionId) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mediaRecorder = new MediaRecorder(stream);
+                const chunks = [];
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) chunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'audio/webm' });
+                    audioBlobs[questionId] = blob;
+                    stream.getTracks().forEach(track => track.stop());
+                    showAudioPlayback(questionId, blob);
+                    updateProgress();
+                };
+
+                recorders[questionId] = mediaRecorder;
+                mediaRecorder.start();
+
+                btn.classList.add('recording');
+                btn.querySelector('.record-label').textContent = 'Detener';
+
+                // Timer
+                let seconds = 0;
+                const timerEl = btn.querySelector('.record-timer');
+                timerEl.textContent = '00:00';
+                timerIntervals[questionId] = setInterval(() => {
+                    seconds++;
+                    timerEl.textContent = formatTime(seconds);
+                }, 1000);
+
+                // Start Speech Recognition for transcription
+                startSpeechRecognition(questionId);
+
+            } catch (err) {
+                alert('No se pudo acceder al micrófono. Por favor, permite el acceso al micrófono en tu navegador.');
+                console.error('Microphone access error:', err);
+            }
+        }
+
+        // Speech Recognition for real-time transcription
+        function startSpeechRecognition(questionId) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                console.warn('Speech Recognition not supported in this browser');
+                audioTranscripts[questionId] = '(Transcripción no disponible en este navegador)';
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'es-CO'; // Spanish - Colombia
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+
+            let finalTranscript = '';
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                audioTranscripts[questionId] = finalTranscript.trim();
+                
+                // Show live transcription indicator
+                const card = document.querySelector(`.interview-card[data-question="${questionId.replace('q', '')}"]`);
+                if (card) {
+                    let indicator = card.querySelector('.transcription-indicator');
+                    if (!indicator) {
+                        indicator = document.createElement('div');
+                        indicator.className = 'transcription-indicator';
+                        indicator.style.cssText = 'margin-top: 8px; padding: 8px 12px; background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.2); border-radius: 8px; font-size: 12px; color: #94a3b8;';
+                        const audioContainer = card.querySelector('.audio-playback');
+                        if (audioContainer) audioContainer.parentNode.insertBefore(indicator, audioContainer);
+                    }
+                    const displayText = finalTranscript + (interimTranscript ? `<span style="color:#64748b">${interimTranscript}</span>` : '');
+                    indicator.innerHTML = `<span style="color:#2dd4bf;font-weight:600;">🎙️ Transcribiendo:</span> ${displayText || '<em>Escuchando...</em>'}`;
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.warn('Speech recognition error:', event.error);
+                if (event.error === 'no-speech') {
+                    // Restart if no speech detected
+                    try { recognition.start(); } catch(e) {}
+                }
+            };
+
+            recognition.onend = () => {
+                // Don't restart if recording has stopped
+                if (recorders[questionId] && recorders[questionId].state === 'recording') {
+                    try { recognition.start(); } catch(e) {}
+                }
+            };
+
+            try {
+                recognition.start();
+                speechRecognitions[questionId] = recognition;
+            } catch(e) {
+                console.warn('Could not start speech recognition:', e);
+            }
+        }
+
+        function stopRecording(btn, questionId) {
+            if (recorders[questionId] && recorders[questionId].state === 'recording') {
+                recorders[questionId].stop();
+            }
+            btn.classList.remove('recording');
+            btn.querySelector('.record-label').textContent = 'Grabar de nuevo';
+            clearInterval(timerIntervals[questionId]);
+
+            // Stop speech recognition
+            if (speechRecognitions[questionId]) {
+                try { speechRecognitions[questionId].stop(); } catch(e) {}
+            }
+
+            // Update transcription indicator to final state
+            const card = document.querySelector(`.interview-card[data-question="${questionId.replace('q', '')}"]`);
+            if (card) {
+                const indicator = card.querySelector('.transcription-indicator');
+                if (indicator && audioTranscripts[questionId]) {
+                    indicator.innerHTML = `<span style="color:#2dd4bf;font-weight:600;">✅ Transcripción:</span> ${audioTranscripts[questionId]}`;
+                    indicator.style.borderColor = 'rgba(45,212,191,0.3)';
+                } else if (indicator) {
+                    indicator.innerHTML = `<span style="color:#f59e0b;font-weight:600;">⚠️</span> No se detectó voz`;
+                }
+            }
+        }
+
+        function showAudioPlayback(questionId, blob) {
+            const container = document.getElementById(`audio-${questionId}`);
+            const url = URL.createObjectURL(blob);
+            container.innerHTML = `
+                <svg class="w-4 h-4 text-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                <audio controls src="${url}"></audio>
+                <button type="button" class="delete-audio-btn" onclick="deleteAudio('${questionId}')" title="Eliminar grabación">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </button>
+            `;
+            container.classList.add('has-audio');
+        }
+
+        function deleteAudio(questionId) {
+            delete audioBlobs[questionId];
+            delete audioTranscripts[questionId];
+            const container = document.getElementById(`audio-${questionId}`);
+            container.innerHTML = '';
+            container.classList.remove('has-audio');
+            // Remove transcription indicator
+            const card = document.querySelector(`.interview-card[data-question="${questionId.replace('q', '')}"]`);
+            if (card) {
+                const indicator = card.querySelector('.transcription-indicator');
+                if (indicator) indicator.remove();
+                const btn = card.querySelector('.record-btn');
+                btn.querySelector('.record-label').textContent = 'Grabar respuesta';
+            }
+            updateProgress();
+        }
+
+        function updateProgress() {
+            let answered = 0;
+            for (let i = 1; i <= 10; i++) {
+                const textarea = document.getElementById(`q${i}`);
+                const hasText = textarea && textarea.value.trim().length > 0;
+                const hasAudio = !!audioBlobs[`q${i}`];
+                if (hasText || hasAudio) answered++;
+            }
+            const pct = (answered / 10) * 100;
+            document.getElementById('interview-progress-fill').style.width = `${pct}%`;
+            document.getElementById('interview-progress-text').textContent = `${answered} / 10`;
+        }
+
+        // Form submission - Send to Google Apps Script
+        document.getElementById('interview-form')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `
+                <svg class="animate-spin w-5 h-5 inline mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                Enviando respuestas a Google Drive...
+            `;
+
+            // Collect all responses
+            const responses = {};
+            for (let i = 1; i <= 10; i++) {
+                const textarea = document.getElementById(`q${i}`);
+                responses[`q${i}_text`] = textarea ? textarea.value.trim() : '';
+                responses[`q${i}_audio_transcript`] = audioTranscripts[`q${i}`] || '';
+                responses[`q${i}_has_audio`] = !!audioBlobs[`q${i}`];
+            }
+
+            console.log('Sending interview responses:', responses);
+
+            try {
+                // Send to Google Apps Script
+                if (GOOGLE_APPS_SCRIPT_URL && GOOGLE_APPS_SCRIPT_URL !== 'PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                    const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(responses)
+                    });
+                    console.log('Google Apps Script response sent');
+                } else {
+                    console.warn('Google Apps Script URL not configured. Responses logged to console only.');
+                    console.log('Full responses data:', JSON.stringify(responses, null, 2));
+                }
+            } catch (err) {
+                console.error('Error sending to Google Apps Script:', err);
+            }
+
+            // Show success state
+            document.getElementById('interview-form').style.display = 'none';
+            document.querySelector('.interview-progress-bar')?.parentElement?.style && (document.querySelector('.interview-progress-bar').parentElement.style.display = 'none');
+            const success = document.getElementById('interview-success');
+            success.classList.add('show');
+            success.classList.add('visible');
+
+            // Scroll to success message
+            success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    </script>
 
     <!-- Logo Lightbox Modal -->
     <div id="logo-lightbox" class="logo-lightbox" onclick="closeLogoLightbox(event)">
         <button class="close-btn" onclick="closeLogoLightbox(event)" aria-label="Cerrar">&times;</button>
         <img src="./assets/img/logo.png" alt="Contexia - GPS for Cash Flow & Tax Risk">
     </div>
-
     <script>
         function openLogoLightbox() {
             document.getElementById('logo-lightbox').classList.add('active');
@@ -1435,7 +1455,6 @@
             }
         });
     </script>
-
 </body>
 
 </html>
