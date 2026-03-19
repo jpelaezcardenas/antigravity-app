@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Empresa en Colombia | Contexia</title>
+    <meta name="description"
+        content="Constituye tu empresa en Colombia en 2 días hábiles. Registro en Cámara de Comercio, NIT, RUT y asesoría contable incluida. Todo incluido por COP $500.000.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { teal: '#2DD4BF', 'teal-dark': '#14B8A6', navy: '#0F172A', 'navy-dark': '#020617', orange: '#F97316', violet: '#8B5CF6' },
+                    animation: { 'float': 'float 6s ease-in-out infinite', 'pulse-slow': 'pulse 4s cubic-bezier(0.4,0,0.6,1) infinite' },
+                    keyframes: { float: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-20px)' } } }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, #2DD4BF, #8B5CF6);
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .card-glow:hover {
+            box-shadow: 0 0 40px -10px rgba(45, 212, 191, 0.15);
+        }
+
+        .logo-blend {
+            mix-blend-mode: lighten;
+        }
+
+        /* Step connector line */
+        .step-connector {
+            position: absolute;
+            left: 24px;
+            top: 56px;
+            bottom: -32px;
+            width: 2px;
+            background: linear-gradient(to bottom, rgba(45, 212, 191, 0.4), rgba(139, 92, 246, 0.2));
+        }
+
+        /* Pricing card */
+        .pricing-card {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(45, 212, 191, 0.15);
+            border-radius: 1.5rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .pricing-card:hover {
+            border-color: rgba(45, 212, 191, 0.35);
+            box-shadow: 0 0 60px -15px rgba(45, 212, 191, 0.15);
+            transform: translateY(-4px);
+        }
+
+        /* Feature card */
+        .feature-card {
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(45, 212, 191, 0.08);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            border-color: rgba(45, 212, 191, 0.2);
+            background: rgba(15, 23, 42, 0.7);
+            transform: translateY(-2px);
+        }
+
+        /* Step card */
+        .step-card {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(45, 212, 191, 0.08);
+            border-radius: 1rem;
+            padding: 1.5rem 1.5rem 1.5rem 4.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .step-card:hover {
+            border-color: rgba(45, 212, 191, 0.2);
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        /* Process step number */
+        .step-number {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            position: absolute;
+            left: -24px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+
+        /* FAQ Accordion */
+        .faq-item {
+            border: 1px solid rgba(45, 212, 191, 0.08);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .faq-item:hover {
+            border-color: rgba(45, 212, 191, 0.2);
+        }
+        .faq-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+            background: rgba(15, 23, 42, 0.4);
+            transition: background 0.3s ease;
+        }
+        .faq-header:hover {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .faq-chevron {
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+        .faq-item.open .faq-chevron {
+            transform: rotate(180deg);
+        }
+        .faq-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(15, 23, 42, 0.2);
+        }
+        .faq-item.open .faq-body {
+            max-height: 300px;
+        }
+
+        /* CTA button animation */
+        .cta-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s ease;
+        }
+        .cta-btn:hover::before {
+            left: 100%;
+        }
+
+        /* Floating particles */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 8s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body class="bg-[#020617] text-white min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="w-full border-b border-slate-800 bg-[#020617]/90 backdrop-blur-xl fixed top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <a href="landing.html" class="flex items-center gap-3 group" title="Volver a inicio">
+                    <div class="h-[38px] w-[40px] overflow-hidden flex justify-center items-start flex-shrink-0">
+                        <img src="./assets/img/logo.png" alt="Contexia"
+                            class="w-[78px] h-auto max-w-none flex-shrink-0 logo-blend transition-transform group-hover:scale-110"
+                            style="margin-top: 0px;">
+                    </div>
+                    <div class="flex flex-col justify-center" style="margin-top: -2px;">
+                        <span class="text-white font-bold text-lg tracking-[0.25em] leading-tight" style="font-family: 'Orbitron', 'Rajdhani', 'Share Tech', sans-serif;">CONTEXIA</span>
+                        <span class="text-slate-400 text-[9px] tracking-[0.18em] uppercase leading-tight" style="font-family: 'Rajdhani', 'Share Tech', sans-serif;">GPS for Cash Flow & Tax Risk</span>
+                    </div>
+                </a>
+                <div class="hidden md:flex items-center gap-6">
+                    <a href="landing.html#soluciones"
+                        class="text-slate-300 hover:text-white px-4 py-2 text-sm font-semibold transition-all">Soluciones</a>
+                    <a href="landing.html#servicios"
+                        class="text-slate-300 hover:text-white px-4 py-2 text-sm font-semibold transition-all">Servicios</a>
+                    <a href="landing.html#entrevista"
+                        class="text-slate-300 hover:text-white px-4 py-2 text-sm font-semibold transition-all">Entrevista</a>
+                    <a href="crear-empresa.html"
+                        class="text-teal px-4 py-2 text-sm font-bold transition-all border-b-2 border-teal">Crear Empresa</a>
+                    <a href="landing.html#faq"
+                        class="text-slate-300 hover:text-white px-4 py-2 text-sm font-semibold transition-all">FAQ</a>
+                    <a href="login.html"
+                        class="bg-gradient-to-r from-violet to-teal-dark text-white px-6 py-2.5 rounded-full text-sm font-bold transition-all hover:shadow-lg hover:shadow-violet/25 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                        Acceso
+                    </a>
+                </div>
+                <!-- Mobile menu button -->
+                <button class="md:hidden text-white" onclick="document.getElementById('mobileMenu').classList.toggle('hidden')">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </div>
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="hidden md:hidden pb-4 space-y-2">
+                <a href="landing.html" class="block text-slate-300 hover:text-white px-4 py-2 text-sm font-semibold">Inicio</a>
+                <a href="crear-empresa.html" class="block text-teal px-4 py-2 text-sm font-bold">Crear Empresa</a>
+                <a href="landing.html#entrevista" class="block text-slate-300 hover:text-white px-4 py-2 text-sm font-semibold">Entrevista</a>
+                <a href="login.html" class="block text-center bg-gradient-to-r from-violet to-teal-dark text-white px-6 py-2.5 rounded-full text-sm font-bold mx-4">Acceso</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 relative overflow-hidden">
+        <!-- Background decorations -->
+        <div class="absolute top-20 left-10 w-72 h-72 bg-teal/5 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 right-10 w-96 h-96 bg-violet/5 rounded-full blur-3xl"></div>
+        
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <!-- Left: Text content -->
+                <div class="fade-in">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal/10 border border-teal/20 text-teal text-sm font-semibold mb-6">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Rápido y sencillo
+                    </div>
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6">
+                        Crea tu empresa en <span class="gradient-text">Colombia</span>
+                    </h1>
+                    <p class="text-slate-400 text-lg mb-8 leading-relaxed">
+                        La forma más rápida de lanzar tu negocio en Colombia. Nos encargamos de todo: registro, NIT, RUT y asesoría legal.
+                    </p>
+                    <div class="space-y-4 mb-10">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-teal/10 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-4 h-4 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <span class="text-slate-300">Completa tu solicitud en <strong class="text-white">10 minutos</strong></span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-teal/10 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-4 h-4 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            </div>
+                            <span class="text-slate-300">Constituye tu empresa en <strong class="text-white">2 días hábiles</strong></span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-teal/10 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-4 h-4 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            </div>
+                            <span class="text-slate-300">Asesoría <strong class="text-white">contable y legal</strong> incluida</span>
+                        </div>
+                    </div>
+                    <a href="https://wa.me/573001234567?text=Quiero%20crear%20mi%20empresa" target="_blank"
+                       class="cta-btn inline-flex items-center gap-3 bg-gradient-to-r from-teal to-teal-dark text-navy-dark px-8 py-4 rounded-2xl text-lg font-bold transition-all hover:shadow-xl hover:shadow-teal/20 hover:scale-105">
+                        Crear mi empresa
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    </a>
+                </div>
+
+                <!-- Right: Visual card -->
+                <div class="fade-in relative">
+                    <div class="pricing-card p-8 md:p-10">
+                        <div class="text-center mb-8">
+                            <p class="text-slate-400 text-sm uppercase tracking-wider mb-2">Todo incluido por</p>
+                            <div class="text-5xl md:text-6xl font-black text-white mb-2">
+                                $500<span class="text-3xl text-slate-400">.000</span>
+                            </div>
+                            <p class="text-slate-500 text-sm">COP · Pago único · Sin costos ocultos</p>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-teal flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                <span class="text-slate-300">Constitución legal (SAS o Ltda)</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-teal flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                <span class="text-slate-300">NIT y RUT ante la DIAN</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-teal flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                <span class="text-slate-300">Certificados legales</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-teal flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                <span class="text-slate-300">Soporte contable incluido</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-teal flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                <span class="text-slate-300">Acompañamiento completo</span>
+                            </div>
+                        </div>
+                        <div class="mt-8 pt-6 border-t border-slate-700/50 text-center">
+                            <p class="text-slate-500 text-xs">Tu empresa lista en 2 días hábiles</p>
+                        </div>
+                    </div>
+                    <!-- Decorative glow -->
+                    <div class="absolute -top-4 -right-4 w-32 h-32 bg-teal/10 rounded-full blur-2xl"></div>
+                    <div class="absolute -bottom-4 -left-4 w-24 h-24 bg-violet/10 rounded-full blur-2xl"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Process Steps Section -->
+    <section class="py-20 relative">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-3xl md:text-4xl font-black mb-4">
+                    El proceso <span class="gradient-text">paso a paso</span>
+                </h2>
+                <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+                    Desde la solicitud hasta tu empresa operando, todo en un proceso claro y transparente.
+                </p>
+            </div>
+
+            <div class="relative space-y-8 ml-6">
+                <!-- Vertical line -->
+                <div class="absolute left-0 top-8 bottom-8 w-0.5 bg-gradient-to-b from-teal/40 via-violet/30 to-teal/10"></div>
+
+                <!-- Step 1 -->
+                <div class="fade-in relative pl-12">
+                    <div class="absolute left-[-18px] top-6 w-9 h-9 rounded-full bg-gradient-to-br from-teal to-teal-dark flex items-center justify-center text-sm font-bold text-navy-dark shadow-lg shadow-teal/30 z-10">
+                        1
+                    </div>
+                    <div class="step-card p-6" style="padding-left: 1.5rem;">
+                        <h3 class="text-xl font-bold text-white mb-2">Completa tu solicitud</h3>
+                        <p class="text-slate-400 leading-relaxed">
+                            Nombre de la empresa, socios, distribución de capital y representante legal. Todo de forma simple y guiada.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="fade-in relative pl-12">
+                    <div class="absolute left-[-18px] top-6 w-9 h-9 rounded-full bg-gradient-to-br from-violet to-violet/70 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-violet/30 z-10">
+                        2
+                    </div>
+                    <div class="step-card p-6" style="padding-left: 1.5rem;">
+                        <h3 class="text-xl font-bold text-white mb-2">Lanza tu negocio</h3>
+                        <p class="text-slate-400 leading-relaxed">
+                            En 2 días hábiles tu empresa estará constituida con todos los documentos legales listos para operar.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="fade-in relative pl-12">
+                    <div class="absolute left-[-18px] top-6 w-9 h-9 rounded-full bg-gradient-to-br from-orange to-orange/70 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-orange/30 z-10">
+                        3
+                    </div>
+                    <div class="step-card p-6" style="padding-left: 1.5rem;">
+                        <h3 class="text-xl font-bold text-white mb-2">Obtenemos tu NIT y configuramos la DIAN</h3>
+                        <p class="text-slate-400 leading-relaxed">
+                            Completamos automáticamente la configuración de tu empresa. Te ayudamos con RUT, certificados legales y asesoría contable.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section class="py-20 relative">
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-teal/[0.02] to-transparent"></div>
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-3xl md:text-4xl font-black mb-4">
+                    Todo lo que necesitas para <span class="gradient-text">lanzar tu empresa</span>
+                </h2>
+                <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+                    Un servicio completo que cubre cada aspecto de la constitución de tu empresa.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Benefit 1 -->
+                <div class="feature-card fade-in">
+                    <div class="w-12 h-12 rounded-xl bg-teal/10 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Incorporación expedita</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Registro en Cámara de Comercio con todos los estatutos listos. Tipo SAS o Ltda según tu necesidad.</p>
+                </div>
+
+                <!-- Benefit 2 -->
+                <div class="feature-card fade-in">
+                    <div class="w-12 h-12 rounded-xl bg-violet/10 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Soporte legal integral</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Certificado de existencia y representación legal. Asesoría jurídica durante todo el proceso.</p>
+                </div>
+
+                <!-- Benefit 3 -->
+                <div class="feature-card fade-in">
+                    <div class="w-12 h-12 rounded-xl bg-orange/10 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Contabilidad lista</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Soporte contable desde el día uno. Configuración tributaria ante la DIAN incluida.</p>
+                </div>
+
+                <!-- Benefit 4 -->
+                <div class="feature-card fade-in">
+                    <div class="w-12 h-12 rounded-xl bg-teal/10 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Cumplimiento regulatorio</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">NIT, RUT y configuración ante la DIAN. Tu empresa 100% legal desde el primer día.</p>
+                </div>
+
+                <!-- Benefit 5 -->
+                <div class="feature-card fade-in">
+                    <div class="w-12 h-12 rounded-xl bg-violet/10 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Soporte continuo</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Te acompañamos después de la constitución. Asesoría para cambios societarios y obligaciones.</p>
+                </div>
+
+                <!-- Benefit 6 -->
+                <div class="feature-card fade-in">
+                    <div class="w-12 h-12 rounded-xl bg-orange/10 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Proceso 100% digital</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Sin filas, sin papeleos innecesarios. Todo el proceso desde tu computador o celular.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-20">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-3xl md:text-4xl font-black mb-4">
+                    Preguntas <span class="gradient-text">frecuentes</span>
+                </h2>
+            </div>
+
+            <div class="space-y-4">
+                <div class="faq-item fade-in" onclick="toggleFaq(this)">
+                    <div class="faq-header">
+                        <span class="text-white font-semibold pr-4">¿Cuánto tiempo toma constituir la empresa?</span>
+                        <svg class="faq-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    <div class="faq-body">
+                        <p class="text-slate-400 px-6 py-4 text-sm leading-relaxed">Con SAS (recomendada): <strong class="text-white">2 días hábiles</strong> desde que completes tu solicitud. Con Ltda: aproximadamente 5-7 días hábiles porque requiere escritura pública ante notaría.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item fade-in" onclick="toggleFaq(this)">
+                    <div class="faq-header">
+                        <span class="text-white font-semibold pr-4">¿Cuál es la diferencia entre SAS y Ltda?</span>
+                        <svg class="faq-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    <div class="faq-body">
+                        <p class="text-slate-400 px-6 py-4 text-sm leading-relaxed">SAS es más rápida (sin escritura pública), flexible para cambios de socios y recomendada para startups. Ltda requiere notaría, es más formal y se usa principalmente para negocios familiares o pequeños grupos cerrados.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item fade-in" onclick="toggleFaq(this)">
+                    <div class="faq-header">
+                        <span class="text-white font-semibold pr-4">¿Qué documentos necesito?</span>
+                        <svg class="faq-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    <div class="faq-body">
+                        <p class="text-slate-400 px-6 py-4 text-sm leading-relaxed">Cédula de ciudadanía de todos los socios (imagen escaneada de ambos lados), dirección de residencia de cada socio, y dirección comercial donde operará la empresa. Todo lo subes directamente en el formulario.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item fade-in" onclick="toggleFaq(this)">
+                    <div class="faq-header">
+                        <span class="text-white font-semibold pr-4">¿Verifican la disponibilidad del nombre?</span>
+                        <svg class="faq-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    <div class="faq-body">
+                        <p class="text-slate-400 px-6 py-4 text-sm leading-relaxed">Sí. Durante el proceso verificamos automáticamente la disponibilidad del nombre en Cámara de Comercio. Si está ocupado, te sugerimos alternativas.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item fade-in" onclick="toggleFaq(this)">
+                    <div class="faq-header">
+                        <span class="text-white font-semibold pr-4">¿Incluye el trámite de NIT y RUT?</span>
+                        <svg class="faq-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    <div class="faq-body">
+                        <p class="text-slate-400 px-6 py-4 text-sm leading-relaxed">Sí. Incluye el trámite de NIT ante la DIAN, generación del RUT, certificado de existencia y representación legal. Todo listo para operar legalmente.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item fade-in" onclick="toggleFaq(this)">
+                    <div class="faq-header">
+                        <span class="text-white font-semibold pr-4">¿Qué pasa después de pagar?</span>
+                        <svg class="faq-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    <div class="faq-body">
+                        <p class="text-slate-400 px-6 py-4 text-sm leading-relaxed">Recibes confirmación por email y comenzamos el proceso en las próximas 2-4 horas hábiles. Te mantenemos informado de cada avance: registro en Cámara de Comercio, NIT, RUT, etc.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item fade-in" onclick="toggleFaq(this)">
+                    <div class="faq-header">
+                        <span class="text-white font-semibold pr-4">¿Puedo hacer cambios después de constituida?</span>
+                        <svg class="faq-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    <div class="faq-body">
+                        <p class="text-slate-400 px-6 py-4 text-sm leading-relaxed">Sí, pero algunos cambios (como nombre, socios o representante legal) requieren trámites adicionales ante Cámara de Comercio. Te asesoramos en cada paso si necesitas hacer modificaciones.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="py-20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-t from-teal/5 via-transparent to-transparent"></div>
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
+            <div class="fade-in">
+                <h2 class="text-3xl md:text-4xl font-black mb-4">
+                    ¿Listo para <span class="gradient-text">empezar</span>?
+                </h2>
+                <p class="text-slate-400 text-lg mb-10 max-w-xl mx-auto">
+                    Escríbenos por WhatsApp y te guiamos en cada paso para crear tu empresa en Colombia.
+                </p>
+                <a href="https://wa.me/573001234567?text=Quiero%20crear%20mi%20empresa" target="_blank"
+                   class="cta-btn inline-flex items-center gap-3 bg-gradient-to-r from-teal to-teal-dark text-navy-dark px-10 py-5 rounded-2xl text-xl font-bold transition-all hover:shadow-xl hover:shadow-teal/25 hover:scale-105">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"></path></svg>
+                    Crear mi empresa ahora
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </a>
+                <p class="text-slate-500 text-sm mt-6">Tu empresa lista en 2 días hábiles · Pago único COP $500.000</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-3">
+                    <div class="h-[38px] w-[40px] overflow-hidden flex justify-center items-start flex-shrink-0">
+                        <img src="./assets/img/logo.png" alt="Contexia" class="w-[78px] h-auto max-w-none flex-shrink-0 logo-blend" style="margin-top: 0px;">
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-white font-bold text-sm tracking-[0.25em]" style="font-family: 'Orbitron', sans-serif;">CONTEXIA</span>
+                        <span class="text-slate-500 text-[8px] tracking-[0.15em] uppercase" style="font-family: 'Rajdhani', sans-serif;">GPS for Cash Flow & Tax Risk</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6 text-sm text-slate-500">
+                    <a href="landing.html" class="hover:text-slate-300 transition">Inicio</a>
+                    <a href="landing.html#soluciones" class="hover:text-slate-300 transition">Soluciones</a>
+                    <a href="landing.html#servicios" class="hover:text-slate-300 transition">Servicios</a>
+                    <a href="landing.html#faq" class="hover:text-slate-300 transition">FAQ</a>
+                </div>
+                <p class="text-slate-600 text-xs">© 2026 Contexia. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Floating Button -->
+    <a href="https://wa.me/573001234567?text=Quiero%20crear%20mi%20empresa" target="_blank"
+       class="fixed bottom-6 right-6 z-50 w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 hover:scale-110 transition-transform">
+        <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"></path></svg>
+    </a>
+
+    <script>
+        // FAQ Toggle
+        function toggleFaq(item) {
+            const wasOpen = item.classList.contains('open');
+            document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+            if (!wasOpen) item.classList.add('open');
+        }
+
+        // Scroll Reveal
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
