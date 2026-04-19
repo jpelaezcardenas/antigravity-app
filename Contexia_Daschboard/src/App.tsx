@@ -58,7 +58,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-ctx-bg text-ctx-muted flex font-sans selection:bg-ctx-lime/30">
+    <div className="min-h-screen bg-ctx-bg text-ctx-muted flex font-sans selection:bg-ctx-teal/30">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <TopNav user={user} />
@@ -77,8 +77,8 @@ function Sidebar() {
         <div className="flex items-center gap-3 text-ctx-text">
           <ContexiaLogo className="w-10 h-10 shrink-0" />
           <div className="flex flex-col">
-            <span className="font-bold text-xl leading-none tracking-tight text-white mb-[2px]">CONTEXIA</span>
-            <span className="text-[9px] text-ctx-muted tracking-widest uppercase font-medium">GPS for Cash Flow & Tax Risk</span>
+            <span className="font-orbitron font-bold text-xl leading-none tracking-tight text-white mb-[2px]">CONTEXIA</span>
+            <span className="font-rajdhani text-[9px] text-ctx-teal tracking-[0.2em] uppercase font-semibold">GPS for Cash Flow & Tax Risk</span>
           </div>
         </div>
       </div>
@@ -97,14 +97,14 @@ function Sidebar() {
         </nav>
       </div>
       <div className="mt-auto p-4">
-        <div className="bg-gradient-to-br from-ctx-panel to-ctx-bg border border-ctx-border p-4 rounded-2xl flex flex-col gap-3">
-          <div className="text-sm font-medium text-ctx-text flex items-center justify-between">
+        <div className="glass-card bg-gradient-to-br from-ctx-surface/50 to-ctx-bg/50 border border-ctx-border p-4 rounded-2xl flex flex-col gap-3">
+          <div className="text-sm font-semibold text-ctx-text flex items-center justify-between">
             Plan Premium
           </div>
-          <div className="h-1.5 w-full bg-ctx-border rounded-full overflow-hidden">
-            <div className="h-full bg-ctx-cyan w-3/4 rounded-full" />
+          <div className="h-1.5 w-full bg-ctx-bg rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-ctx-teal to-ctx-violet w-3/4 rounded-full" />
           </div>
-          <div className="text-xs text-ctx-muted">14 días restantes de prueba</div>
+          <div className="text-xs text-ctx-muted font-medium">14 días restantes de prueba</div>
         </div>
 
         <button 
@@ -136,18 +136,18 @@ function NavItem({
   return (
     <a
       href="#"
-      className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors ${
+      className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-300 ${
         active
-          ? 'bg-ctx-lime/10 text-ctx-lime font-medium border border-ctx-lime/20'
-          : 'text-ctx-muted hover:text-ctx-text hover:bg-ctx-border/50'
+          ? 'bg-ctx-teal/10 text-ctx-teal font-semibold border border-ctx-teal/20 shadow-[0_0_15px_-5px_rgba(45,212,191,0.3)]'
+          : 'text-ctx-muted hover:text-ctx-text hover:bg-ctx-surface/50'
       }`}
     >
       <div className="flex items-center gap-3">
-        <Icon className={`w-5 h-5 ${active ? 'text-ctx-lime' : 'text-ctx-muted'}`} />
-        <span className="text-sm">{label}</span>
+        <Icon className={`w-5 h-5 transition-colors ${active ? 'text-ctx-teal' : 'text-ctx-muted'}`} />
+        <span className="text-sm font-rajdhani tracking-wide">{label}</span>
       </div>
       {badge && (
-        <span className="px-2 py-0.5 rounded-md bg-ctx-blue/10 text-ctx-blue text-[10px] font-semibold tracking-wide border border-ctx-blue/20">
+        <span className="px-2 py-0.5 rounded-md bg-ctx-violet/10 text-ctx-violet text-[10px] font-bold tracking-wider border border-ctx-violet/20 uppercase font-orbitron">
           {badge}
         </span>
       )}
@@ -160,7 +160,7 @@ function TopNav({ user }: { user: any }) {
   return (
     <header className="h-16 flex items-center justify-between px-4 lg:px-8 border-b border-ctx-border bg-ctx-bg/80 backdrop-blur-md sticky top-0 z-10">
       <div className="flex items-center gap-4 lg:hidden">
-        <BrainCircuit className="w-6 h-6 text-ctx-lime" />
+        <BrainCircuit className="w-6 h-6 text-ctx-teal" />
       </div>
 
       <div className="hidden lg:block relative w-96">
@@ -178,13 +178,13 @@ function TopNav({ user }: { user: any }) {
             <Bell className="w-5 h-5" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-ctx-yellow rounded-full border-2 border-ctx-bg"></span>
           </button>
-          <button className="flex items-center gap-2 pl-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-ctx-lime to-ctx-cyan p-[1px]">
+          <button className="flex items-center gap-2 pl-2 group">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-ctx-teal to-ctx-violet p-[1px] group-hover:scale-110 transition-transform">
               <div className="w-full h-full rounded-full bg-ctx-panel border-2 border-ctx-bg flex items-center justify-center">
-                <span className="text-xs font-bold text-ctx-text">{initials}</span>
+                <span className="text-xs font-bold text-white group-hover:text-ctx-teal transition-colors">{initials}</span>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-ctx-muted" />
+            <ChevronRight className="w-4 h-4 text-ctx-muted group-hover:text-ctx-text transition-colors" />
           </button>
         </div>
         
@@ -192,8 +192,8 @@ function TopNav({ user }: { user: any }) {
         <div className="hidden lg:flex items-center gap-3 pl-6 border-l border-ctx-border relative">
             <ContexiaLogo className="w-10 h-10" />
             <div className="flex flex-col pt-1">
-              <span className="font-bold text-[15px] leading-none tracking-tight text-white uppercase">CONTEXIA</span>
-              <span className="text-[8px] text-ctx-muted tracking-widest uppercase mt-[2px] font-medium">GPS For Cash Flow</span>
+              <span className="font-orbitron font-bold text-[15px] leading-none tracking-tight text-white uppercase">CONTEXIA</span>
+              <span className="font-rajdhani text-[8px] text-ctx-teal tracking-[0.2em] uppercase mt-[2px] font-bold">GPS For Cash Flow</span>
             </div>
         </div>
       </div>
@@ -207,18 +207,18 @@ function DashboardContent({ user }: { user: any }) {
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 py-2">
         <div>
-          <h1 className="text-opacity-90 text-2xl font-bold text-ctx-text tracking-tight">
-            Hola, {firstName} 👋
+          <h1 className="text-3xl font-orbitron font-bold text-white tracking-tight">
+            Hola, <span className="gradient-text">{firstName}</span> 👋
           </h1>
-          <p className="text-sm text-ctx-muted mt-1.5">
+          <p className="text-sm text-ctx-muted mt-2 font-rajdhani font-semibold tracking-wide uppercase opacity-80">
             Aquí tienes el resumen de tu empresa al día de hoy.
           </p>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 bg-ctx-panel border border-ctx-border hover:bg-ctx-surface text-ctx-text text-sm font-medium rounded-xl transition-colors">
+          <button className="px-5 py-2.5 bg-ctx-panel border border-ctx-border hover:bg-ctx-surface/80 text-ctx-text text-sm font-semibold rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg">
             Descargar Reporte
           </button>
-          <button className="px-4 py-2 bg-ctx-lime hover:opacity-90 text-ctx-bg text-sm font-semibold rounded-xl shadow-[0_0_15px_rgba(204,255,0,0.3)] transition-all">
+          <button className="px-5 py-2.5 bg-gradient-to-r from-ctx-teal to-ctx-violet hover:brightness-110 text-ctx-panel text-sm font-bold rounded-xl shadow-[0_4px_20px_-4px_rgba(45,212,191,0.4)] transition-all hover:scale-105 active:scale-95">
             Nueva Transacción
           </button>
         </div>
@@ -232,7 +232,7 @@ function DashboardContent({ user }: { user: any }) {
           trend=""
           isUp={true}
           icon={Wallet}
-          color="lime"
+          color="teal"
           highlight
         />
         <KpiCard
@@ -241,7 +241,7 @@ function DashboardContent({ user }: { user: any }) {
           trend=""
           isUp={false}
           icon={Radar}
-          color="cyan"
+          color="violet"
         />
         <KpiCard
           title="Riesgo Fiscal"
@@ -249,7 +249,7 @@ function DashboardContent({ user }: { user: any }) {
           trend=""
           isUp={true}
           icon={ShieldAlert}
-          color="lime"
+          color="teal"
           highlight
         />
         <KpiCard
@@ -269,8 +269,8 @@ function DashboardContent({ user }: { user: any }) {
           <Card>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-lg font-medium text-ctx-text flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-ctx-lime" />
+                <h2 className="text-xl font-orbitron font-bold text-white flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-ctx-teal" />
                   GPS de Flujo de Caja
                 </h2>
                 <p className="text-sm text-ctx-muted">
@@ -290,12 +290,12 @@ function DashboardContent({ user }: { user: any }) {
                 >
                   <defs>
                     <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8AFF4F" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#8AFF4F" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#2DD4BF" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#2DD4BF" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="colorEgresos" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00E5FF" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#00E5FF" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.08)" vertical={false} />
@@ -308,16 +308,16 @@ function DashboardContent({ user }: { user: any }) {
                   <Area
                     type="monotone"
                     dataKey="ingresos"
-                    stroke="#8AFF4F"
-                    strokeWidth={2}
+                    stroke="#2DD4BF"
+                    strokeWidth={3}
                     fillOpacity={1}
                     fill="url(#colorIngresos)"
                   />
                   <Area
                     type="monotone"
                     dataKey="egresos"
-                    stroke="#00E5FF"
-                    strokeWidth={2}
+                    stroke="#8B5CF6"
+                    strokeWidth={3}
                     fillOpacity={1}
                     fill="url(#colorEgresos)"
                   />
@@ -328,11 +328,11 @@ function DashboardContent({ user }: { user: any }) {
 
           <Card>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-ctx-text flex items-center gap-2">
-                <ListChecks className="w-5 h-5 text-ctx-cyan" />
+              <h2 className="text-xl font-orbitron font-bold text-white flex items-center gap-2">
+                <ListChecks className="w-5 h-5 text-ctx-teal" />
                 Conciliación Bancaria 4.0
               </h2>
-              <button className="text-sm text-ctx-cyan hover:opacity-80 font-medium">
+              <button className="text-sm text-ctx-teal hover:text-ctx-violet font-bold transition-colors font-rajdhani uppercase tracking-widest">
                 Ver detalle
               </button>
             </div>
@@ -342,9 +342,9 @@ function DashboardContent({ user }: { user: any }) {
                 <span className="text-ctx-muted">Progreso mensual</span>
                 <span className="text-ctx-text font-medium">85% completado</span>
               </div>
-              <div className="h-2 w-full bg-ctx-bg rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-ctx-cyan to-ctx-blue w-[85%] rounded-full relative">
-                  <div className="absolute inset-0 bg-white/20 blur-sm mix-blend-overlay"></div>
+              <div className="h-2 w-full bg-ctx-bg rounded-full overflow-hidden border border-ctx-border">
+                <div className="h-full bg-gradient-to-r from-ctx-teal to-ctx-violet w-[85%] rounded-full relative shadow-[0_0_10px_rgba(45,212,191,0.5)]">
+                  <div className="absolute inset-0 bg-white/10 blur-[1px] mix-blend-overlay"></div>
                 </div>
               </div>
               
@@ -370,8 +370,8 @@ function DashboardContent({ user }: { user: any }) {
         <div className="lg:col-span-1 space-y-5">
           <Card>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-ctx-text flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5 text-ctx-yellow" />
+              <h2 className="text-xl font-orbitron font-bold text-white flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-ctx-orange" />
                 Centinela Fiscal
               </h2>
             </div>
@@ -383,8 +383,8 @@ function DashboardContent({ user }: { user: any }) {
                 <div key={i} className="p-3 rounded-xl bg-ctx-bg border border-ctx-border hover:border-ctx-muted transition-colors cursor-pointer group">
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${item.risk === 'alto' ? 'bg-red-500' : 'bg-ctx-yellow'}`} />
-                      <span className="text-xs font-semibold text-ctx-text">{item.id}</span>
+                      <div className={`w-2 h-2 rounded-full ${item.risk === 'alto' ? 'bg-ctx-orange' : 'bg-ctx-violet'} animate-pulse`} />
+                      <span className="text-xs font-bold text-ctx-text font-orbitron">{item.id}</span>
                     </div>
                     <span className="text-xs font-mono text-ctx-muted">{item.amount}</span>
                   </div>
@@ -405,8 +405,8 @@ function DashboardContent({ user }: { user: any }) {
               <div className="absolute top-0 right-0 w-32 h-32 bg-ctx-blue/10 blur-xl rounded-full translate-x-10 -translate-y-10" />
               
               <div className="relative z-10">
-                <h2 className="text-lg font-medium text-ctx-text flex items-center gap-2 mb-1">
-                  <Radar className="w-5 h-5 text-ctx-blue" />
+                <h2 className="text-xl font-orbitron font-bold text-white flex items-center gap-2 mb-1">
+                  <Radar className="w-5 h-5 text-ctx-teal" />
                   Radar Predictivo
                 </h2>
                 <p className="text-sm text-ctx-muted mb-4">
@@ -428,7 +428,7 @@ function DashboardContent({ user }: { user: any }) {
           <div className="bg-ctx-bg border border-ctx-cyan/30 rounded-2xl p-5 flex flex-col relative overflow-hidden">
              <div className="absolute top-0 right-0 w-32 h-32 bg-ctx-cyan/10 blur-xl rounded-full translate-x-10 -translate-y-10" />
             <div className="flex items-center gap-2 mb-4 relative z-10">
-              <span className="font-semibold text-ctx-text text-lg">Copiloto Fiscal</span>
+              <span className="font-orbitron font-bold text-white text-lg">Copiloto Fiscal</span>
             </div>
             
             <button className="bg-ctx-panel border border-ctx-border rounded-xl p-3 flex items-center gap-3 hover:bg-ctx-surface transition-colors relative z-10 w-full mb-6 text-left group">
@@ -465,7 +465,7 @@ function DashboardContent({ user }: { user: any }) {
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`bg-ctx-panel border border-ctx-border rounded-2xl p-6 shadow-sm overflow-hidden ${className}`}
+      className={`glass-card rounded-2xl p-6 overflow-hidden hover:border-ctx-teal/30 transition-all duration-300 group ${className}`}
     >
       {children}
     </div>
@@ -487,42 +487,42 @@ function KpiCard({
   trend: string;
   isUp: boolean;
   icon: any;
-  color: 'lime' | 'cyan' | 'yellow' | 'red';
+  color: 'teal' | 'violet' | 'yellow' | 'red';
   highlight?: boolean;
   trendLabel?: string;
 }) {
   const bgColors = {
-    lime: 'bg-ctx-lime/10 border-ctx-lime/20',
-    cyan: 'bg-ctx-cyan/10 border-ctx-cyan/20',
+    teal: 'bg-ctx-teal/10 border-ctx-teal/20',
+    violet: 'bg-ctx-violet/10 border-ctx-violet/20',
     yellow: 'bg-ctx-yellow/10 border-ctx-yellow/20',
-    red: 'bg-red-500/10 border-red-500/20',
+    red: 'bg-ctx-orange/10 border-ctx-orange/20',
   };
 
   const textColors = {
-    lime: 'text-ctx-lime',
-    cyan: 'text-ctx-cyan',
+    teal: 'text-ctx-teal',
+    violet: 'text-ctx-violet',
     yellow: 'text-ctx-yellow',
-    red: 'text-red-400',
+    red: 'text-ctx-orange',
   };
 
-  const trendColor = isUp ? 'text-ctx-lime' : 'text-ctx-muted';
+  const trendColor = isUp ? 'text-ctx-teal' : 'text-ctx-muted';
 
   return (
     <div
-      className={`relative bg-ctx-panel border rounded-xl p-5 ${
+      className={`relative glass-card rounded-xl p-5 hover:scale-105 transition-all duration-300 group ${
         highlight 
-        ? color === 'red' ? 'border-ctx-red/50 shadow-[0_0_20px_rgba(255,77,77,0.1)]' 
-          : color === 'lime' ? 'border-ctx-lime/40 shadow-[0_0_20px_rgba(138,255,79,0.1)]'
-          : color === 'yellow' ? 'border-ctx-yellow/40 shadow-[0_0_20px_rgba(255,234,0,0.1)]'
-          : 'border-ctx-cyan/40 shadow-[0_0_20px_rgba(0,229,255,0.1)]'
+        ? color === 'red' ? 'border-ctx-orange/50 shadow-[0_0_20px_rgba(249,115,22,0.15)]' 
+          : color === 'teal' ? 'border-ctx-teal/40 shadow-[0_0_20px_rgba(45,212,191,0.15)]'
+          : color === 'yellow' ? 'border-ctx-yellow/40 shadow-[0_0_20px_rgba(251,191,36,0.15)]'
+          : 'border-ctx-violet/40 shadow-[0_0_20px_rgba(139,92,246,0.15)]'
         : 'border-ctx-border'
       }`}
     >
        {highlight && (
-         <div className={`absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-${color === 'red' ? 'red-500' : color === 'lime' ? 'ctx-lime' : color === 'yellow' ? 'ctx-yellow' : 'ctx-cyan'} to-transparent opacity-50`} />
+         <div className={`absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-${color === 'red' ? 'ctx-orange' : color === 'teal' ? 'ctx-teal' : color === 'yellow' ? 'ctx-yellow' : 'ctx-violet'} to-transparent opacity-50`} />
        )}
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-[13px] font-medium text-ctx-muted">{title}</h3>
+        <h3 className="text-[12px] font-rajdhani font-bold uppercase tracking-wider text-ctx-muted group-hover:text-ctx-text transition-colors">{title}</h3>
         {value === 'Bajo' || value === 'Medio' || value === 'Alto' ? (
            <div className={`px-3 py-1 rounded-full border text-xs font-semibold ${bgColors[color]}`}>
              {value}
@@ -534,8 +534,8 @@ function KpiCard({
         )}
       </div>
       <div className="flex items-baseline gap-2">
-        <span className={`text-2xl lg:text-[28px] font-semibold tracking-tight ${
-           value === 'Bajo' || value === 'Medio' || value === 'Alto' ? textColors[color] : 'text-ctx-text'
+        <span className={`text-2xl lg:text-[28px] font-orbitron font-bold leading-none tracking-tight ${
+           value === 'Bajo' || value === 'Medio' || value === 'Alto' ? textColors[color] : 'text-white'
         }`}>{value !== 'Bajo' && value !== 'Medio' && value !== 'Alto' ? value : ''}</span>
       </div>
       {trend && (
@@ -543,9 +543,9 @@ function KpiCard({
         {trendLabel ? (
             <span className="text-ctx-muted mr-1">{trendLabel}:</span>
         ) : (
-          isUp ? <TrendingUp className="w-3 h-3 mr-1 text-ctx-lime" /> : <TrendingDown className="w-3 h-3 mr-1 text-ctx-muted" />
+          isUp ? <TrendingUp className="w-3 h-3 mr-1 text-ctx-teal" /> : <TrendingDown className="w-3 h-3 mr-1 text-ctx-muted" />
         )}
-        <span className={`font-medium ${trendLabel ? textColors[color] : trendColor}`}>{trend}</span>
+        <span className={`font-rajdhani font-bold uppercase tracking-widest ${trendLabel ? textColors[color] : trendColor}`}>{trend}</span>
       </div>
       )}
     </div>
@@ -557,9 +557,9 @@ export function ContexiaShield({ className = "w-8 h-8" }: { className?: string }
     <svg viewBox="0 0 32 32" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="shield-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#FFEA00" />
-          <stop offset="50%" stopColor="#8AFF4F" />
-          <stop offset="100%" stopColor="#00E5FF" />
+          <stop offset="0%" stopColor="#FBBF24" />
+          <stop offset="50%" stopColor="#2DD4BF" />
+          <stop offset="100%" stopColor="#8B5CF6" />
         </linearGradient>
       </defs>
       <path d="M16 3 L4 8 V15 C4 22 9 27 16 30 C23 27 28 22 28 15 V8 L16 3 Z" stroke="url(#shield-grad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -572,34 +572,34 @@ export function ContexiaLogo({ className = "w-10 h-10" }: { className?: string }
     <svg viewBox="0 0 120 140" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="pin-left" x1="0%" y1="100%" x2="0%" y2="0%">
-          <stop offset="0%" stopColor="#00E5FF"/>
-          <stop offset="50%" stopColor="#8AFF4F"/>
-          <stop offset="100%" stopColor="#8AFF4F"/>
+          <stop offset="0%" stopColor="#8B5CF6"/>
+          <stop offset="50%" stopColor="#2DD4BF"/>
+          <stop offset="100%" stopColor="#2DD4BF"/>
         </linearGradient>
         <linearGradient id="pin-right" x1="0%" y1="0%" x2="0%" y2="100%">
-           <stop offset="0%" stopColor="#8AFF4F"/>
-           <stop offset="50%" stopColor="#00E5FF"/>
-           <stop offset="100%" stopColor="#2A3FFF"/>
+           <stop offset="0%" stopColor="#2DD4BF"/>
+           <stop offset="50%" stopColor="#8B5CF6"/>
+           <stop offset="100%" stopColor="#1E293B"/>
         </linearGradient>
         <linearGradient id="bar-green" x1="0%" y1="0%" x2="0%" y2="100%">
-           <stop offset="0%" stopColor="#8AFF4F"/>
-           <stop offset="100%" stopColor="#1B5E20"/>
+           <stop offset="0%" stopColor="#2DD4BF"/>
+           <stop offset="100%" stopColor="#134E4A"/>
         </linearGradient>
         <linearGradient id="bar-yellow" x1="0%" y1="0%" x2="0%" y2="100%">
-           <stop offset="0%" stopColor="#FFEA00"/>
-           <stop offset="100%" stopColor="#F57F17"/>
+           <stop offset="0%" stopColor="#FBBF24"/>
+           <stop offset="100%" stopColor="#92400E"/>
         </linearGradient>
         <linearGradient id="bar-cyan" x1="0%" y1="0%" x2="0%" y2="100%">
-           <stop offset="0%" stopColor="#00E5FF"/>
-           <stop offset="100%" stopColor="#01579B"/>
+           <stop offset="0%" stopColor="#8B5CF6"/>
+           <stop offset="100%" stopColor="#4C1D95"/>
         </linearGradient>
         <linearGradient id="orbit" x1="0%" y1="0%" x2="100%" y2="0%">
-           <stop offset="0%" stopColor="#00E5FF"/>
-           <stop offset="100%" stopColor="#00E5FF"/>
+           <stop offset="0%" stopColor="#2DD4BF"/>
+           <stop offset="100%" stopColor="#8B5CF6"/>
         </linearGradient>
         <linearGradient id="pin-bottom" x1="0%" y1="0%" x2="100%" y2="0%">
-           <stop offset="0%" stopColor="#00E5FF"/>
-           <stop offset="100%" stopColor="#2A3FFF"/>
+           <stop offset="0%" stopColor="#2DD4BF"/>
+           <stop offset="100%" stopColor="#8B5CF6"/>
         </linearGradient>
       </defs>
 
@@ -616,9 +616,9 @@ export function ContexiaLogo({ className = "w-10 h-10" }: { className?: string }
 
       <path d="M 12 85 Q 60 125 105 45" stroke="url(#orbit)" strokeWidth="4" strokeLinecap="round" fill="none"/>
       
-      <path d="M 94 40 L 115 35 L 105 58 Z" fill="#00E5FF"/>
+      <path d="M 94 40 L 115 35 L 105 58 Z" fill="#8B5CF6"/>
 
-      <circle cx="20" cy="80" r="3" fill="#8AFF4F"/>
+      <circle cx="20" cy="80" r="3" fill="#2DD4BF"/>
       <circle cx="55" cy="105" r="4.5" fill="#121212" stroke="#FFFFFF" strokeWidth="2.5"/>
       <circle cx="70" cy="102" r="4.5" fill="#121212" stroke="#FFFFFF" strokeWidth="2.5"/>
     </svg>
