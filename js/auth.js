@@ -8,35 +8,19 @@ window.auth = {
 
     // Usuarios de prueba por rol
     users: {
-        empresa: {
-            username: 'empresa',
-            password: 'empresa',
+        empresario: {
+            username: 'empresario',
+            password: 'demo',
             profile: {
-                name: 'Carlos Mendoza',
-                role: 'empresa',
-                roleLabel: 'Empresa',
-                company: 'DistriFuXion AI',
-                companyNit: '900.123.456-7',
-                companyLogo: './assets/img/companies/distrifuxion-ai.png',
-                email: 'carlos@distribucionai.com',
-                avatar: 'CM',
+                name: 'Juan Peláez',
+                role: 'empresario',
+                roleLabel: 'Empresario',
+                company: 'Contexia Global',
+                companyNit: '900.789.012-3',
+                companyLogo: './assets/img/logo_contexia.png',
+                email: 'juan.pelaez@contexia.online',
+                avatar: 'JP',
                 homePage: 'panel_empresario.html'
-            }
-        },
-        contador: {
-            username: 'contador',
-            password: 'contador',
-            profile: {
-                name: 'Tatiana Barbosa',
-                role: 'contador',
-                roleLabel: 'Contadora',
-                company: 'Tatiana Barbosa',
-                companyNit: 'T.P. 123456-T',
-                companyLogo: './assets/img/profiles/tatiana-barbosa.jpg',
-                professionalCard: 'T.P. 123456-T',
-                email: 'tatiana@barbosacontadores.com',
-                avatar: 'TB',
-                homePage: 'panel_firma.html'
             }
         },
         admin: {
@@ -58,12 +42,8 @@ window.auth = {
 
     // Permisos de módulos por rol
     permissions: {
-        empresa: {
+        empresario: {
             modules: ['pulso_diario', 'panel_empresario', 'conciliacion', 'tesoreria', 'documentos', 'centinela', 'oraculo', 'benchmarking', 'copiloto'],
-            viewOnly: []
-        },
-        contador: {
-            modules: ['pulso_diario', 'panel_firma', 'conciliacion', 'tesoreria', 'documentos', 'centinela', 'oraculo', 'benchmarking', 'copiloto'],
             viewOnly: []
         },
         admin: {
