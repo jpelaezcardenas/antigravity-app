@@ -8,47 +8,42 @@ window.auth = {
 
     // Usuarios de prueba por rol
     users: {
-        empresa: {
-            username: 'empresa',
-            password: 'empresa',
+        empresario: {
+            username: 'empresario',
+            password: 'demo',
             profile: {
-                name: 'Carlos Mendoza',
-                role: 'empresa',
-                roleLabel: 'Empresa',
-                company: 'DistriFuXion AI',
-                companyNit: '900.123.456-7',
-                companyLogo: './assets/img/companies/distrifuxion-ai.png',
-                email: 'carlos@example.com',
-                avatar: 'CM',
+                name: 'Juan Peláez',
+                role: 'empresario',
+                roleLabel: 'Empresario',
+                company: 'Contexia Global',
+                companyNit: '900.789.012-3',
+                companyLogo: './assets/img/logo_contexia.png',
+                email: 'juan.pelaez@contexia.online',
+                avatar: 'JP',
                 homePage: 'panel_empresario.html'
             }
         },
-        contador: {
-            username: 'contador',
-            password: 'contador',
+        admin: {
+            username: 'admin',
+            password: 'admin',
             profile: {
-                name: 'Tatiana Barbosa',
-                role: 'contador',
-                roleLabel: 'Contadora',
-                company: 'Tatiana Barbosa',
-                companyNit: 'T.P. 123456-T',
-                companyLogo: './assets/img/profiles/tatiana-barbosa.jpg',
-                professionalCard: 'T.P. 123456-T',
-                email: 'tatiana@example.com',
-                avatar: 'TB',
-                homePage: 'panel_firma.html'
+                name: 'Juan Peláez',
+                role: 'admin',
+                roleLabel: 'Administrador',
+                company: 'Juan Peláez',
+                companyNit: 'C.C. 1.234.567.890',
+                companyLogo: './assets/img/profiles/juan-pelaez.jpg',
+                email: 'juan.pelaez@contexia.co',
+                avatar: 'JP',
+                homePage: 'pulso_diario.html'
             }
         }
     },
 
     // Permisos de módulos por rol
     permissions: {
-        empresa: {
+        empresario: {
             modules: ['pulso_diario', 'panel_empresario', 'conciliacion', 'tesoreria', 'documentos', 'centinela', 'oraculo', 'benchmarking', 'copiloto'],
-            viewOnly: []
-        },
-        contador: {
-            modules: ['pulso_diario', 'panel_firma', 'conciliacion', 'tesoreria', 'documentos', 'centinela', 'oraculo', 'benchmarking', 'copiloto'],
             viewOnly: []
         },
         admin: {
@@ -76,7 +71,7 @@ window.auth = {
 
     checkAuth() {
         const session = localStorage.getItem(this.key);
-        const isLoginPage = window.location.pathname.endsWith('login.html');
+        const isLoginPage = window.location.pathname.includes('login');
 
         if (!session && !isLoginPage) {
             window.location.href = 'login.html';
