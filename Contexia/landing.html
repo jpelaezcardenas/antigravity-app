@@ -358,7 +358,7 @@
                 <p class="text-white text-xl font-semibold mb-2">Queremos escucharte.</p>
                 <p class="text-slate-400 max-w-2xl mx-auto text-lg">Cuéntanos cómo manejas hoy tus impuestos y obligaciones con la DIAN, ¡Gracias por ayudar!</p>
                 <div class="mt-6 flex items-center justify-center gap-6 text-sm text-slate-500">
-                    <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> ~5 minutos</span>
+                    <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> ~2 minutos</span>
                     <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> 100% anónimo</span>
                     <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg> Escribe o graba</span>
                 </div>
@@ -368,7 +368,7 @@
             <div class="mb-10 fade-in">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs text-slate-500 font-medium">Progreso</span>
-                    <span id="interview-progress-text" class="text-xs text-teal font-bold">0 / 10</span>
+                    <span id="interview-progress-text" class="text-xs text-teal font-bold">0 / 3</span>
                 </div>
                 <div class="interview-progress-bar">
                     <div id="interview-progress-fill" class="interview-progress-fill"></div>
@@ -378,11 +378,11 @@
             <!-- Interview Form -->
             <form id="interview-form" class="space-y-4 fade-in">
 
-                <!-- Pregunta 1 -->
+                <!-- Pregunta 1: Validación del dolor (miedo DIAN) -->
                 <div class="interview-card" data-question="1">
                     <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
                         <span class="question-number bg-teal/10 text-teal">1</span>
-                        <p class="text-white font-semibold leading-relaxed flex-1">Cuéntame cómo fue tu proceso de formalizar tu emprendimiento: ¿qué pasos seguiste y en qué momento te sentiste perdido?</p>
+                        <p class="text-white font-semibold leading-relaxed flex-1">¿Qué fue lo que más te asustó al pensar en la DIAN o en la Cámara de Comercio cuando empezaste?</p>
                         <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
                     <div class="accordion-body">
@@ -398,11 +398,11 @@
                     </div>
                 </div>
 
-                <!-- Pregunta 2 -->
+                <!-- Pregunta 2: Comportamiento actual (alternativas) -->
                 <div class="interview-card" data-question="2">
                     <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
                         <span class="question-number bg-violet/10 text-violet">2</span>
-                        <p class="text-white font-semibold leading-relaxed flex-1">¿Qué fue lo que más te asustó al pensar en la DIAN o en la Cámara de Comercio cuando empezaste?</p>
+                        <p class="text-white font-semibold leading-relaxed flex-1">¿Cómo manejas hoy tus impuestos y obligaciones? ¿Lo haces solo, con contador, app... o lo pospones?</p>
                         <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
                     <div class="accordion-body">
@@ -418,11 +418,11 @@
                     </div>
                 </div>
 
-                <!-- Pregunta 3 -->
+                <!-- Pregunta 3: Validación de solución (herramienta ideal) -->
                 <div class="interview-card" data-question="3">
                     <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
                         <span class="question-number bg-orange/10 text-orange">3</span>
-                        <p class="text-white font-semibold leading-relaxed flex-1">Describe una situación específica donde hayas sentido miedo a cometer un error tributario... ¿qué pasó después?</p>
+                        <p class="text-white font-semibold leading-relaxed flex-1">Imagina que existiera una herramienta que te guiara desde cero en RUT, régimen, facturación, proyecciones fiscales... ¿qué tendría que tener para que la usaras ya?</p>
                         <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
                     <div class="accordion-body">
@@ -435,146 +435,6 @@
                             </button>
                         </div>
                         <div class="audio-playback" id="audio-q3"></div>
-                    </div>
-                </div>
-
-                <!-- Pregunta 4 -->
-                <div class="interview-card" data-question="4">
-                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
-                        <span class="question-number bg-blue-500/10 text-blue-400">4</span>
-                        <p class="text-white font-semibold leading-relaxed flex-1">¿Cuánto tiempo y plata has gastado hasta ahora solo en trámites legales o contables? ¿Valió la pena?</p>
-                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <textarea class="interview-textarea" id="q4" name="q4" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
-                        <div class="flex items-center justify-between mt-3">
-                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q4')">
-                                <span class="record-dot"></span>
-                                <span class="record-label">Grabar respuesta</span>
-                                <span class="record-timer">00:00</span>
-                            </button>
-                        </div>
-                        <div class="audio-playback" id="audio-q4"></div>
-                    </div>
-                </div>
-
-                <!-- Pregunta 5 -->
-                <div class="interview-card" data-question="5">
-                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
-                        <span class="question-number bg-red-500/10 text-red-400">5</span>
-                        <p class="text-white font-semibold leading-relaxed flex-1">¿Alguna vez has recibido una notificación, multa o advertencia de la DIAN? Si sí, ¿cómo te hizo sentir y qué hiciste?</p>
-                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <textarea class="interview-textarea" id="q5" name="q5" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
-                        <div class="flex items-center justify-between mt-3">
-                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q5')">
-                                <span class="record-dot"></span>
-                                <span class="record-label">Grabar respuesta</span>
-                                <span class="record-timer">00:00</span>
-                            </button>
-                        </div>
-                        <div class="audio-playback" id="audio-q5"></div>
-                    </div>
-                </div>
-
-                <!-- Pregunta 6 -->
-                <div class="interview-card" data-question="6">
-                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
-                        <span class="question-number bg-emerald-500/10 text-emerald-400">6</span>
-                        <p class="text-white font-semibold leading-relaxed flex-1">Si pudieras retroceder al día uno, ¿qué información o ayuda te habría evitado estrés o errores?</p>
-                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <textarea class="interview-textarea" id="q6" name="q6" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
-                        <div class="flex items-center justify-between mt-3">
-                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q6')">
-                                <span class="record-dot"></span>
-                                <span class="record-label">Grabar respuesta</span>
-                                <span class="record-timer">00:00</span>
-                            </button>
-                        </div>
-                        <div class="audio-playback" id="audio-q6"></div>
-                    </div>
-                </div>
-
-                <!-- Pregunta 7 -->
-                <div class="interview-card" data-question="7">
-                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
-                        <span class="question-number bg-pink-500/10 text-pink-400">7</span>
-                        <p class="text-white font-semibold leading-relaxed flex-1">¿Cómo manejas hoy tus impuestos y obligaciones? ¿Lo haces solo, con contador, app... o lo pospones?</p>
-                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <textarea class="interview-textarea" id="q7" name="q7" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
-                        <div class="flex items-center justify-between mt-3">
-                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q7')">
-                                <span class="record-dot"></span>
-                                <span class="record-label">Grabar respuesta</span>
-                                <span class="record-timer">00:00</span>
-                            </button>
-                        </div>
-                        <div class="audio-playback" id="audio-q7"></div>
-                    </div>
-                </div>
-
-                <!-- Pregunta 8 -->
-                <div class="interview-card" data-question="8">
-                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
-                        <span class="question-number bg-amber-500/10 text-amber-400">8</span>
-                        <p class="text-white font-semibold leading-relaxed flex-1">¿Qué tan importante es para ti pagar lo mínimo posible de impuestos sin meterte en problemas? ¿Por qué?</p>
-                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <textarea class="interview-textarea" id="q8" name="q8" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
-                        <div class="flex items-center justify-between mt-3">
-                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q8')">
-                                <span class="record-dot"></span>
-                                <span class="record-label">Grabar respuesta</span>
-                                <span class="record-timer">00:00</span>
-                            </button>
-                        </div>
-                        <div class="audio-playback" id="audio-q8"></div>
-                    </div>
-                </div>
-
-                <!-- Pregunta 9 -->
-                <div class="interview-card" data-question="9">
-                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
-                        <span class="question-number bg-cyan-500/10 text-cyan-400">9</span>
-                        <p class="text-white font-semibold leading-relaxed flex-1">¿Conoces a otros emprendedores que hayan "quemado" plata por no saber cómo estructurar la empresa? ¿Qué les pasó?</p>
-                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <textarea class="interview-textarea" id="q9" name="q9" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
-                        <div class="flex items-center justify-between mt-3">
-                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q9')">
-                                <span class="record-dot"></span>
-                                <span class="record-label">Grabar respuesta</span>
-                                <span class="record-timer">00:00</span>
-                            </button>
-                        </div>
-                        <div class="audio-playback" id="audio-q9"></div>
-                    </div>
-                </div>
-
-                <!-- Pregunta 10 -->
-                <div class="interview-card" data-question="10">
-                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
-                        <span class="question-number bg-teal/10 text-teal">10</span>
-                        <p class="text-white font-semibold leading-relaxed flex-1">Imagina que existiera una herramienta que te guiara desde cero en RUT, régimen, facturación, proyecciones fiscales... ¿qué tendría que tener para que la usaras ya?</p>
-                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <textarea class="interview-textarea" id="q10" name="q10" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
-                        <div class="flex items-center justify-between mt-3">
-                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q10')">
-                                <span class="record-dot"></span>
-                                <span class="record-label">Grabar respuesta</span>
-                                <span class="record-timer">00:00</span>
-                            </button>
-                        </div>
-                        <div class="audio-playback" id="audio-q10"></div>
                     </div>
                 </div>
 
@@ -1375,15 +1235,15 @@
 
         function updateProgress() {
             let answered = 0;
-            for (let i = 1; i <= 10; i++) {
+            for (let i = 1; i <= 3; i++) {
                 const textarea = document.getElementById(`q${i}`);
                 const hasText = textarea && textarea.value.trim().length > 0;
                 const hasAudio = !!audioBlobs[`q${i}`];
                 if (hasText || hasAudio) answered++;
             }
-            const pct = (answered / 10) * 100;
+            const pct = (answered / 3) * 100;
             document.getElementById('interview-progress-fill').style.width = `${pct}%`;
-            document.getElementById('interview-progress-text').textContent = `${answered} / 10`;
+            document.getElementById('interview-progress-text').textContent = `${answered} / 3`;
         }
 
         // Form submission - Send to Google Apps Script
@@ -1403,7 +1263,7 @@
 
             // Collect all responses
             const responses = {};
-            for (let i = 1; i <= 10; i++) {
+            for (let i = 1; i <= 3; i++) {
                 const textarea = document.getElementById(`q${i}`);
                 responses[`q${i}_text`] = textarea ? textarea.value.trim() : '';
                 responses[`q${i}_audio_transcript`] = audioTranscripts[`q${i}`] || '';
