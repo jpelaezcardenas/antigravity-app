@@ -1,5 +1,5 @@
 {
-    "name": "contexia-web-app",
+    "name": "contexia-fullstack",
     "version": 2,
     "redirects": [
         {
@@ -7,5 +7,13 @@
             "destination": "/landing.html",
             "permanent": false
         }
-    ]
+    ],
+    "rewrites": [
+        {
+            "source": "/app/(.*)",
+            "destination": "/panel_empresario.html"
+        }
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false
 }

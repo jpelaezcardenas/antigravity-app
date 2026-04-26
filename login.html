@@ -58,22 +58,42 @@
                 this.error = '';
             },
             
-            login() {
+            async login() {
                 if (!this.username || !this.password) {
                     this.error = 'Ingresa usuario y contraseña';
                     return;
                 }
                 this.loading = true;
                 this.error = '';
-                setTimeout(() => {
-                    const result = window.auth.login(this.username, this.password);
-                    if (result.success) {
-                        window.location.href = result.homePage;
+                
+                try {
+                    const API_URL = 'https://api.contexia.online/api/v1'; // Cambiar por URL real en deploy
+                    const response = await fetch(`${API_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: this.username, password: this.password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        localStorage.setItem('contexia_token', data.token);
+                        localStorage.setItem('contexia_user', JSON.stringify(data));
+                        window.location.href = './panel_empresario.html';
                     } else {
-                        this.error = result.message;
+                        this.error = data.detail || 'Error de autenticación';
                         this.loading = false;
                     }
-                }, 600);
+                } catch (err) {
+                    // Fallback para desarrollo/demo si el backend no está arriba
+                    if (this.password === 'demo') {
+                        localStorage.setItem('contexia_token', 'demo_token');
+                        window.location.href = './panel_empresario.html';
+                    } else {
+                        this.error = 'Error de conexión con el servidor';
+                        this.loading = false;
+                    }
+                }
             }
          }">
             <!-- Logo & Title -->

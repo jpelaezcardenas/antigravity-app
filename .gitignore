@@ -43,3 +43,12 @@ cookies.json
 # Vercel
 .vercel
 
+# Node
+node_modules/
+dist/
+.env
+*.local
+
+# Apps
+apps/backend/venv/
+apps/backend/.env

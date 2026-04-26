@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
+import { usePulso } from './hooks/usePulso';
 
 import {
   LayoutDashboard,
@@ -52,6 +53,7 @@ export default function App() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState(data);
+  const { pulso } = usePulso(session?.user?.id || null);
 
   useEffect(() => {
     // Check active session
@@ -132,7 +134,7 @@ export default function App() {
       <div className="flex-1 flex flex-col min-w-0">
         <TopNav user={user} />
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
-          <DashboardContent user={user} transactions={transactions} />
+          <DashboardContent user={user} transactions={transactions} pulso={pulso} />
         </main>
       </div>
     </div>
@@ -268,9 +270,12 @@ function TopNav({ user }: { user: any }) {
   );
 }
 
-function DashboardContent({ user, transactions }: { user: any, transactions: any[] }) {
-
+function DashboardContent({ user, transactions, pulso }: { user: any, transactions: any[], pulso: any }) {
   const firstName = user?.name ? user.name.split(' ')[0] : 'Usuario';
+  
+  const formatCurrency = (val: number) => 
+    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 py-2">
@@ -296,7 +301,7 @@ function DashboardContent({ user, transactions }: { user: any, transactions: any
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           title="Caja Real Hoy"
-          value="$2,500,000 COP"
+          value={pulso ? formatCurrency(pulso.ingresos_hoy - pulso.gastos_hoy) : "$0 COP"}
           trend=""
           isUp={true}
           icon={Wallet}
@@ -304,29 +309,29 @@ function DashboardContent({ user, transactions }: { user: any, transactions: any
           highlight
         />
         <KpiCard
-          title="Impuestos Estimados"
-          value="$850,000 COP"
+          title="Provisión DIAN"
+          value={pulso ? formatCurrency(pulso.provision_dian) : "$0 COP"}
           trend=""
           isUp={false}
           icon={Radar}
           color="violet"
         />
         <KpiCard
+          title="Dinero TUYO"
+          value={pulso ? formatCurrency(pulso.dinero_tuyo_hoy) : "$0 COP"}
+          trend={pulso && pulso.dinero_tuyo_hoy < 0 ? "¡OJO! USANDO PLATA DIAN" : "SALDO SEGURO"}
+          isUp={pulso ? pulso.dinero_tuyo_hoy > 0 : true}
+          icon={ShieldAlert}
+          color={pulso && pulso.dinero_tuyo_hoy < 0 ? "red" : "teal"}
+          highlight
+        />
+        <KpiCard
           title="Riesgo Fiscal"
           value="Bajo"
           trend=""
           isUp={true}
-          icon={ShieldAlert}
-          color="teal"
-          highlight
-        />
-        <KpiCard
-          title="Alertas Activas"
-          value="3"
-          trend=""
-          isUp={false}
           icon={AlertTriangle}
-          color="yellow"
+          color="teal"
           highlight
         />
       </div>
