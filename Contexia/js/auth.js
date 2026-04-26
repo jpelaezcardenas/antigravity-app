@@ -20,7 +20,7 @@ window.auth = {
                 companyLogo: './assets/img/logo_contexia.png',
                 email: 'juan.pelaez@contexia.online',
                 avatar: 'JP',
-                homePage: 'panel_empresario.html'
+                homePage: '/app'
             }
         },
         admin: {

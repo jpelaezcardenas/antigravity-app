@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
             title: 'Dashboards',
             items: [
                 { href: 'pulso_diario.html', icon: 'dashboard', label: 'Flujo de Caja', module: 'pulso_diario', roles: ['empresa', 'contador', 'admin'] },
-                { href: 'panel_empresario.html', icon: 'store', label: 'Mi Empresa', module: 'panel_empresario', roles: ['empresa', 'admin'] },
+                { href: '/app', icon: 'store', label: 'Mi Empresa', module: 'panel_empresario', roles: ['empresa', 'admin'] },
                 { href: 'panel_firma.html', icon: 'business_center', label: 'Panel Firma', module: 'panel_firma', roles: ['contador', 'admin'] }
             ]
         },

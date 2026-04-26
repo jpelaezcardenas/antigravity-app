@@ -79,7 +79,7 @@
                     if (response.ok) {
                         localStorage.setItem('contexia_token', data.token);
                         localStorage.setItem('contexia_user', JSON.stringify(data));
-                        window.location.href = './panel_empresario.html';
+                        window.location.href = '/app';
                     } else {
                         this.error = data.detail || 'Error de autenticación';
                         this.loading = false;
@@ -88,7 +88,7 @@
                     // Fallback para desarrollo/demo si el backend no está arriba
                     if (this.password === 'demo') {
                         localStorage.setItem('contexia_token', 'demo_token');
-                        window.location.href = './panel_empresario.html';
+                        window.location.href = '/app';
                     } else {
                         this.error = 'Error de conexión con el servidor';
                         this.loading = false;

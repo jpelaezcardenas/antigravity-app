@@ -11,7 +11,7 @@
     "rewrites": [
         {
             "source": "/app/(.*)",
-            "destination": "/panel_empresario.html"
+            "destination": "/app/index.html"
         }
     ],
     "cleanUrls": true,

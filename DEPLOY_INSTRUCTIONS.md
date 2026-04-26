@@ -19,12 +19,13 @@ Sigue estos pasos para poner la plataforma en producción.
 
 ## 3. Dashboard (React en Vercel)
 1. Conecta el repositorio a Vercel.
-2. Configura la "Root Directory" como `Contexia_Daschboard`.
-3. Agrega variables de entorno:
+2. Configura el "Build Command" como: `cd Contexia_Daschboard && npm install && npm run build`
+3. Configura el "Output Directory" como: `app`
+4. Agrega variables de entorno:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
    - `VITE_API_URL=https://api.contexia.online/api/v1`
-4. Despliega y configura el dominio `app.contexia.online`.
+4. Despliega y asegura que el dominio principal sea `contexia.online`. El dashboard será accesible en `/app`.
 
 ## 4. Landing Page (Raíz en Vercel)
 1. Conecta el repositorio a Vercel.
