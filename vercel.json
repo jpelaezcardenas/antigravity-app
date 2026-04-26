@@ -1,19 +1,27 @@
 {
-      "name": "contexia-fullstack",
-      "version": 2,
-      "redirects": [
-              {
-                        "source": "/",
-                        "destination": "/landing.html",
-                        "permanent": false
-              }
-      ],
-      "rewrites": [
-              {
-                        "source": "/app/(.*)",
-                        "destination": "/app/index.html"
-              }
-      ],
-      "cleanUrls": true,
-      "trailingSlash": false
+    "name": "contexia-fullstack",
+    "version": 2,
+    "redirects": [
+        {
+            "source": "/",
+            "destination": "/landing.html",
+            "permanent": false
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/app",
+            "destination": "/app/index.html"
+        },
+        {
+            "source": "/app/",
+            "destination": "/app/index.html"
+        },
+        {
+            "source": "/app/:path((?!dashboard-assets/|.*\\.).*)",
+            "destination": "/app/index.html"
+        }
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false
 }

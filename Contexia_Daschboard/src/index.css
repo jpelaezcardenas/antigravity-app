@@ -12,14 +12,17 @@
   --color-ctx-text: #F8FAFC;
   --color-ctx-muted: #94A3B8;
   --color-ctx-border: rgba(255, 255, 255, 0.06);
+  --color-navy-dark: #020617;
+  --color-navy-light: #0F172A;
 }
 
 @layer base {
   body {
-    @apply bg-ctx-bg text-ctx-text font-sans antialiased;
+    @apply bg-navy-dark text-ctx-text font-sans antialiased;
     background-image: 
-      radial-gradient(circle at 0% 0%, rgba(45, 212, 191, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
+      radial-gradient(circle at 0% 0%, rgba(45, 212, 191, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
+    min-height: 100vh;
   }
 }
 
@@ -29,7 +32,15 @@
   }
 
   .glass-card {
-    @apply bg-ctx-panel/40 backdrop-blur-xl border border-ctx-border shadow-2xl;
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl;
+  }
+
+  .premium-button {
+    @apply bg-gradient-to-r from-ctx-teal to-ctx-violet text-white font-bold rounded-xl shadow-lg hover:shadow-ctx-teal/20 transition-all active:scale-95 disabled:opacity-50;
+  }
+
+  .premium-button-secondary {
+    @apply bg-white/5 border border-white/10 text-white hover:bg-white/10 rounded-xl transition-all active:scale-95;
   }
 
   .font-orbitron {
@@ -38,5 +49,17 @@
 
   .font-rajdhani {
     font-family: 'Rajdhani', sans-serif;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
   }
 }

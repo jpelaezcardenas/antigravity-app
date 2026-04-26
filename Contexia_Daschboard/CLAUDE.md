@@ -10,7 +10,7 @@ Contexia es una **Entidad B tecnológica** (no una firma contable tradicional). 
 - **Lógica de Automatización:** (Planificado) Python/FastAPI para OCR, integración XML DIAN y SyncManager.
 - **Despliegue:** 
   - Landing: `contexia.online`
-  - Web App: `app.contexia.online`
+  - Web App: `contexia.online/app`
   - API: `api.contexia.online`
 
 ## Reglas de Desarrollo
