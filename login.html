@@ -66,28 +66,20 @@
                 this.loading = true;
                 this.error = '';
                 
-                try {
-                    const API_URL = 'https://api.contexia.online/api/v1';
-                    const response = await fetch(`${API_URL}/auth/login`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: this.username, password: this.password })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        localStorage.setItem('token', data.token);
-                        localStorage.setItem('user', JSON.stringify(data));
-                        window.location.href = '/app';
-                    } else {
-                        this.error = data.detail || 'Error de autenticación';
-                        this.loading = false;
-                    }
-                } catch (err) {
-                    this.error = 'Error de conexión con el servidor';
-                    this.loading = false;
-                }
+                // Mock login — no API call needed
+                const mockUser = {
+                    usuario_id: 'usr_001',
+                    token: 'mock-jwt-token-contexia-2024',
+                    nombre_empresa: 'Lavaderos L&D',
+                    email: this.username,
+                    plan: 'starter'
+                };
+                
+                setTimeout(() => {
+                    localStorage.setItem('token', mockUser.token);
+                    localStorage.setItem('cx_user', JSON.stringify(mockUser));
+                    window.location.href = '/app';
+                }, 600);
             }
          }">
             <!-- Logo & Title -->
