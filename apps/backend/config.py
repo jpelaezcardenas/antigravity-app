@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     JWT_EXPIRE_MINUTES: int = 1440
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
-    ALLOWED_ORIGINS: str = "http://localhost:5173,https://contexia.online"
+    ALLOWED_ORIGINS: str = "http://localhost:5173,https://contexia.online,https://www.contexia.online"
 
     @property
     def origins_list(self) -> List[str]:
