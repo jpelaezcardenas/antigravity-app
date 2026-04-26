@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from './lib/supabase';
+
 import {
   LayoutDashboard,
   Wallet,
@@ -46,31 +48,99 @@ const data = [
 ];
 
 export default function App() {
-  const [user, setUser] = React.useState<any>(null);
+  const [session, setSession] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState(data);
 
-  React.useEffect(() => {
-    const session = localStorage.getItem('cx_session');
-    if (session) {
-      setUser(JSON.parse(session));
-    } else {
-      window.location.href = 'login.html';
-    }
+  useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) fetchProfile(session.user.id);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        fetchProfile(session.user.id);
+        fetchTransactions();
+      }
+      else setUserProfile(null);
+    });
+
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const fetchProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*, companies(*)')
+      .eq('id', userId)
+      .single();
+    
+    if (!error) setUserProfile(data);
+  };
+
+  const fetchTransactions = async () => {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .order('date', { ascending: true });
+    
+    if (!error && data && data.length > 0) {
+      // Map Supabase data to Recharts format
+      const mapped = data.map(t => ({
+        name: new Date(t.date).getDate().toString(),
+        ingresos: t.type === 'income' ? Number(t.amount) : 0,
+        egresos: t.type === 'expense' ? Number(t.amount) : 0
+      }));
+      setTransactions(mapped);
+    }
+  };
+
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-ctx-bg flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-ctx-teal"></div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <LoginView />;
+  }
+
+  const user = {
+    name: userProfile?.name || session.user.email?.split('@')[0],
+    role: userProfile?.role || 'User',
+    company: userProfile?.companies?.name || 'Empresa'
+  };
+
 
   return (
     <div className="min-h-screen bg-ctx-bg text-ctx-muted flex font-sans selection:bg-ctx-teal/30">
-      <Sidebar />
+      <Sidebar onLogout={handleLogout} />
       <div className="flex-1 flex flex-col min-w-0">
         <TopNav user={user} />
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
-          <DashboardContent user={user} />
+          <DashboardContent user={user} transactions={transactions} />
         </main>
       </div>
     </div>
   );
 }
 
-function Sidebar() {
+function Sidebar({ onLogout }: { onLogout: () => void }) {
+
   return (
     <aside className="w-64 border-r border-ctx-border bg-ctx-surface flex-col hidden lg:flex">
       <div className="h-16 flex items-center px-6 border-b border-ctx-border">
@@ -108,10 +178,7 @@ function Sidebar() {
         </div>
 
         <button 
-          onClick={() => {
-            localStorage.removeItem('cx_session');
-            window.location.href = 'login.html';
-          }}
+          onClick={onLogout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-ctx-muted hover:text-red-400 hover:bg-red-400/10 transition-colors mt-2 w-full"
         >
           <LogOut className="w-5 h-5" />
@@ -201,7 +268,8 @@ function TopNav({ user }: { user: any }) {
   );
 }
 
-function DashboardContent({ user }: { user: any }) {
+function DashboardContent({ user, transactions }: { user: any, transactions: any[] }) {
+
   const firstName = user?.name ? user.name.split(' ')[0] : 'Usuario';
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -625,3 +693,83 @@ export function ContexiaLogo({ className = "w-10 h-10" }: { className?: string }
   );
 }
 
+
+function LoginView() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) setError(error.message);
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-ctx-bg flex items-center justify-center p-4">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <ContexiaLogo className="w-16 h-16" />
+          </div>
+          <h2 className="text-3xl font-orbitron font-bold text-white">CONTEXIA</h2>
+          <p className="mt-2 text-ctx-muted font-rajdhani tracking-wider uppercase">GPS for Cash Flow & Tax Risk</p>
+        </div>
+        
+        <div className="glass-card p-8 rounded-2xl border border-ctx-border shadow-2xl">
+          <form className="space-y-6" onSubmit={handleLogin}>
+            <div>
+              <label className="block text-sm font-medium text-ctx-muted mb-2">Correo Electrónico</label>
+              <input
+                type="email"
+                required
+                className="w-full bg-ctx-panel border border-ctx-border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-ctx-teal transition-all"
+                placeholder="tu@empresa.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ctx-muted mb-2">Contraseña</label>
+              <input
+                type="password"
+                required
+                className="w-full bg-ctx-panel border border-ctx-border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-ctx-teal transition-all"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            {error && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-gradient-to-r from-ctx-teal to-ctx-violet text-ctx-panel font-bold rounded-xl shadow-lg hover:brightness-110 transition-all disabled:opacity-50"
+            >
+              {loading ? 'Iniciando sesión...' : 'Entrar al Dashboard'}
+            </button>
+          </form>
+          
+          <div className="mt-6 text-center">
+             <p className="text-xs text-ctx-muted italic">MVP v1.0 - Acceso exclusivo para 16 usuarios seleccionados</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
