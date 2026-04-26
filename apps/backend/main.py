@@ -59,8 +59,12 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 # Incluir routers
-app.include_router(health_router)
+api_router.include_router(health_router)
 app.include_router(api_router, prefix="/api/v1")
 
+
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=True)
+    import os
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+

@@ -1,5 +1,5 @@
 from typing import Optional, List
-from infrastructure.supabase_client import supabase
+from infrastructure.supabase_client import supabase_client as supabase
 from domain.usuario import Usuario, UsuarioCreate
 from core.security import hash_password
 
