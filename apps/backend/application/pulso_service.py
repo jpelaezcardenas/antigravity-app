@@ -1,54 +1,60 @@
-from datetime import date
-from typing import List
-from domain.transaccion import PulsoDiario, Transaccion
-from infrastructure.repositories.transaccion_repository import TransaccionRepository
-from infrastructure.repositories.usuario_repository import UsuarioRepository
+from infrastructure.repositories.transaccion_repo import TransaccionRepository
+from infrastructure.repositories.usuario_repo import UsuarioRepository
+from domain.transaccion import PulsoDiario
+from datetime import date, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
 
 class PulsoService:
-    def __init__(
-        self, 
-        trans_repo: TransaccionRepository = TransaccionRepository(),
-        user_repo: UsuarioRepository = UsuarioRepository()
-    ):
-        self.trans_repo = trans_repo
-        self.user_repo = user_repo
+    def __init__(self):
+        self.transaccion_repo = TransaccionRepository()
+        self.usuario_repo = UsuarioRepository()
 
-    def calcular_pulso_diario(self, user_id: str, fecha: date = date.today()) -> PulsoDiario:
-        user = self.user_repo.get_by_id(user_id)
+    async def calcular_pulso_diario(self, usuario_id: str, fecha: date = None):
+        if not fecha:
+            fecha = date.today()
+            
+        user = await self.usuario_repo.get_by_id(usuario_id)
         if not user:
-            # Fallback para demo
-            porcentaje_renta = 0.35
-            porcentaje_iva = 0.19
-        else:
-            porcentaje_renta = user.porcentaje_renta
-            porcentaje_iva = user.porcentaje_iva
+            return None
 
-        transacciones = self.trans_repo.get_by_date_range(user_id, fecha, fecha)
+        # Obtenemos transacciones de los últimos 30 días para contexto, pero nos enfocamos en el día
+        # O según la lógica de Contexia: "dinero tuyo hoy"
+        # Traeremos todas las transacciones del mes actual para el cálculo
+        start_date = fecha.replace(day=1)
+        end_date = fecha
         
-        ingresos = sum(t.monto for t in transacciones if t.tipo == "ingreso")
-        gastos = sum(t.monto for t in transacciones if t.tipo == "gasto")
+        transactions = await self.transaccion_repo.get_by_usuario_and_date(usuario_id, start_date, end_date)
         
+        ingresos = sum(t["monto"] for t in transactions if t["tipo"] == "ingreso")
+        gastos = sum(t["monto"] for t in transactions if t["tipo"] == "gasto")
         margen = ingresos - gastos
         
-        # Lógica de GPS Financiero: Cuánto es realmente tuyo
-        # Asumiendo que los ingresos incluyen IVA (brutos) y gastos incluyen IVA
-        # Esto es una simplificación para el MVP
-        provision_iva = ingresos * (porcentaje_iva / (1 + porcentaje_iva))
-        provision_renta = (ingresos - gastos) * porcentaje_renta if (ingresos - gastos) > 0 else 0
+        # Provisión DIAN basada en los porcentajes del usuario
+        provision_renta = ingresos * user.get("porcentaje_renta", 0.35)
+        provision_iva = (ingresos - gastos) * user.get("porcentaje_iva", 0.19)
+        if provision_iva < 0: provision_iva = 0
         
-        provision_total = provision_iva + provision_renta
-        dinero_tuyo = margen - provision_total
-
+        total_provision = provision_renta + provision_iva
+        dinero_tuyo = margen - total_provision
+        
         advertencias = []
-        if dinero_tuyo < 0:
-            advertencias.append("Alerta: Estás gastando dinero que le pertenece a la DIAN.")
-        
+        # Detectar falta de sincronización (ej: si no hay transacciones hoy)
+        transacciones_hoy = [t for t in transactions if t["fecha"] == fecha.isoformat()]
+        if not transacciones_hoy:
+            advertencias.append("No se detectan transacciones sincronizadas hoy")
+            
+        # Brechas anormales (ej: si gastos > ingresos)
+        if gastos > ingresos:
+            advertencias.append("Alerta: Los gastos superan los ingresos este mes")
+
         return PulsoDiario(
             fecha=fecha,
-            ingresos_hoy=ingresos,
-            gastos_hoy=gastos,
-            margen_hoy=margen,
-            provision_dian=provision_total,
+            ingresos=ingresos,
+            gastos=gastos,
+            margen=margen,
+            provision_dian=total_provision,
             dinero_tuyo_hoy=dinero_tuyo,
             advertencias=advertencias
         )

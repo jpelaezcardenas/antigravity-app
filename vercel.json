@@ -10,15 +10,11 @@
     ],
     "rewrites": [
         {
-            "source": "/app",
-            "destination": "/app/index.html"
-        },
-        {
-            "source": "/app/",
-            "destination": "/app/index.html"
-        },
-        {
             "source": "/app/:path((?!dashboard-assets/|.*\\.).*)",
+            "destination": "/app/index.html"
+        },
+        {
+            "source": "/app",
             "destination": "/app/index.html"
         }
     ],

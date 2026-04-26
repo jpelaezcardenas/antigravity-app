@@ -2,30 +2,29 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 
-class UsuarioBase(BaseModel):
+class Usuario(BaseModel):
+    id: str
     email: EmailStr
     nombre_empresa: str
-    nit: Optional[str] = None
-    plan: str = "starter"
+    nit: str
+    plan: str  # "starter" | "growth" | "enterprise"
     porcentaje_renta: float = 0.35
     porcentaje_iva: float = 0.19
     activo: bool = True
-
-class UsuarioCreate(UsuarioBase):
-    password: str
-
-class Usuario(UsuarioBase):
-    id: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+class UsuarioCreate(BaseModel):
+    email: EmailStr
+    password: str
+    nombre_empresa: str
+    nit: str
+    plan: str = "starter"
 
 class LoginRequest(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
-class Token(BaseModel):
+class TokenResponse(BaseModel):
     token: str
     usuario_id: str
     nombre_empresa: str

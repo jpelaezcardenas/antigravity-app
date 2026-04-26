@@ -36,10 +36,6 @@
 
 <body class="bg-navy-dark text-white min-h-screen flex items-center justify-center p-4">
 
-    <script>
-        // Redirect to new React dashboard login
-        window.location.replace('/app');
-    </script>
     <div class="max-w-md w-full" x-data="{ 
             username: '', 
             password: '', 
@@ -71,7 +67,7 @@
                 this.error = '';
                 
                 try {
-                    const API_URL = 'https://api.contexia.online/api/v1'; // Cambiar por URL real en deploy
+                    const API_URL = 'https://api.contexia.online/api/v1';
                     const response = await fetch(`${API_URL}/auth/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -81,22 +77,16 @@
                     const data = await response.json();
                     
                     if (response.ok) {
-                        localStorage.setItem('contexia_token', data.token);
-                        localStorage.setItem('contexia_user', JSON.stringify(data));
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('user', JSON.stringify(data));
                         window.location.href = '/app';
                     } else {
                         this.error = data.detail || 'Error de autenticación';
                         this.loading = false;
                     }
                 } catch (err) {
-                    // Fallback para desarrollo/demo si el backend no está arriba
-                    if (this.password === 'demo') {
-                        localStorage.setItem('contexia_token', 'demo_token');
-                        window.location.href = '/app';
-                    } else {
-                        this.error = 'Error de conexión con el servidor';
-                        this.loading = false;
-                    }
+                    this.error = 'Error de conexión con el servidor';
+                    this.loading = false;
                 }
             }
          }">

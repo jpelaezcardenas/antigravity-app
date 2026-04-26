@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from './lib/supabase';
+import { authApi, pulsoApi } from './services/api';
 import { usePulso } from './hooks/usePulso';
 
 import { 
@@ -259,75 +259,49 @@ const LoginView = ({ onLogin, loading, error, setEmail, setPassword, email, pass
 // --- Main Application ---
 
 export default function App() {
-  const [session, setSession] = useState<any>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState('inicio');
-  const [transactions, setTransactions] = useState(data);
-  const { pulso } = usePulso(session?.user?.id || null);
+  
+  // Hook de Pulso
+  const { data: pulsoData, loading: pulsoLoading } = usePulso(user?.usuario_id || null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) fetchProfile(session.user.id);
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) {
-        fetchProfile(session.user.id);
-        fetchTransactions();
-      }
-      else setUserProfile(null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*, companies(*)')
-      .eq('id', userId)
-      .single();
-    
-    if (!error) setUserProfile(data);
-  };
-
-  const fetchTransactions = async () => {
-    const { data, error } = await supabase
-      .from('transactions')
-      .select('*')
-      .order('date', { ascending: true });
-    
-    if (!error && data && data.length > 0) {
-      const mapped = data.map(t => ({
-        name: new Date(t.date).getDate().toString(),
-        ingresos: t.type === 'income' ? Number(t.amount) : 0,
-        egresos: t.type === 'expense' ? Number(t.amount) : 0
-      }));
-      setTransactions(mapped);
+    const savedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    if (savedUser && token) {
+      setUser(JSON.parse(savedUser));
     }
-  };
+    setLoading(false);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthLoading(true);
     setAuthError('');
     
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) setAuthError(error.message);
-    setAuthLoading(false);
+    try {
+      const response = await authApi.login({ email, password });
+      const userData = response.data;
+      
+      localStorage.setItem('token', userData.token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+    } catch (err: any) {
+      setAuthError(err.response?.data?.detail || 'Error de conexión con el servidor');
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
   };
 
   if (loading) {
@@ -345,27 +319,7 @@ export default function App() {
     );
   }
 
-  if (session && userProfile && userProfile.role !== 'Empresario' && userProfile.role !== 'Admin') {
-    return (
-      <div className="min-h-screen bg-navy-dark flex items-center justify-center p-6 text-center">
-        <div className="glass-card max-w-md p-8 border-red-500/30">
-          <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="font-orbitron text-2xl mb-4">Acceso Denegado</h1>
-          <p className="text-gray-400 mb-6">
-            Esta versión del portal está reservada exclusivamente para el perfil <strong>Empresario</strong>.
-          </p>
-          <button 
-            onClick={handleLogout}
-            className="premium-button-secondary px-6 py-3"
-          >
-            Cerrar Sesión
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!session) {
+  if (!user) {
     return (
       <LoginView 
         onLogin={handleLogin} 
@@ -379,17 +333,17 @@ export default function App() {
     );
   }
 
-  const user = {
-    name: userProfile?.name || session.user.email?.split('@')[0],
-    role: userProfile?.role || 'User',
-    company: userProfile?.companies?.name || 'Empresa'
+  const userDisplay = {
+    name: user.nombre_empresa,
+    role: 'Empresario',
+    id: user.usuario_id
   };
 
   return (
     <div className="min-h-screen bg-navy-dark text-white flex font-sans selection:bg-ctx-teal/30">
       <Sidebar onLogout={handleLogout} activeTab={activeTab} setActiveTab={setActiveTab} />
       <div className="flex-1 flex flex-col min-w-0">
-        <TopNav user={user} />
+        <TopNav user={userDisplay} />
         <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           <AnimatePresence mode="wait">
             <motion.div
@@ -428,30 +382,30 @@ export default function App() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <StatCard 
                       icon={TrendingUp} 
-                      label="EBITDA Proyectado" 
-                      value="$1.2M" 
-                      change="+12.5%" 
+                      label="Ingresos" 
+                      value={pulsoLoading ? '...' : pulsoData ? `$${(pulsoData.ingresos / 1000000).toFixed(1)}M` : '$0.0M'} 
+                      change="+5.2%" 
                       positive={true} 
                     />
                     <StatCard 
                       icon={Wallet} 
-                      label="Caja Disponible" 
-                      value="$450k" 
-                      change="-2.4%" 
+                      label="Caja Real (Hoy)" 
+                      value={pulsoLoading ? '...' : pulsoData ? `$${(pulsoData.dinero_tuyo_hoy / 1000000).toFixed(1)}M` : '$0.0M'} 
+                      change="-1.2%" 
                       positive={false} 
                     />
                     <StatCard 
                       icon={ShieldCheck} 
-                      label="Riesgo Fiscal" 
-                      value="4.2%" 
-                      change="-0.5%" 
+                      label="Provisión DIAN" 
+                      value={pulsoLoading ? '...' : pulsoData ? `$${(pulsoData.provision_dian / 1000000).toFixed(1)}M` : '$0.0M'} 
+                      change="Fija" 
                       positive={true} 
                     />
                     <StatCard 
                       icon={Radar} 
-                      label="Oportunidades" 
-                      value="8" 
-                      change="+3" 
+                      label="Margen" 
+                      value={pulsoLoading ? '...' : (pulsoData && pulsoData.ingresos > 0) ? `${((pulsoData.margen / pulsoData.ingresos) * 100).toFixed(1)}%` : '0.0%'} 
+                      change="+2%" 
                       positive={true} 
                     />
                   </div>

@@ -1,29 +1,20 @@
 import { useState, useEffect } from 'react';
 import { pulsoApi } from '../services/api';
 
-export interface PulsoData {
-  fecha: string;
-  ingresos_hoy: number;
-  gastos_hoy: number;
-  margen_hoy: number;
-  provision_dian: number;
-  dinero_tuyo_hoy: number;
-  advertencias: string[];
-}
-
 export const usePulso = (usuarioId: string | null) => {
-  const [pulso, setPulso] = useState<PulsoData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPulso = async () => {
     if (!usuarioId) return;
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await pulsoApi.getDiario(usuarioId);
-      setPulso(response.data);
+      const response = await pulsoApi.getPulso(usuarioId);
+      setData(response.data);
+      setError(null);
     } catch (err: any) {
-      setError(err.message || 'Error al cargar el pulso');
+      setError(err.response?.data?.detail || 'Error al cargar el pulso');
     } finally {
       setLoading(false);
     }
@@ -31,7 +22,10 @@ export const usePulso = (usuarioId: string | null) => {
 
   useEffect(() => {
     fetchPulso();
+    // Refresh cada 5 minutos
+    const interval = setInterval(fetchPulso, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [usuarioId]);
 
-  return { pulso, loading, error, refresh: fetchPulso };
+  return { data, loading, error, refresh: fetchPulso };
 };

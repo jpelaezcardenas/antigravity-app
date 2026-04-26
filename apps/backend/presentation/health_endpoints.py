@@ -1,7 +1,12 @@
 from fastapi import APIRouter
+from datetime import datetime
 
-router = APIRouter(tags=["Health"])
+router = APIRouter()
 
-@router.get("/health")
+@router.get("/health", tags=["health"])
 async def health_check():
-    return {"status": "healthy", "service": "contexia-api"}
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "service": "Contexia API"
+    }
