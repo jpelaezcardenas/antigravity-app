@@ -16,6 +16,18 @@
         {
             "source": "/app",
             "destination": "/app/index.html"
+        },
+        {
+            "source": "/wizard/api/:path*",
+            "destination": "https://contexia-wizard.vercel.app/api/:path*"
+        },
+        {
+            "source": "/wizard/:path*",
+            "destination": "https://contexia-wizard.vercel.app/:path*"
+        },
+        {
+            "source": "/wizard",
+            "destination": "https://contexia-wizard.vercel.app"
         }
     ],
     "cleanUrls": true,
