@@ -297,7 +297,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-20">
                 <a href="javascript:void(0)" onclick="openLogoLightbox()" class="flex items-center gap-4 group" title="Click para ver el logo completo">
-                    <div class="h-14 w-auto flex items-center justify-center flex-shrink-0">
+                    <div class="h-24 w-auto flex items-center justify-center flex-shrink-0">
                         <img src="./assets/img/logo_official.png" alt="Contexia"
                             class="h-full w-auto object-contain transition-transform group-hover:scale-105">
                     </div>
@@ -317,27 +317,26 @@
                     <div class="h-8 w-[1px] bg-slate-800 mx-2"></div>
 
                     <div class="flex items-center gap-4">
-                        <a href="/app"
-                            class="relative group flex items-center gap-3 px-6 py-2.5 rounded-xl text-sm font-bold text-white overflow-hidden bg-navy border border-white/10 hover:border-teal/50 transition-all duration-300">
-                            <div class="absolute inset-0 bg-gradient-to-r from-teal/20 to-violet/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            <svg class="w-4 h-4 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                            </svg>
-                            <span class="relative">Acceso App</span>
-                        </a>
-
-                        <div class="flex items-center gap-3 pl-2 group cursor-help" title="Taty - Tu amiga contadora">
-                            <div class="text-right hidden lg:block">
-                                <p class="text-[10px] text-teal font-bold uppercase tracking-widest leading-none">Tu Amiga Contadora</p>
-                                <p class="text-xs text-white font-bold">Taty</p>
-                            </div>
-                            <div class="relative">
-                                <div class="absolute -inset-1 bg-gradient-to-tr from-teal to-violet rounded-full blur-[2px] opacity-70 group-hover:opacity-100 transition-opacity"></div>
+                        <a href="/app" class="group relative flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl pl-2 pr-6 py-2 hover:bg-white/10 hover:border-teal/50 transition-all duration-500 overflow-hidden" style="box-shadow: 0 0 20px rgba(20, 184, 166, 0.1);">
+                            <!-- Photo Section -->
+                            <div class="relative w-14 h-14 rounded-xl overflow-hidden border border-white/10 flex-shrink-0">
                                 <img src="./assets/img/profiles/tatiana_full.png" alt="Taty" 
-                                    class="relative w-12 h-12 rounded-full border-2 border-navy object-cover object-top hover:scale-110 transition-all">
-                                <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-navy rounded-full"></div>
+                                    class="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700">
+                                <div class="absolute inset-0 bg-gradient-to-t from-navy/60 to-transparent"></div>
                             </div>
-                        </div>
+                            
+                            <!-- Text Section -->
+                            <div class="flex flex-col">
+                                <p class="text-[10px] text-teal font-black uppercase tracking-[0.2em] leading-none mb-1 group-hover:translate-x-1 transition-transform">Acceso App</p>
+                                <p class="text-sm text-white font-bold tracking-tight">Tu Amiga Contadora Taty</p>
+                            </div>
+
+                            <!-- Indicator -->
+                            <div class="absolute top-2 right-2 flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-teal"></span>
+                            </div>
+                        </a>
                     </div>
                 </div>
                 <button id="mobile-menu-btn" class="md:hidden text-slate-300 hover:text-white p-2"><svg class="w-6 h-6"

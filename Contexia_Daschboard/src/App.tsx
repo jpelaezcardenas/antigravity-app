@@ -381,18 +381,22 @@ export default function App() {
               <Bell className="w-4 h-4 text-gray-400" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-ctx-violet rounded-full" />
             </button>
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:block text-right">
-                <p className="text-sm font-bold text-white">{MOCK_USER.nombre_empresa}</p>
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:block text-right pr-4 border-r border-white/10">
+                <p className="text-sm font-bold text-white leading-none mb-1">{MOCK_USER.nombre_empresa}</p>
                 <p className="text-[10px] text-ctx-teal uppercase tracking-widest font-bold">Empresario</p>
               </div>
-              <div className="relative group cursor-help" title="Tu Amiga Contadora Taty">
-                <div className="absolute -inset-1 bg-gradient-to-tr from-ctx-teal to-ctx-violet rounded-xl blur-[2px] opacity-50 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative w-10 h-10 rounded-xl bg-navy-dark border border-white/10 overflow-hidden">
-                  <img src="/assets/img/profiles/tatiana_full.png" alt="Taty" className="w-full h-full object-cover object-top" />
+
+              <div className="relative group cursor-help flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-1.5 pr-4 hover:bg-white/10 transition-all duration-300" title="Tu Amiga Contadora Taty">
+                <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-white/10">
+                  <img src="/assets/img/profiles/tatiana_full.png" alt="Taty" className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500" />
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-ctx-teal rounded-full border-2 border-navy-dark flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                <div className="flex flex-col">
+                  <span className="text-[9px] text-ctx-teal font-black uppercase tracking-widest leading-none mb-0.5">Online</span>
+                  <span className="text-xs text-white font-bold">Tu Amiga Contadora Taty</span>
+                </div>
+                <div className="absolute top-1 right-1 w-2 h-2 bg-ctx-teal rounded-full border border-navy-dark">
+                  <div className="w-full h-full bg-white rounded-full animate-pulse opacity-50" />
                 </div>
               </div>
             </div>
