@@ -8,7 +8,7 @@
 export const MOCK_USER = {
   usuario_id: 'usr_001',
   token: 'mock-jwt-token-contexia-2024',
-  nombre_empresa: 'Lavaderos L&D',
+  nombre_empresa: 'Ferez.com E-comerce',
   email: 'lavaderos_ld@contexia.com',
   nit: '901.456.789-2',
   plan: 'starter' as const,
@@ -241,10 +241,10 @@ export const MOCK_CHAT_INITIAL: ChatMessage[] = [
 
 export const TATY_RESPONSES: Record<string, string> = {
   'impuestos': '📊 Basándome en tus ingresos acumulados de $78.2M COP este año, te recomiendo apartar aproximadamente $2.6M COP mensuales para impuestos. Así no te pilla la DIAN de sorpresa. ¿Quieres que te explique cómo calculé eso?',
-  'renta': '🏛️ Para tu caso (Lavaderos L&D), como ya superaste los 1,400 UVT ($69.7M), eres declarante de renta obligatorio. La fecha límite según tu NIT es el 12 de agosto de 2026. ¡Tranqui, tenemos tiempo para preparar todo!',
+  'renta': '🏛️ Para tu caso (Ferez.com E-comerce), como ya superaste los 1,400 UVT ($69.7M), eres declarante de renta obligatorio. La fecha límite según tu NIT es el 12 de agosto de 2026. ¡Tranqui, tenemos tiempo para preparar todo!',
   'deducciones': '💡 Para un negocio de lavandería como el tuyo, las principales deducciones son:\n\n• Arriendo del local\n• Servicios públicos (agua, luz)\n• Insumos de lavado\n• Nómina y prestaciones\n• Depreciación de máquinas\n• Mantenimiento de equipos\n\n¿Quieres que revisemos si tienes alguna que no estés aprovechando?',
   'iva': '📋 El IVA bimestral se declara cada 2 meses. Tu próximo vencimiento es el 1 de mayo. Recuerda que puedes descontar el IVA de las compras que hagas para tu negocio. Monto estimado a pagar: $3.5M COP.',
-  'default': '¡Buena pregunta! 🤔 Déjame revisar... Para darte la mejor respuesta sobre tu caso específico con Lavaderos L&D, te sugiero que agendemos una sesión con uno de nuestros contadores expertos. ¿Te parece?',
+  'default': '¡Buena pregunta! 🤔 Déjame revisar... Para darte la mejor respuesta sobre tu caso específico con Ferez.com E-comerce, te sugiero que agendemos una sesión con uno de nuestros contadores expertos. ¿Te parece?',
 };
 
 export const TATY_SUGGESTIONS = [
@@ -257,7 +257,7 @@ export const TATY_SUGGESTIONS = [
 // --- Configuración ---
 export const MOCK_CONFIG = {
   empresa: {
-    nombre: 'Lavaderos L&D',
+    nombre: 'Ferez.com E-comerce',
     nit: '901.456.789-2',
     plan: 'Starter',
     email: 'lavaderos_ld@contexia.com',

@@ -386,7 +386,7 @@ export default function App() {
             <div className="flex items-center gap-4">
               <div className="hidden sm:block text-right pr-6 border-r border-white/10">
                 <p className="text-sm font-bold text-white leading-none mb-1">{MOCK_USER.nombre_empresa}</p>
-                <p className="text-[10px] text-ctx-teal uppercase tracking-[0.2em] font-bold">Empresario Premium</p>
+                <p className="text-[10px] text-ctx-teal uppercase tracking-[0.2em] font-bold">Starter</p>
               </div>
 
               <button onClick={() => setActiveTab('taty')} className="relative group flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 pr-6 hover:bg-white/10 hover:border-ctx-teal/30 transition-all duration-500 cursor-pointer text-left" style={{ boxShadow: '0 0 20px rgba(45, 212, 191, 0.1)' }}>
