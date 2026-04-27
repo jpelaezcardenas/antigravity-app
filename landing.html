@@ -58,7 +58,8 @@
             position: fixed;
             inset: 0;
             z-index: 9999;
-            background: #020617;
+            background: rgba(2, 6, 23, 0.95);
+            backdrop-filter: blur(8px);
             align-items: center;
             justify-content: center;
             cursor: zoom-out;
@@ -70,7 +71,6 @@
             max-height: 80vh;
             border-radius: 1rem;
             animation: zoomIn 0.35s cubic-bezier(0.16,1,0.3,1);
-            mix-blend-mode: lighten;
         }
         .logo-lightbox .close-btn {
             position: absolute; top: 1.5rem; right: 1.5rem;
