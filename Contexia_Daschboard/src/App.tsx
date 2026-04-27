@@ -74,10 +74,8 @@ const AlertItem = ({ type, title, desc }: any) => {
 const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose }: any) => (
   <>
     <div className="flex items-center justify-between mb-8 px-2">
-      <div className="flex items-center gap-4 py-2">
-        <div className="h-20 w-auto flex-shrink-0">
-          <img src="/assets/img/logo_official.png" alt="Contexia" className="h-full w-auto object-contain" />
-        </div>
+      <div className="flex items-center gap-3 py-2">
+        <span className="font-orbitron font-bold text-2xl tracking-[0.2em] text-white">CONTEXIA</span>
       </div>
       {onClose && <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg lg:hidden"><X className="w-5 h-5 text-gray-400" /></button>}
     </div>
@@ -99,11 +97,19 @@ const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose }: any) => 
         </button>
       ))}
     </nav>
-    <button onClick={onLogout}
-      className="flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-red-400 transition-colors mt-auto group">
-      <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
-      <span className="text-sm font-rajdhani uppercase tracking-widest font-bold">Cerrar Sesión</span>
-    </button>
+    <div className="mt-auto pt-6 space-y-6">
+      <div className="px-4">
+        <div className="glass-card p-4 border-ctx-teal/10 bg-white/5 flex items-center justify-center">
+          <img src="/assets/img/logo_official.png" alt="Contexia Logo" className="h-24 w-auto object-contain" />
+        </div>
+      </div>
+      
+      <button onClick={onLogout}
+        className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-red-400 transition-colors group border-t border-white/5">
+        <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
+        <span className="text-sm font-rajdhani uppercase tracking-widest font-bold">Cerrar Sesión</span>
+      </button>
+    </div>
   </>
 );
 
@@ -378,21 +384,25 @@ export default function App() {
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-ctx-violet rounded-full" />
             </button>
             <div className="flex items-center gap-4">
-              <div className="hidden sm:block text-right pr-4 border-r border-white/10">
+              <div className="hidden sm:block text-right pr-6 border-r border-white/10">
                 <p className="text-sm font-bold text-white leading-none mb-1">{MOCK_USER.nombre_empresa}</p>
-                <p className="text-[10px] text-ctx-teal uppercase tracking-widest font-bold">Empresario</p>
+                <p className="text-[10px] text-ctx-teal uppercase tracking-[0.2em] font-bold">Empresario Premium</p>
               </div>
 
-              <div className="relative group cursor-help flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-1.5 pr-4 hover:bg-white/10 transition-all duration-300" title="Tu Amiga Contadora Taty">
-                <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-white/10">
-                  <img src="/assets/img/profiles/tatiana_full.png" alt="Taty" className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500" />
+              <div className="relative group flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 pr-6 hover:bg-white/10 transition-all duration-500" style={{ boxShadow: '0 0 20px rgba(45, 212, 191, 0.1)' }}>
+                <div className="relative w-14 h-20 rounded-xl overflow-hidden border border-white/20 shadow-xl">
+                  <img src="/assets/img/profiles/tatiana_full.png" alt="Taty" className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-dark/60 via-transparent to-transparent"></div>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[9px] text-ctx-teal font-black uppercase tracking-widest leading-none mb-0.5">Online</span>
-                  <span className="text-xs text-white font-bold">Tu Amiga Contadora Taty</span>
-                </div>
-                <div className="absolute top-1 right-1 w-2 h-2 bg-ctx-teal rounded-full border border-navy-dark">
-                  <div className="w-full h-full bg-white rounded-full animate-pulse opacity-50" />
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ctx-teal opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-ctx-teal"></span>
+                    </span>
+                    <span className="text-[10px] text-ctx-teal font-black uppercase tracking-widest leading-none">Online</span>
+                  </div>
+                  <span className="text-sm text-white font-bold leading-tight">Tu Amiga Contadora<br/><span className="text-ctx-teal">Taty</span></span>
                 </div>
               </div>
             </div>
