@@ -1,11 +1,59 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWizardStore, type AuditResult } from "@/lib/store";
 import StepWrapper from "../StepWrapper";
 import { formatCOP, formatMillones, compararRegimenes } from "@/lib/calculations";
 import { detectarRiesgos, detectarOportunidades } from "@/lib/riskAnalysis";
 import { calcularReadiness } from "@/lib/readinessScore";
+import { ga4 } from "@/lib/ga4";
 import { CheckCircle, AlertTriangle, XCircle, TrendingUp, Download, MessageCircle, Building2 } from "lucide-react";
+
+// ─── CIIU 1090 Banner ────────────────────────────────────────
+function Ciiu1090Banner() {
+  useEffect(() => { ga4.ciiu1090BannerShown(); }, []);
+  return (
+    <div style={{
+      background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)",
+      borderRadius: "12px",
+      padding: "1.25rem 1.5rem",
+      marginBottom: "1.5rem",
+      display: "flex",
+      gap: "1rem",
+      alignItems: "flex-start",
+    }}>
+      <span style={{ fontSize: "1.5rem", flexShrink: 0 }}>⚡</span>
+      <div>
+        <h4 style={{ color: "#ffffff", fontWeight: 700, fontSize: "0.9375rem", margin: "0 0 0.375rem" }}>
+          Atención CIIU 1090 — Elaboración de otros productos alimenticios
+        </h4>
+        <p style={{ color: "#c4b5fd", fontSize: "0.8125rem", margin: "0 0 0.75rem", lineHeight: 1.6 }}>
+          Tu actividad está sujeta a regulación del INVIMA y BPM (Buenas Prácticas de Manufactura).
+          Antes de formalizar, verifica el certificado sanitario y el concepto de uso de suelos.
+        </p>
+        <a
+          href="https://wa.me/573018948151?text=Hola%20Taty,%20tengo%20CIIU%201090%20y%20necesito%20orientación%20sobre%20INVIMA%20y%20BPM"
+          target="_blank" rel="noopener noreferrer"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.375rem",
+            background: "rgba(255,255,255,0.15)",
+            border: "1px solid rgba(255,255,255,0.3)",
+            color: "#ffffff",
+            fontSize: "0.8125rem",
+            fontWeight: 600,
+            padding: "0.5rem 1rem",
+            borderRadius: "8px",
+            textDecoration: "none",
+          }}
+          onClick={() => ga4.whatsappOpened()}
+        >
+          💬 Consultar especialista INVIMA/BPM
+        </a>
+      </div>
+    </div>
+  );
+}
 
 // ─── Sub-components ──────────────────────────────────────────
 
@@ -132,6 +180,13 @@ export default function Step8Diagnostico({ onBack }: Props) {
       };
 
       store.setAuditResult(result);
+      // Track audit execution
+      ga4.auditExecuted({
+        regimen: result.recomendacion,
+        readiness_score: result.readinessScore,
+        riesgos_count: riesgos.length,
+        ahorro_potencial: result.ahorroPotencial,
+      });
       // Save to Supabase
       await fetch("/wizard/api/audit/execute", {
         method: "POST",
@@ -153,6 +208,7 @@ export default function Step8Diagnostico({ onBack }: Props) {
         body: JSON.stringify({ email: emailInput, leadId: store.leadId, result: store.auditResult, nombre: store.paso1?.nombre }),
       });
       setEmailSent(true);
+      ga4.emailSent();
     } finally {
       setEmailLoading(false);
     }
@@ -198,6 +254,8 @@ export default function Step8Diagnostico({ onBack }: Props) {
       ) : result ? (
         /* ── Full diagnostic ── */
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+          {/* CIIU 1090 special banner */}
+          {store.paso2?.ciiu_principal === "1090" && <Ciiu1090Banner />}
           {/* A — Resumen ejecutivo */}
           <div style={{
             background: result.recomendacion === "simple" ? "#f0fdf4" : "#eff6ff",
@@ -381,21 +439,24 @@ export default function Step8Diagnostico({ onBack }: Props) {
             <h3 style={{ fontWeight: 700, color: "#0a2540", margin: "0 0 0.5rem" }}>¿Qué sigue?</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem" }}>
               <a href="https://www.contexia.online/crear-empresa.html" className="ctx-btn-primary"
-                style={{ textDecoration: "none", textAlign: "center", padding: "0.875rem", borderRadius: "12px", flexDirection: "column", gap: "0.25rem" }}>
+                style={{ textDecoration: "none", textAlign: "center", padding: "0.875rem", borderRadius: "12px", flexDirection: "column", gap: "0.25rem" }}
+                onClick={() => ga4.ctaClicked("crear_empresa")}>
                 <Building2 size={20} />
                 <span>Crear mi empresa con Contexia</span>
                 <span style={{ fontSize: "0.8125rem", opacity: 0.85 }}>Desde $1.200.000 COP</span>
               </a>
               <a href="https://wa.me/573018948151?text=Hola,%20completé%20el%20Shadow%20Audit%20y%20quiero%20agendar%20asesoría"
                 target="_blank" rel="noopener noreferrer" className="ctx-btn-secondary"
-                style={{ textDecoration: "none", textAlign: "center", padding: "0.875rem", borderRadius: "12px", flexDirection: "column", gap: "0.25rem" }}>
+                style={{ textDecoration: "none", textAlign: "center", padding: "0.875rem", borderRadius: "12px", flexDirection: "column", gap: "0.25rem" }}
+                onClick={() => { ga4.ctaClicked("whatsapp_asesoria"); ga4.whatsappOpened(); }}>
                 <MessageCircle size={20} />
                 <span>Hablar con Taty</span>
                 <span style={{ fontSize: "0.8125rem", opacity: 0.85 }}>WhatsApp 24/7</span>
               </a>
-              <a href={`/wizard/api/audit/pdf?email=${encodeURIComponent(store.paso1?.email || "")}`}
+              <a href={`/wizard/api/audit/pdf?email=${encodeURIComponent(store.paso1?.email || "")}&leadId=${encodeURIComponent(store.leadId || "")}`}
                 target="_blank" className="ctx-btn-outline"
-                style={{ textDecoration: "none", textAlign: "center", padding: "0.875rem", borderRadius: "12px", flexDirection: "column", gap: "0.25rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                style={{ textDecoration: "none", textAlign: "center", padding: "0.875rem", borderRadius: "12px", flexDirection: "column", gap: "0.25rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+                onClick={() => ga4.pdfDownloaded()}>
                 <Download size={20} />
                 <span>Descargar PDF</span>
               </a>
