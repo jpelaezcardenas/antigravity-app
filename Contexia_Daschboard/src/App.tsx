@@ -101,7 +101,7 @@ const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose }: any) => 
     </nav>
     <div className="mt-auto pt-4 flex flex-col gap-4">
       <div className="flex flex-col items-center gap-4 px-2">
-        <img src="/assets/img/logo_official_transparent.png" alt="Contexia Logo" className="h-48 w-full max-w-[200px] object-contain" />
+        <img src="/assets/img/logo_official_transparent.png" alt="Contexia Logo" className="h-auto w-full max-w-[260px] object-contain scale-110" />
       </div>
       
       <button onClick={onLogout}
