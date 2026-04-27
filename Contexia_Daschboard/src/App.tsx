@@ -15,6 +15,7 @@ import { MOCK_USER, MOCK_PULSO, formatCOP, formatCOPShort } from './data/mockDat
 import { PulsoDiarioView } from './components/pulso/PulsoDiarioView';
 import { CentinelaView } from './components/centinela/CentinelaView';
 import { ComingSoonView } from './components/shared/ComingSoonView';
+import { TatyView } from './components/taty/TatyView';
 import { ConfiguracionView } from './components/configuracion/ConfiguracionView';
 
 const chartData = [
@@ -309,6 +310,7 @@ export default function App() {
     inicio: 'Panel de Control',
     pulso: '📊 Pulso Diario',
     centinela: '🛡️ Centinela Fiscal',
+    taty: '💬 Tu Amiga Contadora Taty',
     auditoria: '🔍 Auditoría Sombra',
     radar: '📡 Radar Predictivo',
     configuracion: '⚙️ Configuración',
@@ -319,6 +321,7 @@ export default function App() {
       case 'inicio': return <DashboardHome setActiveTab={setActiveTab} />;
       case 'pulso': return <PulsoDiarioView />;
       case 'centinela': return <CentinelaView />;
+      case 'taty': return <TatyView />;
       case 'auditoria': return (
         <ComingSoonView icon="auditoria" titulo="Auditoría Sombra"
           subtitulo="¿Qué sabe la DIAN de ti que tú no sabes?"
@@ -386,7 +389,7 @@ export default function App() {
                 <p className="text-[10px] text-ctx-teal uppercase tracking-[0.2em] font-bold">Empresario Premium</p>
               </div>
 
-              <a href="https://wa.me/573018948151" target="_blank" rel="noopener noreferrer" className="relative group flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 pr-6 hover:bg-white/10 hover:border-ctx-teal/30 transition-all duration-500 cursor-pointer" style={{ boxShadow: '0 0 20px rgba(45, 212, 191, 0.1)' }}>
+              <button onClick={() => setActiveTab('taty')} className="relative group flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 pr-6 hover:bg-white/10 hover:border-ctx-teal/30 transition-all duration-500 cursor-pointer text-left" style={{ boxShadow: '0 0 20px rgba(45, 212, 191, 0.1)' }}>
                 <div className="relative w-14 h-20 rounded-xl overflow-hidden border border-white/20 shadow-xl">
                   <img src="/assets/img/profiles/tatiana_full.png" alt="Taty" className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700" />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-dark/60 via-transparent to-transparent"></div>
@@ -401,7 +404,7 @@ export default function App() {
                   </div>
                   <span className="text-sm text-white font-bold leading-tight">Tu Amiga Contadora<br/><span className="text-ctx-teal group-hover:text-white transition-colors">Taty</span></span>
                 </div>
-              </a>
+              </button>
             </div>
           </div>
         </header>
