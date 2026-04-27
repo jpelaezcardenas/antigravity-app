@@ -14,7 +14,6 @@ import {
 import { MOCK_USER, MOCK_PULSO, formatCOP, formatCOPShort } from './data/mockData';
 import { PulsoDiarioView } from './components/pulso/PulsoDiarioView';
 import { CentinelaView } from './components/centinela/CentinelaView';
-import { CobroView } from './components/cobro/CobroView';
 import { ComingSoonView } from './components/shared/ComingSoonView';
 import { TatyView } from './components/taty/TatyView';
 import { ConfiguracionView } from './components/configuracion/ConfiguracionView';
@@ -33,7 +32,6 @@ const navItems = [
   { id: 'inicio', label: 'Inicio', icon: LayoutDashboard },
   { id: 'pulso', label: 'Pulso Diario', icon: Wallet },
   { id: 'centinela', label: 'Centinela Fiscal', icon: ShieldCheck },
-  { id: 'cobro', label: 'Cobro Inteligente', icon: Receipt },
   { id: 'taty', label: 'Taty', icon: MessageSquare },
   { id: 'auditoria', label: 'Auditoría Sombra', icon: Search },
   { id: 'radar', label: 'Radar Predictivo', icon: Radar },
@@ -75,10 +73,15 @@ const AlertItem = ({ type, title, desc }: any) => {
 
 const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose }: any) => (
   <>
-    <div className="flex items-center justify-between mb-10 px-2">
-      <div className="flex flex-col gap-1">
-        <span className="font-orbitron font-bold text-2xl leading-none tracking-tighter text-white">CONTEXIA</span>
-        <span className="font-rajdhani text-[10px] text-ctx-teal tracking-[0.2em] uppercase font-bold">GPS for Cash Flow</span>
+    <div className="flex items-center justify-between mb-8 px-2">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 flex-shrink-0">
+          <img src="/assets/img/logo_premium.png" alt="Contexia" className="w-full h-full object-contain" />
+        </div>
+        <div className="flex flex-col">
+          <span className="font-orbitron font-bold text-xl leading-none tracking-tight text-white">CONTEXIA</span>
+          <span className="font-rajdhani text-[8px] text-ctx-teal tracking-[0.2em] uppercase font-bold mt-1">GPS for Cash Flow</span>
+        </div>
       </div>
       {onClose && <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg lg:hidden"><X className="w-5 h-5 text-gray-400" /></button>}
     </div>
@@ -148,7 +151,6 @@ const DashboardHome = ({ setActiveTab }: { setActiveTab: (t: string) => void }) 
               {[
                 { label: 'Ver Pulso Diario', tab: 'pulso' },
                 { label: 'Revisar Alertas DIAN', tab: 'centinela' },
-                { label: 'Cobrar Facturas Vencidas', tab: 'cobro' },
                 { label: 'Hablar con Taty', tab: 'taty' },
               ].map(a => (
                 <button key={a.tab} onClick={() => setActiveTab(a.tab)}
@@ -306,7 +308,6 @@ export default function App() {
     inicio: 'Panel de Control',
     pulso: '📊 Pulso Diario',
     centinela: '🛡️ Centinela Fiscal',
-    cobro: '💰 Cobro Inteligente',
     taty: '💚 Taty — Tu Amiga Contadora',
     auditoria: '🔍 Auditoría Sombra',
     radar: '📡 Radar Predictivo',
@@ -318,7 +319,6 @@ export default function App() {
       case 'inicio': return <DashboardHome setActiveTab={setActiveTab} />;
       case 'pulso': return <PulsoDiarioView />;
       case 'centinela': return <CentinelaView />;
-      case 'cobro': return <CobroView />;
       case 'taty': return <TatyView />;
       case 'auditoria': return (
         <ComingSoonView icon="auditoria" titulo="Auditoría Sombra"
@@ -381,14 +381,18 @@ export default function App() {
               <Bell className="w-4 h-4 text-gray-400" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-ctx-violet rounded-full" />
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-bold text-white">{MOCK_USER.nombre_empresa}</p>
                 <p className="text-[10px] text-ctx-teal uppercase tracking-widest font-bold">Empresario</p>
               </div>
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-ctx-teal to-ctx-violet p-[2px]">
-                <div className="w-full h-full bg-navy-dark rounded-[10px] flex items-center justify-center font-bold text-ctx-teal text-sm">
-                  {MOCK_USER.nombre_empresa.charAt(0)}
+              <div className="relative group cursor-help" title="Taty - Tu amiga contadora">
+                <div className="absolute -inset-1 bg-gradient-to-tr from-ctx-teal to-ctx-violet rounded-xl blur-[2px] opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative w-10 h-10 rounded-xl bg-navy-dark border border-white/10 overflow-hidden">
+                  <img src="/assets/img/profiles/taty_premium.png" alt="Taty" className="w-full h-full object-cover" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-ctx-teal rounded-full border-2 border-navy-dark flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
                 </div>
               </div>
             </div>
