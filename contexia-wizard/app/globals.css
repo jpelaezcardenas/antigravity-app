@@ -1,0 +1,217 @@
+@import "tailwindcss";
+
+/* ─── Contexia Design System ─────────────────────────────────
+   Paleta extraída de contexia.online/landing
+   Flat design — sin gradientes — bordes suaves + sombra mínima
+   ──────────────────────────────────────────────────────────── */
+
+:root {
+  --ctx-bg: #ffffff;
+  --ctx-bg-alt: #f8fafc;
+  --ctx-border: #e2e8f0;
+  --ctx-text: #1a202c;
+  --ctx-text-muted: #64748b;
+  --ctx-text-light: #94a3b8;
+
+  /* Acentos Contexia */
+  --ctx-primary: #0a2540;      /* Azul marino profundo */
+  --ctx-accent: #00a878;       /* Verde corporativo del logo */
+  --ctx-accent-light: #e8f7f3; /* Verde muy suave (fondo success) */
+
+  /* Estados */
+  --ctx-success: #16a34a;
+  --ctx-success-bg: #f0fdf4;
+  --ctx-warning: #d97706;
+  --ctx-warning-bg: #fffbeb;
+  --ctx-danger: #dc2626;
+  --ctx-danger-bg: #fef2f2;
+  --ctx-info: #2563eb;
+  --ctx-info-bg: #eff6ff;
+
+  /* Shadows */
+  --ctx-shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --ctx-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  --ctx-shadow-lg: 0 8px 24px rgba(0,0,0,0.10);
+
+  /* Radii */
+  --ctx-radius-sm: 6px;
+  --ctx-radius: 12px;
+  --ctx-radius-lg: 16px;
+  --ctx-radius-xl: 24px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--ctx-bg-alt);
+  color: var(--ctx-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Componentes reutilizables ──────────────────────────────── */
+
+.ctx-card {
+  background: var(--ctx-bg);
+  border: 1px solid var(--ctx-border);
+  border-radius: var(--ctx-radius);
+  box-shadow: var(--ctx-shadow-sm);
+  padding: 1.5rem;
+}
+
+.ctx-card-lg {
+  padding: 2rem;
+  border-radius: var(--ctx-radius-lg);
+  box-shadow: var(--ctx-shadow);
+}
+
+/* Botón primario — verde Contexia */
+.ctx-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--ctx-accent);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: var(--ctx-radius);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ctx-btn-primary:hover { background-color: #009068; transform: translateY(-1px); }
+.ctx-btn-primary:active { transform: translateY(0); }
+.ctx-btn-primary:disabled { background-color: #94a3b8; cursor: not-allowed; transform: none; }
+
+/* Botón secundario — azul marino */
+.ctx-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--ctx-primary);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: var(--ctx-radius);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ctx-btn-secondary:hover { background-color: #0d3158; transform: translateY(-1px); }
+
+/* Botón outline */
+.ctx-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: transparent;
+  color: var(--ctx-primary);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: var(--ctx-radius);
+  border: 2px solid var(--ctx-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ctx-btn-outline:hover { background-color: var(--ctx-primary); color: white; }
+
+/* Inputs */
+.ctx-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--ctx-border);
+  border-radius: var(--ctx-radius-sm);
+  font-size: 0.9375rem;
+  color: var(--ctx-text);
+  background: var(--ctx-bg);
+  transition: border-color 0.15s;
+  outline: none;
+  -webkit-appearance: none;
+}
+.ctx-input:focus { border-color: var(--ctx-accent); box-shadow: 0 0 0 3px rgba(0, 168, 120, 0.12); }
+.ctx-input::placeholder { color: var(--ctx-text-light); }
+.ctx-input.error { border-color: var(--ctx-danger); }
+
+.ctx-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ctx-text);
+  margin-bottom: 0.375rem;
+}
+.ctx-label-hint {
+  font-size: 0.8125rem;
+  color: var(--ctx-text-muted);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+.ctx-error-msg {
+  font-size: 0.8125rem;
+  color: var(--ctx-danger);
+  margin-top: 0.25rem;
+}
+
+/* Riesgo badges */
+.badge-critico { background: var(--ctx-danger-bg); color: var(--ctx-danger); border: 1px solid #fca5a5; }
+.badge-alto { background: var(--ctx-warning-bg); color: var(--ctx-warning); border: 1px solid #fcd34d; }
+.badge-medio { background: var(--ctx-info-bg); color: var(--ctx-info); border: 1px solid #93c5fd; }
+.badge-bajo { background: var(--ctx-success-bg); color: var(--ctx-success); border: 1px solid #86efac; }
+
+/* Stepper */
+.ctx-step-circle {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border: 2px solid var(--ctx-border);
+  background: var(--ctx-bg);
+  color: var(--ctx-text-muted);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.ctx-step-circle.active { border-color: var(--ctx-accent); background: var(--ctx-accent); color: white; }
+.ctx-step-circle.completed { border-color: var(--ctx-accent); background: var(--ctx-accent-light); color: var(--ctx-accent); }
+.ctx-step-line { flex: 1; height: 2px; background: var(--ctx-border); }
+.ctx-step-line.completed { background: var(--ctx-accent); }
+
+/* Selects */
+select.ctx-input { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1rem; padding-right: 2.5rem; }
+
+/* Animations */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fadeInUp { animation: fadeInUp 0.35s ease; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin { animation: spin 1s linear infinite; }
+
+/* Taty float */
+.taty-float {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 50;
+  cursor: pointer;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+  transition: transform 0.2s;
+}
+.taty-float:hover { transform: scale(1.05); }

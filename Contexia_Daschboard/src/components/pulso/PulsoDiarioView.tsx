@@ -170,8 +170,8 @@ const PulsoChart = () => (
         <AreaChart data={MOCK_PULSO.tendencia_30_dias}>
           <defs>
             <linearGradient id="colorPulso" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#2DD4BF" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#2DD4BF" stopOpacity={0} />
+              <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -198,7 +198,7 @@ const PulsoChart = () => (
           <Area
             type="monotone"
             dataKey="valor"
-            stroke="#2DD4BF"
+            stroke="#3B82F6"
             strokeWidth={2}
             fillOpacity={1}
             fill="url(#colorPulso)"

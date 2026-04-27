@@ -101,10 +101,12 @@ const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose }: any) => 
       ))}
     </nav>
     <div className="mt-auto pt-4 flex flex-col gap-4">
-      <div className="flex flex-col items-center gap-4 px-2">
-        <img src="/assets/img/logo_official_transparent.png" alt="Contexia Logo" className="h-auto w-full max-w-[260px] object-contain scale-110" />
+      <div className="flex flex-col items-center justify-center py-4 mb-2">
+        <p className="font-rajdhani text-[10px] text-gray-500 uppercase tracking-widest mb-3">
+          Powered by Contexia
+        </p>
+        <img src="/assets/img/logo_official_transparent.png" alt="Contexia" className="h-28 object-contain opacity-90 hover:opacity-100 transition-opacity drop-shadow-[0_0_8px_rgba(45,212,191,0.2)]" />
       </div>
-      
       <button onClick={onLogout}
         className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-red-400 transition-colors group border-t border-white/5 mt-2">
         <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -130,20 +132,20 @@ const DashboardHome = ({ setActiveTab }: { setActiveTab: (t: string) => void }) 
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="colorIng" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2DD4BF" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#2DD4BF" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="colorEgr" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#1D4ED8" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#1D4ED8" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} />
               <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} />
               <Tooltip contentStyle={{ backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff' }} />
-              <Area type="monotone" dataKey="ingresos" stroke="#2DD4BF" fillOpacity={1} fill="url(#colorIng)" />
-              <Area type="monotone" dataKey="egresos" stroke="#8B5CF6" fillOpacity={1} fill="url(#colorEgr)" />
+              <Area type="monotone" dataKey="ingresos" stroke="#3B82F6" fillOpacity={1} fill="url(#colorIng)" />
+              <Area type="monotone" dataKey="egresos" stroke="#1D4ED8" fillOpacity={1} fill="url(#colorEgr)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -184,14 +186,14 @@ const DashboardHome = ({ setActiveTab }: { setActiveTab: (t: string) => void }) 
         <div className="glass-card p-6 border-white/10 bg-navy-light/30">
           <h3 className="font-orbitron text-lg mb-6">Alertas Críticas</h3>
           <div className="space-y-4">
-            <AlertItem type="danger" title="Desviación de Gastos" desc="Gastos operativos exceden presupuesto por 15%" />
-            <AlertItem type="warning" title="Vencimiento IVA" desc="Plazo límite en 3 días hábiles" />
-            <AlertItem type="info" title="Nueva Oportunidad" desc="Optimización detectada en pagos a proveedores" />
+            <AlertItem type="danger" title="Desviación en Pauta (CAC)" desc="El costo de adquisición en Meta Ads excede el margen en 15%" />
+            <AlertItem type="warning" title="Vencimiento IVA (Bimestral)" desc="Plazo límite para declarar IVA de ventas en 3 días" />
+            <AlertItem type="info" title="Nueva Oportunidad Fiscal" desc="Deducción identificada en comisiones de pasarela (Stripe/Wompi)" />
           </div>
         </div>
         <div className="glass-card p-6 border-ctx-teal/10 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10"><Globe className="w-20 h-20" /></div>
-          <h3 className="font-orbitron text-lg mb-2">Contexia Global</h3>
+          <h3 className="font-orbitron text-lg mb-2">Ferez.co Global</h3>
           <p className="text-sm text-gray-400 mb-4">Tu empresa opera bajo estándares internacionales.</p>
           <div className="flex gap-2">
             <div className="px-2 py-1 bg-ctx-teal/10 text-ctx-teal text-[10px] rounded uppercase font-bold tracking-widest">NIIF</div>
@@ -223,10 +225,10 @@ const LoginView = ({ onLogin }: { onLogin: () => void }) => {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full relative z-10">
         <div className="text-center mb-10">
           <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="flex flex-col items-center justify-center gap-1 mb-6">
-            <span className="font-orbitron font-bold text-4xl leading-none tracking-tighter text-white">CONTEXIA</span>
-            <span className="font-rajdhani text-xs text-ctx-teal tracking-[0.3em] uppercase font-semibold">GPS for Cash Flow & Tax Risk</span>
+            <span className="font-orbitron font-bold text-5xl leading-none tracking-tighter text-white">Ferez.co</span>
+            <span className="font-rajdhani text-sm text-ctx-teal tracking-[0.3em] uppercase font-semibold">E-Commerce</span>
           </motion.div>
-          <h2 className="text-xl text-gray-400 font-rajdhani uppercase tracking-widest">Portal Empresarial Premium</h2>
+          <h2 className="text-xl text-gray-400 font-rajdhani uppercase tracking-widest">Portal Starter</h2>
         </div>
         <div className="glass-card p-8 border-white/10">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -261,7 +263,7 @@ const LoginView = ({ onLogin }: { onLogin: () => void }) => {
             </p>
           </div>
         </div>
-        <p className="mt-8 text-center text-[10px] text-gray-600 font-rajdhani uppercase tracking-[0.2em]">Powered by Contexia AI Engine • v2.0.4</p>
+        <p className="mt-8 text-center text-[10px] text-gray-600 font-rajdhani uppercase tracking-[0.2em]">Powered by Ferez.co AI Engine • v2.0.4</p>
       </motion.div>
     </div>
   );
@@ -298,7 +300,7 @@ export default function App() {
       <div className="min-h-screen bg-navy-dark flex items-center justify-center">
         <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
           <div className="w-16 h-16 border-4 border-ctx-teal border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="font-orbitron text-ctx-teal tracking-widest uppercase text-sm">Cargando Contexia...</p>
+          <p className="font-orbitron text-ctx-teal tracking-widest uppercase text-sm">Cargando...</p>
         </motion.div>
       </div>
     );

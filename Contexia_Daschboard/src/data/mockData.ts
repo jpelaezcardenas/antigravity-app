@@ -1,7 +1,6 @@
 // ============================================================
-// MOCK DATA — Contexia Frontend
-// Datos hardcodeados para demostración sin backend.
-// Cuando el backend esté listo, reemplazar imports por API calls.
+// MOCK DATA — Contexia Frontend (Ferez.co E-commerce)
+// Datos hardcodeados con hiperpersonalización para E-commerce
 // ============================================================
 
 // --- Usuario Mock ---
@@ -9,7 +8,7 @@ export const MOCK_USER = {
   usuario_id: 'usr_001',
   token: 'mock-jwt-token-contexia-2024',
   nombre_empresa: 'Ferez.co E-commerce',
-  email: 'lavaderos_ld@contexia.com',
+  email: 'gerencia@ferez.co',
   nit: '901.456.789-2',
   plan: 'starter' as const,
   porcentaje_renta: 35,
@@ -21,17 +20,17 @@ export const MOCK_USER = {
 export const MOCK_PULSO = {
   usuario_id: 'usr_001',
   fecha: new Date().toISOString().split('T')[0],
-  ingresos_brutos: 18_750_000,
-  gastos_operativos: 11_230_000,
-  margen_bruto: 7_520_000,
+  ingresos_brutos: 24_750_000,
+  gastos_operativos: 14_230_000,
+  margen_bruto: 10_520_000,
   porcentaje_tributario_estimado: 35,
-  provision_dian: 2_632_000,
-  dinero_tuyo_hoy: 4_888_000,
+  provision_dian: 3_682_000,
+  dinero_tuyo_hoy: 6_838_000, // Libre de impuestos (Caja Real)
   ultima_sincronizacion: new Date().toISOString(),
   data_completa: true,
   advertencias: [] as string[],
-  ventas_ayer: 2_340_000,
-  gastos_ayer: 1_180_000,
+  ventas_ayer: 3_340_000,
+  gastos_ayer: 1_880_000,
   tendencia_30_dias: [
     { fecha: '01', valor: 3_200_000 },
     { fecha: '02', valor: 2_800_000 },
@@ -62,7 +61,7 @@ export const MOCK_PULSO = {
     { fecha: '27', valor: 5_900_000 },
     { fecha: '28', valor: 4_300_000 },
     { fecha: '29', valor: 5_200_000 },
-    { fecha: '30', valor: 4_888_000 },
+    { fecha: '30', valor: 6_838_000 },
   ],
 };
 
@@ -86,9 +85,9 @@ export const MOCK_ALERTAS: AlertaTributaria[] = [
     id: 'alerta_001',
     tipo: 'umbral',
     severidad: 'roja',
-    titulo: '⚠️ ¡Ya cruzaste el umbral de Renta Ordinaria!',
-    descripcion: 'Tus ingresos acumulados este año superan 1,400 UVT ($69.7M COP). Ya eres declarante de renta obligatorio.',
-    accion_sugerida: 'Agenda una cita con tu contador para preparar la declaración antes de la fecha límite.',
+    titulo: '⚠️ Umbral de Declaración Superado',
+    descripcion: 'Con las ventas de Shopify de esta semana cruzaste el límite (1,400 UVT). A partir de ahora declarar renta es obligatorio.',
+    accion_sugerida: 'Tranquilo, tu Provisión DIAN ya está separando lo necesario de tus ventas diarias.',
     fecha_limite: '2026-08-12',
     porcentaje_progreso: 112,
     umbral_nombre: 'Renta Ordinaria (1,400 UVT)',
@@ -97,46 +96,36 @@ export const MOCK_ALERTAS: AlertaTributaria[] = [
     id: 'alerta_002',
     tipo: 'vencimiento',
     severidad: 'roja',
-    titulo: '📅 Vencimiento IVA bimestral en 5 días',
-    descripcion: 'El plazo para declarar y pagar IVA del bimestre actual vence el 1 de mayo. Monto estimado: $3,562,500 COP.',
-    accion_sugerida: 'Revisa las facturas de compra pendientes para maximizar tu IVA descontable.',
+    titulo: '📅 Alerta de IVA (Meta Ads / Proveedores)',
+    descripcion: 'Faltan 5 días para tu declaración de IVA. Tu IVA descontable por pauta publicitaria ya fue calculado.',
+    accion_sugerida: 'Asegúrate de subir cualquier factura de compra de inventario restante para reducir el pago.',
     fecha_limite: '2026-05-01',
   },
   {
     id: 'alerta_003',
     tipo: 'umbral',
     severidad: 'amarilla',
-    titulo: '🔔 Te acercas al umbral de Responsable de IVA',
-    descripcion: 'Llevas $148.2M de $174.3M (3,500 UVT). Si cruzas este umbral, pasas a ser responsable de IVA.',
-    accion_sugerida: 'Evalúa si te conviene frenar facturación este año o prepararte para el régimen de IVA.',
+    titulo: '🔔 Responsabilidad de IVA a la vista',
+    descripcion: 'El crecimiento de tu E-commerce es genial, pero te acercas al tope de 3,500 UVT para cobrar IVA en tus envíos.',
+    accion_sugerida: 'Empieza a evaluar los márgenes de tus productos estrella si les sumas el 19%.',
     porcentaje_progreso: 85,
     umbral_nombre: 'Responsable IVA (3,500 UVT)',
   },
   {
     id: 'alerta_004',
     tipo: 'incumplimiento',
-    severidad: 'amarilla',
-    titulo: '📋 Actualización RUT pendiente',
-    descripcion: 'Tienes actividades económicas desactualizadas en tu RUT. La DIAN puede sancionarte.',
-    accion_sugerida: 'Actualiza tu RUT en la página de la DIAN o con tu contador.',
-    fecha_limite: '2026-06-30',
-  },
-  {
-    id: 'alerta_005',
-    tipo: 'umbral',
     severidad: 'verde',
-    titulo: '✅ Retención en la fuente al día',
-    descripcion: 'Tus pagos de retención en la fuente están al día. No hay pendientes.',
-    accion_sugerida: 'Sigue así. La próxima declaración es en julio.',
-    porcentaje_progreso: 45,
-    umbral_nombre: 'Retención en la Fuente',
+    titulo: '✅ Blindaje Fiscal Activo',
+    descripcion: 'Tus integraciones de pasarela (Stripe, Wompi) coinciden 100% con lo reportado a la DIAN este mes.',
+    accion_sugerida: 'Ninguna acción requerida. Tienes claridad total sobre tu negocio.',
+    fecha_limite: '2026-06-30',
   },
 ];
 
 export const MOCK_CENTINELA = {
   usuario_id: 'usr_001',
   fecha_evaluacion: new Date().toISOString(),
-  ingresos_acumulados_ytd: 78_200_000,
+  ingresos_acumulados_ytd: 98_200_000,
   alertas: MOCK_ALERTAS,
 };
 
@@ -144,7 +133,7 @@ export const MOCK_CENTINELA = {
 export interface FacturaVencida {
   id: string;
   numero_factura: string;
-  cliente: string;
+  cliente: string; // En E-commerce, usualmente es el proveedor logístico
   monto: number;
   fecha_emision: string;
   fecha_vencimiento: string;
@@ -156,8 +145,8 @@ export interface FacturaVencida {
 export const MOCK_CARTERA: FacturaVencida[] = [
   {
     id: 'fv_001',
-    numero_factura: 'FV-2026-0147',
-    cliente: 'Restaurante El Buen Sabor S.A.S',
+    numero_factura: 'Recaudo PCE-0147',
+    cliente: 'Inter Rapidísimo (Pago Contra Entrega)',
     monto: 4_850_000,
     fecha_emision: '2026-02-15',
     fecha_vencimiento: '2026-03-15',
@@ -167,8 +156,8 @@ export const MOCK_CARTERA: FacturaVencida[] = [
   },
   {
     id: 'fv_002',
-    numero_factura: 'FV-2026-0152',
-    cliente: 'Distribuidora Andina Ltda',
+    numero_factura: 'Recaudo PCE-0152',
+    cliente: 'Servientrega (Pago Contra Entrega)',
     monto: 12_300_000,
     fecha_emision: '2026-02-28',
     fecha_vencimiento: '2026-03-28',
@@ -178,47 +167,25 @@ export const MOCK_CARTERA: FacturaVencida[] = [
   },
   {
     id: 'fv_003',
-    numero_factura: 'FV-2026-0158',
-    cliente: 'Hotel Parque Central',
+    numero_factura: 'Disp-Stripe-0158',
+    cliente: 'Stripe Payouts',
     monto: 7_200_000,
     fecha_emision: '2026-03-01',
-    fecha_vencimiento: '2026-03-31',
+    fecha_vencimiento: '2026-03-05',
     dias_vencida: 26,
     estado: 'parcialmente_pagada',
     intentos_cobro: 1,
   },
   {
     id: 'fv_004',
-    numero_factura: 'FV-2026-0163',
-    cliente: 'Clínica Santa María',
-    monto: 18_500_000,
+    numero_factura: 'Recaudo PCE-0163',
+    cliente: 'Envia (Pago Contra Entrega)',
+    monto: 1_500_000,
     fecha_emision: '2026-01-20',
     fecha_vencimiento: '2026-02-20',
     dias_vencida: 65,
     estado: 'no_pagada',
     intentos_cobro: 4,
-  },
-  {
-    id: 'fv_005',
-    numero_factura: 'FV-2026-0170',
-    cliente: 'Transportes del Valle S.A',
-    monto: 3_150_000,
-    fecha_emision: '2026-03-10',
-    fecha_vencimiento: '2026-04-10',
-    dias_vencida: 16,
-    estado: 'no_pagada',
-    intentos_cobro: 0,
-  },
-  {
-    id: 'fv_006',
-    numero_factura: 'FV-2026-0175',
-    cliente: 'Constructora Medellín',
-    monto: 25_800_000,
-    fecha_emision: '2026-01-05',
-    fecha_vencimiento: '2026-02-05',
-    dias_vencida: 80,
-    estado: 'no_pagada',
-    intentos_cobro: 5,
   },
 ];
 
@@ -234,24 +201,24 @@ export const MOCK_CHAT_INITIAL: ChatMessage[] = [
   {
     id: 'msg_001',
     role: 'taty',
-    content: '¡Hola! 💚 Soy Taty, tu amiga contadora. Estoy aquí 24/7 para ayudarte con tus dudas de impuestos, flujo de caja y todo lo financiero. ¿En qué te puedo ayudar hoy?',
+    content: '¡Hola! 💚 Soy Taty, tu CFO as a Service. He analizado tus números de Ferez.co E-commerce de hoy. Tu caja real (lo que te queda después de provisión de impuestos) está genial. ¿Quieres revisar tus métricas de pauta o resolver una duda fiscal?',
     timestamp: new Date().toISOString(),
   },
 ];
 
 export const TATY_RESPONSES: Record<string, string> = {
-  'impuestos': '📊 Basándome en tus ingresos acumulados de $78.2M COP este año, te recomiendo apartar aproximadamente $2.6M COP mensuales para impuestos. Así no te pilla la DIAN de sorpresa. ¿Quieres que te explique cómo calculé eso?',
-  'renta': '🏛️ Para tu caso (Ferez.co E-commerce), como ya superaste los 1,400 UVT ($69.7M), eres declarante de renta obligatorio. La fecha límite según tu NIT es el 12 de agosto de 2026. ¡Tranqui, tenemos tiempo para preparar todo!',
-  'deducciones': '💡 Para un negocio de lavandería como el tuyo, las principales deducciones son:\n\n• Arriendo del local\n• Servicios públicos (agua, luz)\n• Insumos de lavado\n• Nómina y prestaciones\n• Depreciación de máquinas\n• Mantenimiento de equipos\n\n¿Quieres que revisemos si tienes alguna que no estés aprovechando?',
-  'iva': '📋 El IVA bimestral se declara cada 2 meses. Tu próximo vencimiento es el 1 de mayo. Recuerda que puedes descontar el IVA de las compras que hagas para tu negocio. Monto estimado a pagar: $3.5M COP.',
-  'default': '¡Buena pregunta! 🤔 Déjame revisar... Para darte la mejor respuesta sobre tu caso específico con Ferez.co E-commerce, te sugiero que agendemos una sesión con uno de nuestros contadores expertos. ¿Te parece?',
+  'impuestos': '📊 ¡Súper! He revisado que tus ventas totales en Shopify y Wompi superan los $98M. No te preocupes por la declaración: tu provisión actual es de $3.6M y el sistema lo separa automáticamente de tu "Dinero tuyo hoy". ¿Quieres ver el detalle de deducciones?',
+  'renta': '🏛️ Ya cruzaste el umbral de 1,400 UVT. En términos simples: sí debes declarar renta este año. Tu fecha límite es el 12 de agosto de 2026. Te enviaré recordatorios visuales (🟢🟡🔴) conforme nos acerquemos a la fecha para que estemos listos.',
+  'deducciones': '💡 Para tu e-commerce, las deducciones de oro son:\n\n• Facturas de Meta Ads / Google Ads (Pauta)\n• Software como Shopify, Klaviyo\n• Costos de logística (Servientrega, Inter Rapidísimo)\n• Tu proveedor de pasarela (Wompi, Stripe)\n\n¿Estás solicitando factura electrónica a todos ellos?',
+  'iva': '📋 Si llegas a las 3,500 UVT ($174M), serás responsable de IVA. Por ahora no lo eres, lo que te da una ventaja competitiva en el precio final de tus productos. Sigue monitoreando tu GPS Financiero.',
+  'default': '¡Interesante! 🤔 Déjame revisar el impacto de eso en la caja real de Ferez.co. Te sugiero que agendemos una sesión rápida con uno de nuestros asesores expertos en E-commerce para revisarlo en detalle. ¿Te parece?',
 };
 
 export const TATY_SUGGESTIONS = [
-  '¿Cuánto debo apartar para impuestos este mes?',
-  '¿Cuándo debo declarar renta?',
-  '¿Qué deducciones aplican a mi negocio?',
-  '¿Cómo funciona el IVA bimestral?',
+  '¿Cuál es mi "Dinero tuyo hoy" libre de DIAN?',
+  '¿Cuánto he gastado en pauta deducible?',
+  '¿Qué facturas de transportadoras no he cruzado?',
+  '¿Cuándo debo preocuparme por cobrar IVA?',
 ];
 
 // --- Configuración ---
@@ -260,7 +227,7 @@ export const MOCK_CONFIG = {
     nombre: 'Ferez.co E-commerce',
     nit: '901.456.789-2',
     plan: 'Starter',
-    email: 'lavaderos_ld@contexia.com',
+    email: 'gerencia@ferez.co',
     telefono: '+57 312 456 7890',
     ciudad: 'Medellín',
   },
@@ -268,15 +235,15 @@ export const MOCK_CONFIG = {
     porcentaje_renta: 35,
     porcentaje_iva: 19,
     regimen: 'Régimen Ordinario',
-    actividad_economica: '9601 - Lavado y limpieza de prendas de tela y de piel',
+    actividad_economica: '4791 - Comercio al por menor por internet',
     periodicidad_iva: 'Bimestral',
   },
   integraciones: [
+    { nombre: 'Shopify', conectado: true, icono: '🛒' },
+    { nombre: 'Stripe', conectado: true, icono: '💳' },
+    { nombre: 'Wompi', conectado: true, icono: '💰' },
     { nombre: 'Siigo', conectado: true, icono: '📊' },
-    { nombre: 'Bancolombia', conectado: true, icono: '🏦' },
-    { nombre: 'Stripe', conectado: false, icono: '💳' },
-    { nombre: 'Wompi', conectado: false, icono: '💰' },
-    { nombre: 'MercadoPago', conectado: false, icono: '🛒' },
+    { nombre: 'MercadoPago', conectado: false, icono: '🛍️' },
     { nombre: 'Nequi', conectado: false, icono: '📱' },
   ],
   notificaciones: {
@@ -307,3 +274,4 @@ export const formatCOPShort = (value: number): string => {
   }
   return `$${value}`;
 };
+
