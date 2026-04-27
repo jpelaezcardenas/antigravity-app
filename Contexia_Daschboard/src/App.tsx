@@ -415,8 +415,13 @@ export default function App() {
             <motion.div key={activeTab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-orbitron font-bold text-white mb-1">{tabTitles[activeTab]}</h1>
-                  <p className="text-gray-400 text-sm">Bienvenido, <span className="text-ctx-teal font-semibold">{MOCK_USER.nombre_empresa}</span></p>
+                  <h1 className="text-2xl md:text-3xl font-orbitron font-bold text-white mb-1">
+                    {activeTab === 'inicio' ? (
+                      <>Bienvenido, <span className="text-ctx-teal">{MOCK_USER.nombre_empresa}</span></>
+                    ) : (
+                      tabTitles[activeTab]
+                    )}
+                  </h1>
                 </div>
               </div>
               {renderTab()}
