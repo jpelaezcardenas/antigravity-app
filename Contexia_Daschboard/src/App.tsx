@@ -386,7 +386,7 @@ export default function App() {
                 <p className="text-[10px] text-ctx-teal uppercase tracking-[0.2em] font-bold">Empresario Premium</p>
               </div>
 
-              <div className="relative group flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 pr-6 hover:bg-white/10 transition-all duration-500" style={{ boxShadow: '0 0 20px rgba(45, 212, 191, 0.1)' }}>
+              <a href="https://wa.me/573018948151" target="_blank" rel="noopener noreferrer" className="relative group flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 pr-6 hover:bg-white/10 hover:border-ctx-teal/30 transition-all duration-500 cursor-pointer" style={{ boxShadow: '0 0 20px rgba(45, 212, 191, 0.1)' }}>
                 <div className="relative w-14 h-20 rounded-xl overflow-hidden border border-white/20 shadow-xl">
                   <img src="/assets/img/profiles/tatiana_full.png" alt="Taty" className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700" />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-dark/60 via-transparent to-transparent"></div>
@@ -399,9 +399,9 @@ export default function App() {
                     </span>
                     <span className="text-[10px] text-ctx-teal font-black uppercase tracking-widest leading-none">Online</span>
                   </div>
-                  <span className="text-sm text-white font-bold leading-tight">Tu Amiga Contadora<br/><span className="text-ctx-teal">Taty</span></span>
+                  <span className="text-sm text-white font-bold leading-tight">Tu Amiga Contadora<br/><span className="text-ctx-teal group-hover:text-white transition-colors">Taty</span></span>
                 </div>
-              </div>
+              </a>
             </div>
           </div>
         </header>
