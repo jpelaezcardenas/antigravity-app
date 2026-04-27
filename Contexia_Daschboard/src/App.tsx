@@ -75,8 +75,8 @@ const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose }: any) => 
   <>
     <div className="flex items-center justify-between mb-8 px-2">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 flex-shrink-0">
-          <img src="/assets/img/logo_premium.png" alt="Contexia" className="w-full h-full object-contain" />
+        <div className="h-12 w-auto flex-shrink-0">
+          <img src="/assets/img/logo_official.png" alt="Contexia" className="h-full w-auto object-contain" />
         </div>
         <div className="flex flex-col">
           <span className="font-orbitron font-bold text-xl leading-none tracking-tight text-white">CONTEXIA</span>
@@ -308,7 +308,7 @@ export default function App() {
     inicio: 'Panel de Control',
     pulso: '📊 Pulso Diario',
     centinela: '🛡️ Centinela Fiscal',
-    taty: '💚 Taty — Tu Amiga Contadora',
+    taty: '💚 Tu Amiga Contadora Taty',
     auditoria: '🔍 Auditoría Sombra',
     radar: '📡 Radar Predictivo',
     configuracion: '⚙️ Configuración',
@@ -386,10 +386,10 @@ export default function App() {
                 <p className="text-sm font-bold text-white">{MOCK_USER.nombre_empresa}</p>
                 <p className="text-[10px] text-ctx-teal uppercase tracking-widest font-bold">Empresario</p>
               </div>
-              <div className="relative group cursor-help" title="Taty - Tu amiga contadora">
+              <div className="relative group cursor-help" title="Tu Amiga Contadora Taty">
                 <div className="absolute -inset-1 bg-gradient-to-tr from-ctx-teal to-ctx-violet rounded-xl blur-[2px] opacity-50 group-hover:opacity-100 transition-opacity"></div>
                 <div className="relative w-10 h-10 rounded-xl bg-navy-dark border border-white/10 overflow-hidden">
-                  <img src="/assets/img/profiles/taty_premium.png" alt="Taty" className="w-full h-full object-cover" />
+                  <img src="/assets/img/profiles/tatiana_full.png" alt="Taty" className="w-full h-full object-cover object-top" />
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-ctx-teal rounded-full border-2 border-navy-dark flex items-center justify-center">
                   <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
