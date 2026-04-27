@@ -74,13 +74,9 @@ const AlertItem = ({ type, title, desc }: any) => {
 const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose }: any) => (
   <>
     <div className="flex items-center justify-between mb-8 px-2">
-      <div className="flex items-center gap-3">
-        <div className="h-12 w-auto flex-shrink-0">
+      <div className="flex items-center gap-4 py-2">
+        <div className="h-20 w-auto flex-shrink-0">
           <img src="/assets/img/logo_official.png" alt="Contexia" className="h-full w-auto object-contain" />
-        </div>
-        <div className="flex flex-col">
-          <span className="font-orbitron font-bold text-xl leading-none tracking-tight text-white">CONTEXIA</span>
-          <span className="font-rajdhani text-[8px] text-ctx-teal tracking-[0.2em] uppercase font-bold mt-1">GPS for Cash Flow</span>
         </div>
       </div>
       {onClose && <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg lg:hidden"><X className="w-5 h-5 text-gray-400" /></button>}
