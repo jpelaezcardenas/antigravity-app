@@ -42,8 +42,8 @@ html {
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
-  background-color: var(--ctx-navy-dark) !important;
-  color: var(--ctx-text) !important;
+  background-color: #020617 !important;
+  color: #f8fafc !important;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
