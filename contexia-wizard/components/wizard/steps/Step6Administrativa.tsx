@@ -20,7 +20,15 @@ export default function Step6Administrativa({ onNext, onBack }: Props) {
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<Step6Form>({
     resolver: zodResolver(paso6Schema),
-    defaultValues: (paso6 as Step6Form) || { empleados: 0, tipos_vinculacion: [], salario_promedio: 0 },
+    defaultValues: {
+      empleados: 0,
+      tipos_vinculacion: [],
+      salario_promedio: 0,
+      requiere_nomina: false,
+      contratos_proveedores: false,
+      tiene_bpa: false,
+      ...paso6,
+    } as Step6Form,
   });
 
   const tiposVinculacion = (watch("tipos_vinculacion") || []) as string[];
@@ -56,18 +64,18 @@ export default function Step6Administrativa({ onNext, onBack }: Props) {
           {/* Tipos de vinculación */}
           <div style={{ gridColumn: "1 / -1" }}>
             <label className="ctx-label">Tipos de vinculación laboral</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginTop: "0.5rem" }}>
               {VINCULACION_TIPOS.map((tipo) => {
                 const selected = tiposVinculacion.includes(tipo);
                 return (
                   <button key={tipo} type="button" onClick={() => toggleTipo(tipo)}
                     style={{
-                      padding: "0.375rem 0.875rem", borderRadius: "999px",
-                      border: `1.5px solid ${selected ? "#00a878" : "#e2e8f0"}`,
-                      background: selected ? "#e8f7f3" : "#fff",
-                      color: selected ? "#00a878" : "#64748b",
-                      fontWeight: selected ? 600 : 400,
-                      fontSize: "0.875rem", cursor: "pointer",
+                      padding: "0.5rem 1rem", borderRadius: "999px",
+                      border: `1px solid ${selected ? "var(--ctx-teal)" : "rgba(255,255,255,0.1)"}`,
+                      background: selected ? "rgba(45, 212, 191, 0.1)" : "rgba(255,255,255,0.03)",
+                      color: selected ? "var(--ctx-teal)" : "var(--ctx-text-muted)",
+                      fontWeight: selected ? 700 : 500,
+                      fontSize: "0.8125rem", cursor: "pointer", transition: "all 0.2s",
                     }}
                   >{tipo}</button>
                 );
@@ -78,10 +86,12 @@ export default function Step6Administrativa({ onNext, onBack }: Props) {
           {/* Nómina formal */}
           <div>
             <label className="ctx-label">¿Requieres nómina formal con prestaciones?</label>
-            <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+            <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.5rem" }}>
               {[{ val: "true", label: "Sí" }, { val: "false", label: "No" }].map(({ val, label }) => (
-                <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-                  <input type="radio" value={val} {...register("requiere_nomina", { setValueAs: v => v === "true" })} />
+                <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
+                  <input type="radio" value={val} {...register("requiere_nomina", { setValueAs: v => v === "true" })} 
+                    style={{ accentColor: "var(--ctx-teal)" }}
+                  />
                   {label}
                 </label>
               ))}
@@ -91,10 +101,12 @@ export default function Step6Administrativa({ onNext, onBack }: Props) {
           {/* Contratos proveedores */}
           <div>
             <label className="ctx-label">¿Tienes contratos formales con proveedores clave?</label>
-            <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+            <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.5rem" }}>
               {[{ val: "true", label: "Sí" }, { val: "false", label: "No" }].map(({ val, label }) => (
-                <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-                  <input type="radio" value={val} {...register("contratos_proveedores", { setValueAs: v => v === "true" })} />
+                <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
+                  <input type="radio" value={val} {...register("contratos_proveedores", { setValueAs: v => v === "true" })} 
+                    style={{ accentColor: "var(--ctx-teal)" }}
+                  />
                   {label}
                 </label>
               ))}
@@ -103,13 +115,15 @@ export default function Step6Administrativa({ onNext, onBack }: Props) {
 
           {/* BPA — solo si es manufactura/alimentos */}
           {isManufactura && (
-            <div style={{ gridColumn: "1 / -1", background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: "10px", padding: "1rem" }}>
-              <label className="ctx-label">¿Tienes Buenas Prácticas (BPA/BPM) implementadas?</label>
+            <div style={{ gridColumn: "1 / -1", background: "rgba(217, 119, 6, 0.05)", border: "1px solid rgba(217, 119, 6, 0.2)", borderRadius: "12px", padding: "1.25rem" }}>
+              <label className="ctx-label" style={{ color: "#fbbf24" }}>¿Tienes Buenas Prácticas (BPA/BPM) implementadas?</label>
               <span className="ctx-label-hint">Importante para el proceso de registro ICA/sanitario</span>
-              <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+              <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.5rem" }}>
                 {[{ val: "true", label: "Sí ✅" }, { val: "false", label: "No ❌" }].map(({ val, label }) => (
-                  <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-                    <input type="radio" value={val} {...register("tiene_bpa", { setValueAs: v => v === "true" })} />
+                  <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
+                    <input type="radio" value={val} {...register("tiene_bpa", { setValueAs: v => v === "true" })} 
+                      style={{ accentColor: "var(--ctx-teal)" }}
+                    />
                     {label}
                   </label>
                 ))}

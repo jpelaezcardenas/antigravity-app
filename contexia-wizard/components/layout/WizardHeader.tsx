@@ -14,9 +14,11 @@ const WA_URL =
 export default function WizardHeader() {
   return (
     <header
+      className="ctx-force-dark-bg"
       style={{
-        background: "#fff",
-        borderBottom: "1px solid #e2e8f0",
+        background: "rgba(2, 6, 23, 0.8)",
+        backdropFilter: "blur(12px)",
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
         position: "sticky",
         top: 0,
         zIndex: 40,
@@ -55,15 +57,15 @@ export default function WizardHeader() {
             <a
               key={l.label}
               href={l.href}
+              className="ctx-force-white"
               style={{
                 fontSize: "0.9375rem",
-                color: "#1a202c",
                 textDecoration: "none",
                 fontWeight: 500,
                 transition: "color 0.15s",
               }}
-              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#00a878")}
-              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#1a202c")}
+              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "var(--ctx-teal)")}
+              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "white")}
             >
               {l.label}
             </a>
@@ -76,13 +78,15 @@ export default function WizardHeader() {
             href="https://www.contexia.online/app"
             style={{
               fontSize: "0.875rem",
-              color: "#0a2540",
+              color: "white",
               textDecoration: "none",
               fontWeight: 600,
-              padding: "0.5rem 1rem",
-              border: "1.5px solid #0a2540",
-              borderRadius: "8px",
+              padding: "0.5rem 1.25rem",
+              border: "1.5px solid rgba(255,255,255,0.1)",
+              borderRadius: "10px",
               transition: "all 0.15s",
+              background: "rgba(255,255,255,0.05)",
+              backdropFilter: "blur(8px)",
             }}
           >
             Acceso App
@@ -101,7 +105,6 @@ export default function WizardHeader() {
           </a>
         </div>
       </div>
-      <style>{`.hidden-mobile { display: flex; } @media (max-width: 768px) { .hidden-mobile { display: none; } }`}</style>
     </header>
   );
 }

@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   // NO static export — we need API routes (leads, email, audit)
   // basePath keeps assets working when proxied from contexia.online/wizard
   basePath: "/wizard",
-  trailingSlash: false,
+  trailingSlash: true,
   images: {
     unoptimized: true,
     remotePatterns: [

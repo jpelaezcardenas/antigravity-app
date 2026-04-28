@@ -19,15 +19,15 @@
         },
         {
             "source": "/wizard/api/:path*",
-            "destination": "https://contexia-wizard.vercel.app/api/:path*"
+            "destination": "https://contexia-wizard.vercel.app/wizard/api/:path*"
         },
         {
             "source": "/wizard/:path*",
-            "destination": "https://contexia-wizard.vercel.app/:path*"
+            "destination": "https://contexia-wizard.vercel.app/wizard/:path*"
         },
         {
             "source": "/wizard",
-            "destination": "https://contexia-wizard.vercel.app"
+            "destination": "https://contexia-wizard.vercel.app/wizard"
         }
     ],
     "cleanUrls": true,

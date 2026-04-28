@@ -30,7 +30,7 @@ export default function Step2Empresa({ onNext, onBack }: Props) {
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<Paso2Data>({
     resolver: zodResolver(paso2Schema),
-    defaultValues: paso2 as Paso2Data,
+    defaultValues: { ...paso2 } as Paso2Data,
   });
 
   const ciiu = watch("ciiu_principal");
@@ -52,15 +52,15 @@ export default function Step2Empresa({ onNext, onBack }: Props) {
         {/* Banner CIIU 1090 */}
         {ciiu === "1090" && (
           <div style={{
-            background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: "10px",
-            padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", gap: "0.75rem"
+            background: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", borderRadius: "12px",
+            padding: "1.25rem", marginBottom: "1.5rem", display: "flex", gap: "1rem"
           }}>
-            <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>⚠️</span>
+            <span style={{ fontSize: "1.5rem", flexShrink: 0 }}>⚠️</span>
             <div>
-              <h4 style={{ color: "#dc2626", fontWeight: 700, margin: "0 0 0.375rem", fontSize: "0.9375rem" }}>
+              <h4 style={{ color: "#ef4444", fontWeight: 700, margin: "0 0 0.5rem", fontSize: "1rem", letterSpacing: "0.01em" }}>
                 Tu actividad requiere registro ICA
               </h4>
-              <p style={{ color: "#7f1d1d", fontSize: "0.875rem", margin: 0, lineHeight: 1.6 }}>
+              <p style={{ color: "#fca5a5", fontSize: "0.875rem", margin: 0, lineHeight: 1.6 }}>
                 La Resolución ICA 061252/2020 obliga a TODOS los fabricantes de alimento comercial para animales a registrarse en <strong>SimplifICA</strong>. Operar sin este registro expone a decomiso, cierre y multas hasta <strong>10.000 SMMLV (~$14.230 millones COP)</strong>. Contexia te acompaña en la ruta de cumplimiento.
               </p>
             </div>
@@ -75,11 +75,11 @@ export default function Step2Empresa({ onNext, onBack }: Props) {
             {errors.nombre_opcion1 && <p className="ctx-error-msg">{errors.nombre_opcion1.message}</p>}
           </div>
           <div>
-            <label className="ctx-label">Nombre alternativo 2 <span style={{ color: "#94a3b8", fontWeight: 400 }}>(opcional)</span></label>
+            <label className="ctx-label">Nombre alternativo 2 <span style={{ color: "var(--ctx-text-muted)", fontWeight: 400 }}>(opcional)</span></label>
             <input className="ctx-input" placeholder="Opción 2" {...register("nombre_opcion2")} />
           </div>
           <div>
-            <label className="ctx-label">Nombre alternativo 3 <span style={{ color: "#94a3b8", fontWeight: 400 }}>(opcional)</span></label>
+            <label className="ctx-label">Nombre alternativo 3 <span style={{ color: "var(--ctx-text-muted)", fontWeight: 400 }}>(opcional)</span></label>
             <input className="ctx-input" placeholder="Opción 3" {...register("nombre_opcion3")} />
           </div>
 
@@ -112,7 +112,7 @@ export default function Step2Empresa({ onNext, onBack }: Props) {
 
           {/* CIIU secundario */}
           <div>
-            <label className="ctx-label">CIIU secundario <span style={{ color: "#94a3b8", fontWeight: 400 }}>(opcional)</span></label>
+            <label className="ctx-label">CIIU secundario <span style={{ color: "var(--ctx-text-muted)", fontWeight: 400 }}>(opcional)</span></label>
             <select className="ctx-input" {...register("ciiu_secundario")}>
               <option value="">Ninguno</option>
               {CIIU_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}

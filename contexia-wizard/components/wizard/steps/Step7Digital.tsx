@@ -14,7 +14,11 @@ export default function Step7Digital({ onNext, onBack }: Props) {
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<Paso7Data>({
     resolver: zodResolver(paso7Schema),
-    defaultValues: { ...paso7, redes_sociales: paso7?.redes_sociales || [] } as Paso7Data,
+    defaultValues: {
+      tiene_ecommerce: false,
+      redes_sociales: [],
+      ...paso7,
+    } as Paso7Data,
   });
 
   const tieneEcommerce = watch("tiene_ecommerce");
@@ -39,11 +43,13 @@ export default function Step7Digital({ onNext, onBack }: Props) {
           {/* E-commerce */}
           <div style={{ gridColumn: "1 / -1" }}>
             <label className="ctx-label">¿Tienes tienda en línea / e-commerce?</label>
-            <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+            <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.5rem" }}>
               {[{ val: "true", label: "Sí 🛒" }, { val: "false", label: "No" }].map(({ val, label }) => (
-                <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+                <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
                   <input type="radio" value={val}
-                    {...register("tiene_ecommerce", { setValueAs: v => v === "true" })} />
+                    {...register("tiene_ecommerce", { setValueAs: v => v === "true" })} 
+                    style={{ accentColor: "var(--ctx-teal)" }}
+                  />
                   {label}
                 </label>
               ))}
@@ -59,31 +65,31 @@ export default function Step7Digital({ onNext, onBack }: Props) {
 
           {/* Software contable */}
           <div>
-            <label className="ctx-label">Software contable usado <span style={{ color: "#94a3b8", fontWeight: 400 }}>(opcional)</span></label>
+            <label className="ctx-label">Software contable usado <span style={{ color: "var(--ctx-text-muted)", fontWeight: 400 }}>(opcional)</span></label>
             <input className="ctx-input" placeholder="Siigo, Alegra, Helisa, Excel..." {...register("software_contable")} />
           </div>
 
           {/* Dominio */}
           <div>
-            <label className="ctx-label">Dominio web <span style={{ color: "#94a3b8", fontWeight: 400 }}>(opcional)</span></label>
+            <label className="ctx-label">Dominio web <span style={{ color: "var(--ctx-text-muted)", fontWeight: 400 }}>(opcional)</span></label>
             <input className="ctx-input" placeholder="tuempresa.com" {...register("dominio_web")} />
           </div>
 
           {/* Redes sociales */}
           <div style={{ gridColumn: "1 / -1" }}>
             <label className="ctx-label">Redes sociales activas</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginTop: "0.5rem" }}>
               {REDES.map((red) => {
                 const selected = redesActivas.includes(red);
                 return (
                   <button key={red} type="button" onClick={() => toggleRed(red)}
                     style={{
-                      padding: "0.375rem 0.875rem", borderRadius: "999px",
-                      border: `1.5px solid ${selected ? "#00a878" : "#e2e8f0"}`,
-                      background: selected ? "#e8f7f3" : "#fff",
-                      color: selected ? "#00a878" : "#64748b",
-                      fontWeight: selected ? 600 : 400,
-                      fontSize: "0.875rem", cursor: "pointer",
+                      padding: "0.5rem 1rem", borderRadius: "999px",
+                      border: `1px solid ${selected ? "var(--ctx-teal)" : "rgba(255,255,255,0.1)"}`,
+                      background: selected ? "rgba(45, 212, 191, 0.1)" : "rgba(255,255,255,0.03)",
+                      color: selected ? "var(--ctx-teal)" : "var(--ctx-text-muted)",
+                      fontWeight: selected ? 700 : 500,
+                      fontSize: "0.8125rem", cursor: "pointer", transition: "all 0.2s",
                     }}
                   >{red}</button>
                 );

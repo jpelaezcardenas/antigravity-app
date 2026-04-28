@@ -50,7 +50,7 @@ export default function Stepper({ currentStep, completedSteps }: StepperProps) {
                 style={{
                   fontSize: "0.6875rem",
                   fontWeight: isActive ? 700 : 500,
-                  color: isActive ? "#00a878" : isCompleted ? "#00a878" : "#94a3b8",
+                  color: isActive ? "var(--ctx-teal)" : isCompleted ? "var(--ctx-teal)" : "#64748b",
                   textAlign: "center",
                   whiteSpace: "nowrap",
                 }}
@@ -64,9 +64,9 @@ export default function Stepper({ currentStep, completedSteps }: StepperProps) {
               <div
                 style={{
                   flex: 1,
-                  height: "2px",
-                  background: isCompleted ? "#00a878" : "#e2e8f0",
-                  marginTop: "1.125rem",
+                  height: "1.5px",
+                  background: isCompleted ? "var(--ctx-teal)" : "rgba(255,255,255,0.05)",
+                  marginTop: "1.25rem",
                   transition: "background 0.3s",
                 }}
               />

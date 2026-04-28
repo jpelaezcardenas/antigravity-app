@@ -16,17 +16,24 @@ export default function Step5Contable({ onNext, onBack }: Props) {
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<Step5Form>({
     resolver: zodResolver(paso5Schema),
-    defaultValues: (paso5 as Step5Form) || {},
+    defaultValues: {
+      tiene_contador: false,
+      maneja_inventarios: false,
+      facturacion_electronica: "no",
+      regimen_preferido: "analisis",
+      registros_actuales: "excel",
+      ...paso5,
+    } as Step5Form,
   });
 
   const tieneContador = watch("tiene_contador");
   const onSubmit = (data: Step5Form) => { setPaso5(data as any); onNext(); };
 
   const RadioGroup = ({ name, options }: { name: any; options: { val: string; label: string }[] }) => (
-    <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+    <div style={{ display: "flex", gap: "1.25rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
       {options.map(({ val, label }) => (
-        <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-          <input type="radio" value={val} {...register(name)} style={{ accentColor: "#00a878" }} />
+        <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
+          <input type="radio" value={val} {...register(name, { setValueAs: (v) => (v === "true" ? true : v === "false" ? false : v) })} style={{ accentColor: "var(--ctx-teal)" }} />
           {label}
         </label>
       ))}
@@ -92,11 +99,11 @@ export default function Step5Contable({ onNext, onBack }: Props) {
               ].map(({ val, label }) => {
                 return (
                   <label key={val} style={{
-                    display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer",
-                    padding: "0.625rem 1rem", borderRadius: "10px", border: "1.5px solid #e2e8f0",
-                    fontSize: "0.875rem", background: "#fff",
+                    display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer",
+                    padding: "0.625rem 1rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.1)",
+                    fontSize: "0.875rem", background: "rgba(255,255,255,0.03)", color: "white",
                   }}>
-                    <input type="radio" value={val} {...register("regimen_preferido")} style={{ accentColor: "#00a878" }} />
+                    <input type="radio" value={val} {...register("regimen_preferido")} style={{ accentColor: "var(--ctx-teal)" }} />
                     {label}
                   </label>
                 );

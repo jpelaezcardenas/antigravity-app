@@ -34,29 +34,32 @@ export default function StepWrapper({
             display: "inline-flex",
             alignItems: "center",
             gap: "0.5rem",
-            background: "#e8f7f3",
-            color: "#00a878",
+            background: "rgba(45, 212, 191, 0.1)",
+            color: "var(--ctx-teal)",
             fontSize: "0.8125rem",
             fontWeight: 700,
-            padding: "0.375rem 0.75rem",
+            padding: "0.375rem 0.875rem",
             borderRadius: "999px",
             marginBottom: "0.75rem",
+            border: "1px solid rgba(45, 212, 191, 0.2)",
           }}
         >
           <span>Paso {step} de 8</span>
         </div>
         <h2
+          className="font-orbitron"
           style={{
             fontSize: "1.625rem",
-            fontWeight: 700,
-            color: "#0a2540",
-            margin: "0 0 0.375rem",
+            fontWeight: 800,
+            color: "white",
+            margin: "0 0 0.5rem",
+            letterSpacing: "0.02em",
           }}
         >
           {headline}
         </h2>
         {subheadline && (
-          <p style={{ color: "#64748b", fontSize: "0.9375rem", margin: 0 }}>
+          <p style={{ color: "var(--ctx-text-muted)", fontSize: "0.9375rem", margin: 0 }}>
             {subheadline}
           </p>
         )}
@@ -74,14 +77,16 @@ export default function StepWrapper({
           justifyContent: "space-between",
           alignItems: "center",
           gap: "1rem",
+          marginTop: "2.5rem",
+          paddingBottom: "1.5rem",
         }}
       >
         {onBack ? (
           <button
             type="button"
             onClick={onBack}
-            className="ctx-btn-outline"
-            style={{ gap: "0.375rem" }}
+            className="ctx-btn-secondary"
+            style={{ gap: "0.375rem", padding: "0.75rem 1.5rem" }}
           >
             <ArrowLeft size={16} />
             Atrás

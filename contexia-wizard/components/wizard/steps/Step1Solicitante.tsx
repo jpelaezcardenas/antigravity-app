@@ -14,7 +14,7 @@ export default function Step1Solicitante({ onNext }: Props) {
 
   const { register, handleSubmit, formState: { errors } } = useForm<Paso1Data>({
     resolver: zodResolver(paso1Schema),
-    defaultValues: paso1 as Paso1Data,
+    defaultValues: { ...paso1 } as Paso1Data,
   });
 
   const onSubmit = async (data: Paso1Data) => {
@@ -86,7 +86,7 @@ export default function Step1Solicitante({ onNext }: Props) {
         </div>
 
         {/* Privacy note */}
-        <p style={{ fontSize: "0.8125rem", color: "#94a3b8", marginTop: "1.25rem", display: "flex", alignItems: "center", gap: "0.375rem" }}>
+        <p style={{ fontSize: "0.8125rem", color: "var(--ctx-text-muted)", marginTop: "1.25rem", display: "flex", alignItems: "center", gap: "0.375rem" }}>
           🔒 Tu información es 100% confidencial y nunca será compartida con terceros.
         </p>
       </StepWrapper>

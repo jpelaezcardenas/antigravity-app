@@ -25,7 +25,15 @@ export default function Step4Financiera({ onNext, onBack }: Props) {
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<Paso4Data>({
     resolver: zodResolver(paso4Schema),
-    defaultValues: { ...paso4, medios_pago: paso4?.medios_pago || [] } as Paso4Data,
+    defaultValues: {
+      ingresos_mensuales: 0,
+      costos_pct: 50,
+      modelo_negocio: "servicios",
+      medios_pago: [],
+      tiene_ingresos_previos: false,
+      ha_declarado_renta: false,
+      ...paso4,
+    } as Paso4Data,
   });
 
   const costosPct = watch("costos_pct") || 50;
@@ -58,13 +66,13 @@ export default function Step4Financiera({ onNext, onBack }: Props) {
           {/* Costos % */}
           <div>
             <label className="ctx-label">Costos + gastos como % de ingresos *</label>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
               <input
                 type="range" min={0} max={100}
                 {...register("costos_pct", { valueAsNumber: true })}
-                style={{ flex: 1, accentColor: "#00a878" }}
+                style={{ flex: 1, accentColor: "var(--ctx-teal)" }}
               />
-              <span style={{ fontWeight: 700, color: "#0a2540", minWidth: "40px", textAlign: "right" }}>{costosPct}%</span>
+              <span style={{ fontWeight: 800, color: "white", minWidth: "48px", textAlign: "right", fontSize: "1rem" }}>{costosPct}%</span>
             </div>
             {costosPct > 70 && (
               <p style={{ fontSize: "0.8125rem", color: "#d97706", marginTop: "0.375rem" }}>
@@ -76,14 +84,15 @@ export default function Step4Financiera({ onNext, onBack }: Props) {
           {/* Modelo negocio */}
           <div style={{ gridColumn: "1 / -1" }}>
             <label className="ctx-label">Modelo de negocio *</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginTop: "0.5rem" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", marginTop: "0.5rem" }}>
               {MODELOS.map((m) => (
                 <label key={m.value} style={{
-                  display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer",
-                  padding: "0.5rem 0.875rem", borderRadius: "8px", border: "1.5px solid #e2e8f0",
-                  fontSize: "0.875rem", background: "#fff", transition: "all 0.15s",
+                  display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer",
+                  padding: "0.625rem 1rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.1)",
+                  fontSize: "0.875rem", background: "rgba(255,255,255,0.03)", transition: "all 0.2s",
+                  color: "white"
                 }}>
-                  <input type="radio" value={m.value} {...register("modelo_negocio")} style={{ accentColor: "#00a878" }} />
+                  <input type="radio" value={m.value} {...register("modelo_negocio")} style={{ accentColor: "var(--ctx-teal)" }} />
                   {m.label}
                 </label>
               ))}
@@ -95,18 +104,18 @@ export default function Step4Financiera({ onNext, onBack }: Props) {
           <div style={{ gridColumn: "1 / -1" }}>
             <label className="ctx-label">Pasarelas / medios de pago activas *</label>
             <span className="ctx-label-hint">Selecciona todos los que usas actualmente</span>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem" }}>
               {MEDIOS_PAGO.map((m) => {
                 const selected = mediosPago.includes(m);
                 return (
                   <button key={m} type="button" onClick={() => toggleMedio(m)}
                     style={{
-                      padding: "0.375rem 0.75rem", borderRadius: "999px",
-                      border: `1.5px solid ${selected ? "#00a878" : "#e2e8f0"}`,
-                      background: selected ? "#e8f7f3" : "#fff",
-                      color: selected ? "#00a878" : "#64748b",
-                      fontWeight: selected ? 600 : 400,
-                      fontSize: "0.875rem", cursor: "pointer", transition: "all 0.15s",
+                      padding: "0.5rem 1rem", borderRadius: "999px",
+                      border: `1px solid ${selected ? "var(--ctx-teal)" : "rgba(255,255,255,0.1)"}`,
+                      background: selected ? "rgba(45, 212, 191, 0.1)" : "rgba(255,255,255,0.03)",
+                      color: selected ? "var(--ctx-teal)" : "var(--ctx-text-muted)",
+                      fontWeight: selected ? 700 : 500,
+                      fontSize: "0.8125rem", cursor: "pointer", transition: "all 0.2s",
                     }}
                   >{m}</button>
                 );
@@ -118,10 +127,12 @@ export default function Step4Financiera({ onNext, onBack }: Props) {
           {/* Ingresos previos */}
           <div>
             <label className="ctx-label">¿Tienes ingresos previos sin formalizar?</label>
-            <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+            <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.5rem" }}>
               {[{ val: "true", label: "Sí" }, { val: "false", label: "No" }].map(({ val, label }) => (
-                <label key={label} style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-                  <input type="radio" value={val} {...register("tiene_ingresos_previos", { setValueAs: v => v === "true" })} />
+                <label key={label} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
+                  <input type="radio" value={val} {...register("tiene_ingresos_previos", { setValueAs: v => v === "true" })} 
+                    style={{ accentColor: "var(--ctx-teal)" }}
+                  />
                   {label}
                 </label>
               ))}
@@ -139,10 +150,12 @@ export default function Step4Financiera({ onNext, onBack }: Props) {
           {/* Ha declarado */}
           <div>
             <label className="ctx-label">¿Has declarado renta como persona natural?</label>
-            <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+            <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.5rem" }}>
               {[{ val: "true", label: "Sí" }, { val: "false", label: "No" }].map(({ val, label }) => (
-                <label key={label} style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-                  <input type="radio" value={val} {...register("ha_declarado_renta", { setValueAs: v => v === "true" })} />
+                <label key={label} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
+                  <input type="radio" value={val} {...register("ha_declarado_renta", { setValueAs: v => v === "true" })} 
+                    style={{ accentColor: "var(--ctx-teal)" }}
+                  />
                   {label}
                 </label>
               ))}

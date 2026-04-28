@@ -31,13 +31,14 @@ function WizardHero({ onStart }: { onStart: () => void }) {
           display: "inline-flex",
           alignItems: "center",
           gap: "0.5rem",
-          background: "#e8f7f3",
-          color: "#00a878",
+          background: "rgba(45, 212, 191, 0.1)",
+          color: "var(--ctx-teal)",
           fontWeight: 700,
           fontSize: "0.875rem",
-          padding: "0.375rem 0.875rem",
+          padding: "0.375rem 1rem",
           borderRadius: "999px",
           marginBottom: "1.5rem",
+          border: "1px solid rgba(45, 212, 191, 0.2)",
         }}
       >
         🔍 Shadow Audit — Gratis &amp; Sin compromiso
@@ -46,18 +47,18 @@ function WizardHero({ onStart }: { onStart: () => void }) {
         style={{
           fontSize: "clamp(2rem, 5vw, 2.75rem)",
           fontWeight: 800,
-          color: "#0a2540",
+          color: "#ffffff",
           lineHeight: 1.2,
           margin: "0 0 1rem",
         }}
       >
         ¿Tu empresa paga más
         <br />
-        impuestos de lo que debe?
+        <span className="gradient-text">impuestos de lo que debe?</span>
       </h1>
       <p
         style={{
-          color: "#475569",
+          color: "var(--ctx-text-muted)",
           fontSize: "1.0625rem",
           lineHeight: 1.7,
           margin: "0 0 2.5rem",
@@ -93,7 +94,7 @@ function WizardHero({ onStart }: { onStart: () => void }) {
               display: "flex",
               alignItems: "center",
               gap: "0.5rem",
-              color: "#64748b",
+              color: "var(--ctx-text-muted)",
               fontSize: "0.9375rem",
             }}
           >
@@ -111,7 +112,7 @@ function WizardHero({ onStart }: { onStart: () => void }) {
         Hacer mi diagnóstico gratuito →
       </button>
 
-      <p style={{ color: "#94a3b8", fontSize: "0.875rem", marginTop: "1.25rem" }}>
+      <p style={{ color: "var(--ctx-text-light)", fontSize: "0.875rem", marginTop: "1.25rem" }}>
         Sin tarjeta de crédito. Sin spam. Solo insights reales.
       </p>
 
@@ -120,14 +121,14 @@ function WizardHero({ onStart }: { onStart: () => void }) {
         style={{
           marginTop: "3rem",
           paddingTop: "2rem",
-          borderTop: "1px solid #e2e8f0",
+          borderTop: "1px solid rgba(255,255,255,0.05)",
           display: "flex",
           flexDirection: "column",
           gap: "1rem",
           alignItems: "center",
         }}
       >
-        <p style={{ color: "#94a3b8", fontSize: "0.8125rem" }}>
+        <p style={{ color: "var(--ctx-text-light)", fontSize: "0.8125rem" }}>
           Cálculos basados en normativa vigente
         </p>
         <div
@@ -144,11 +145,11 @@ function WizardHero({ onStart }: { onStart: () => void }) {
                 key={label}
                 style={{
                   fontSize: "0.8125rem",
-                  color: "#64748b",
-                  background: "#f1f5f9",
-                  padding: "0.375rem 0.75rem",
+                  color: "var(--ctx-text-muted)",
+                  background: "rgba(255,255,255,0.03)",
+                  padding: "0.375rem 1rem",
                   borderRadius: "999px",
-                  border: "1px solid #e2e8f0",
+                  border: "1px solid rgba(255,255,255,0.08)",
                 }}
               >
                 {label}
@@ -186,7 +187,13 @@ export default function WizardClient() {
   const next = () => store.setPasoActual(Math.min(store.pasoActual + 1, 8));
   const back = () => store.setPasoActual(Math.max(store.pasoActual - 1, 1));
 
-  if (!mounted) return null;
+  if (!mounted) return (
+    <div style={{ minHeight: "100vh", background: "var(--ctx-navy)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div className="ctx-glass" style={{ padding: "2rem", borderRadius: "1.5rem" }}>
+        <div className="animate-pulse" style={{ color: "var(--ctx-teal)" }}>Cargando Contexia...</div>
+      </div>
+    </div>
+  );
 
   return (
     <div
@@ -194,7 +201,7 @@ export default function WizardClient() {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        background: "#f8fafc",
+        background: "#020617",
       }}
     >
       <WizardHeader />
