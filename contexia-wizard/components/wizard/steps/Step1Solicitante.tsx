@@ -5,7 +5,17 @@ import { paso1Schema, type Paso1Data } from "@/lib/validations";
 import { useWizardStore } from "@/lib/store";
 import StepWrapper from "../StepWrapper";
 
-const ROLES = ["Propietario", "Contador", "Financiero", "Administrador", "Manager", "Otro"];
+const ROLES = [
+  "Propietario / Emprendedor",
+  "Independiente / Freelance",
+  "Comerciante con Local",
+  "Empleado",
+  "Contador",
+  "Financiero",
+  "Administrador",
+  "Manager",
+  "Otro"
+];
 
 interface Props { onNext: () => void; }
 
@@ -60,10 +70,34 @@ export default function Step1Solicitante({ onNext }: Props) {
             {errors.email && <p className="ctx-error-msg">{errors.email.message}</p>}
           </div>
 
-          {/* WhatsApp */}
+          {/* WhatsApp with Country Code */}
           <div>
             <label className="ctx-label">WhatsApp *</label>
-            <input className={`ctx-input ${errors.whatsapp ? "error" : ""}`} placeholder="+573001234567" {...register("whatsapp")} />
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <select 
+                className="ctx-input" 
+                style={{ width: "90px", padding: "0.875rem 0.5rem", textAlign: "center" }}
+                {...register("pais_codigo")}
+                defaultValue="+57"
+              >
+                <option value="+57">🇨🇴 +57</option>
+                <option value="+52">🇲🇽 +52</option>
+                <option value="+56">🇨🇱 +56</option>
+                <option value="+51">🇵🇪 +51</option>
+                <option value="+1">🇺🇸 +1</option>
+                <option value="+34">🇪🇸 +34</option>
+                <option value="+58">🇻🇪 +58</option>
+                <option value="+593">🇪🇨 +593</option>
+                <option value="+507">🇵🇦 +507</option>
+              </select>
+              <input 
+                className={`ctx-input ${errors.whatsapp ? "error" : ""}`} 
+                placeholder="300 123 4567" 
+                {...register("whatsapp")} 
+                style={{ flex: 1 }}
+              />
+            </div>
+            <span className="ctx-label-hint">Selecciona tu país y número sin prefijo</span>
             {errors.whatsapp && <p className="ctx-error-msg">{errors.whatsapp.message}</p>}
           </div>
 

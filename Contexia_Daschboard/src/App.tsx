@@ -85,7 +85,14 @@ const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose }: any) => 
     <nav className="space-y-1 flex-1">
       {navItems.map((item) => (
         <button key={item.id}
-          onClick={() => { setActiveTab(item.id); onClose?.(); }}
+          onClick={() => { 
+            if (item.id === 'auditoria') {
+              window.location.href = '/wizard/';
+              return;
+            }
+            setActiveTab(item.id); 
+            onClose?.(); 
+          }}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative group ${
             activeTab === item.id
               ? 'bg-ctx-teal/10 text-ctx-teal border border-ctx-teal/20'
@@ -97,6 +104,9 @@ const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose }: any) => 
           )}
           <item.icon className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeTab === item.id ? 'text-ctx-teal' : 'text-gray-500'}`} />
           <span className="font-rajdhani text-sm uppercase tracking-widest font-semibold">{item.label}</span>
+          {item.id === 'auditoria' && (
+            <div className="absolute right-3 px-1.5 py-0.5 bg-ctx-teal/20 text-ctx-teal text-[8px] font-black rounded border border-ctx-teal/30 animate-pulse">GRATIS</div>
+          )}
         </button>
       ))}
     </nav>
@@ -156,8 +166,16 @@ const DashboardHome = ({ setActiveTab }: { setActiveTab: (t: string) => void }) 
               {[
                 { label: 'Ver Pulso Diario', tab: 'pulso' },
                 { label: 'Revisar Alertas DIAN', tab: 'centinela' },
+                { label: 'Ejecutar Auditoría Sombra', tab: 'auditoria' },
               ].map(a => (
-                <button key={a.tab} onClick={() => setActiveTab(a.tab)}
+                <button key={a.tab} 
+                  onClick={() => {
+                    if (a.tab === 'auditoria') {
+                      window.location.href = '/wizard/';
+                      return;
+                    }
+                    setActiveTab(a.tab);
+                  }}
                   className="w-full text-left p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-between group">
                   <span className="text-sm">{a.label}</span>
                   <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-ctx-violet transition-colors" />

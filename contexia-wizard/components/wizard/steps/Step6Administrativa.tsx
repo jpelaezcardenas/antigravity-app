@@ -8,8 +8,16 @@ import { z } from "zod";
 
 type Step6Form = z.infer<typeof paso6Schema>;
 
-const VINCULACION_TIPOS = [
+const SMLV_2026 = 1_750_905;
+
+const VINCULACION_FORMALES = [
   "Contrato indefinido", "Término fijo", "Prestación de servicios", "Aprendices SENA",
+];
+
+const VINCULACION_INFORMALES = [
+  "Por horas / jornales", "Por obra o labor", "Pago al destajo (por unidad)",
+  "Día trabajado, día pagado", "Comisión pura (sin básico)", "Familiar sin contrato",
+  "Freelance / independiente", "Plataformas (Rappi, etc.)",
 ];
 
 interface Props { onNext: () => void; onBack: () => void; }
@@ -32,6 +40,10 @@ export default function Step6Administrativa({ onNext, onBack }: Props) {
   });
 
   const tiposVinculacion = (watch("tipos_vinculacion") || []) as string[];
+  const requiereNomina = watch("requiere_nomina");
+  const contratosProveedores = watch("contratos_proveedores");
+  const tieneBpa = watch("tiene_bpa");
+  const salarioPromedio = watch("salario_promedio") || 0;
 
   const toggleTipo = (tipo: string) => {
     if (tiposVinculacion.includes(tipo)) {
@@ -59,13 +71,24 @@ export default function Step6Administrativa({ onNext, onBack }: Props) {
             <label className="ctx-label">Salario promedio mensual (COP)</label>
             <input type="number" className="ctx-input" placeholder="Ej. 1500000"
               {...register("salario_promedio", { valueAsNumber: true })} />
+            <span className="ctx-label-hint">
+              SMLV 2026: ${SMLV_2026.toLocaleString("es-CO")} + Aux. transporte: $249.095 = <strong>$2.000.000</strong>
+              {salarioPromedio > 0 && salarioPromedio < SMLV_2026 && (
+                <span style={{ color: "#fb923c", fontWeight: 600 }}>
+                  {" "}⚠️ Por debajo del mínimo legal
+                </span>
+              )}
+            </span>
           </div>
 
           {/* Tipos de vinculación */}
           <div style={{ gridColumn: "1 / -1" }}>
             <label className="ctx-label">Tipos de vinculación laboral</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginTop: "0.5rem" }}>
-              {VINCULACION_TIPOS.map((tipo) => {
+            <span className="ctx-label-hint">Selecciona todos los que apliquen a tu negocio</span>
+
+            <p style={{ fontSize: "0.75rem", color: "var(--ctx-teal)", fontWeight: 700, margin: "0.75rem 0 0.375rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>📋 Formales</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem" }}>
+              {VINCULACION_FORMALES.map((tipo) => {
                 const selected = tiposVinculacion.includes(tipo);
                 return (
                   <button key={tipo} type="button" onClick={() => toggleTipo(tipo)}
@@ -81,15 +104,34 @@ export default function Step6Administrativa({ onNext, onBack }: Props) {
                 );
               })}
             </div>
+
+            <p style={{ fontSize: "0.75rem", color: "#fb923c", fontWeight: 700, margin: "0.75rem 0 0.375rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>⚡ Informales / Sin contrato</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem" }}>
+              {VINCULACION_INFORMALES.map((tipo) => {
+                const selected = tiposVinculacion.includes(tipo);
+                return (
+                  <button key={tipo} type="button" onClick={() => toggleTipo(tipo)}
+                    style={{
+                      padding: "0.5rem 1rem", borderRadius: "999px",
+                      border: `1px solid ${selected ? "#fb923c" : "rgba(255,255,255,0.1)"}`,
+                      background: selected ? "rgba(251, 146, 60, 0.1)" : "rgba(255,255,255,0.03)",
+                      color: selected ? "#fb923c" : "var(--ctx-text-muted)",
+                      fontWeight: selected ? 700 : 500,
+                      fontSize: "0.8125rem", cursor: "pointer", transition: "all 0.2s",
+                    }}
+                  >{tipo}</button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Nómina formal */}
           <div>
             <label className="ctx-label">¿Requieres nómina formal con prestaciones?</label>
             <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.5rem" }}>
-              {[{ val: "true", label: "Sí" }, { val: "false", label: "No" }].map(({ val, label }) => (
-                <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
-                  <input type="radio" value={val} {...register("requiere_nomina", { setValueAs: v => v === "true" })} 
+              {[{ val: true, label: "Sí" }, { val: false, label: "No" }].map(({ val, label }) => (
+                <label key={String(val)} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
+                  <input type="radio" checked={requiereNomina === val} onChange={() => setValue("requiere_nomina", val)}
                     style={{ accentColor: "var(--ctx-teal)" }}
                   />
                   {label}
@@ -102,9 +144,9 @@ export default function Step6Administrativa({ onNext, onBack }: Props) {
           <div>
             <label className="ctx-label">¿Tienes contratos formales con proveedores clave?</label>
             <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.5rem" }}>
-              {[{ val: "true", label: "Sí" }, { val: "false", label: "No" }].map(({ val, label }) => (
-                <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
-                  <input type="radio" value={val} {...register("contratos_proveedores", { setValueAs: v => v === "true" })} 
+              {[{ val: true, label: "Sí" }, { val: false, label: "No" }].map(({ val, label }) => (
+                <label key={String(val)} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
+                  <input type="radio" checked={contratosProveedores === val} onChange={() => setValue("contratos_proveedores", val)}
                     style={{ accentColor: "var(--ctx-teal)" }}
                   />
                   {label}
@@ -119,9 +161,9 @@ export default function Step6Administrativa({ onNext, onBack }: Props) {
               <label className="ctx-label" style={{ color: "#fbbf24" }}>¿Tienes Buenas Prácticas (BPA/BPM) implementadas?</label>
               <span className="ctx-label-hint">Importante para el proceso de registro ICA/sanitario</span>
               <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.5rem" }}>
-                {[{ val: "true", label: "Sí ✅" }, { val: "false", label: "No ❌" }].map(({ val, label }) => (
-                  <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
-                    <input type="radio" value={val} {...register("tiene_bpa", { setValueAs: v => v === "true" })} 
+                {[{ val: true, label: "Sí ✅" }, { val: false, label: "No ❌" }].map(({ val, label }) => (
+                  <label key={String(val)} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
+                    <input type="radio" checked={tieneBpa === val} onChange={() => setValue("tiene_bpa", val)}
                       style={{ accentColor: "var(--ctx-teal)" }}
                     />
                     {label}

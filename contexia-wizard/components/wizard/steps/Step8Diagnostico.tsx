@@ -197,16 +197,28 @@ export default function Step8Diagnostico({ onBack }: Props) {
     }
   };
 
+  const [emailError, setEmailError] = useState("");
+
   const sendEmail = async () => {
     setEmailLoading(true);
+    setEmailError("");
     try {
-      await fetch("/wizard/api/audit/email", {
+      const res = await fetch("/wizard/api/audit/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailInput, leadId: store.leadId, result: store.auditResult, nombre: store.paso1?.nombre }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.error("Email API error:", res.status, data);
+        setEmailError(data?.error || `Error ${res.status}`);
+        return;
+      }
       setEmailSent(true);
       ga4.emailSent();
+    } catch (err) {
+      console.error("Email fetch error:", err);
+      setEmailError("Error de conexión");
     } finally {
       setEmailLoading(false);
     }
@@ -470,20 +482,46 @@ export default function Step8Diagnostico({ onBack }: Props) {
             </a>
           </div>
 
-          {/* Email CTA */}
-          <div style={{ display: "flex", gap: "1rem", alignItems: "center", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "1.25rem", marginTop: "0.5rem" }}>
-            <input
-              type="email"
-              value={emailInput}
-              onChange={(e) => setEmailInput(e.target.value)}
-              placeholder="tu@email.com"
-              className="ctx-input"
-              style={{ flex: 1, margin: 0 }}
-            />
-            <button onClick={sendEmail} disabled={emailLoading || emailSent} className="ctx-btn-secondary"
-              style={{ flexShrink: 0, padding: "0.75rem 1.5rem" }}>
-              {emailSent ? "✅ Enviado" : emailLoading ? "..." : "Recibir por email"}
-            </button>
+          {/* Email + WhatsApp share */}
+          <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+            {/* Email */}
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "1rem 1.25rem", flex: 1, minWidth: "280px" }}>
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="tu@email.com"
+                className="ctx-input"
+                style={{ flex: 1, margin: 0 }}
+              />
+              <button onClick={sendEmail} disabled={emailLoading || emailSent} className="ctx-btn-secondary"
+                style={{ flexShrink: 0, padding: "0.75rem 1.25rem" }}>
+                {emailSent ? "✅ Enviado" : emailLoading ? "..." : emailError ? "🔄 Reintentar" : "📧 Email"}
+              </button>
+              {emailError && <p style={{ color: "#ef4444", fontSize: "0.8125rem", margin: "0.5rem 0 0", width: "100%" }}>{emailError}</p>}
+            </div>
+            {/* WhatsApp share */}
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(
+                `🔍 *Shadow Audit — ${store.paso2?.nombre_opcion1 || "Mi empresa"}*\n\n` +
+                `📊 Régimen recomendado: *${result.recomendacion === "simple" ? "Simple" : "Ordinario"}*\n` +
+                `💰 Ahorro potencial: *${formatMillones(result.ahorroPotencial)}/año*\n` +
+                `📈 Readiness Score: *${result.readinessScore}/100*\n` +
+                `⚠️ Riesgos: ${result.riesgos.length}\n\n` +
+                `Generado por Contexia · contexia.online/wizard`
+              )}`}
+              target="_blank" rel="noopener noreferrer"
+              className="ctx-btn-secondary"
+              style={{
+                textDecoration: "none", display: "flex", alignItems: "center", gap: "0.625rem",
+                padding: "1rem 1.5rem", borderRadius: "16px", flexShrink: 0,
+                background: "rgba(37, 211, 102, 0.1)", border: "1px solid rgba(37, 211, 102, 0.3)",
+                color: "#25d366", fontWeight: 700, fontSize: "0.9375rem",
+              }}
+              onClick={() => ga4.ctaClicked("whatsapp_share")}
+            >
+              📲 Compartir por WhatsApp
+            </a>
           </div>
         </div>
       </div>

@@ -5,22 +5,14 @@ import { paso2Schema, type Paso2Data } from "@/lib/validations";
 import { useWizardStore } from "@/lib/store";
 import StepWrapper from "../StepWrapper";
 
-const CIIU_OPTIONS = [
-  { value: "1090", label: "1090 — Elaboración de alimentos preparados para animales" },
-  { value: "4631", label: "4631 — Comercio al por mayor de alimentos" },
-  { value: "4791", label: "4791 — Comercio al por menor por internet" },
-  { value: "4773", label: "4773 — Comercio al por menor especializado" },
-  { value: "5611", label: "5611 — Restaurantes y establecimientos de comida" },
-  { value: "6201", label: "6201 — Actividades de desarrollo de software" },
-  { value: "7500", label: "7500 — Actividades veterinarias" },
-  { value: "9609", label: "9609 — Otras actividades de servicios personales" },
-  { value: "otro", label: "Otro (ingresa manualmente)" },
-];
+import { CIIU_LIST } from "@/lib/ciiuData";
 
 const TIPOS_SOCIEDAD = [
-  { value: "SAS", label: "SAS — Sociedad por Acciones Simplificada (recomendada)" },
+  { value: "SAS", label: "SAS — Sociedad por Acciones Simplificada (Recomendada)" },
+  { value: "persona_natural_comercio", label: "Persona Natural con Establecimiento de Comercio" },
+  { value: "persona_natural_servicios", label: "Persona Natural (Independiente / Servicios)" },
   { value: "Ltda", label: "Ltda — Sociedad de Responsabilidad Limitada" },
-  { value: "persona_natural", label: "Persona Natural (sin constitución societaria)" },
+  { value: "otro", label: "Otro / Sin constitución aún" },
 ];
 
 interface Props { onNext: () => void; onBack: () => void; }
@@ -103,20 +95,39 @@ export default function Step2Empresa({ onNext, onBack }: Props) {
           {/* CIIU principal */}
           <div>
             <label className="ctx-label">CIIU principal *</label>
-            <select className={`ctx-input ${errors.ciiu_principal ? "error" : ""}`} {...register("ciiu_principal")}>
-              <option value="">Selecciona CIIU</option>
-              {CIIU_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
+            <input
+              list="ciiu-list-principal"
+              className={`ctx-input ${errors.ciiu_principal ? "error" : ""}`}
+              placeholder="Escribe el código o actividad..."
+              {...register("ciiu_principal")}
+            />
+            <datalist id="ciiu-list-principal">
+              {CIIU_LIST.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code} — {c.description}
+                </option>
+              ))}
+            </datalist>
             {errors.ciiu_principal && <p className="ctx-error-msg">{errors.ciiu_principal.message}</p>}
+            <span className="ctx-label-hint">Busca por código o nombre (Ej. "Alimentos")</span>
           </div>
 
           {/* CIIU secundario */}
           <div>
             <label className="ctx-label">CIIU secundario <span style={{ color: "var(--ctx-text-muted)", fontWeight: 400 }}>(opcional)</span></label>
-            <select className="ctx-input" {...register("ciiu_secundario")}>
-              <option value="">Ninguno</option>
-              {CIIU_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
+            <input
+              list="ciiu-list-secundario"
+              className="ctx-input"
+              placeholder="Opcional..."
+              {...register("ciiu_secundario")}
+            />
+            <datalist id="ciiu-list-secundario">
+              {CIIU_LIST.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code} — {c.description}
+                </option>
+              ))}
+            </datalist>
           </div>
 
           {/* Dirección */}

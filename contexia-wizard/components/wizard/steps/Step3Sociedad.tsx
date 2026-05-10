@@ -4,14 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { paso3Schema, type Paso3Data } from "@/lib/validations";
 import { useWizardStore } from "@/lib/store";
 import StepWrapper from "../StepWrapper";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, User } from "lucide-react";
 
 interface Props { onNext: () => void; onBack: () => void; }
 
 export default function Step3Sociedad({ onNext, onBack }: Props) {
-  const { paso3, setPaso3 } = useWizardStore();
-
-  const { register, handleSubmit, watch, control, formState: { errors } } = useForm<Paso3Data>({
+  const { paso1, paso3, setPaso3 } = useWizardStore();
+  const { register, handleSubmit, watch, control, setValue, formState: { errors } } = useForm<Paso3Data>({
     resolver: zodResolver(paso3Schema),
     defaultValues: {
       num_socios: 1,
@@ -26,6 +25,18 @@ export default function Step3Sociedad({ onNext, onBack }: Props) {
   const { fields, append, remove } = useFieldArray({ control, name: "socios" });
   const aportesEspecie = watch("aportes_en_especie");
 
+  const handleSinglePartner = () => {
+    if (paso1?.nombre) {
+      setValue("socios", [{
+        nombre: paso1.nombre,
+        cedula: paso1.cedula || "",
+        participacion: 100,
+        rol: "Accionista Único"
+      }]);
+      setValue("representante_legal", paso1.nombre);
+    }
+  };
+
   const onSubmit = (data: Paso3Data) => {
     const finalData = { ...data, num_socios: data.socios.length };
     setPaso3(finalData);
@@ -38,14 +49,24 @@ export default function Step3Sociedad({ onNext, onBack }: Props) {
         <div style={{ marginBottom: "1.5rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
             <label className="ctx-label" style={{ margin: 0 }}>Socios / accionistas *</label>
-            <button
-              type="button"
-              onClick={() => append({ nombre: "", cedula: "", participacion: 0, rol: "Socio" })}
-              className="ctx-btn-secondary"
-              style={{ padding: "0.5rem 1rem", fontSize: "0.875rem", gap: "0.375rem" }}
-            >
-              <Plus size={14} /> Agregar socio
-            </button>
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button
+                type="button"
+                onClick={handleSinglePartner}
+                className="ctx-btn-secondary"
+                style={{ padding: "0.5rem 1rem", fontSize: "0.875rem", gap: "0.375rem", border: "1px solid var(--ctx-teal)", color: "var(--ctx-teal)" }}
+              >
+                <User size={14} /> Soy el único socio
+              </button>
+              <button
+                type="button"
+                onClick={() => append({ nombre: "", cedula: "", participacion: 0, rol: "Socio" })}
+                className="ctx-btn-secondary"
+                style={{ padding: "0.5rem 1rem", fontSize: "0.875rem", gap: "0.375rem" }}
+              >
+                <Plus size={14} /> Agregar socio
+              </button>
+            </div>
           </div>
 
           {fields.map((field, idx) => (
@@ -75,7 +96,22 @@ export default function Step3Sociedad({ onNext, onBack }: Props) {
                 </div>
                 <div>
                   <label className="ctx-label" style={{ fontSize: "0.8125rem" }}>Rol</label>
-                  <input className={`ctx-input ${errors.socios?.[idx]?.rol ? "error" : ""}`} {...register(`socios.${idx}.rol`)} placeholder="Rol" />
+                  <input 
+                    list="roles-socios-list"
+                    className={`ctx-input ${errors.socios?.[idx]?.rol ? "error" : ""}`} 
+                    {...register(`socios.${idx}.rol`)} 
+                    placeholder="Rol" 
+                  />
+                  <datalist id="roles-socios-list">
+                    <option value="Accionista" />
+                    <option value="Representante Legal" />
+                    <option value="Socio Fundador" />
+                    <option value="Socio Capitalista" />
+                    <option value="Socio Industrial" />
+                    <option value="Gerente General" />
+                    <option value="Director Comercial" />
+                    <option value="Inversionista" />
+                  </datalist>
                 </div>
               </div>
             </div>

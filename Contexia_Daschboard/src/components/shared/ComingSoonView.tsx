@@ -77,13 +77,26 @@ export const ComingSoonView = ({ icon, titulo, subtitulo, descripcion, features 
             ))}
           </motion.div>
 
-          {/* Waitlist */}
+          {/* Waitlist or Start Beta Button */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            {subscribed ? (
+            {icon === 'auditoria' ? (
+              <div className="flex flex-col items-center gap-4">
+                <button
+                  onClick={() => window.location.href = '/wizard/'}
+                  className="premium-button px-10 py-4 text-base font-bold flex items-center gap-3 shadow-[0_0_30px_-5px_rgba(45,212,191,0.4)]"
+                >
+                  <Search className="w-5 h-5" />
+                  Iniciar Auditoría Sombra Beta
+                </button>
+                <p className="text-[10px] text-gray-500 font-rajdhani uppercase tracking-[0.2em]">
+                  Acceso instantáneo gratuito • No requiere tarjeta
+                </p>
+              </div>
+            ) : subscribed ? (
               <motion.div
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}

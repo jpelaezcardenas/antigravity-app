@@ -14,7 +14,7 @@ interface Props { onNext: () => void; onBack: () => void; }
 export default function Step5Contable({ onNext, onBack }: Props) {
   const { paso5, setPaso5 } = useWizardStore();
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<Step5Form>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<Step5Form>({
     resolver: zodResolver(paso5Schema),
     defaultValues: {
       tiene_contador: false,
@@ -27,18 +27,19 @@ export default function Step5Contable({ onNext, onBack }: Props) {
   });
 
   const tieneContador = watch("tiene_contador");
-  const onSubmit = (data: Step5Form) => { setPaso5(data as any); onNext(); };
+  const manejaInventarios = watch("maneja_inventarios");
+  const facturacionElectronica = watch("facturacion_electronica");
+  const regimenPreferido = watch("regimen_preferido");
+  
+  const handleToggle = (name: keyof Step5Form, val: any) => {
+    setValue(name, val);
+    if (name === "tiene_contador" && !val) {
+      setValue("nombre_contador", "");
+      setValue("email_contador", "");
+    }
+  };
 
-  const RadioGroup = ({ name, options }: { name: any; options: { val: string; label: string }[] }) => (
-    <div style={{ display: "flex", gap: "1.25rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
-      {options.map(({ val, label }) => (
-        <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
-          <input type="radio" value={val} {...register(name, { setValueAs: (v) => (v === "true" ? true : v === "false" ? false : v) })} style={{ accentColor: "var(--ctx-teal)" }} />
-          {label}
-        </label>
-      ))}
-    </div>
-  );
+  const onSubmit = (data: Step5Form) => { setPaso5(data as any); onNext(); };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -47,22 +48,32 @@ export default function Step5Contable({ onNext, onBack }: Props) {
           {/* Tiene contador */}
           <div style={{ gridColumn: "1 / -1" }}>
             <label className="ctx-label">¿Tienes contador actual? *</label>
-            <RadioGroup name="tiene_contador" options={[
-              { val: "true", label: "Sí, tengo contador" },
-              { val: "false", label: "No tengo contador" },
-            ]} />
+            <div style={{ display: "flex", gap: "1.25rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+              {[
+                { val: true, label: "Sí, tengo contador" },
+                { val: false, label: "No tengo contador" },
+              ].map(({ val, label }) => (
+                <label key={String(val)} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
+                  <input type="radio" checked={tieneContador === val} onChange={() => handleToggle("tiene_contador", val)} style={{ accentColor: "var(--ctx-teal)" }} />
+                  {label}
+                </label>
+              ))}
+            </div>
+            {errors.tiene_contador && <p className="ctx-error-msg">{errors.tiene_contador.message}</p>}
           </div>
 
           {tieneContador && (
             <>
               <div>
                 <label className="ctx-label">Nombre del contador</label>
-                <input className="ctx-input" placeholder="Nombre completo" {...register("nombre_contador")} />
+                <input className={`ctx-input ${errors.nombre_contador ? "error" : ""}`} placeholder="Nombre completo" {...register("nombre_contador")} />
+                {errors.nombre_contador && <p className="ctx-error-msg">{errors.nombre_contador.message}</p>}
               </div>
               <div>
                 <label className="ctx-label">Email del contador</label>
-                <input type="email" className="ctx-input" placeholder="contador@firma.com" {...register("email_contador")} />
+                <input type="email" className={`ctx-input ${errors.email_contador ? "error" : ""}`} placeholder="contador@firma.com" {...register("email_contador")} />
                 <span className="ctx-label-hint">Para coordinar el handoff de información</span>
+                {errors.email_contador && <p className="ctx-error-msg">{errors.email_contador.message}</p>}
               </div>
             </>
           )}
@@ -70,20 +81,35 @@ export default function Step5Contable({ onNext, onBack }: Props) {
           {/* Inventarios */}
           <div>
             <label className="ctx-label">¿Manejas inventarios físicos? *</label>
-            <RadioGroup name="maneja_inventarios" options={[
-              { val: "true", label: "Sí" },
-              { val: "false", label: "No" },
-            ]} />
+            <div style={{ display: "flex", gap: "1.25rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+              {[
+                { val: true, label: "Sí" },
+                { val: false, label: "No" },
+              ].map(({ val, label }) => (
+                <label key={String(val)} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
+                  <input type="radio" checked={manejaInventarios === val} onChange={() => handleToggle("maneja_inventarios", val)} style={{ accentColor: "var(--ctx-teal)" }} />
+                  {label}
+                </label>
+              ))}
+            </div>
+            {errors.maneja_inventarios && <p className="ctx-error-msg">{errors.maneja_inventarios.message}</p>}
           </div>
 
           {/* Facturación electrónica */}
           <div>
             <label className="ctx-label">¿Tienes facturación electrónica habilitada con DIAN? *</label>
-            <RadioGroup name="facturacion_electronica" options={[
-              { val: "si", label: "Sí ✅" },
-              { val: "no", label: "No ❌" },
-              { val: "no_se", label: "No sé 🤷" },
-            ]} />
+            <div style={{ display: "flex", gap: "1.25rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+              {[
+                { val: "si", label: "Sí ✅" },
+                { val: "no", label: "No ❌" },
+                { val: "no_se", label: "No sé 🤷" },
+              ].map(({ val, label }) => (
+                <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
+                  <input type="radio" checked={facturacionElectronica === val} onChange={() => handleToggle("facturacion_electronica", val)} style={{ accentColor: "var(--ctx-teal)" }} />
+                  {label}
+                </label>
+              ))}
+            </div>
             {errors.facturacion_electronica && <p className="ctx-error-msg">{errors.facturacion_electronica.message}</p>}
           </div>
 
@@ -97,18 +123,24 @@ export default function Step5Contable({ onNext, onBack }: Props) {
                 { val: "ordinario", label: "🔵 Régimen Ordinario" },
                 { val: "analisis", label: "🔍 Quiero el análisis" },
               ].map(({ val, label }) => {
+                const isSelected = regimenPreferido === val;
                 return (
                   <label key={val} style={{
                     display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer",
-                    padding: "0.625rem 1rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.1)",
-                    fontSize: "0.875rem", background: "rgba(255,255,255,0.03)", color: "white",
+                    padding: "0.625rem 1rem", borderRadius: "10px", 
+                    border: `1px solid ${isSelected ? "var(--ctx-teal)" : "rgba(255,255,255,0.1)"}`,
+                    fontSize: "0.875rem", 
+                    background: isSelected ? "rgba(45, 212, 191, 0.1)" : "rgba(255,255,255,0.03)", 
+                    color: isSelected ? "var(--ctx-teal)" : "white",
+                    transition: "all 0.2s"
                   }}>
-                    <input type="radio" value={val} {...register("regimen_preferido")} style={{ accentColor: "var(--ctx-teal)" }} />
+                    <input type="radio" checked={isSelected} onChange={() => handleToggle("regimen_preferido", val as any)} style={{ accentColor: "var(--ctx-teal)" }} />
                     {label}
                   </label>
                 );
               })}
             </div>
+            {errors.regimen_preferido && <p className="ctx-error-msg">{errors.regimen_preferido.message}</p>}
           </div>
 
           {/* Registros actuales */}

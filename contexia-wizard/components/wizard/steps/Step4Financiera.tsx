@@ -14,8 +14,9 @@ const MODELOS = [
 ];
 
 const MEDIOS_PAGO = [
-  "Transferencia bancaria", "Datafono", "Nequi", "Daviplata",
-  "PayPal", "Wompi", "Bold", "Mercado Pago", "Contraentrega", "Efectivo",
+  "Transferencia bancaria", "QR Bancolombia", "Datáfono", "Nequi", "Daviplata",
+  "Wompi", "Bold", "ePayco", "PayU", "Mercado Pago", "Stripe", "PayPal",
+  "Gana / Efecty", "Contraentrega", "Efectivo",
 ];
 
 interface Props { onNext: () => void; onBack: () => void; }
@@ -49,6 +50,16 @@ export default function Step4Financiera({ onNext, onBack }: Props) {
     }
   };
 
+  const handleTienePrevios = (val: boolean) => {
+    setValue("tiene_ingresos_previos", val);
+    if (!val) setValue("ingreso_anual_previo", undefined);
+  };
+
+  const handleHaDeclarado = (val: boolean) => {
+    setValue("ha_declarado_renta", val);
+    if (!val) setValue("ultimo_año_declarado", undefined);
+  };
+
   const onSubmit = (data: Paso4Data) => { setPaso4(data); onNext(); };
 
   return (
@@ -65,7 +76,10 @@ export default function Step4Financiera({ onNext, onBack }: Props) {
 
           {/* Costos % */}
           <div>
-            <label className="ctx-label">Costos + gastos como % de ingresos *</label>
+            <label className="ctx-label">¿Qué porcentaje de tus ventas se va en gastos? *</label>
+            <span className="ctx-label-hint" style={{ marginBottom: "0.5rem", display: "block" }}>
+              De cada $100 que recibes, ¿cuánto usas para pagar el negocio (arriendo, nómina, proveedores)?
+            </span>
             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
               <input
                 type="range" min={0} max={100}
@@ -74,11 +88,12 @@ export default function Step4Financiera({ onNext, onBack }: Props) {
               />
               <span style={{ fontWeight: 800, color: "white", minWidth: "48px", textAlign: "right", fontSize: "1rem" }}>{costosPct}%</span>
             </div>
-            {costosPct > 70 && (
-              <p style={{ fontSize: "0.8125rem", color: "#d97706", marginTop: "0.375rem" }}>
-                ⚠️ Margen muy bajo. Optimización tributaria es clave.
+            {costosPct > 75 && (
+              <p style={{ fontSize: "0.8125rem", color: "#fb923c", marginTop: "0.375rem" }}>
+                ⚠️ <strong>¡Ojo!</strong> Te queda poca ganancia. Necesitas optimizar impuestos urgente para que la DIAN no se lleve lo poco que queda.
               </p>
             )}
+            {errors.costos_pct && <p className="ctx-error-msg">{errors.costos_pct.message}</p>}
           </div>
 
           {/* Modelo negocio */}
@@ -126,46 +141,57 @@ export default function Step4Financiera({ onNext, onBack }: Props) {
 
           {/* Ingresos previos */}
           <div>
-            <label className="ctx-label">¿Tienes ingresos previos sin formalizar?</label>
+            <label className="ctx-label">¿Ya venías recibiendo pagos en tus cuentas personales?</label>
+            <span className="ctx-label-hint" style={{ marginBottom: "0.5rem", display: "block" }}>
+              Si ya estabas vendiendo antes de crear la empresa o facturar oficialmente.
+            </span>
             <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.5rem" }}>
-              {[{ val: "true", label: "Sí" }, { val: "false", label: "No" }].map(({ val, label }) => (
+              {[{ val: true, label: "Sí" }, { val: false, label: "No" }].map(({ val, label }) => (
                 <label key={label} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
-                  <input type="radio" value={val} {...register("tiene_ingresos_previos", { setValueAs: v => v === "true" })} 
+                  <input type="radio" checked={tienePrevios === val} onChange={() => handleTienePrevios(val)} 
                     style={{ accentColor: "var(--ctx-teal)" }}
                   />
                   {label}
                 </label>
               ))}
             </div>
+            {errors.tiene_ingresos_previos && <p className="ctx-error-msg">{errors.tiene_ingresos_previos.message}</p>}
           </div>
 
           {tienePrevios && (
             <div>
-              <label className="ctx-label">Ingreso anual aprox. del último año</label>
+              <label className="ctx-label">¿Cuánto vendiste aprox. el último año?</label>
               <input type="number" className="ctx-input" placeholder="Ej. 80000000"
                 {...register("ingreso_anual_previo", { valueAsNumber: true })} />
+              <span className="ctx-label-hint">Suma todo lo que entró a tus cuentas por el negocio.</span>
+              {errors.ingreso_anual_previo && <p className="ctx-error-msg">{errors.ingreso_anual_previo.message}</p>}
             </div>
           )}
 
           {/* Ha declarado */}
           <div>
-            <label className="ctx-label">¿Has declarado renta como persona natural?</label>
+            <label className="ctx-label">¿Le has presentado antes tu declaración de renta a la DIAN?</label>
+            <span className="ctx-label-hint" style={{ marginBottom: "0.5rem", display: "block" }}>
+              Como persona independiente, empleado o comerciante.
+            </span>
             <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.5rem" }}>
-              {[{ val: "true", label: "Sí" }, { val: "false", label: "No" }].map(({ val, label }) => (
+              {[{ val: true, label: "Sí" }, { val: false, label: "No" }].map(({ val, label }) => (
                 <label key={label} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
-                  <input type="radio" value={val} {...register("ha_declarado_renta", { setValueAs: v => v === "true" })} 
+                  <input type="radio" checked={haDeclarado === val} onChange={() => handleHaDeclarado(val)} 
                     style={{ accentColor: "var(--ctx-teal)" }}
                   />
                   {label}
                 </label>
               ))}
             </div>
+            {errors.ha_declarado_renta && <p className="ctx-error-msg">{errors.ha_declarado_renta.message}</p>}
           </div>
 
           {haDeclarado && (
             <div>
               <label className="ctx-label">Último año declarado</label>
               <input className="ctx-input" placeholder="Ej. 2023" {...register("ultimo_año_declarado")} />
+              {errors.ultimo_año_declarado && <p className="ctx-error-msg">{errors.ultimo_año_declarado.message}</p>}
             </div>
           )}
         </div>

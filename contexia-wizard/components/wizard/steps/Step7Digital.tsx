@@ -21,7 +21,7 @@ export default function Step7Digital({ onNext, onBack }: Props) {
     } as Paso7Data,
   });
 
-  const tieneEcommerce = watch("tiene_ecommerce");
+  const tieneEcommerce = watch("tiene_ecommerce") ?? false;
   const redesActivas = watch("redes_sociales") || [];
 
   const toggleRed = (red: string) => {
@@ -44,10 +44,13 @@ export default function Step7Digital({ onNext, onBack }: Props) {
           <div style={{ gridColumn: "1 / -1" }}>
             <label className="ctx-label">¿Tienes tienda en línea / e-commerce?</label>
             <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.5rem" }}>
-              {[{ val: "true", label: "Sí 🛒" }, { val: "false", label: "No" }].map(({ val, label }) => (
-                <label key={val} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
-                  <input type="radio" value={val}
-                    {...register("tiene_ecommerce", { setValueAs: v => v === "true" })} 
+              {[{ val: true, label: "Sí 🛒" }, { val: false, label: "No" }].map(({ val, label }) => (
+                <label key={String(val)} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", color: "white", fontSize: "0.9375rem" }}>
+                  <input type="radio" checked={tieneEcommerce === val}
+                    onChange={() => {
+                      setValue("tiene_ecommerce", val);
+                      if (!val) setValue("plataforma_ecommerce", "");
+                    }}
                     style={{ accentColor: "var(--ctx-teal)" }}
                   />
                   {label}

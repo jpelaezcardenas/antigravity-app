@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
           nombre: paso1.nombre,
           cedula: paso1.cedula,
           email: paso1.email.toLowerCase().trim(),
-          whatsapp: paso1.whatsapp,
+          whatsapp: `${paso1.pais_codigo || ""}${paso1.whatsapp}`,
           ciudad: paso1.ciudad,
           rol: paso1.rol,
           ip_address: ip,
