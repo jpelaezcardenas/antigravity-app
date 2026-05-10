@@ -342,12 +342,18 @@ export default function App() {
       case 'pulso': return <PulsoDiarioView />;
       case 'centinela': return <CentinelaView />;
       case 'taty': return <TatyView />;
-      case 'auditoria': return (
-        <ComingSoonView icon="auditoria" titulo="Auditoría Sombra"
-          subtitulo="¿Qué sabe la DIAN de ti que tú no sabes?"
-          descripcion="Cruzaremos los datos que la DIAN ya tiene de tus pasarelas (Stripe, MercadoPago, Nequi) con tu contabilidad para detectar inconsistencias antes de que te sorprendan."
-          features={['Cruce automático', 'Detección de discrepancias', 'Alertas preventivas', 'Reporte detallado']} />
-      );
+      case 'auditoria': {
+        // Redirect immediately to the live wizard
+        window.location.href = '/wizard/';
+        return (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="w-10 h-10 border-2 border-ctx-teal border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-gray-400 text-sm">Redirigiendo a Auditoría Sombra...</p>
+            </div>
+          </div>
+        );
+      }
       case 'radar': return (
         <ComingSoonView icon="radar" titulo="Radar Predictivo"
           subtitulo="Adelántate a tus impuestos"
