@@ -11,7 +11,7 @@ export default function Page() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "#f8fafc",
+            background: "#020617",
           }}
         >
           <div style={{ textAlign: "center" }}>

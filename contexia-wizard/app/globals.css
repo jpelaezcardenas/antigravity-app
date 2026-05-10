@@ -1,7 +1,18 @@
 @import "tailwindcss";
 
+/* Force dark mode AFTER Tailwind preflight */
+@layer base {
+  html {
+    background-color: #020617 !important;
+    color-scheme: dark;
+  }
+  body {
+    background-color: #020617 !important;
+    color: #f8fafc !important;
+  }
+}
+
 /* ─── Contexia Design System (Premium Dark) ──────────────────
-   Inspirado en la landing de contexia.online
    Deep Navy + Teal + Violet + Glassmorphism
    ──────────────────────────────────────────────────────────── */
 
@@ -36,7 +47,7 @@
 html { 
   font-size: 16px; 
   scroll-behavior: smooth; 
-  background-color: var(--ctx-navy-dark);
+  background-color: #020617 !important;
 }
 
 body {
