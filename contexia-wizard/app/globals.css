@@ -1,15 +1,24 @@
 @import "tailwindcss";
 
-/* Force dark mode AFTER Tailwind preflight */
-@layer base {
-  html {
-    background-color: #020617 !important;
-    color-scheme: dark;
-  }
-  body {
-    background-color: #020617 !important;
-    color: #f8fafc !important;
-  }
+/* ─── Tailwind v4: Override preflight defaults ─────────────── */
+@theme {
+  --color-ctx-navy: #0f172a;
+  --color-ctx-navy-dark: #020617;
+  --color-ctx-teal: #2dd4bf;
+  --color-ctx-teal-dark: #14b8a6;
+  --color-ctx-violet: #8b5cf6;
+}
+
+/* ─── UNLAYERED overrides — always beat @layer styles ──────── */
+html, html[class], html[data-theme] {
+  background-color: #020617 !important;
+  color-scheme: dark !important;
+}
+
+body, body[class] {
+  background-color: #020617 !important;
+  color: #f8fafc !important;
+  margin: 0 !important;
 }
 
 /* ─── Contexia Design System (Premium Dark) ──────────────────
@@ -47,14 +56,10 @@
 html { 
   font-size: 16px; 
   scroll-behavior: smooth; 
-  background-color: #020617 !important;
 }
 
 body {
-  margin: 0;
   font-family: 'Inter', sans-serif;
-  background-color: #020617 !important;
-  color: #f8fafc !important;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;

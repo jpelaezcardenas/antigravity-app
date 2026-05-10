@@ -191,7 +191,7 @@ export function DiagnosticoPDF({ result, nombre, empresa }: Props) {
             <Text style={s.sectionTitle}>2. Comparativo Simple vs Ordinario</Text>
             <View style={s.compRow}>
               {/* Simple */}
-              <View style={[s.compCard, simple && s.compActive]}>
+              <View style={simple ? [s.compCard, s.compActive] : [s.compCard]}>
                 {simple && <View style={s.compBadge}><Text style={s.compBadgeText}>RECOMENDADO</Text></View>}
                 <Text style={s.compTitle}>Regimen Simple</Text>
                 {result.impuestoSimple > 0 ? (
@@ -204,7 +204,7 @@ export function DiagnosticoPDF({ result, nombre, empresa }: Props) {
                 )}
               </View>
               {/* Ordinario */}
-              <View style={[s.compCard, !simple && s.compActiveBlue]}>
+              <View style={!simple ? [s.compCard, s.compActiveBlue] : [s.compCard]}>
                 {!simple && <View style={[s.compBadge, s.compBadgeBlue]}><Text style={s.compBadgeText}>RECOMENDADO</Text></View>}
                 <Text style={s.compTitle}>Regimen Ordinario</Text>
                 <Text style={[s.compVal, { color: C.blue }]}>{fmt(result.impuestoOrdinario)}/año</Text>
