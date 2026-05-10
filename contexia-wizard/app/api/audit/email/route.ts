@@ -101,9 +101,9 @@ function buildEmailHtml(nombre: string, result: any): string {
 
           <!-- Secondary CTA -->
           <div style="text-align:center;margin-bottom:32px;">
-            <a href="https://wa.me/573018948151?text=Hola%20Taty,%20recibí%20mi%20Shadow%20Audit%20y%20quiero%20hablar%20con%20un%20experto"
+            <a href="https://cal.com/juan-david-pelaez-cardenas-jrurh5/30min"
                style="display:inline-block;background:#0a2540;color:#ffffff;font-weight:600;font-size:14px;padding:12px 28px;border-radius:10px;text-decoration:none;">
-              💬 Hablar con experto por WhatsApp
+              📅 Agendar asesoría gratis — 30 min
             </a>
           </div>
 
@@ -157,6 +157,35 @@ export async function POST(req: NextRequest) {
         .from("leads")
         .update({ diagnostic_emailed: true, status: "emailed" })
         .eq("id", leadId);
+    }
+
+    // Notify Taty — nuevo lead completó el Shadow Audit
+    const ahorroStr = formatCOP(result.ahorroPotencial || 0);
+    const scoreStr = result.readinessScore || "N/A";
+    const riesgosCount = (result.riesgos || []).length;
+    try {
+      await resend.emails.send({
+        from: FROM_EMAIL,
+        to: ["tatybarbosav91@gmail.com"],
+        subject: `🔔 Nuevo Lead: ${nombre || "Sin nombre"} — Score ${scoreStr}/100`,
+        html: `<div style="font-family:sans-serif;padding:20px;max-width:500px;">
+          <h2 style="color:#0a2540;margin:0 0 16px;">🔔 Nuevo Lead — Shadow Audit</h2>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr><td style="padding:8px 0;color:#64748b;font-size:13px;">Nombre</td><td style="padding:8px 0;font-weight:700;">${nombre || "No proporcionado"}</td></tr>
+            <tr><td style="padding:8px 0;color:#64748b;font-size:13px;">Email</td><td style="padding:8px 0;font-weight:700;"><a href="mailto:${email}">${email}</a></td></tr>
+            <tr><td style="padding:8px 0;color:#64748b;font-size:13px;">Régimen</td><td style="padding:8px 0;font-weight:700;color:${result.recomendacion === "simple" ? "#16a34a" : "#2563eb"};">${regimenLabel}</td></tr>
+            <tr><td style="padding:8px 0;color:#64748b;font-size:13px;">Ahorro potencial</td><td style="padding:8px 0;font-weight:700;color:#16a34a;">${ahorroStr}/año</td></tr>
+            <tr><td style="padding:8px 0;color:#64748b;font-size:13px;">Readiness Score</td><td style="padding:8px 0;font-weight:700;">${scoreStr}/100</td></tr>
+            <tr><td style="padding:8px 0;color:#64748b;font-size:13px;">Riesgos</td><td style="padding:8px 0;font-weight:700;color:#dc2626;">${riesgosCount} identificados</td></tr>
+          </table>
+          <div style="margin-top:20px;padding:16px;background:#f0fdf4;border-radius:12px;text-align:center;">
+            <a href="https://wa.me/57${email.includes("@") ? "" : email}?text=Hola%20${encodeURIComponent(nombre || "")},%20vi%20tu%20Shadow%20Audit" style="display:inline-block;background:#25d366;color:#fff;font-weight:700;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px;">💬 Contactar por WhatsApp</a>
+          </div>
+          <p style="color:#94a3b8;font-size:11px;margin-top:16px;">Generado automáticamente · Contexia Shadow Audit</p>
+        </div>`,
+      });
+    } catch (notifyErr) {
+      console.error("Taty notification error (non-blocking):", notifyErr);
     }
 
     return NextResponse.json({ ok: true, messageId: data?.id });

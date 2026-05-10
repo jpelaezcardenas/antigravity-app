@@ -464,13 +464,13 @@ export default function Step8Diagnostico({ onBack }: Props) {
               <span style={{ fontWeight: 800 }}>Crear mi empresa</span>
               <span style={{ fontSize: "0.8125rem", opacity: 0.9, fontWeight: 500 }}>Paquetes desde $1.2M</span>
             </a>
-            <a href="https://wa.me/573018948151?text=Hola,%20completé%20el%20Shadow%20Audit%20y%20quiero%20agendar%20asesoría"
+            <a href="https://cal.com/juan-david-pelaez-cardenas-jrurh5/30min"
               target="_blank" rel="noopener noreferrer" className="ctx-btn-secondary"
-              style={{ textDecoration: "none", textAlign: "center", padding: "1.25rem", borderRadius: "16px", display: "flex", flexDirection: "column", gap: "0.5rem", height: "auto" }}
-              onClick={() => { ga4.ctaClicked("whatsapp_asesoria"); ga4.whatsappOpened(); }}>
+              style={{ textDecoration: "none", textAlign: "center", padding: "1.25rem", borderRadius: "16px", display: "flex", flexDirection: "column", gap: "0.5rem", height: "auto", background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.3)" }}
+              onClick={() => { ga4.ctaClicked("agendar_asesoria"); }}>
               <MessageCircle size={24} />
-              <span style={{ fontWeight: 800 }}>Hablar con Taty</span>
-              <span style={{ fontSize: "0.8125rem", opacity: 0.9, fontWeight: 500 }}>WhatsApp 24/7</span>
+              <span style={{ fontWeight: 800 }}>Agendar asesoría gratis</span>
+              <span style={{ fontSize: "0.8125rem", opacity: 0.9, fontWeight: 500 }}>30 min · Google Meet</span>
             </a>
             <a href={`/wizard/api/audit/pdf?email=${encodeURIComponent(store.paso1?.email || "")}&leadId=${encodeURIComponent(store.leadId || "")}`}
               target="_blank" className="ctx-btn-secondary"

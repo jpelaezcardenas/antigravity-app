@@ -266,10 +266,10 @@ export function DiagnosticoPDF({ result, nombre, empresa }: Props) {
                   <Text style={[s.ctaBtnSub, { color: "#065f46" }]}>Paquetes desde $1.2M</Text>
                 </View>
               </Link>
-              <Link src="https://wa.me/573018948151?text=Hola,%20completé%20el%20Shadow%20Audit%20y%20quiero%20agendar%20asesoría" style={{ textDecoration: "none" }}>
+              <Link src="https://cal.com/juan-david-pelaez-cardenas-jrurh5/30min" style={{ textDecoration: "none" }}>
                 <View style={[s.ctaBtn, s.ctaBtnSecondary]}>
-                  <Text style={s.ctaBtnTextLight}>Hablar con Taty</Text>
-                  <Text style={s.ctaBtnSub}>WhatsApp 24/7</Text>
+                  <Text style={s.ctaBtnTextLight}>Agendar asesoria</Text>
+                  <Text style={s.ctaBtnSub}>30 min gratis</Text>
                 </View>
               </Link>
               <Link src="https://www.contexia.online" style={{ textDecoration: "none" }}>
