@@ -48,6 +48,7 @@ interface WizardStore {
   setPaso7: (data: Partial<Paso7Data>) => void;
   setAuditResult: (result: AuditResult) => void;
   setPrefillConnatural: () => void;
+  setPrefillLeadCaliente: () => void;
   reset: () => void;
 }
 
@@ -110,6 +111,72 @@ const CONNATURAL_DATA = {
   } as Paso7Data,
 };
 
+// ─── Lead Caliente — Caso ficticio jugoso para demo de growth ────────
+const LEAD_CALIENTE_DATA = {
+  paso1: {
+    nombre: "Catalina Restrepo Vélez",
+    cedula: "1037689421",
+    email: "growth@contexia.online",
+    pais_codigo: "+57",
+    whatsapp: "3504187902",
+    ciudad: "Medellín, Antioquia",
+    rol: "CEO / Fundadora",
+  } as Paso1Data,
+  paso2: {
+    nombre_opcion1: "TechFlow Digital SAS",
+    nombre_opcion2: "TechFlow Studio SAS",
+    nombre_opcion3: "Flow Digital Lab SAS",
+    tipo_sociedad: "SAS" as const,
+    sector: "Agencia digital — desarrollo web, e-commerce y growth marketing para PyMEs",
+    ciiu_principal: "7020", // Consultoría de gestión empresarial
+    ciiu_secundario: "6201", // Actividades de desarrollo de sistemas informáticos
+    direccion: "Cra 43A #1-50, Edificio Optimus, Oficina 802, Medellín",
+    tiene_rut_actual: "si" as const,
+    nit_actual: "1037689421-2 (persona natural — actualmente factura como freelance)",
+  } as Paso2Data,
+  paso3: {
+    num_socios: 2,
+    socios: [
+      { nombre: "Catalina Restrepo Vélez", cedula: "1037689421", participacion: 70, rol: "CEO / Representante Legal" },
+      { nombre: "Andrés Mejía Gómez", cedula: "1088734512", participacion: 30, rol: "CTO / Socio operativo" },
+    ],
+    representante_legal: "Catalina Restrepo Vélez",
+    capital_suscrito: 50000000,
+    aportes_en_especie: true,
+    descripcion_aportes: "Cartera de 12 clientes activos, dominio techflowdigital.co, equipos de cómputo, software licenciado (Figma, Adobe CC, Webflow Enterprise) y propiedad intelectual de 3 productos SaaS internos",
+  } as Paso3Data,
+  paso4: {
+    ingresos_mensuales: 35000000,
+    costos_pct: 32,
+    modelo_negocio: "servicios" as const,
+    medios_pago: ["Transferencia", "PSE", "Stripe", "Wompi"],
+    tiene_ingresos_previos: true,
+    ingreso_anual_previo: 320000000,
+    ha_declarado_renta: true,
+    ultimo_año_declarado: "2024",
+  } as Paso4Data,
+  paso5: {
+    tiene_contador: false,
+    maneja_inventarios: false,
+    facturacion_electronica: "no" as const,
+    regimen_preferido: "analisis" as const,
+    registros_actuales: "excel" as const,
+  } as Paso5Data,
+  paso6: {
+    empleados: 4,
+    tipos_vinculacion: ["Prestación de servicios", "Freelance"],
+    salario_promedio: 3500000,
+    requiere_nomina: true,
+    contratos_proveedores: true,
+    tiene_bpa: false,
+  } as Paso6Data,
+  paso7: {
+    tiene_ecommerce: true,
+    dominio_web: "techflowdigital.co",
+    redes_sociales: ["Instagram", "LinkedIn", "TikTok", "YouTube"],
+  } as Paso7Data,
+};
+
 export const useWizardStore = create<WizardStore>()(
   persist(
     (set) => ({
@@ -134,6 +201,7 @@ export const useWizardStore = create<WizardStore>()(
       setPaso7: (data) => set((s) => ({ paso7: { ...s.paso7, ...data } })),
       setAuditResult: (result) => set({ auditResult: result }),
       setPrefillConnatural: () => set({ ...CONNATURAL_DATA, pasoActual: 1 }),
+      setPrefillLeadCaliente: () => set({ ...LEAD_CALIENTE_DATA, pasoActual: 8 }),
       reset: () => set({
         pasoActual: 1, leadId: null,
         paso1: {}, paso2: {}, paso3: {}, paso4: {}, paso5: {}, paso6: {}, paso7: {},

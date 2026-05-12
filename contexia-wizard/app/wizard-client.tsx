@@ -171,10 +171,15 @@ export default function WizardClient() {
 
   useEffect(() => {
     setMounted(true);
-    // Prefill mode: empty by default — ?prefill=connatural activates test data for Juan Esteban
+    // Prefill mode: empty by default
+    // ?prefill=connatural → datos de Juan Esteban (BARF, manufactura CIIU 1090)
+    // ?prefill=lead-caliente → caso TechFlow Digital (agencia digital — lead caliente growth demo)
     const prefill = searchParams.get("prefill");
     if (prefill === "connatural") {
       store.setPrefillConnatural();
+      setStarted(true);
+    } else if (prefill === "lead-caliente") {
+      store.setPrefillLeadCaliente();
       setStarted(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -500,16 +500,24 @@ export default function Step8Diagnostico({ onBack }: Props) {
               </button>
               {emailError && <p style={{ color: "#ef4444", fontSize: "0.8125rem", margin: "0.5rem 0 0", width: "100%" }}>{emailError}</p>}
             </div>
-            {/* WhatsApp share */}
+            {/* WhatsApp share — envía al número del lead (paso 1) si está disponible */}
             <a
-              href={`https://wa.me/?text=${encodeURIComponent(
-                `🔍 *Shadow Audit — ${store.paso2?.nombre_opcion1 || "Mi empresa"}*\n\n` +
-                `📊 Régimen recomendado: *${result.recomendacion === "simple" ? "Simple" : "Ordinario"}*\n` +
-                `💰 Ahorro potencial: *${formatMillones(result.ahorroPotencial)}/año*\n` +
-                `📈 Readiness Score: *${result.readinessScore}/100*\n` +
-                `⚠️ Riesgos: ${result.riesgos.length}\n\n` +
-                `Generado por Contexia · contexia.online/wizard`
-              )}`}
+              href={(() => {
+                const wa = (store.paso1?.whatsapp || "").replace(/\D/g, "");
+                const phone = wa ? `57${wa}` : "";
+                const text = encodeURIComponent(
+                  `🔍 *Shadow Audit — ${store.paso2?.nombre_opcion1 || "Mi empresa"}*\n\n` +
+                  `👤 Solicitante: ${store.paso1?.nombre || "—"}\n` +
+                  `📧 Email: ${store.paso1?.email || "—"}\n\n` +
+                  `📊 Régimen recomendado: *${result.recomendacion === "simple" ? "Simple" : "Ordinario"}*\n` +
+                  `💰 Ahorro potencial: *${formatMillones(result.ahorroPotencial)}/año*\n` +
+                  `📈 Readiness Score: *${result.readinessScore}/100*\n` +
+                  `⚠️ Riesgos: ${result.riesgos.length}\n` +
+                  `💡 Oportunidades: ${result.oportunidades.length}\n\n` +
+                  `Generado por Contexia · contexia.online/wizard`
+                );
+                return `https://wa.me/${phone}?text=${text}`;
+              })()}
               target="_blank" rel="noopener noreferrer"
               className="ctx-btn-secondary"
               style={{
