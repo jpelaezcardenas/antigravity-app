@@ -8,8 +8,8 @@ import { supabaseAdmin } from "@/lib/supabase";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const email = searchParams.get("email") || "";
-    const leadId = searchParams.get("leadId") || "";
+    const email = (searchParams.get("email") || "").trim();
+    const leadId = (searchParams.get("leadId") || "").trim();
 
     // Fetch lead data from Supabase
     let result: any = null;
@@ -17,27 +17,40 @@ export async function GET(req: NextRequest) {
     let empresa = "Tu empresa";
 
     if (email || leadId) {
-      const query = supabaseAdmin
+      // Columns that actually exist in the leads table — no `empresa` directly,
+      // but we can read paso2.nombre_opcion1 from the audit_result or full row
+      let query = supabaseAdmin
         .from("leads")
-        .select("audit_result, nombre, email, empresa");
+        .select("audit_result, nombre, email")
+        .limit(1);
 
       if (leadId) {
-        query.eq("id", leadId);
-      } else {
-        query.eq("email", email.toLowerCase().trim());
+        query = query.eq("id", leadId);
+      } else if (email) {
+        query = query.eq("email", email.toLowerCase());
       }
 
-      const { data } = await query.single();
+      const { data, error } = await query.maybeSingle();
+      if (error) {
+        console.error("PDF lookup error:", error);
+      }
       if (data) {
         result = data.audit_result;
         nombre = data.nombre || "Empresario";
-        empresa = data.empresa || "Tu empresa";
+        // Empresa vive dentro del audit_result o pasos guardados; fallback al default
+        const r: any = result;
+        empresa = r?.empresa || r?.paso2?.nombre_opcion1 || "Tu empresa";
       }
     }
 
     if (!result) {
       return NextResponse.json(
-        { error: "No se encontró el resultado del audit" },
+        {
+          error: "No se encontró el resultado del audit",
+          hint: "Asegúrate de haber ejecutado el Shadow Audit antes de descargar el PDF. Si usaste el modo prefill, primero pulsa 'Ejecutar Shadow Audit' en el paso 8.",
+          email,
+          leadId,
+        },
         { status: 404 }
       );
     }
@@ -56,7 +69,7 @@ export async function GET(req: NextRequest) {
       if (leadId) {
         updateQuery.eq("id", leadId);
       } else {
-        updateQuery.eq("email", email.toLowerCase().trim());
+        updateQuery.eq("email", email.toLowerCase());
       }
       await updateQuery;
     }
@@ -69,10 +82,10 @@ export async function GET(req: NextRequest) {
         "Cache-Control": "no-store",
       },
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error("audit/pdf error:", err);
     return NextResponse.json(
-      { error: "Error generando PDF" },
+      { error: "Error generando PDF", detail: err?.message || String(err) },
       { status: 500 }
     );
   }

@@ -186,16 +186,25 @@ export default function Step8Diagnostico({ onBack }: Props) {
         ahorro_potencial: result.ahorroPotencial,
       });
       // Save to Supabase + dispara alerta interna a equipo Contexia
-      await fetch("/wizard/api/audit/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          leadId: store.leadId,
-          result,
-          paso1: store.paso1,
-          paso2: store.paso2,
-        }),
-      });
+      try {
+        const res = await fetch("/wizard/api/audit/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            leadId: store.leadId,
+            result,
+            paso1: store.paso1,
+            paso2: store.paso2,
+          }),
+        });
+        const json = await res.json().catch(() => ({}));
+        // Persiste el leadId devuelto por el server para que el PDF/email funcionen
+        if (json?.leadId && !store.leadId) {
+          store.setLeadId(json.leadId);
+        }
+      } catch (err) {
+        console.error("audit/execute call failed:", err);
+      }
       setAuditDone(true);
     } finally {
       setLoading(false);

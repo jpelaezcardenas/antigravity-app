@@ -23,7 +23,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Resultado de auditoría requerido" }, { status: 400 });
     }
 
-    // Persist audit_result in Supabase
+    // Persist audit_result in Supabase — UPSERT para que el flujo con prefill
+    // (que salta /api/leads/save) también cree el registro.
+    let resolvedLeadId: string | null = leadId || null;
+
     if (leadId) {
       await supabaseAdmin
         .from("leads")
@@ -35,15 +38,51 @@ export async function POST(req: NextRequest) {
         })
         .eq("id", leadId);
     } else if (paso1?.email) {
-      await supabaseAdmin
+      const normalizedEmail = paso1.email.toLowerCase().trim();
+      // Verificar si el lead ya existe
+      const { data: existing } = await supabaseAdmin
         .from("leads")
-        .update({
-          audit_result: result,
-          audit_executed_at: new Date().toISOString(),
-          status: "audited",
-          lead_score: result.readinessScore || 0,
-        })
-        .eq("email", paso1.email.toLowerCase().trim());
+        .select("id")
+        .eq("email", normalizedEmail)
+        .maybeSingle();
+
+      if (existing) {
+        resolvedLeadId = existing.id;
+        await supabaseAdmin
+          .from("leads")
+          .update({
+            audit_result: result,
+            audit_executed_at: new Date().toISOString(),
+            status: "audited",
+            lead_score: result.readinessScore || 0,
+          })
+          .eq("id", existing.id);
+      } else {
+        // Insertar nuevo lead con info del paso 1 + audit result (caso del prefill)
+        const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || null;
+        const userAgent = req.headers.get("user-agent") || null;
+        const referer = req.headers.get("referer") || null;
+        const { data: inserted } = await supabaseAdmin
+          .from("leads")
+          .insert({
+            nombre: paso1.nombre || null,
+            cedula: paso1.cedula || null,
+            email: normalizedEmail,
+            whatsapp: `${paso1.pais_codigo || ""}${paso1.whatsapp || ""}` || null,
+            ciudad: paso1.ciudad || null,
+            rol: paso1.rol || null,
+            audit_result: result,
+            audit_executed_at: new Date().toISOString(),
+            status: "audited",
+            lead_score: result.readinessScore || 0,
+            ip_address: ip,
+            user_agent: userAgent,
+            referrer: referer,
+          })
+          .select("id")
+          .single();
+        resolvedLeadId = inserted?.id || null;
+      }
     }
 
     // ── Dispara alerta interna al equipo Contexia ─────────────
@@ -141,7 +180,7 @@ export async function POST(req: NextRequest) {
       console.error("Internal alert error (non-blocking):", notifyErr);
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, leadId: resolvedLeadId });
   } catch (err) {
     console.error("audit/execute error:", err);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
