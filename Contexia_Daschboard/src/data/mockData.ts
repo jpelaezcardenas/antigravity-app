@@ -255,6 +255,124 @@ export const MOCK_CONFIG = {
   },
 };
 
+// --- Credenciales Demo ---
+export const DEMO_CREDENTIALS = {
+  admin: { email: 'admin@contexia.co', password: 'bunker2025', role: 'admin' as const },
+  cliente: { email: 'cliente@demo.co', password: 'demo123', role: 'client' as const },
+};
+
+// --- Clientes Activos (Vista Búnker Admin) ---
+export type EstadoCliente = 'verde' | 'ambar' | 'rojo';
+
+export interface ClienteActivo {
+  id: string;
+  nombre: string;
+  nit: string;
+  sector: string;
+  ciudad: string;
+  estado: EstadoCliente;
+  plan: string;
+  agente: string;
+  ultima_alerta: string;
+  proxima_accion: string;
+  ingresos_mes: number;
+  caja_hoy: number;
+  provision_dian: number;
+}
+
+export const MOCK_CLIENTS: ClienteActivo[] = [
+  {
+    id: 'c1',
+    nombre: 'Lavaderos LD',
+    nit: '900.123.456-1',
+    sector: 'Servicios / Lavado',
+    ciudad: 'Envigado',
+    estado: 'verde',
+    plan: 'Starter',
+    agente: 'Taty',
+    ultima_alerta: '✅ Blindaje Fiscal Activo',
+    proxima_accion: 'Revisión IVA bimestral — 15 días',
+    ingresos_mes: 18_400_000,
+    caja_hoy: 4_200_000,
+    provision_dian: 2_100_000,
+  },
+  {
+    id: 'c2',
+    nombre: 'Sion',
+    nit: '900.234.567-2',
+    sector: 'Comercio / Retail',
+    ciudad: 'Medellín',
+    estado: 'ambar',
+    plan: 'Starter',
+    agente: 'Taty',
+    ultima_alerta: '📅 Vencimiento IVA en 5 días',
+    proxima_accion: 'Declarar IVA — urgente',
+    ingresos_mes: 32_600_000,
+    caja_hoy: 7_100_000,
+    provision_dian: 4_800_000,
+  },
+  {
+    id: 'c3',
+    nombre: 'Repuestos Don Álvaro',
+    nit: '900.345.678-3',
+    sector: 'Comercio / Autopartes',
+    ciudad: 'Itagüí',
+    estado: 'rojo',
+    plan: 'Starter',
+    agente: 'Taty',
+    ultima_alerta: '⚠️ Umbral 1.400 UVT superado',
+    proxima_accion: 'Declarar Renta — urgente',
+    ingresos_mes: 54_200_000,
+    caja_hoy: 9_800_000,
+    provision_dian: 8_600_000,
+  },
+  {
+    id: 'c4',
+    nombre: 'Studio 4 Diseño',
+    nit: '900.456.789-4',
+    sector: 'Servicios / Diseño',
+    ciudad: 'Envigado',
+    estado: 'verde',
+    plan: 'Starter',
+    agente: 'Taty',
+    ultima_alerta: '✅ Sin alertas activas',
+    proxima_accion: 'Auditoría Sombra programada',
+    ingresos_mes: 14_900_000,
+    caja_hoy: 3_800_000,
+    provision_dian: 1_700_000,
+  },
+  {
+    id: 'c5',
+    nombre: 'Floristería Jardín Sur',
+    nit: '900.567.890-5',
+    sector: 'Comercio / Floristería',
+    ciudad: 'Sabaneta',
+    estado: 'ambar',
+    plan: 'Starter',
+    agente: 'Taty',
+    ultima_alerta: '🔔 Soportes de gastos incompletos',
+    proxima_accion: 'Subir facturas pendientes',
+    ingresos_mes: 9_700_000,
+    caja_hoy: 2_100_000,
+    provision_dian: 950_000,
+  },
+  {
+    id: 'c6',
+    nombre: 'Ferez.co E-commerce',
+    nit: '901.456.789-2',
+    sector: 'E-commerce / Moda',
+    ciudad: 'Medellín',
+    estado: 'ambar',
+    plan: 'Starter',
+    agente: 'Taty',
+    ultima_alerta: '📅 IVA Meta Ads por declarar',
+    proxima_accion: 'Preparar declaración IVA bimestral',
+    ingresos_mes: 24_750_000,
+    caja_hoy: 6_838_000,
+    provision_dian: 3_682_000,
+  },
+];
+
 // --- Formato Moneda COP ---
 export const formatCOP = (value: number): string => {
   return new Intl.NumberFormat('es-CO', {
