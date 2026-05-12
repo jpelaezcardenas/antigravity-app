@@ -304,22 +304,31 @@ const BunkerView = ({
   onLogout: () => void;
 }) => (
   <div className="min-h-screen bg-navy-dark text-white">
-    <header className="h-16 border-b border-white/5 flex items-center justify-between px-6 lg:px-10 bg-navy-dark/80 backdrop-blur-md sticky top-0 z-20">
-      <div className="flex items-center gap-3">
-        <img src="/assets/img/logo_official_transparent.png" alt="Contexia" className="h-8 object-contain opacity-90" />
-        <div className="w-px h-5 bg-white/10" />
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 bg-ctx-teal rounded-full animate-pulse" />
-          <span className="text-[10px] font-rajdhani uppercase tracking-widest text-gray-400">Búnker Admin</span>
+    <header className="w-full border-b border-slate-800 bg-[#020617]/90 backdrop-blur-xl sticky top-0 z-50">
+      <div className="h-32 md:h-40 flex items-center justify-between px-6 lg:px-10 max-w-7xl mx-auto">
+        <div className="flex items-center gap-4 h-full">
+          <div className="h-32 md:h-40 w-auto flex items-center">
+            <img src="/assets/img/logo_official_transparent.png" alt="Contexia" className="h-24 md:h-32 object-contain opacity-90 scale-110 translate-y-1 mix-blend-screen" />
+          </div>
+          <div className="hidden sm:flex flex-col justify-center h-full">
+            <div className="w-px h-16 bg-white/10" />
+          </div>
+          <div className="hidden sm:flex flex-col justify-center h-full">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-ctx-teal rounded-full animate-pulse" />
+              <span className="text-xs font-rajdhani uppercase tracking-widest text-gray-300">Búnker Admin</span>
+            </div>
+            <p className="text-[10px] text-gray-500 font-rajdhani">Gestión de Clientes Contexia</p>
+          </div>
         </div>
+        <button
+          onClick={onLogout}
+          className="flex items-center gap-2 bg-ctx-teal/10 hover:bg-ctx-teal/20 text-ctx-teal px-4 py-2 rounded-xl transition-colors text-xs font-rajdhani uppercase tracking-widest border border-ctx-teal/30 hover:border-ctx-teal/50"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="hidden sm:inline">Cerrar Sesión</span>
+        </button>
       </div>
-      <button
-        onClick={onLogout}
-        className="flex items-center gap-2 text-gray-500 hover:text-red-400 transition-colors text-xs font-rajdhani uppercase tracking-widest"
-      >
-        <LogOut className="w-4 h-4" />
-        Cerrar Sesión
-      </button>
     </header>
 
     <main className="p-6 lg:p-10 max-w-7xl mx-auto">

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_in_Chrome__computer",
+      "mcp__Claude_in_Chrome__get_page_text",
+      "Bash(pkill -f \"vite --port\")",
+      "Bash(npm run *)",
+      "Bash(git checkout *)",
+      "Bash(git reset *)",
+      "mcp__Claude_in_Chrome__browser_batch",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(sleep 8 && tail -20 /tmp/dev.log)"
+    ]
+  }
+}
