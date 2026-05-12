@@ -91,19 +91,26 @@ function buildEmailHtml(nombre: string, result: any): string {
           <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">${riesgosHtml}</table>
           ` : ""}
 
-          <!-- CTA Principal -->
-          <div style="text-align:center;margin:32px 0;">
-            <a href="https://www.contexia.online/crear-empresa.html"
-               style="display:inline-block;background:#00a878;color:#ffffff;font-weight:700;font-size:16px;padding:16px 40px;border-radius:12px;text-decoration:none;">
-              Formalizar mi empresa — $1.200.000 COP
-            </a>
+          <!-- CTA Principal — Agendar asesoría (lo más importante para el lead caliente) -->
+          <div style="text-align:center;margin:32px 0 16px;">
+            <div style="background:linear-gradient(135deg,#00a878 0%,#0a8d63 100%);border-radius:16px;padding:28px 24px;">
+              <div style="color:#d1fae5;font-size:13px;font-weight:600;margin-bottom:8px;letter-spacing:0.05em;text-transform:uppercase;">SIGUIENTE PASO RECOMENDADO</div>
+              <div style="color:#ffffff;font-size:20px;font-weight:800;margin-bottom:16px;line-height:1.3;">
+                Revisemos tu Shadow Audit juntos<br/>en una sesión de 30 minutos
+              </div>
+              <a href="https://cal.com/juan-david-pelaez-cardenas-jrurh5/30min"
+                 style="display:inline-block;background:#ffffff;color:#0a8d63;font-weight:800;font-size:16px;padding:16px 36px;border-radius:12px;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+                📅 Agendar mi asesoría gratis →
+              </a>
+              <div style="color:#d1fae5;font-size:12px;margin-top:12px;">Sin costo · Google Meet · Confirmación inmediata</div>
+            </div>
           </div>
 
-          <!-- Secondary CTA -->
+          <!-- CTA Secundario — Formalizar empresa -->
           <div style="text-align:center;margin-bottom:32px;">
-            <a href="https://cal.com/juan-david-pelaez-cardenas-jrurh5/30min"
+            <a href="https://www.contexia.online/crear-empresa.html"
                style="display:inline-block;background:#0a2540;color:#ffffff;font-weight:600;font-size:14px;padding:12px 28px;border-radius:10px;text-decoration:none;">
-              📅 Agendar asesoría gratis — 30 min
+              🏢 Ver paquete de constitución — $1.200.000 COP
             </a>
           </div>
 
@@ -179,7 +186,9 @@ export async function POST(req: NextRequest) {
             <tr><td style="padding:8px 0;color:#64748b;font-size:13px;">Riesgos</td><td style="padding:8px 0;font-weight:700;color:#dc2626;">${riesgosCount} identificados</td></tr>
           </table>
           <div style="margin-top:20px;padding:16px;background:#f0fdf4;border-radius:12px;text-align:center;">
-            <a href="https://wa.me/57${email.includes("@") ? "" : email}?text=Hola%20${encodeURIComponent(nombre || "")},%20vi%20tu%20Shadow%20Audit" style="display:inline-block;background:#25d366;color:#fff;font-weight:700;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px;">💬 Contactar por WhatsApp</a>
+            <p style="margin:0 0 10px;color:#0a2540;font-size:13px;font-weight:600;">Acciones rápidas:</p>
+            <a href="https://wa.me/57${email.includes("@") ? "" : email}?text=Hola%20${encodeURIComponent(nombre || "")},%20vi%20tu%20Shadow%20Audit.%20%C2%BFAgendamos%2030%20min%3F%20https%3A%2F%2Fcal.com%2Fjuan-david-pelaez-cardenas-jrurh5%2F30min" style="display:inline-block;background:#25d366;color:#fff;font-weight:700;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:13px;margin:4px;">💬 WhatsApp + link Cal.com</a>
+            <a href="https://cal.com/juan-david-pelaez-cardenas-jrurh5/30min" style="display:inline-block;background:#0a2540;color:#fff;font-weight:700;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:13px;margin:4px;">📅 Ver mi agenda</a>
           </div>
           <p style="color:#94a3b8;font-size:11px;margin-top:16px;">Generado automáticamente · Contexia Shadow Audit</p>
         </div>`,

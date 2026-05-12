@@ -505,15 +505,17 @@ export default function Step8Diagnostico({ onBack }: Props) {
               href={(() => {
                 const wa = (store.paso1?.whatsapp || "").replace(/\D/g, "");
                 const phone = wa ? `57${wa}` : "";
+                const primerNombre = (store.paso1?.nombre || "").split(" ")[0] || "";
                 const text = encodeURIComponent(
-                  `🔍 *Shadow Audit — ${store.paso2?.nombre_opcion1 || "Mi empresa"}*\n\n` +
-                  `👤 Solicitante: ${store.paso1?.nombre || "—"}\n` +
-                  `📧 Email: ${store.paso1?.email || "—"}\n\n` +
+                  `Hola ${primerNombre} 👋\n\n` +
+                  `Aquí está el resumen de tu *Shadow Audit — ${store.paso2?.nombre_opcion1 || "Mi empresa"}*:\n\n` +
                   `📊 Régimen recomendado: *${result.recomendacion === "simple" ? "Simple" : "Ordinario"}*\n` +
                   `💰 Ahorro potencial: *${formatMillones(result.ahorroPotencial)}/año*\n` +
                   `📈 Readiness Score: *${result.readinessScore}/100*\n` +
-                  `⚠️ Riesgos: ${result.riesgos.length}\n` +
+                  `⚠️ Riesgos identificados: ${result.riesgos.length}\n` +
                   `💡 Oportunidades: ${result.oportunidades.length}\n\n` +
+                  `🗓️ *Agenda 30 min gratis para revisarlo juntos:*\n` +
+                  `https://cal.com/juan-david-pelaez-cardenas-jrurh5/30min\n\n` +
                   `Generado por Contexia · contexia.online/wizard`
                 );
                 return `https://wa.me/${phone}?text=${text}`;
