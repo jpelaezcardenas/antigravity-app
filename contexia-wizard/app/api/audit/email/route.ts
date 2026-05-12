@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { supabaseAdmin } from "@/lib/supabase";
-
-// Email sender confirmed: growth@contexia.online
-const FROM_EMAIL = "Taty de Contexia <growth@contexia.online>";
+import { FROM_EMAIL } from "@/lib/notifications";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -166,36 +164,8 @@ export async function POST(req: NextRequest) {
         .eq("id", leadId);
     }
 
-    // Notify Taty — nuevo lead completó el Shadow Audit
-    const ahorroStr = formatCOP(result.ahorroPotencial || 0);
-    const scoreStr = result.readinessScore || "N/A";
-    const riesgosCount = (result.riesgos || []).length;
-    try {
-      await resend.emails.send({
-        from: FROM_EMAIL,
-        to: ["tatybarbosav91@gmail.com"],
-        subject: `🔔 Nuevo Lead: ${nombre || "Sin nombre"} — Score ${scoreStr}/100`,
-        html: `<div style="font-family:sans-serif;padding:20px;max-width:500px;">
-          <h2 style="color:#0a2540;margin:0 0 16px;">🔔 Nuevo Lead — Shadow Audit</h2>
-          <table style="width:100%;border-collapse:collapse;">
-            <tr><td style="padding:8px 0;color:#64748b;font-size:13px;">Nombre</td><td style="padding:8px 0;font-weight:700;">${nombre || "No proporcionado"}</td></tr>
-            <tr><td style="padding:8px 0;color:#64748b;font-size:13px;">Email</td><td style="padding:8px 0;font-weight:700;"><a href="mailto:${email}">${email}</a></td></tr>
-            <tr><td style="padding:8px 0;color:#64748b;font-size:13px;">Régimen</td><td style="padding:8px 0;font-weight:700;color:${result.recomendacion === "simple" ? "#16a34a" : "#2563eb"};">${regimenLabel}</td></tr>
-            <tr><td style="padding:8px 0;color:#64748b;font-size:13px;">Ahorro potencial</td><td style="padding:8px 0;font-weight:700;color:#16a34a;">${ahorroStr}/año</td></tr>
-            <tr><td style="padding:8px 0;color:#64748b;font-size:13px;">Readiness Score</td><td style="padding:8px 0;font-weight:700;">${scoreStr}/100</td></tr>
-            <tr><td style="padding:8px 0;color:#64748b;font-size:13px;">Riesgos</td><td style="padding:8px 0;font-weight:700;color:#dc2626;">${riesgosCount} identificados</td></tr>
-          </table>
-          <div style="margin-top:20px;padding:16px;background:#f0fdf4;border-radius:12px;text-align:center;">
-            <p style="margin:0 0 10px;color:#0a2540;font-size:13px;font-weight:600;">Acciones rápidas:</p>
-            <a href="https://wa.me/57${email.includes("@") ? "" : email}?text=Hola%20${encodeURIComponent(nombre || "")},%20vi%20tu%20Shadow%20Audit.%20%C2%BFAgendamos%2030%20min%3F%20https%3A%2F%2Fcal.com%2Fjuan-david-pelaez-cardenas-jrurh5%2F30min" style="display:inline-block;background:#25d366;color:#fff;font-weight:700;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:13px;margin:4px;">💬 WhatsApp + link Cal.com</a>
-            <a href="https://cal.com/juan-david-pelaez-cardenas-jrurh5/30min" style="display:inline-block;background:#0a2540;color:#fff;font-weight:700;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:13px;margin:4px;">📅 Ver mi agenda</a>
-          </div>
-          <p style="color:#94a3b8;font-size:11px;margin-top:16px;">Generado automáticamente · Contexia Shadow Audit</p>
-        </div>`,
-      });
-    } catch (notifyErr) {
-      console.error("Taty notification error (non-blocking):", notifyErr);
-    }
+    // Nota: la alerta interna al equipo se dispara en /api/audit/execute (al ejecutar el audit),
+    // no aquí. Aquí solo se envía el correo al cliente.
 
     return NextResponse.json({ ok: true, messageId: data?.id });
   } catch (err) {

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { supabaseAdmin } from "@/lib/supabase";
-
-const FROM_EMAIL = "Taty de Contexia <growth@contexia.online>";
-const NOTIFY_EMAILS = ["jpelaezcardenas@gmail.com", "tatybarbosav91@gmail.com"];
+import { INTERNAL_NOTIFY_EMAILS, FROM_EMAIL } from "@/lib/notifications";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -86,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     await resend.emails.send({
       from: FROM_EMAIL,
-      to: NOTIFY_EMAILS,
+      to: INTERNAL_NOTIFY_EMAILS,
       subject: `${eventLabel}: ${attendeeName} — ${title}`,
       html,
     });

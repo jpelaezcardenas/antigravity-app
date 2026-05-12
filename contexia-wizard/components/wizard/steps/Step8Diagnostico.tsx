@@ -185,11 +185,16 @@ export default function Step8Diagnostico({ onBack }: Props) {
         riesgos_count: riesgos.length,
         ahorro_potencial: result.ahorroPotencial,
       });
-      // Save to Supabase
+      // Save to Supabase + dispara alerta interna a equipo Contexia
       await fetch("/wizard/api/audit/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leadId: store.leadId, result, paso1: store.paso1 }),
+        body: JSON.stringify({
+          leadId: store.leadId,
+          result,
+          paso1: store.paso1,
+          paso2: store.paso2,
+        }),
       });
       setAuditDone(true);
     } finally {
@@ -206,7 +211,16 @@ export default function Step8Diagnostico({ onBack }: Props) {
       const res = await fetch("/wizard/api/audit/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailInput, leadId: store.leadId, result: store.auditResult, nombre: store.paso1?.nombre }),
+        body: JSON.stringify({
+          email: emailInput,
+          leadId: store.leadId,
+          result: store.auditResult,
+          nombre: store.paso1?.nombre,
+          whatsapp: store.paso1?.whatsapp,
+          empresa: store.paso2?.nombre_opcion1,
+          paso1: store.paso1,
+          paso2: store.paso2,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
