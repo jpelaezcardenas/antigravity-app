@@ -53,3 +53,5 @@ dist/
 # Apps
 apps/backend/venv/
 apps/backend/.env
+.claude/worktrees/
+lidr-specboot/
