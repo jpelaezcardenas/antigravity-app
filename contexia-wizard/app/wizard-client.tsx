@@ -206,7 +206,7 @@ export default function WizardClient() {
     >
       <WizardHeader />
 
-      <main style={{ flex: 1 }}>
+      <main style={{ flex: 1, paddingTop: "160px" }}>
         {!started ? (
           <WizardHero
             onStart={() => {

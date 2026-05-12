@@ -29,41 +29,42 @@ const FOOTER_LINKS = {
 
 export default function WizardFooter() {
   return (
-    <footer style={{ background: "#020617", color: "var(--ctx-text-muted)", marginTop: "4rem", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "4rem 1.5rem 3rem" }}>
-        {/* Top row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "3rem", marginBottom: "3rem" }}>
-          {/* Brand */}
-          <div style={{ gridColumn: "span 1" }}>
-            <Image
-              src="https://www.contexia.online/assets/img/logo_official_transparent.png"
-              alt="Contexia"
-              width={160}
-              height={48}
-              style={{ objectFit: "contain", height: "40px", width: "auto", marginBottom: "1.5rem", filter: "brightness(0) invert(1)" }}
-              unoptimized
-            />
-            <p style={{ fontSize: "0.875rem", lineHeight: 1.7, color: "var(--ctx-text-light)", maxWidth: "280px" }}>
-              Liderando la transformación contable en Colombia con tecnología de vanguardia y especialistas de alto nivel.
+    <footer className="bg-[#0c1e30] border-t border-slate-800">
+      <div className="mx-auto max-w-7xl px-6 pt-16 pb-8 lg:px-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+          {/* Logo Column */}
+          <div className="col-span-2 md:col-span-1">
+            <a href="https://www.contexia.online/landing" className="flex items-center mb-6" title="Volver a la landing">
+              <div className="h-32 w-auto flex items-center justify-start flex-shrink-0">
+                <Image 
+                  src="https://www.contexia.online/assets/img/logo_official.png" 
+                  alt="Contexia"
+                  width={200}
+                  height={128}
+                  className="h-full w-auto object-contain mix-blend-screen"
+                  unoptimized
+                />
+              </div>
+            </a>
+            <p className="text-sm text-slate-400 mb-4">
+              El mejor equipo contable de Colombia. Contadores con experiencia con tecnología avanzada.
             </p>
+            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+              </svg>
+            </a>
           </div>
 
-          {/* Links */}
+          {/* Links Columns */}
           {Object.entries(FOOTER_LINKS).map(([section, links]) => (
             <div key={section}>
-              <h4 className="font-orbitron" style={{ color: "#fff", fontSize: "0.8125rem", fontWeight: 800, marginBottom: "1.25rem", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                {section}
-              </h4>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                {links.map((l) => (
-                  <li key={l.label}>
-                    <a
-                      href={l.href}
-                      style={{ color: "var(--ctx-text-muted)", fontSize: "0.875rem", textDecoration: "none", transition: "color 0.2s ease" }}
-                      onMouseOver={(e) => (e.currentTarget.style.color = "var(--ctx-teal)")}
-                      onMouseOut={(e) => (e.currentTarget.style.color = "var(--ctx-text-muted)")}
-                    >
-                      {l.label}
+              <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">{section}</h3>
+              <ul className="space-y-2 text-sm text-slate-400">
+                {links.map((link) => (
+                  <li key={link.label}>
+                    <a href={link.href} className="hover:text-teal transition-colors">
+                      {link.label}
                     </a>
                   </li>
                 ))}
@@ -72,46 +73,19 @@ export default function WizardFooter() {
           ))}
         </div>
 
-        {/* Bottom row */}
-        <div
-          style={{
-            borderTop: "1px solid rgba(255,255,255,0.05)",
-            paddingTop: "2rem",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "1.5rem",
-          }}
-        >
-          <div style={{ fontSize: "0.8125rem", color: "var(--ctx-text-light)" }}>
-            <span>© 2026 Contexia SAS.</span>
-            <span style={{ margin: "0 0.5rem" }}>·</span>
-            <a href="mailto:growth@contexia.online" style={{ color: "inherit", textDecoration: "none" }}>
-              growth@contexia.online
-            </a>
-            <span style={{ margin: "0 0.5rem" }}>·</span>
-            <span>Antioquia, Colombia</span>
-          </div>
-          <div style={{ display: "flex", gap: "1.5rem", fontSize: "0.8125rem", alignItems: "center" }}>
-            {["Términos", "Privacidad"].map((t) => (
-              <a key={t} href="https://www.contexia.online/landing" style={{ color: "var(--ctx-text-light)", textDecoration: "none" }}>{t}</a>
-            ))}
-            <a
-              href="https://wa.me/573018948151?text=Hola,%20me%20interesa%20Contexia"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ 
-                color: "var(--ctx-teal)", 
-                textDecoration: "none", 
-                fontWeight: 700,
-                padding: "0.5rem 1rem",
-                borderRadius: "999px",
-                background: "rgba(45, 212, 191, 0.05)",
-                border: "1px solid rgba(45, 212, 191, 0.1)"
-              }}
+        {/* Bottom Section */}
+        <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-slate-500">© 2026 Contexia SAS. Todos los derechos reservados.</p>
+          <p className="text-xs text-slate-500">growth@contexia.online · Antioquia, Colombia</p>
+          <div className="flex items-center gap-4 text-xs text-slate-500">
+            <a href="#" className="hover:text-slate-300 transition-colors">Términos</a>
+            <a href="#" className="hover:text-slate-300 transition-colors">Privacidad</a>
+            <a href="#" className="hover:text-slate-300 transition-colors">Seguridad</a>
+            <a 
+              href="https://wa.me/573018948151?text=Hola,%20me%20interesa%20Contexia" 
+              className="text-teal hover:text-teal-dark transition-colors font-semibold"
             >
-              WhatsApp 24/7
+              Hablemos por WhatsApp
             </a>
           </div>
         </div>

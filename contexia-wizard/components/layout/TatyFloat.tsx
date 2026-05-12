@@ -37,13 +37,13 @@ export default function TatyFloat() {
         <Image
           src="https://www.contexia.online/assets/img/profiles/tatiana_full.png"
           alt="Taty"
-          width={48}
-          height={48}
+          width={64}
+          height={64}
           className="taty-avatar"
           style={{ borderRadius: "50%", objectFit: "cover" }}
           unoptimized
         />
-        <div className="taty-status" style={{ width: "0.5rem", height: "0.5rem", bottom: "0.15rem", right: "0.15rem" }} />
+        <div className="taty-status" style={{ width: "0.625rem", height: "0.625rem", bottom: "0.25rem", right: "0.25rem" }} />
       </a>
     </div>
   );

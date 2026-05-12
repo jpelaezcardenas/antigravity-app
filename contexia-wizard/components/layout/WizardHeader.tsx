@@ -8,103 +8,98 @@ const NAV_LINKS = [
   { label: "FAQ", href: "https://www.contexia.online/landing#faq" },
 ];
 
-const WA_URL =
-  "https://wa.me/573018948151?text=Hola,%20completé%20el%20Shadow%20Audit%20y%20quiero%20agendar%20asesoría";
-
 export default function WizardHeader() {
   return (
-    <header
-      className="ctx-force-dark-bg"
-      style={{
-        background: "rgba(2, 6, 23, 0.8)",
-        backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(255,255,255,0.05)",
-        position: "sticky",
-        top: 0,
-        zIndex: 40,
-      }}
+    <nav 
+      className="w-full border-b border-slate-800 bg-[#020617]/90 backdrop-blur-xl fixed top-0 z-50"
+      style={{ borderBottom: "1px solid rgba(100, 116, 139, 0.2)" }}
     >
-      <div
-        style={{
-          maxWidth: "1200px",
-          margin: "0 auto",
-          padding: "0 1.5rem",
-          height: "68px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "1.5rem",
-        }}
-      >
-        {/* Logo */}
-        <a href="https://www.contexia.online/landing" style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-          <Image
-            src="https://www.contexia.online/assets/img/logo_official.png"
-            alt="Contexia"
-            width={140}
-            height={40}
-            style={{ objectFit: "contain", height: "40px", width: "auto" }}
-            unoptimized
-          />
-        </a>
-
-        {/* Nav desktop */}
-        <nav
-          style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}
-          className="hidden-mobile"
-        >
-          {NAV_LINKS.map((l) => (
-            <a
-              key={l.label}
-              href={l.href}
-              className="ctx-force-white"
-              style={{
-                fontSize: "0.9375rem",
-                textDecoration: "none",
-                fontWeight: 500,
-                transition: "color 0.15s",
-              }}
-              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "var(--ctx-teal)")}
-              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "white")}
-            >
-              {l.label}
-            </a>
-          ))}
-        </nav>
-
-        {/* CTAs */}
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexShrink: 0 }}>
-          <a
-            href="https://www.contexia.online/app"
-            style={{
-              fontSize: "0.875rem",
-              color: "white",
-              textDecoration: "none",
-              fontWeight: 600,
-              padding: "0.5rem 1.25rem",
-              border: "1.5px solid rgba(255,255,255,0.1)",
-              borderRadius: "10px",
-              transition: "all 0.15s",
-              background: "rgba(255,255,255,0.05)",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            Acceso App
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between py-4 min-h-[120px]">
+          {/* Logo Section */}
+          <a href="https://www.contexia.online/landing" className="flex items-center group" title="Volver a la landing">
+            <div className="h-32 md:h-40 w-auto flex items-center justify-center flex-shrink-0">
+              <Image 
+                src="https://www.contexia.online/assets/img/logo_official.png" 
+                alt="Contexia"
+                width={200}
+                height={160}
+                className="h-full w-auto object-contain transition-transform group-hover:scale-105 scale-110 translate-y-1 mix-blend-screen"
+                unoptimized
+              />
+            </div>
           </a>
-          <a
-            href={WA_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ctx-btn-primary"
-            style={{ fontSize: "0.875rem", padding: "0.5rem 1rem" }}
-          >
-            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z" />
-            </svg>
-            Taty
-          </a>
+          
+          <div className="hidden md:flex items-center gap-8">
+            <div className="flex items-center gap-6 text-sm font-bold uppercase tracking-widest">
+              {NAV_LINKS.map((link) => (
+                <a 
+                  key={link.label}
+                  href={link.href} 
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
+                  {link.label}
+                </a>
+              ))}
+              
+              <Link 
+                href="/" 
+                className="px-8 py-3 bg-ctx-violet/10 text-white border-2 border-ctx-violet rounded-full hover:bg-ctx-violet/20 hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.6)] transition-all text-base font-bold tracking-wide shadow-[0_0_15px_-5px_rgba(139,92,246,0.4)] text-center inline-flex flex-col items-center leading-tight"
+                title="Auditoría tributaria gratuita y 100% anónima"
+              >
+                <span>🔍 AUDITORÍA SOMBRA</span>
+                <span className="text-ctx-violet text-xs font-semibold">(SIMULACIÓN CON LA DIAN)</span>
+              </Link>
+            </div>
+
+            <div className="h-8 w-[1px] bg-slate-800 mx-2"></div>
+
+            <div className="flex items-center gap-6">
+              {/* Taty Button */}
+              <a 
+                href="https://wa.me/573018948151?text=Hola,%20completé%20el%20Shadow%20Audit%20y%20quiero%20agendar%20asesoría" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="group relative flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 pr-6 hover:bg-white/10 hover:border-ctx-teal/50 transition-all duration-500 overflow-hidden" 
+                style={{ boxShadow: "0 0 20px rgba(20, 184, 166, 0.1)" }}
+              >
+                {/* Photo Section */}
+                <div className="relative w-14 h-20 rounded-xl overflow-hidden border border-white/20 shadow-xl flex-shrink-0">
+                  <Image 
+                    src="https://www.contexia.online/assets/img/profiles/tatiana_full.png" 
+                    alt="Taty" 
+                    width={56}
+                    height={80}
+                    className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700"
+                    unoptimized
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#020617]/80 via-transparent to-transparent"></div>
+                </div>
+                {/* Text Section */}
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ctx-teal opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-ctx-teal"></span>
+                    </span>
+                    <span className="text-[10px] text-ctx-teal font-black uppercase tracking-widest leading-none">Online</span>
+                  </div>
+                  <span className="text-sm text-white font-bold leading-tight">Tu Amiga Contadora<br/><span className="text-ctx-teal">Taty</span></span>
+                </div>
+              </a>
+
+              <a 
+                href="https://www.contexia.online/app" 
+                className="inline-flex items-center justify-center px-6 py-2 border border-transparent text-sm font-medium rounded-full text-[#020617] bg-ctx-teal hover:bg-ctx-teal-dark shadow-[0_0_15px_rgba(20,184,166,0.3)] transition-all"
+              >
+                Acceso App
+              </a>
+            </div>
+          </div>
+
+          {/* Mobile menu button could go here if needed, but keeping it simple for now */}
         </div>
       </div>
-    </header>
+    </nav>
   );
 }
