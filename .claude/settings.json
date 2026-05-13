@@ -1,0 +1,11 @@
+{
+  "version": "1",
+  "project_id": "contexia-clean",
+  "exclude_patterns": [
+    "node_modules/**",
+    ".next/**",
+    "dist/**",
+    "build/**",
+    ".git/**"
+  ]
+}
