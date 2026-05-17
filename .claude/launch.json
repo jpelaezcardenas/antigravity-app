@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "contexia-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "contexia-app", "run", "dev"],
+      "port": 3000,
+      "autoPort": true
+    }
+  ]
+}
