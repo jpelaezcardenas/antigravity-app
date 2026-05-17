@@ -33,7 +33,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#57F1DB",
+  themeColor: "#2DD4BF",
   viewportFit: "cover",
 };
 
@@ -52,7 +52,7 @@ export default function RootLayout({
           crossOrigin=""
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap"
           rel="stylesheet"
         />
         <link
@@ -60,7 +60,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
         {/* PWA Meta Tags */}
-        <meta name="theme-color" content="#57F1DB" />
+        <meta name="theme-color" content="#2DD4BF" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Contexia" />
