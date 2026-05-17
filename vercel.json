@@ -19,6 +19,10 @@
             "destination": "/app/overview.html"
         },
         {
+            "source": "/app/bunker",
+            "destination": "/app/bunker.html"
+        },
+        {
             "source": "/app/fiscal",
             "destination": "/app/fiscal.html"
         },
