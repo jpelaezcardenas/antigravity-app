@@ -44,7 +44,8 @@
             selectedRole: null,
             
             roles: [
-                { id: 'empresario', label: 'Empresario', icon: 'store', desc: 'Acceso Empresarial', user: 'empresario', pass: 'demo' }
+                { id: 'empresario', label: 'Empresario', icon: 'store', desc: 'Acceso a Dashboard', user: 'contexia.marketing', pass: 'demo' },
+                { id: 'admin', label: 'Admin', icon: 'admin_panel_settings', desc: 'Acceso Administrativo', user: 'admin', pass: 'demo' }
             ],
             
             init() {
@@ -68,17 +69,20 @@
                 
                 // Mock login — no API call needed
                 const mockUser = {
-                    usuario_id: 'usr_001',
+                    usuario_id: this.selectedRole?.id === 'admin' ? 'usr_admin_001' : 'usr_001',
                     token: 'mock-jwt-token-contexia-2024',
-                    nombre_empresa: 'Lavaderos L&D',
+                    nombre_empresa: this.selectedRole?.id === 'admin' ? 'Contexia Admin' : 'Contexia Marketing',
                     email: this.username,
+                    role: this.selectedRole?.id,
                     plan: 'starter'
                 };
                 
                 setTimeout(() => {
                     localStorage.setItem('token', mockUser.token);
                     localStorage.setItem('cx_user', JSON.stringify(mockUser));
-                    window.location.href = '/app';
+                    // Redirige según el rol
+                    const destination = this.selectedRole?.id === 'admin' ? '/app/bunker' : '/app/overview';
+                    window.location.href = destination;
                 }, 600);
             }
          }">
@@ -137,7 +141,7 @@
 
                     <button type="submit" :disabled="loading"
                         class="w-full bg-teal hover:bg-teal-dark text-white font-bold py-3 rounded-lg transition-all shadow-lg shadow-teal/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span x-show="!loading">Ingresar al Dashboard</span>
+                        <span x-show="!loading">Ingresar a Contexia</span>
                         <span x-show="loading"
                             class="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     </button>
@@ -146,7 +150,7 @@
                 <!-- Quick Access Hint -->
                 <div class="mt-4 pt-4 border-t border-slate-700">
                     <p class="text-[10px] text-slate-500 text-center italic">
-                        El acceso está configurado para el perfil <span class="text-teal font-medium">Empresario</span>
+                        Rol: <span class="text-teal font-medium" x-text="selectedRole?.label || 'Selecciona'"></span>
                     </p>
                 </div>
             </div>
