@@ -80,7 +80,9 @@
                 setTimeout(() => {
                     localStorage.setItem('token', mockUser.token);
                     localStorage.setItem('cx_user', JSON.stringify(mockUser));
-                    window.location.href = '/app';
+                    // Redirige según el rol
+                    const destination = this.selectedRole?.id === 'admin' ? '/app/bunker' : '/app/overview';
+                    window.location.href = destination;
                 }, 600);
             }
          }">
