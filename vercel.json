@@ -15,6 +15,10 @@
     ],
     "rewrites": [
         {
+            "source": "/crear-empresa-wizard",
+            "destination": "/crear-empresa-wizard.html"
+        },
+        {
             "source": "/app/overview",
             "destination": "/app/overview.html"
         },
