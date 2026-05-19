@@ -1,0 +1,224 @@
+{
+  "name": "CTX-WF10: Análisis Semanal + Retroalimentación",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": "trigger",
+        "triggerTimes": {
+          "value": [
+            {
+              "mode": "everyWeek",
+              "hour": 15,
+              "minute": 0,
+              "weekday": "5"
+            }
+          ]
+        }
+      },
+      "id": "trigger-schedule-friday-3pm",
+      "name": "⏰ Viernes 3:00 PM",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/metricas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" }
+          ]
+        },
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              { "name": "select", "value": "*,publicaciones(*,contenido(*,calendario(*)))" },
+              { "name": "order", "value": "created_at.desc" },
+              { "name": "limit", "value": "10" }
+            ]
+          }
+        }
+      },
+      "id": "get-weekly-metrics",
+      "name": "📋 Leer Métricas con Detalle",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const metrics = $input.all().map(item => item.json);\n\n// Formatear métricas de manera legible para Gemini\nconst formattedMetrics = metrics.map(m => {\n  const post = m.publicaciones || {};\n  const content = post.contenido || {};\n  const cal = content.calendario || {};\n  return {\n    titulo: cal.titulo_trabajo || 'Post sin título',\n    pilar: cal.pilar || 'Sin pilar',\n    formato: cal.formato || 'Sin formato',\n    alcance: m.alcance || 0,\n    engagement_rate: m.engagement_rate || 0,\n    reacciones: m.reacciones || 0,\n    comentarios: m.comentarios || 0,\n    compartidos: m.compartidos || 0,\n    guardados: m.guardados || 0,\n    score: m.score || 0,\n    clasificacion: m.clasificacion || 'PROMEDIO'\n  };\n});\n\nreturn {\n  json: {\n    metricas_raw: JSON.stringify(formattedMetrics, null, 2),\n    semana: metrics[0]?.publicaciones?.contenido?.calendario?.semana || 1\n  }\n};"
+      },
+      "id": "prepare-data-gemini",
+      "name": "🛠 Formatear para Gemini",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.API_URL || 'http://localhost:8080' }}/api/v1/llm/analyze",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "=Analiza el rendimiento de los contenidos de Facebook de esta semana:\n\nMÉTRICAS DE LA SEMANA:\n{{ $json.metricas_raw }}\n\nTu objetivo es:\n1. Escribir un resumen ejecutivo (resumen_ia) del desempeño general en tono de amiga contadora.\n2. Identificar el tipo de hook ganador, el pilar ganador, el formato ganador y el dolor que más resonó en nuestra audiencia.\n3. Brindar recomendaciones estratégicas accionables para el siguiente ciclo (recomendacion_siguiente).\n4. Generar exactamente 3 nuevas ideas de contenido para retroalimentar el backlog (estas ideas deben atacar directamente el dolor que mejor funcionó o corregir lo que falló)."
+            },
+            {
+              "name": "system_prompt",
+              "value": "Eres la estratega y amiga contadora de Contexia (Taty Contadora). Tu tono es cercano, empático, directo y colombiano con criterio. Responde estrictamente en formato JSON."
+            },
+            {
+              "name": "schema_expected",
+              "value": "={ \"resumen_ia\": \"str\", \"top_hook_tipo\": \"str\", \"top_pilar\": \"str\", \"top_formato\": \"str\", \"top_dolor\": \"str\", \"recomendacion_siguiente\": \"str\", \"nuevas_ideas\": \"list\" }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gemini-analysis",
+      "name": "🤖 Tatiana Gateway: Análisis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  let analysis = $input.first().json;\n  if (analysis.text) {\n    const cleanText = analysis.text.replace(/```json/g, '').replace(/```/g, '').trim();\n    analysis = JSON.parse(cleanText);\n  }\n  return {\n    json: {\n      ...analysis,\n      semana: $('🛠 Formatear para Gemini').item.json.semana\n    }\n  };\n} catch (e) {\n  return {\n    json: {\n      error: 'Error parseando análisis',\n      resumen_ia: 'Esta semana tuvimos un rendimiento sólido, pero necesitamos registrar más datos para darte un análisis detallado.',\n      top_hook_tipo: 'Pregunta directa',\n      top_pilar: 'PROTECCION',\n      top_formato: 'CARRUSEL',\n      top_dolor: 'MIEDO_DIAN',\n      recomendacion_siguiente: 'Continuar publicando en los horarios habituales y diversificar formatos.',\n      semana: $('🛠 Formatear para Gemini').item.json.semana,\n      nuevas_ideas: []\n    }\n  };\n}"
+      },
+      "id": "parse-analysis",
+      "name": "🛠 Parsear Análisis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/insights",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "semana", "value": "={{ $json.semana }}" },
+            { "name": "top_hook_tipo", "value": "={{ $json.top_hook_tipo }}" },
+            { "name": "top_pilar", "value": "={{ $json.top_pilar }}" },
+            { "name": "top_formato", "value": "={{ $json.top_formato }}" },
+            { "name": "top_dolor", "value": "={{ $json.top_dolor }}" },
+            { "name": "resumen_ia", "value": "={{ $json.resumen_ia }}" },
+            { "name": "recomendacion_siguiente", "value": "={{ $json.recomendacion_siguiente }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "save-insights-supabase",
+      "name": "💾 Guardar Insights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const analysis = $('🛠 Parsear Análisis').item.json;\n\nlet html = `\n<h2>📈 Contexia Content OS — Informe Semanal de Rendimiento (Semana ${analysis.semana})</h2>\n<p>Hola Juan Esteban. Aquí tienes tu reporte de desempeño semanal, digerido por el cerebro de Taty Contadora:</p>\n<blockquote style=\"border-left: 4px solid #f43f5e; padding-left: 15px; margin: 15px 0; color: #475569; font-style: italic;\">\n  \"${analysis.resumen_ia}\"\n</blockquote>\n\n<h3>🏆 Patrones Ganadores Detectados</h3>\n<ul>\n  <li><strong>Pilar Editorial Ganador:</strong> <span style=\"background-color: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px;\">${analysis.top_pilar}</span></li>\n  <li><strong>Formato Más Exitoso:</strong> <span style=\"background-color: #fef3c7; color: #b45309; padding: 2px 6px; border-radius: 4px;\">${analysis.top_formato}</span></li>\n  <li><strong>Dolor de ICP que Más Resonó:</strong> <span style=\"background-color: #d1fae5; color: #065f46; padding: 2px 6px; border-radius: 4px;\">${analysis.top_dolor}</span></li>\n  <li><strong>Tipo de Hook Estrella:</strong> <em>${analysis.top_hook_tipo}</em></li>\n</ul>\n\n<h3>💡 Recomendaciones para la Próxima Semana</h3>\n<p>${analysis.recomendacion_siguiente}</p>\n\n<br>\n<p><strong>🔄 Cierre de Ciclo:</strong> He generado automáticamente 3 nuevas ideas optimizadas y las he inyectado en tu backlog de Supabase para que las uses en el próximo batch de generación.</p>\n<p>Un abrazo,<br><strong>Taty Contadora AI Agent</strong></p>\n`;\n\nreturn {\n  json: {\n    email_body: html,\n    nuevas_ideas: analysis.nuevas_ideas || []\n  }\n};"
+      },
+      "id": "format-report-email",
+      "name": "📧 Formatear Reporte",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "jpelaezcardenas@gmail.com",
+        "subject": "=📈 Contexia Content OS — Reporte Semanal & Cierre de Ciclo",
+        "html": "={{ $json.email_body }}"
+      },
+      "id": "send-report-email",
+      "name": "✉️ Enviar a jpelaezcardenas@gmail.com",
+      "type": "n8n-nodes-base.email",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-credential-id",
+          "name": "Gmail SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ideas = $('📧 Formatear Reporte').item.json.nuevas_ideas || [];\nreturn ideas.map(idea => ({ json: idea }));"
+      },
+      "id": "split-ideas",
+      "name": "🛠 Separar Nuevas Ideas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/ideas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "tema_raw", "value": "={{ $json.tema }}" },
+            { "name": "pilar", "value": "={{ $json.pilar }}" },
+            { "name": "angulo", "value": "={{ $json.angulo }}" },
+            { "name": "formato_sugerido", "value": "={{ $json.formato_sugerido }}" },
+            { "name": "dolor_icp", "value": "={{ $json.dolor_icp }}" },
+            { "name": "score_potencial", "value": "={{ $json.score_potencial }}" },
+            { "name": "status", "value": "NUEVA" },
+            { "name": "fuente", "value": "RECICLAJE" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "save-new-ideas-supabase",
+      "name": "💾 Inyectar en Backlog",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 300]
+    }
+  ],
+  "connections": {
+    "⏰ Viernes 3:00 PM": { "main": [[{ "node": "📋 Leer Métricas con Detalle", "type": "main", "index": 0 }]] },
+    "📋 Leer Métricas con Detalle": { "main": [[{ "node": "🛠 Formatear para Gemini", "type": "main", "index": 0 }]] },
+    "🛠 Formatear para Gemini": { "main": [[{ "node": "🤖 Gemini: Analizar Rendimiento", "type": "main", "index": 0 }]] },
+    "🤖 Gemini: Analizar Rendimiento": { "main": [[{ "node": "🛠 Parsear Análisis", "type": "main", "index": 0 }]] },
+    "🛠 Parsear Análisis": { "main": [[{ "node": "💾 Guardar Insights", "type": "main", "index": 0 }]] },
+    "💾 Guardar Insights": { "main": [[{ "node": "📧 Formatear Reporte", "type": "main", "index": 0 }]] },
+    "📧 Formatear Reporte": { "main": [[{ "node": "✉️ Enviar a jpelaezcardenas@gmail.com", "type": "main", "index": 0 }]] },
+    "✉️ Enviar a jpelaezcardenas@gmail.com": { "main": [[{ "node": "🛠 Separar Nuevas Ideas", "type": "main", "index": 0 }]] },
+    "🛠 Separar Nuevas Ideas": { "main": [[{ "node": "💾 Inyectar en Backlog", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "contexia-content-os" }]
+}

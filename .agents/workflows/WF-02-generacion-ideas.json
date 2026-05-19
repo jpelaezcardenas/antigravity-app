@@ -1,0 +1,163 @@
+{
+  "name": "CTX-WF02: Generación Semanal de Ideas",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": "trigger",
+        "triggerTimes": {
+          "value": [
+            {
+              "mode": "everyWeek",
+              "hour": 7,
+              "minute": 0,
+              "weekday": "1"
+            }
+          ]
+        }
+      },
+      "id": "trigger-schedule",
+      "name": "⏰ Lunes 7:00 AM",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/insights",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" }
+          ]
+        },
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              { "name": "order", "value": "created_at.desc" },
+              { "name": "limit", "value": "1" }
+            ]
+          }
+        }
+      },
+      "id": "get-last-insights",
+      "name": "📈 Leer Último Análisis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/prompts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" }
+          ]
+        },
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              { "name": "id", "value": "eq.PRM-RESEARCH-01" }
+            ]
+          }
+        }
+      },
+      "id": "get-prompt",
+      "name": "📝 Leer Prompt Generador",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.API_URL || 'http://localhost:8080' }}/api/v1/llm/analyze",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "=Prompt: {{ $json[0].prompt_text }}\n\nRecomendaciones previas de la semana anterior: {{ $('📈 Leer Último Análisis').item.json[0]?.recomendacion_siguiente || 'No hay análisis previo. Enfocarse en dolores de dropshippers, freelancers y PyMEs colombianas.' }}\nPatrones ganadores detectados: {{ $('📈 Leer Último Análisis').item.json[0]?.top_hook_tipo || 'Ninguno aún' }}\n\nGenera exactamente las 6 ideas y responde estrictamente con el JSON array."
+            },
+            {
+              "name": "system_prompt",
+              "value": "Eres Taty Contadora, la estratega y amiga contadora con criterio de Contexia. Responde estrictamente con un JSON array."
+            },
+            {
+              "name": "schema_expected",
+              "value": "={ \"tema\": \"str\", \"pilar\": \"str\", \"angulo_sugerido\": \"str\", \"formato_sugerido\": \"str\", \"dolor_icp\": \"str\", \"score_potencial\": \"int\" }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gemini-llm",
+      "name": "🤖 Tatiana AI Gateway",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const inputData = $input.all();\n  if (Array.isArray(inputData) && inputData.length > 0 && inputData[0].json && !inputData[0].json.text) {\n    const firstItem = inputData[0].json;\n    if (Array.isArray(firstItem)) {\n      return firstItem.map(idea => ({ json: idea }));\n    } else if (firstItem.tema || firstItem.pilar) {\n      return inputData;\n    }\n  }\n  const rawText = $input.first().json.text || JSON.stringify($input.first().json);\n  const cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();\n  const ideas = JSON.parse(cleanText);\n  return ideas.map(idea => ({ json: idea }));\n} catch (e) {\n  return $input.all();\n}"
+      },
+      "id": "parse-json",
+      "name": "🛠 Parsear JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/ideas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "tema_raw", "value": "={{ $json.tema }}" },
+            { "name": "pilar", "value": "={{ $json.pilar }}" },
+            { "name": "angulo", "value": "={{ $json.angulo_sugerido }}" },
+            { "name": "formato_sugerido", "value": "={{ $json.formato_sugerido }}" },
+            { "name": "dolor_icp", "value": "={{ $json.dolor_icp }}" },
+            { "name": "score_potencial", "value": "={{ $json.score_potencial }}" },
+            { "name": "status", "value": "NUEVA" },
+            { "name": "fuente", "value": "TRENDING" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "save-ideas",
+      "name": "💾 Guardar en Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 300]
+    }
+  ],
+  "connections": {
+    "⏰ Lunes 7:00 AM": { "main": [[{ "node": "📈 Leer Último Análisis", "type": "main", "index": 0 }]] },
+    "📈 Leer Último Análisis": { "main": [[{ "node": "📝 Leer Prompt Generador", "type": "main", "index": 0 }]] },
+    "📝 Leer Prompt Generador": { "main": [[{ "node": "🤖 Gemini 1.5 Pro", "type": "main", "index": 0 }]] },
+    "🤖 Gemini 1.5 Pro": { "main": [[{ "node": "🛠 Parsear JSON", "type": "main", "index": 0 }]] },
+    "🛠 Parsear JSON": { "main": [[{ "node": "💾 Guardar en Supabase", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "contexia-content-os" }]
+}

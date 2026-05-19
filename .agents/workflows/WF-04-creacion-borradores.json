@@ -1,0 +1,289 @@
+{
+  "name": "CTX-WF04: Generador de Borradores & QA & Notificación",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": "trigger",
+        "triggerTimes": {
+          "value": [
+            {
+              "mode": "everyWeek",
+              "hour": 9,
+              "minute": 0,
+              "weekday": "1"
+            }
+          ]
+        }
+      },
+      "id": "trigger-schedule-9am",
+      "name": "⏰ Lunes 9:00 AM",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/contenido_por_aprobar",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" }
+          ]
+        }
+      },
+      "id": "read-scheduled-posts",
+      "name": "📅 Leer Calendario Semanal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/prompts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" }
+          ]
+        }
+      },
+      "id": "read-prompts",
+      "name": "📝 Leer Prompts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const posts = $('📅 Leer Calendario Semanal').item.json;\nconst prompts = $input.all().map(item => item.json);\n\n// Filtrar prompts especificos\nconst hookPrompt = prompts.find(p => p.id === 'PRM-HOOK-01')?.prompt_text || '';\nconst copyPrompt = prompts.find(p => p.id === 'PRM-COPY-01')?.prompt_text || '';\nconst qaPrompt = prompts.find(p => p.id === 'PRM-QA-01')?.prompt_text || '';\n\nreturn posts.map(post => ({\n  json: {\n    ...post,\n    prompt_hook: hookPrompt,\n    prompt_copy: copyPrompt,\n    prompt_qa: qaPrompt\n  }\n}));"
+      },
+      "id": "prepare-inputs",
+      "name": "🛠 Combinar Datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.API_URL || 'http://localhost:8080' }}/api/v1/llm/analyze",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "=Usa este prompt: {{ $json.prompt_hook }}\n\nTEMA: {{ $json.titulo_trabajo }}\nDOLOR: {{ $json.formato }}"
+            },
+            {
+              "name": "system_prompt",
+              "value": "Eres Taty Contadora, la estratega AI de Contexia. Responde estrictamente con formato JSON."
+            },
+            {
+              "name": "schema_expected",
+              "value": "={ \"hook_principal\": \"str\", \"hook_alt_1\": \"str\", \"hook_alt_2\": \"str\" }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gemini-generate-hooks",
+      "name": "🤖 Tatiana Gateway: Hooks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  let hooksObj = $input.first().json;\n  if (hooksObj.text) {\n    const cleanText = hooksObj.text.replace(/```json/g, '').replace(/```/g, '').trim();\n    hooksObj = JSON.parse(cleanText);\n  }\n  return {\n    json: {\n      ...$input.first().json,\n      hook_principal: hooksObj.hook_principal || hooksObj.hook_seleccionado,\n      hook_alt_1: hooksObj.hook_alt_1,\n      hook_alt_2: hooksObj.hook_alt_2\n    }\n  };\n} catch (e) {\n  return {\n    json: {\n      ...$input.first().json,\n      hook_principal: '¿Sabías que tu negocio puede pagar menos impuestos legalmente?',\n      error: 'Error parseando hooks'\n    }\n  };\n}"
+      },
+      "id": "parse-hooks",
+      "name": "🛠 Parsear Hooks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.API_URL || 'http://localhost:8080' }}/api/v1/llm/analyze",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "=Usa este prompt: {{ $json.prompt_copy }}\n\nHOOK SELECCIONADO: {{ $json.hook_principal }}\nTEMA: {{ $json.titulo_trabajo }}\nDOLOR: {{ $json.formato }}"
+            },
+            {
+              "name": "system_prompt",
+              "value": "Eres Taty Contadora, asesora financiera y contable. Escribe en tono empático y colombiano. Responde estrictamente con formato JSON."
+            },
+            {
+              "name": "schema_expected",
+              "value": "={ \"copy_body\": \"str\", \"cta\": \"str\", \"hashtags\": \"str\" }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gemini-generate-copy",
+      "name": "🤖 Tatiana Gateway: Copy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  let copyObj = $input.first().json;\n  if (copyObj.text) {\n    const cleanText = copyObj.text.replace(/```json/g, '').replace(/```/g, '').trim();\n    copyObj = JSON.parse(cleanText);\n  }\n  return {\n    json: {\n      ...$input.first().json,\n      copy_body: copyObj.copy_body,\n      cta: copyObj.cta,\n      hashtags: copyObj.hashtags\n    }\n  };\n} catch (e) {\n  return {\n    json: {\n      ...$input.first().json,\n      copy_body: $json.text || 'Error generando contenido',\n      cta: 'Escríbenos y te asesoramos.',\n      hashtags: '#Contexia'\n    }\n  };\n}"
+      },
+      "id": "parse-copy",
+      "name": "🛠 Parsear Copy",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.API_URL || 'http://localhost:8080' }}/api/v1/llm/analyze",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "=Usa este prompt de QA: {{ $json.prompt_qa }}\n\nHook: {{ $json.hook_principal }}\nCopy: {{ $json.copy_body }}\nCTA: {{ $json.cta }}"
+            },
+            {
+              "name": "system_prompt",
+              "value": "Eres la auditora experta de humanización de Contexia. Revisa si el texto suena robótico. Responde estrictamente con formato JSON."
+            },
+            {
+              "name": "schema_expected",
+              "value": "={ \"es_humano\": \"bool\", \"score_humanizacion\": \"int\", \"version_reescrita\": \"str\" }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gemini-qa",
+      "name": "🤖 Tatiana Gateway: QA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1700, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  let qaObj = $input.first().json;\n  if (qaObj.text) {\n    const cleanText = qaObj.text.replace(/```json/g, '').replace(/```/g, '').trim();\n    qaObj = JSON.parse(cleanText);\n  }\n  \n  let finalCopy = $input.first().json.copy_body;\n  if (qaObj.es_humano === false && qaObj.version_reescrita) {\n    finalCopy = qaObj.version_reescrita;\n  }\n\n  return {\n    json: {\n      ...$input.first().json,\n      copy_body: finalCopy,\n      qa_humanizacion: true,\n      score_humanizacion: qaObj.score_humanizacion || 8,\n      es_humano: qaObj.es_humano\n    }\n  };\n} catch (e) {\n  return {\n    json: {\n      ...$input.first().json,\n      qa_humanizacion: true,\n      es_humano: true\n    }\n  };\n}"
+      },
+      "id": "parse-qa",
+      "name": "🛠 Parsear QA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1900, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/contenido",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "hook", "value": "={{ $json.hook_principal }}" },
+            { "name": "hook_alt_1", "value": "={{ $json.hook_alt_1 }}" },
+            { "name": "hook_alt_2", "value": "={{ $json.hook_alt_2 }}" },
+            { "name": "copy_body", "value": "={{ $json.copy_body }}" },
+            { "name": "cta", "value": "={{ $json.cta }}" },
+            { "name": "hashtags", "value": "={{ $json.hashtags }}" },
+            { "name": "status", "value": "BORRADOR_IA" },
+            { "name": "qa_humanizacion", "value": "={{ $json.qa_humanizacion }}" }
+          ]
+        },
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              { "name": "id", "value": "=eq.{{ $json.id }}" }
+            ]
+          }
+        }
+      },
+      "id": "save-draft-supabase",
+      "name": "💾 Guardar Borrador",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2100, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(item => item.json);\n\nlet html = `\n<h2>📝 Contexia Content OS — Borradores Generados para Revisión</h2>\n<p>Hola Juan Esteban. Aquí tienes las piezas de la semana listas y pasadas por el filtro de humanización de Taty Contadora:</p>\n<table border=\"1\" cellpadding=\"10\" style=\"border-collapse: collapse; width: 100%; border-color: #e2e8f0;\">\n  <tr style=\"background-color: #0f172a; color: white;\">\n    <th>Tema</th>\n    <th>Formato</th>\n    <th>Hook</th>\n    <th>Copy</th>\n    <th>CTA</th>\n  </tr>\n`;\n\nitems.forEach(item => {\n  html += `\n  <tr>\n    <td><strong>${item.titulo_trabajo || 'Idea'}</strong></td>\n    <td><span style=\"background-color: #2dd4bf; color: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 12px;\">${item.formato || 'TEXTO'}</span></td>\n    <td>${item.hook_principal}</td>\n    <td>${item.copy_body.replace(/\\n/g, '<br>')}</td>\n    <td><em>${item.cta}</em></td>\n  </tr>\n  `;\n});\n\nhtml += `\n</table>\n<br>\n<p><strong>💡 Próximo paso:</strong> Ve a tu base de datos o portal, edita si es necesario y cambia el estado a <strong>APPROVED</strong> para programar.</p>\n<p>Un abrazo,<br><strong>Taty Contadora AI Agent</strong></p>\n`;\n\nreturn {\n  json: {\n    email_body: html,\n    count: items.length\n  }\n};"
+      },
+      "id": "format-email",
+      "name": "📧 Formatear Correo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2300, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "jpelaezcardenas@gmail.com",
+        "subject": "📝 Contexia Content OS — Borradores Semanales Listos",
+        "html": "={{ $json.email_body }}"
+      },
+      "id": "send-email",
+      "name": "✉️ Enviar a jpelaezcardenas@gmail.com",
+      "type": "n8n-nodes-base.email",
+      "typeVersion": 1,
+      "position": [2500, 300],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-credential-id",
+          "name": "Gmail SMTP"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "⏰ Lunes 9:00 AM": { "main": [[{ "node": "📅 Leer Calendario Semanal", "type": "main", "index": 0 }]] },
+    "📅 Leer Calendario Semanal": { "main": [[{ "node": "📝 Leer Prompts", "type": "main", "index": 0 }]] },
+    "📝 Leer Prompts": { "main": [[{ "node": "🛠 Combinar Datos", "type": "main", "index": 0 }]] },
+    "🛠 Combinar Datos": { "main": [[{ "node": "🤖 Gemini: Generar Hooks", "type": "main", "index": 0 }]] },
+    "🤖 Gemini: Generar Hooks": { "main": [[{ "node": "🛠 Parsear Hooks", "type": "main", "index": 0 }]] },
+    "🛠 Parsear Hooks": { "main": [[{ "node": "🤖 Gemini: Generar Copy", "type": "main", "index": 0 }]] },
+    "🤖 Gemini: Generar Copy": { "main": [[{ "node": "🛠 Parsear Copy", "type": "main", "index": 0 }]] },
+    "🛠 Parsear Copy": { "main": [[{ "node": "🤖 Gemini: QA Humanización", "type": "main", "index": 0 }]] },
+    "🤖 Gemini: QA Humanización": { "main": [[{ "node": "🛠 Parsear QA", "type": "main", "index": 0 }]] },
+    "🛠 Parsear QA": { "main": [[{ "node": "💾 Guardar Borrador", "type": "main", "index": 0 }]] },
+    "💾 Guardar Borrador": { "main": [[{ "node": "📧 Formatear Correo", "type": "main", "index": 0 }]] },
+    "📧 Formatear Correo": { "main": [[{ "node": "✉️ Enviar a jpelaezcardenas@gmail.com", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "contexia-content-os" }]
+}

@@ -1,0 +1,151 @@
+{
+  "name": "CTX-WF07: Logging de Publicación",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "▶ Trigger Manual",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "content_id", "value": "1", "type": "number" },
+            { "id": "a2", "name": "cal_id", "value": "1", "type": "number" },
+            { "id": "a3", "name": "url_post", "value": "https://facebook.com/contexia/posts/123456", "type": "string" },
+            { "id": "a4", "name": "tipo_publicacion", "value": "CARRUSEL", "type": "string" },
+            { "id": "a5", "name": "notas_publicacion", "value": "Publicado exitosamente", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-post-data",
+      "name": "📝 Definir Publicación",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/publicaciones",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "content_id", "value": "={{ $json.content_id }}" },
+            { "name": "url_post", "value": "={{ $json.url_post }}" },
+            { "name": "tipo_publicacion", "value": "={{ $json.tipo_publicacion }}" },
+            { "name": "notas_publicacion", "value": "={{ $json.notas_publicacion }}" },
+            { "name": "fecha_publicacion_real", "value": "={{ $now.toISO() }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-supabase-pub",
+      "name": "💾 Registrar Publicación",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/calendario",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "status", "value": "PUBLISHED" }
+          ]
+        },
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              { "name": "id", "value": "=eq.{{ $('📝 Definir Publicación').item.json.cal_id }}" }
+            ]
+          }
+        }
+      },
+      "id": "http-supabase-cal",
+      "name": "📅 Actualizar Calendario",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/contenido",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "status", "value": "LISTO_PUBLICAR" }
+          ]
+        },
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              { "name": "id", "value": "=eq.{{ $('📝 Definir Publicación').item.json.content_id }}" }
+            ]
+          }
+        }
+      },
+      "id": "http-supabase-content",
+      "name": "📝 Actualizar Contenido",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1080, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "r1", "name": "resultado", "value": "=✅ Post registrado exitosamente en Supabase. ID publicación: {{ $('💾 Registrar Publicación').item.json[0].id }}. Calendario y Contenido actualizados.", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-result",
+      "name": "✅ Confirmar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1300, 300]
+    }
+  ],
+  "connections": {
+    "▶ Trigger Manual": { "main": [[{ "node": "📝 Definir Publicación", "type": "main", "index": 0 }]] },
+    "📝 Definir Publicación": { "main": [[{ "node": "💾 Registrar Publicación", "type": "main", "index": 0 }]] },
+    "💾 Registrar Publicación": { "main": [[{ "node": "📅 Actualizar Calendario", "type": "main", "index": 0 }]] },
+    "📅 Actualizar Calendario": { "main": [[{ "node": "📝 Actualizar Contenido", "type": "main", "index": 0 }]] },
+    "📝 Actualizar Contenido": { "main": [[{ "node": "✅ Confirmar", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "contexia-content-os" }]
+}

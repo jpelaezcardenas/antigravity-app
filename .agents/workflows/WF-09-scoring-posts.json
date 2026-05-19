@@ -1,0 +1,165 @@
+{
+  "name": "CTX-WF09: Scoring de Posts",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": "trigger",
+        "triggerTimes": {
+          "value": [
+            {
+              "mode": "everyWeek",
+              "hour": 11,
+              "minute": 0,
+              "weekday": "5"
+            }
+          ]
+        }
+      },
+      "id": "trigger-schedule-friday-11am",
+      "name": "⏰ Viernes 11:00 AM",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/metricas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" }
+          ]
+        },
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              { "name": "score", "value": "is.null" }
+            ]
+          }
+        }
+      },
+      "id": "get-unscored-metrics",
+      "name": "📋 Leer Métricas sin Score",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-unscored-exists",
+      "name": "❓ ¿Hay Pendientes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const metrics = $input.all().map(item => item.json);\n\nreturn metrics.map(item => {\n  const Reactions = item.reacciones || 0;\n  const Comments = item.comentarios || 0;\n  const Shares = item.compartidos || 0;\n  const Saves = item.guardados || 0;\n  const Reach = item.alcance || 0;\n  const EngagementRate = item.engagement_rate || 0;\n\n  // Fórmula de Scoring MVP:\n  // Reactions = 1pt, Comments = 3pt, Shares = 5pt, Saves = 4pt\n  const totalEngagementPoints = (Reactions * 1) + (Comments * 3) + (Shares * 5) + (Saves * 4);\n  \n  // Calcular score compuesto (sobre 100)\n  let score = Math.round((EngagementRate * 12) + (totalEngagementPoints * 1.2));\n  if (score > 100) score = 100;\n  if (score < 1) score = 1;\n\n  // Clasificación\n  let clasificacion = \"PROMEDIO\";\n  if (score >= 70) clasificacion = \"GANADOR\";\n  else if (score < 40) clasificacion = \"PERDEDOR\";\n\n  return {\n    json: {\n      id: item.id,\n      score: score,\n      clasificacion: clasificacion\n    }\n  };\n});"
+      },
+      "id": "calculate-scores",
+      "name": "🧮 Calcular Scores",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [860, 200]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/metricas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "score", "value": "={{ $json.score }}" },
+            { "name": "clasificacion", "value": "={{ $json.clasificacion }}" }
+          ]
+        },
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              { "name": "id", "value": "=eq.{{ $json.id }}" }
+            ]
+          }
+        }
+      },
+      "id": "update-metrics-supabase",
+      "name": "💾 Guardar en Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1080, 200]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "resultado", "value": "Scoring completado exitosamente para las métricas de la semana.", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-success",
+      "name": "✅ Confirmar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1300, 200]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "resultado", "value": "No hay métricas pendientes de calcular score.", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-no-pending",
+      "name": "✅ Sin Pendientes",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [860, 400]
+    }
+  ],
+  "connections": {
+    "⏰ Viernes 11:00 AM": { "main": [[{ "node": "📋 Leer Métricas sin Score", "type": "main", "index": 0 }]] },
+    "📋 Leer Métricas sin Score": { "main": [[{ "node": "❓ ¿Hay Pendientes?", "type": "main", "index": 0 }]] },
+    "❓ ¿Hay Pendientes?": {
+      "main": [
+        [{ "node": "🧮 Calcular Scores", "type": "main", "index": 0 }],
+        [{ "node": "✅ Sin Pendientes", "type": "main", "index": 0 }]
+      ]
+    },
+    "🧮 Calcular Scores": { "main": [[{ "node": "💾 Guardar en Supabase", "type": "main", "index": 0 }]] },
+    "💾 Guardar en Supabase": { "main": [[{ "node": "✅ Confirmar", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "contexia-content-os" }]
+}

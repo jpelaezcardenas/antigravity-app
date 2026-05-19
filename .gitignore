@@ -56,4 +56,14 @@ apps/backend/.env
 .claude/worktrees/
 lidr-specboot/
 
+# n8n local cache and logs (keep JSONs versioned)
+.n8n/
+n8n-data/
+*.n8n.log
+
+# Content OS runtime temps (keep docs and rules versioned)
+.agents/**/.cache/
+.agents/**/*.tmp
+.agents/**/*.lock
+
 **/.claude/settings.local.json

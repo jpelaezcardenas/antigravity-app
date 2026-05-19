@@ -1,0 +1,171 @@
+{
+  "name": "CTX-WF08: Captura de Métricas (Recordatorio)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": "trigger",
+        "triggerTimes": {
+          "value": [
+            {
+              "mode": "everyWeek",
+              "hour": 10,
+              "minute": 0,
+              "weekday": "5"
+            }
+          ]
+        }
+      },
+      "id": "trigger-schedule-friday-10am",
+      "name": "⏰ Viernes 10:00 AM",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [150, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/publicaciones",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" }
+          ]
+        },
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              { "name": "select", "value": "*,contenido(id,cal_id(id,titulo_trabajo))" }
+            ]
+          }
+        }
+      },
+      "id": "get-publications",
+      "name": "📋 Leer Publicaciones",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [370, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/metricas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" }
+          ]
+        },
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              { "name": "select", "value": "pub_id" }
+            ]
+          }
+        }
+      },
+      "id": "get-metrics",
+      "name": "📊 Leer Métricas Existentes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [590, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const pubs = $('📋 Leer Publicaciones').item.json || [];\nconst metrics = $input.all().map(item => item.json.pub_id);\n\n// Filtrar publicaciones que NO tienen métricas registradas\nconst pendingPubs = pubs.filter(pub => !metrics.includes(pub.id));\n\nreturn pendingPubs.map(pub => ({ json: pub }));"
+      },
+      "id": "filter-pending",
+      "name": "🛠 Filtrar Pendientes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [810, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-pending-exists",
+      "name": "❓ ¿Hay Pendientes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1030, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const pending = $input.all().map(item => item.json);\n\nlet html = `\n<h2>📊 Contexia Content OS — Captura Semanal de Métricas</h2>\n<p>Hola Juan Esteban. Es viernes de métricas. Los siguientes posts están publicados pero aún no tienen registro de rendimiento en Supabase:</p>\n<table border=\"1\" cellpadding=\"10\" style=\"border-collapse: collapse; width: 100%; border-color: #e2e8f0;\">\n  <tr style=\"background-color: #0f172a; color: white;\">\n    <th>Tema</th>\n    <th>Plataforma</th>\n    <th>Tipo</th>\n    <th>Link al Post</th>\n  </tr>\n`;\n\npending.forEach(item => {\n  const tema = item.contenido?.cal_id?.titulo_trabajo || 'Post';\n  html += `\n  <tr>\n    <td><strong>${tema}</strong></td>\n    <td>${item.plataforma || 'FACEBOOK'}</td>\n    <td><span style=\"background-color: #f43f5e; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px;\">${item.tipo_publicacion || 'CARRUSEL'}</span></td>\n    <td><a href=\"${item.url_post}\" target=\"_blank\">Ir a Facebook ↗</a></td>\n  </tr>\n  `;\n});\n\nhtml += `\n</table>\n<br>\n<p><strong>💡 Instrucciones:</strong></p>\n<ol>\n  <li>Haz clic en el enlace de cada post en Facebook.</li>\n  <li>Ve a las métricas del post y copia: Alcance, Impresiones, Reacciones, Comentarios, Compartidos y Guardados.</li>\n  <li>Ingresa estos valores en tu base de datos de Supabase en la tabla <strong>metricas</strong> con el ID de la publicación correspondiente.</li>\n</ol>\n<p>¡Esto alimentará el cerebro de Taty Contadora para el análisis de esta tarde!</p>\n<p>Un abrazo,<br><strong>Taty Contadora AI Agent</strong></p>\n`;\n\nreturn {\n  json: {\n    email_body: html,\n    count: pending.length\n  }\n};"
+      },
+      "id": "format-reminder-email",
+      "name": "📧 Formatear Recordatorio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1280, 200]
+    },
+    {
+      "parameters": {
+        "sendTo": "jpelaezcardenas@gmail.com",
+        "subject": "📊 Contexia Content OS — Hora de Registrar Métricas Semanales",
+        "html": "={{ $json.email_body }}"
+      },
+      "id": "send-reminder-email",
+      "name": "✉️ Enviar a jpelaezcardenas@gmail.com",
+      "type": "n8n-nodes-base.email",
+      "typeVersion": 1,
+      "position": [1500, 200],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-credential-id",
+          "name": "Gmail SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "resultado", "value": "No hay publicaciones pendientes de métricas. Todo al día.", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-no-pending-result",
+      "name": "✅ Todo al Día",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1280, 420]
+    }
+  ],
+  "connections": {
+    "⏰ Viernes 10:00 AM": { "main": [[{ "node": "📋 Leer Publicaciones", "type": "main", "index": 0 }]] },
+    "📋 Leer Publicaciones": { "main": [[{ "node": "📊 Leer Métricas Existentes", "type": "main", "index": 0 }]] },
+    "📊 Leer Métricas Existentes": { "main": [[{ "node": "🛠 Filtrar Pendientes", "type": "main", "index": 0 }]] },
+    "🛠 Filtrar Pendientes": { "main": [[{ "node": "❓ ¿Hay Pendientes?", "type": "main", "index": 0 }]] },
+    "❓ ¿Hay Pendientes?": {
+      "main": [
+        [{ "node": "📧 Formatear Recordatorio", "type": "main", "index": 0 }],
+        [{ "node": "✅ Todo al Día", "type": "main", "index": 0 }]
+      ]
+    },
+    "📧 Formatear Recordatorio": { "main": [[{ "node": "✉️ Enviar a jpelaezcardenas@gmail.com", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "contexia-content-os" }]
+}

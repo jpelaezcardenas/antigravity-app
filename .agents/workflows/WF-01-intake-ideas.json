@@ -1,0 +1,85 @@
+{
+  "name": "CTX-WF01: Intake de Ideas",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "▶ Trigger Manual",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "tema_raw", "value": "El mito de que la DIAN no revisa Nequi", "type": "string" },
+            { "id": "a2", "name": "fuente", "value": "MANUAL", "type": "string" },
+            { "id": "a3", "name": "pilar", "value": "PROTECCION", "type": "string" },
+            { "id": "a4", "name": "dolor_icp", "value": "MIEDO_DIAN", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-idea",
+      "name": "📝 Definir Idea",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kpynymwghfwshvcvevxq.supabase.co/rest/v1/ideas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA0MDAxOSwiZXhwIjoyMDk0NjE2MDE5fQ.KZa1V0Up0kI8IlS6MUrFSybe_3LSc9hjLF_DW_jQb3A" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "tema_raw", "value": "={{ $json.tema_raw }}" },
+            { "name": "fuente", "value": "={{ $json.fuente }}" },
+            { "name": "pilar", "value": "={{ $json.pilar }}" },
+            { "name": "dolor_icp", "value": "={{ $json.dolor_icp }}" },
+            { "name": "status", "value": "NUEVA" },
+            { "name": "fecha_ingreso", "value": "={{ $now.toFormat('yyyy-MM-dd') }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-supabase",
+      "name": "💾 Guardar en Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "r1", "name": "resultado", "value": "=✅ Idea #{{ $json[0].id }} guardada: {{ $json[0].tema_raw }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-result",
+      "name": "✅ Confirmar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "▶ Trigger Manual": { "main": [[{ "node": "📝 Definir Idea", "type": "main", "index": 0 }]] },
+    "📝 Definir Idea": { "main": [[{ "node": "💾 Guardar en Supabase", "type": "main", "index": 0 }]] },
+    "💾 Guardar en Supabase": { "main": [[{ "node": "✅ Confirmar", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "contexia-content-os" }]
+}
