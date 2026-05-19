@@ -50,11 +50,35 @@ dist/
 .env
 *.local
 
-# Apps
-apps/backend/venv/
-apps/backend/.env
-.claude/worktrees/
-lidr-specboot/
+# Backend & build
+backend/venv/
+backend/.env
+backend/__pycache__/
+backend/.pytest_cache/
+backend/dist/
+backend/build/
+
+# Frontend builds
+frontend/dashboard/node_modules/
+frontend/dashboard/dist/
+frontend/dashboard/.next/
+frontend/dashboard/.env.local
+frontend/wizard/node_modules/
+frontend/wizard/dist/
+frontend/wizard/.next/
+frontend/wizard/.env.local
+
+# IDE & local
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Config & secrets (keep .env.example versioned)
+.env
+.env.local
+.config/.env
 
 # n8n local cache and logs (keep JSONs versioned)
 .n8n/
@@ -66,4 +90,10 @@ n8n-data/
 .agents/**/*.tmp
 .agents/**/*.lock
 
+# Claude Code
+.claude/worktrees/
 **/.claude/settings.local.json
+
+# Legacy
+lidr-specboot/
+

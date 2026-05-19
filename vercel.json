@@ -1,66 +1,22 @@
 {
-    "name": "contexia-web-app",
+    "name": "contexia-monolith",
     "version": 2,
-    "redirects": [
-        {
-            "source": "/",
-            "destination": "/landing.html",
-            "permanent": false
-        },
-        {
-            "source": "/app",
-            "destination": "/app/overview",
-            "permanent": false
-        }
-    ],
+    "buildCommand": "cd frontend/dashboard && npm run build",
+    "outputDirectory": "frontend/dashboard/dist",
+    "installCommand": "npm install && cd frontend/dashboard && npm install && cd ../wizard && npm install",
+    "env": {
+        "VITE_SUPABASE_URL": "@supabase_url",
+        "VITE_SUPABASE_ANON_KEY": "@supabase_anon_key",
+        "REACT_APP_GEMINI_API_KEY": "@gemini_api_key"
+    },
     "rewrites": [
         {
-            "source": "/crear-empresa-wizard",
-            "destination": "/crear-empresa-wizard.html"
+            "source": "/api/:path*",
+            "destination": "http://localhost:8080/api/:path*"
         },
         {
-            "source": "/app/overview",
-            "destination": "/app/overview.html"
-        },
-        {
-            "source": "/app/config",
-            "destination": "/app/config.html"
-        },
-        {
-            "source": "/app/bunker",
-            "destination": "/app/bunker.html"
-        },
-        {
-            "source": "/app/fiscal",
-            "destination": "/app/fiscal.html"
-        },
-        {
-            "source": "/app/radar",
-            "destination": "/app/radar.html"
-        },
-        {
-            "source": "/app/patrimonio",
-            "destination": "/app/patrimonio.html"
-        },
-        {
-            "source": "/app/flujo-detalle",
-            "destination": "/app/flujo-detalle.html"
-        },
-        {
-            "source": "/flujo-detalle",
-            "destination": "/flujo-detalle.html"
-        },
-        {
-            "source": "/wizard/api/:path*",
-            "destination": "https://contexia-wizard.vercel.app/wizard/api/:path*"
-        },
-        {
-            "source": "/wizard/:path*",
-            "destination": "https://contexia-wizard.vercel.app/wizard/:path*"
-        },
-        {
-            "source": "/wizard",
-            "destination": "https://contexia-wizard.vercel.app/wizard"
+            "source": "/:path*",
+            "destination": "/index.html"
         }
     ],
     "cleanUrls": true,

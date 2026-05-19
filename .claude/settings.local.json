@@ -84,7 +84,16 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git rm *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(ls \"C:\\\\Users\\\\contexia\\\\Projects\\\\antigravity-app\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \".agents\\\\workflows\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \".agents\\\\rules\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"docs\\\\social-media-ops\\\\decisions\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"docs\\\\social-media-ops\\\\runbooks\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"docs\\\\social-media-ops\\\\specs\")",
+      "PowerShell(ls .agents\\\\workflows | ForEach-Object { \"$\\($_.Name\\) - $\\($_.Length\\) bytes\" })",
+      "PowerShell(Copy-Item \"C:\\\\Users\\\\contexia\\\\Projects\\\\Social Media OPs Systems\\\\.agents\\\\rules\\\\rules.md\" \".agents\\\\rules\\\\rules.md\" -Force; $h = \\(Get-FileHash \".agents\\\\rules\\\\rules.md\" -Algorithm SHA256\\).Hash.Substring\\(0,16\\); $s = \\(Get-Item \".agents\\\\rules\\\\rules.md\"\\).Length; Write-Output \"rules.md actualizado -> size=$s hash=$h \\(esperado size=4021 hash=87E1F09CAE911A6C\\)\")",
+      "Bash(git tag *)"
     ]
   }
 }
