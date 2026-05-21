@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
           email: wizard.contacto.email.toLowerCase().trim(),
           whatsapp: `+57${wizard.contacto.telefono.replace(/\D/g, "")}`,
           ciudad: wizard.descripcion.ciudad,
+          cedula: null, // Optional field, will be collected later if needed
           status: "crear_empresa_pago",
         },
         { onConflict: "email", ignoreDuplicates: false }
