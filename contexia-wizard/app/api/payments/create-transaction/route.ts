@@ -26,7 +26,8 @@ export async function POST(req: NextRequest) {
     const pricing = calculateFinalAmount(couponCode);
 
     // Upsert lead (reuses existing leads table)
-    const { data: leadRow } = await supabaseAdmin
+    console.log("1. Attempting to upsert lead...", { email: wizard.contacto.email });
+    const { data: leadRow, error: leadError } = await supabaseAdmin
       .from("leads")
       .upsert(
         {
@@ -40,7 +41,12 @@ export async function POST(req: NextRequest) {
       )
       .select("id")
       .single();
+    if (leadError) {
+      console.error("Lead upsert error:", leadError);
+      throw leadError;
+    }
     const leadId = leadRow?.id ?? null;
+    console.log("2. Lead upserted successfully:", { leadId });
 
     // Resolve representante name for storage
     const representanteLegal =
