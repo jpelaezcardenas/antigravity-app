@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     console.log("2. Lead upserted successfully:", { leadId });
 
     // Resolve representante name for storage
+    console.log("3. Resolving representante...");
     const representanteLegal =
       wizard.representante.origen === "socio"
         ? {
@@ -57,7 +58,9 @@ export async function POST(req: NextRequest) {
             cedula: wizard.accionistas.find((a) => a.id === wizard.representante.socioId)?.cedula || null,
           }
         : { ...wizard.representante, origen: "otro" as const };
+    console.log("4. Representante resolved:", representanteLegal);
 
+    console.log("5. Creating empresa...");
     const empresa = await createEmpresa({
       leadId,
       razonSocial: wizard.nombreEmpresa,
@@ -73,8 +76,11 @@ export async function POST(req: NextRequest) {
       accionistas: wizard.accionistas,
       representanteLegal,
     });
+    console.log("6. Empresa created:", { id: empresa.id });
 
+    console.log("7. Generating reference and signature...");
     const reference = newReference("CXIA-CE");
+    console.log("8. Creating payment record...");
     await createPayment({
       reference,
       leadId,
@@ -88,9 +94,12 @@ export async function POST(req: NextRequest) {
       customerPhone: `+57${wizard.contacto.telefono.replace(/\D/g, "")}`,
       customerName: wizard.contacto.nombre,
     });
+    console.log("9. Payment created successfully");
 
+    console.log("10. Creating integrity signature...");
     const signature = createIntegritySignature(reference, pricing.amountInCents, "COP");
 
+    console.log("11. Returning response...");
     return NextResponse.json({
       reference,
       signature,

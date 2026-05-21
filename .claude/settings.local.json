@@ -116,7 +116,9 @@
       "Bash(vercel env *)",
       "Bash(cd /d/Users/jpela/Projects/Contexia/contexia-wizard && vercel env add NEXT_PUBLIC_WOMPI_PUBLIC_KEY pub_prod_gldxXxebOLm3Yqluug2nkOHsQTadujjI --prod 2>&1 | head -20)",
       "Read(//mnt/c/Users/jpela/Projects/Contexia/**)",
-      "Bash(curl -X POST http://localhost:3100/api/payments/validate-coupon -H 'Content-Type: application/json' -d '{\"code\":\"LANZAMIENTO50\"}')"
+      "Bash(curl -X POST http://localhost:3100/api/payments/validate-coupon -H 'Content-Type: application/json' -d '{\"code\":\"LANZAMIENTO50\"}')",
+      "Bash(find \"C:\\\\\\\\Users\\\\\\\\jpela\\\\\\\\Projects\\\\\\\\Contexia\" -name \"*.ts\" -o -name \"*.tsx\")",
+      "Bash(xargs grep -l \"type WizardState\")"
     ]
   }
 }
