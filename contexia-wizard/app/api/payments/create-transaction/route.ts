@@ -115,14 +115,23 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    const errorStack = err instanceof Error ? err.stack : undefined;
+    let errorMsg = "Unknown error";
+
+    if (err instanceof Error) {
+      errorMsg = err.message;
+    } else if (typeof err === "object" && err !== null && "message" in err) {
+      errorMsg = (err as any).message || String(err);
+    } else if (typeof err === "object" && err !== null && "error" in err) {
+      errorMsg = (err as any).error || String(err);
+    } else {
+      errorMsg = String(err);
+    }
+
     console.error("create-transaction error:", errorMsg);
-    if (errorStack) console.error("Stack:", errorStack);
-    // Always return detailed error in production to help debugging
+    console.error("Full error object:", JSON.stringify(err, null, 2));
+
     return NextResponse.json({
       error: errorMsg,
-      type: err instanceof Error ? "Error" : typeof err,
     }, { status: 500 });
   }
 }
