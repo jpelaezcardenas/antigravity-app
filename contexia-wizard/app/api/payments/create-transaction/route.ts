@@ -107,10 +107,13 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorStack = err instanceof Error ? err.stack : undefined;
     console.error("create-transaction error:", errorMsg);
-    if (process.env.NODE_ENV === "development") {
-      return NextResponse.json({ error: errorMsg, stack: err instanceof Error ? err.stack : undefined }, { status: 500 });
-    }
-    return NextResponse.json({ error: "Error creando transacción", debug: errorMsg }, { status: 500 });
+    if (errorStack) console.error("Stack:", errorStack);
+    // Always return detailed error in production to help debugging
+    return NextResponse.json({
+      error: errorMsg,
+      type: err instanceof Error ? "Error" : typeof err,
+    }, { status: 500 });
   }
 }
