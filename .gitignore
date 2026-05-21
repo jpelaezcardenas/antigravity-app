@@ -21,6 +21,7 @@ eggs/
 .eggs/
 lib/
 !contexia-wizard/lib/
+!contexia-app/lib/
 lib64/
 parts/
 sdist/
