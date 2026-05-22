@@ -5,6 +5,7 @@ from presentation.router import api_router
 from presentation.health_endpoints import router as health_router
 from core.middleware import SecurityHeadersMiddleware, RequestLoggingMiddleware
 from config import settings
+from middleware_config import apply_middleware
 import uvicorn
 import logging
 
@@ -41,6 +42,8 @@ app.add_middleware(SecurityHeadersMiddleware)
 # 3. Request Logging
 app.add_middleware(RequestLoggingMiddleware)
 
+# 4. DAY 6: Apply production middleware (rate limiting, enhanced logging, etc.)
+apply_middleware(app)
 
 # Manejo de errores global — never expose internal details
 @app.exception_handler(Exception)
