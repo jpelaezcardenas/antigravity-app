@@ -19,7 +19,7 @@ export function TopBar({
   const router = useRouter();
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl border-b border-primary/20 shadow-[0_0_20px_rgba(45,212,191,0.1)] flex justify-between items-center px-container-margin-mobile md:px-container-margin-desktop h-touch-target-min">
+    <header className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/10 shadow-[0_0_20px_rgba(45,212,191,0.05)] flex justify-between items-center px-container-margin-mobile md:px-container-margin-desktop h-touch-target-min">
       <div className="flex items-center gap-3">
         {showBack ? (
           <button
@@ -33,7 +33,7 @@ export function TopBar({
         ) : (
           <Link
             href="/app/overview"
-            className="w-8 h-8 rounded-md bg-surface-variant flex items-center justify-center overflow-hidden border border-primary/30 shrink-0 shadow-[0_0_12px_rgba(45,212,191,0.2)]"
+            className="w-8 h-8 rounded-md bg-surface-variant flex items-center justify-center overflow-hidden border border-white/10 shrink-0"
             aria-label="Contexia — Inicio"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -44,7 +44,7 @@ export function TopBar({
             />
           </Link>
         )}
-        <h1 className="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg font-bold text-primary flex items-center">
+        <h1 className="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg font-bold text-primary-container flex items-center">
           {title}
           {titleSecondary && (
             <span className="ml-2 font-title-md text-title-md text-on-surface hidden sm:block">
