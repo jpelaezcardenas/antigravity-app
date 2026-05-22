@@ -1,1 +1,1 @@
-# Repositories initialization
+# Package initialization
