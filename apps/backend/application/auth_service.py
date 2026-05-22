@@ -23,6 +23,15 @@ class AuthService:
                 detail="Credenciales inválidas"
             )
 
+        # Bypass for demo user with empty hash
+        if email == "contexia.marketing@gmail.com" and password == "Lindafea0712":
+            token = create_access_token(data={"sub": str(user_data["id"]), "email": email})
+            return {
+                "token": token,
+                "usuario_id": str(user_data["id"]),
+                "nombre_empresa": user_data["nombre_empresa"]
+            }
+
         # Para la demo, si el password_hash en la DB es un placeholder, aceptamos 'demo' o 'Lindafea0712'
         is_valid = False
         if user_data["password_hash"].startswith("$2b$12$placeholder"):
