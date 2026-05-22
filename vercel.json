@@ -19,6 +19,14 @@
             "destination": "/crear-empresa-wizard.html"
         },
         {
+            "source": "/app/dashboard-assets/:path*",
+            "destination": "/app/dashboard-assets/:path*"
+        },
+        {
+            "source": "/app/assets/:path*",
+            "destination": "/app/assets/:path*"
+        },
+        {
             "source": "/app/:path*",
             "destination": "/app/index.html"
         },
