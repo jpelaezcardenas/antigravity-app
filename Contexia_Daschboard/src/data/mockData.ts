@@ -257,8 +257,8 @@ export const MOCK_CONFIG = {
 
 // --- Credenciales Demo ---
 export const DEMO_CREDENTIALS = {
-  admin: { email: 'contexia.marketing@gmail.com', password: 'Lindafea0712', role: 'admin' as const },
-  cliente: { email: 'cliente@demo.co', password: 'Cliente2026', role: 'client' as const },
+  admin: { email: 'admin@contexia.co', password: 'demo', role: 'admin' as const },
+  cliente: { email: 'cliente@demo.co', password: 'demo', role: 'client' as const },
 };
 
 // --- Clientes Activos (Vista Búnker Admin) ---
