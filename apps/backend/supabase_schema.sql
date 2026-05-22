@@ -54,3 +54,71 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- CREATE TRIGGER on_auth_user_created
 --   AFTER INSERT ON auth.users
 --   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+
+-- ============================================================================
+-- 4. Social Content Ops - Campaign Management & Post Scheduling
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS social_campaigns (
+  id TEXT DEFAULT gen_random_uuid()::text PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  descripcion TEXT,
+  tipo TEXT CHECK (tipo IN ('discovery', 'engagement', 'conversion', 'retention')) DEFAULT 'discovery',
+  estado TEXT CHECK (estado IN ('activa', 'pausada', 'finalizada')) DEFAULT 'activa',
+  presupuesto FLOAT DEFAULT 0,
+  presupuesto_usado FLOAT DEFAULT 0,
+  fecha_inicio DATE,
+  fecha_fin DATE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS social_posts (
+  id TEXT DEFAULT gen_random_uuid()::text PRIMARY KEY,
+  campaign_id TEXT REFERENCES social_campaigns(id) ON DELETE CASCADE NOT NULL,
+  titulo TEXT NOT NULL,
+  contenido TEXT NOT NULL,
+  plataforma TEXT CHECK (plataforma IN ('facebook', 'instagram', 'tiktok', 'general')) NOT NULL,
+  hashtags TEXT[] DEFAULT ARRAY[]::TEXT[],
+  estado TEXT CHECK (estado IN ('borrador', 'programado', 'publicado', 'fallido')) DEFAULT 'borrador',
+  fecha_programada DATE,
+  hora_programada TIME,
+  fecha_publicacion TIMESTAMP WITH TIME ZONE,
+  costo_produccion FLOAT DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS social_post_metrics (
+  id TEXT DEFAULT gen_random_uuid()::text PRIMARY KEY,
+  post_id TEXT REFERENCES social_posts(id) ON DELETE CASCADE NOT NULL,
+  impressions BIGINT DEFAULT 0,
+  reach BIGINT DEFAULT 0,
+  engagement BIGINT DEFAULT 0,
+  clicks BIGINT DEFAULT 0,
+  shares BIGINT DEFAULT 0,
+  comentarios BIGINT DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS content_library (
+  id TEXT DEFAULT gen_random_uuid()::text PRIMARY KEY,
+  titulo TEXT NOT NULL,
+  tipo TEXT CHECK (tipo IN ('post', 'template', 'guia')) NOT NULL,
+  plataforma TEXT CHECK (plataforma IN ('facebook', 'instagram', 'tiktok', 'general')) NOT NULL,
+  contenido TEXT,
+  tags TEXT[] DEFAULT ARRAY[]::TEXT[],
+  usos_totales BIGINT DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Create indexes for performance
+CREATE INDEX idx_posts_campaign_id ON social_posts(campaign_id);
+CREATE INDEX idx_posts_estado ON social_posts(estado);
+CREATE INDEX idx_posts_fecha_programada ON social_posts(fecha_programada);
+CREATE INDEX idx_metrics_post_id ON social_post_metrics(post_id);
+CREATE INDEX idx_content_tipo ON content_library(tipo);
+CREATE INDEX idx_campaigns_estado ON social_campaigns(estado);

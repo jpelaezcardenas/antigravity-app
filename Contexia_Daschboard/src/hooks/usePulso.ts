@@ -1,12 +1,36 @@
-import { useState, useEffect } from 'react';
+/**
+ * Custom hook for Pulso Diario data fetching.
+ * 
+ * Handles loading, error states, and auto-refresh (every 5 minutes)
+ * for the financial pulse dashboard.
+ */
+
+import { useState, useEffect, useCallback } from 'react';
 import { pulsoApi } from '../services/api';
 
-export const usePulso = (usuarioId: string | null) => {
-  const [data, setData] = useState<any>(null);
+interface PulsoDiario {
+  fecha: string;
+  ingresos: number;
+  gastos: number;
+  margen: number;
+  provision_dian: number;
+  dinero_tuyo_hoy: number;
+  advertencias: string[];
+}
+
+interface UsePulsoReturn {
+  data: PulsoDiario | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+}
+
+export const usePulso = (usuarioId: string | null): UsePulsoReturn => {
+  const [data, setData] = useState<PulsoDiario | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPulso = async () => {
+  const fetchPulso = useCallback(async () => {
     if (!usuarioId) return;
     setLoading(true);
     try {
@@ -18,14 +42,14 @@ export const usePulso = (usuarioId: string | null) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [usuarioId]);
 
   useEffect(() => {
     fetchPulso();
-    // Refresh cada 5 minutos
+    // Refresh every 5 minutes
     const interval = setInterval(fetchPulso, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [usuarioId]);
+  }, [fetchPulso]);
 
   return { data, loading, error, refresh: fetchPulso };
 };

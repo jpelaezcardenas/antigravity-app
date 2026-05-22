@@ -18,7 +18,8 @@ async def login(credentials: LoginRequest):
     except HTTPException as e:
         raise e
     except Exception as e:
+        # Never expose internal error details to the client
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error en la autenticación: {str(e)}"
+            detail="Error interno del servidor",
         )

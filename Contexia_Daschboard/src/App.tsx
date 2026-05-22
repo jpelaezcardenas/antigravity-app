@@ -39,34 +39,50 @@ const navItems = [
 
 // --- Sub-components ---
 
-const StatCard = ({ icon: Icon, label, value, change, positive }: any) => (
-  <motion.div whileHover={{ translateY: -5 }}
-    className="glass-card p-6 border-white/5 hover:border-ctx-teal/20 transition-all group">
+const StatCard = ({ icon: Icon, label, value, change, positive, accentColor }: any) => (
+  <motion.div whileHover={{ translateY: -6, scale: 1.02 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+    className="stat-card p-6 group" style={{ '--card-accent': accentColor || '#2DD4BF' } as React.CSSProperties}>
     <div className="flex justify-between items-start mb-4">
-      <div className="p-3 rounded-2xl bg-white/5 group-hover:bg-ctx-teal/10 transition-colors">
-        <Icon className="w-6 h-6 text-ctx-teal" />
+      <div className="p-3 rounded-2xl bg-white/5 group-hover:bg-ctx-teal/10 transition-colors duration-300">
+        <Icon className="w-6 h-6 text-ctx-teal group-hover:scale-110 transition-transform duration-300" />
       </div>
-      <div className={`flex items-center gap-1 text-xs font-bold font-rajdhani ${positive ? 'text-green-400' : 'text-red-400'}`}>
+      <motion.div
+        initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
+        className={`flex items-center gap-1 text-xs font-bold font-rajdhani px-2 py-0.5 rounded-full ${positive ? 'text-green-400 bg-green-400/10' : 'text-red-400 bg-red-400/10'}`}>
         {positive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
         {change}
-      </div>
+      </motion.div>
     </div>
-    <p className="text-gray-400 text-xs font-rajdhani uppercase tracking-wider mb-1">{label}</p>
-    <h3 className="text-2xl font-orbitron font-bold text-white">{value}</h3>
+    <p className="text-gray-400 text-[10px] font-rajdhani uppercase tracking-[0.15em] mb-1.5">{label}</p>
+    <h3 className="text-2xl font-orbitron font-bold text-white number-animate">{value}</h3>
   </motion.div>
 );
 
 const AlertItem = ({ type, title, desc }: any) => {
-  const colors: any = {
-    danger: 'text-red-400 border-red-500/20 bg-red-500/5',
-    warning: 'text-yellow-400 border-yellow-500/20 bg-yellow-500/5',
-    info: 'text-blue-400 border-blue-500/20 bg-blue-500/5'
+  const cardClass: any = {
+    danger: 'alert-card-critical',
+    warning: 'alert-card-warning',
+    info: 'alert-card-success'
+  };
+  const textColor: any = {
+    danger: 'text-red-400',
+    warning: 'text-yellow-400',
+    info: 'text-blue-400'
+  };
+  const dotColor: any = {
+    danger: 'bg-red-500',
+    warning: 'bg-yellow-500',
+    info: 'bg-blue-500'
   };
   return (
-    <div className={`p-3 rounded-xl border ${colors[type] || colors.info}`}>
-      <h4 className="text-sm font-bold mb-1">{title}</h4>
-      <p className="text-xs text-gray-400">{desc}</p>
-    </div>
+    <motion.div whileHover={{ x: 4 }} transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      className={`p-4 rounded-xl cursor-default ${cardClass[type] || cardClass.info}`}>
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className={`w-2 h-2 rounded-full ${dotColor[type]} animate-pulse`} />
+        <h4 className={`text-sm font-bold ${textColor[type]}`}>{title}</h4>
+      </div>
+      <p className="text-xs text-gray-400 pl-4">{desc}</p>
+    </motion.div>
   );
 };
 
@@ -74,7 +90,7 @@ const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose, onBackToBu
   <>
     <div className="flex items-center justify-between mb-8 px-2">
       <a href="https://wa.me/573018948151" target="_blank" rel="noopener noreferrer" 
-         className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white py-2.5 px-3 rounded-full transition-transform hover:scale-105 shadow-[0_0_15px_rgba(37,211,102,0.3)]">
+         className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white py-2.5 px-3 rounded-full transition-all hover:scale-[1.03] shadow-[0_0_20px_rgba(37,211,102,0.3)] hover:shadow-[0_0_30px_rgba(37,211,102,0.45)] active:scale-95">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
           <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
         </svg>
@@ -115,7 +131,7 @@ const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose, onBackToBu
         <p className="font-rajdhani text-[10px] text-gray-500 uppercase tracking-widest mb-3">
           Powered by Contexia
         </p>
-        <img src="/assets/img/logo_official_transparent.png" alt="Contexia" className="h-28 object-contain opacity-90 hover:opacity-100 transition-opacity drop-shadow-[0_0_8px_rgba(45,212,191,0.2)]" />
+        <img src="assets/img/logo_official_transparent.png" alt="Contexia" className="h-28 object-contain opacity-90 hover:opacity-100 transition-opacity drop-shadow-[0_0_8px_rgba(45,212,191,0.2)]" />
       </div>
       {onBackToBunker && (
         <button onClick={onBackToBunker}
@@ -136,10 +152,10 @@ const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose, onBackToBu
 const DashboardHome = ({ setActiveTab, clienteNombre }: { setActiveTab: (t: string) => void; clienteNombre: string }) => (
   <>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <StatCard icon={TrendingUp} label="Ingresos" value={formatCOPShort(MOCK_PULSO.ingresos_brutos)} change="+5.2%" positive />
-      <StatCard icon={Wallet} label="Caja Real (Hoy)" value={formatCOPShort(MOCK_PULSO.dinero_tuyo_hoy)} change="+8.1%" positive />
-      <StatCard icon={ShieldCheck} label="Provisión DIAN" value={formatCOPShort(MOCK_PULSO.provision_dian)} change="Fija" positive />
-      <StatCard icon={Radar} label="Margen" value={`${((MOCK_PULSO.margen_bruto / MOCK_PULSO.ingresos_brutos) * 100).toFixed(1)}%`} change="+2%" positive />
+      <StatCard icon={TrendingUp} label="Ingresos" value={formatCOPShort(MOCK_PULSO.ingresos_brutos)} change="+5.2%" positive accentColor="#2DD4BF" />
+      <StatCard icon={Wallet} label="Caja Real (Hoy)" value={formatCOPShort(MOCK_PULSO.dinero_tuyo_hoy)} change="+8.1%" positive accentColor="#3B82F6" />
+      <StatCard icon={ShieldCheck} label="Provisión DIAN" value={formatCOPShort(MOCK_PULSO.provision_dian)} change="Fija" positive accentColor="#8B5CF6" />
+      <StatCard icon={Radar} label="Margen" value={`${((MOCK_PULSO.margen_bruto / MOCK_PULSO.ingresos_brutos) * 100).toFixed(1)}%`} change="+2%" positive accentColor="#F97316" />
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
       <div className="lg:col-span-2 space-y-8">
@@ -308,7 +324,7 @@ const BunkerView = ({
       <div className="h-32 md:h-40 flex items-center justify-between px-6 lg:px-10 max-w-7xl mx-auto">
         <div className="flex items-center gap-4 h-full">
           <div className="h-32 md:h-40 w-auto flex items-center">
-            <img src="/assets/img/logo_official_transparent.png" alt="Contexia" className="h-24 md:h-32 object-contain opacity-90 scale-110 translate-y-1 mix-blend-screen" />
+            <img src="assets/img/logo_official_transparent.png" alt="Contexia" className="h-24 md:h-32 object-contain opacity-90 scale-110 translate-y-1 mix-blend-screen" />
           </div>
           <div className="hidden sm:flex flex-col justify-center h-full">
             <div className="w-px h-16 bg-white/10" />
@@ -378,7 +394,7 @@ const LoginView = ({ onLogin }: { onLogin: (role: 'admin' | 'client') => void })
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full relative z-10">
         <div className="text-center mb-10">
           <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="flex flex-col items-center justify-center gap-2 mb-6">
-            <img src="/assets/img/logo_official_transparent.png" alt="Contexia" className="h-20 object-contain drop-shadow-[0_0_20px_rgba(45,212,191,0.3)]" />
+            <img src="assets/img/logo_official_transparent.png" alt="Contexia" className="h-20 object-contain drop-shadow-[0_0_20px_rgba(45,212,191,0.3)]" />
             <span className="font-rajdhani text-sm text-ctx-teal tracking-[0.3em] uppercase font-semibold">Portal de Clientes</span>
           </motion.div>
           <h2 className="text-lg text-gray-400 font-rajdhani uppercase tracking-widest">GPS Financiero para PyMEs</h2>
@@ -543,9 +559,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-navy-dark text-white flex font-sans selection:bg-ctx-teal/30">
+    <div className="min-h-screen bg-navy-dark text-white flex font-sans selection:bg-ctx-teal/30 noise-overlay">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-72 bg-navy-light/50 backdrop-blur-xl border-r border-white/5 flex-col p-6 fixed h-screen z-30">
+      <aside className="hidden lg:flex w-72 backdrop-blur-2xl border-r border-white/5 flex-col p-6 fixed h-screen z-30" style={{ background: 'linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(2,6,23,0.98) 100%)' }}>
         <SidebarContent activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout}
           onBackToBunker={user?.role === 'admin' ? handleBackToBunker : undefined} />
       </aside>
@@ -596,7 +612,7 @@ export default function App() {
 
               <button onClick={() => setActiveTab('taty')} className="relative group flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 pr-6 hover:bg-white/10 hover:border-ctx-teal/30 transition-all duration-500 cursor-pointer text-left" style={{ boxShadow: '0 0 20px rgba(45, 212, 191, 0.1)' }}>
                 <div className="relative w-14 h-20 rounded-xl overflow-hidden border border-white/20 shadow-xl">
-                  <img src="/assets/img/profiles/tatiana_full.png" alt="Taty" className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700" />
+                  <img src="assets/img/profiles/tatiana_full.png" alt="Taty" className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700" />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-dark/60 via-transparent to-transparent"></div>
                 </div>
                 <div className="flex flex-col">
@@ -615,7 +631,7 @@ export default function App() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 custom-scrollbar grid-dots">
           <AnimatePresence mode="wait">
             <motion.div key={activeTab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
               <div className="flex items-center justify-between mb-8">

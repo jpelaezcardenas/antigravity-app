@@ -19,9 +19,9 @@ const PulsoMainCard = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
-      className={`glass-card p-8 relative overflow-hidden border-2 ${
-        isPositive ? 'border-green-500/30' : 'border-red-500/30'
-      }`}
+      className={`glass-card-elevated p-8 relative overflow-hidden border-2 ${
+        isPositive ? 'border-green-500/30 animate-glow-pulse' : 'border-red-500/30'
+      }`} style={isPositive ? { '--tw-shadow-color': 'rgba(34,197,94,0.15)' } as React.CSSProperties : {}}
     >
       {/* Background gradient */}
       <div
@@ -121,7 +121,7 @@ const PulsoMetrics = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 + i * 0.1 }}
           whileHover={{ translateY: -4 }}
-          className="glass-card p-5 group hover:border-ctx-teal/20 transition-all"
+          className="stat-card p-5 group"
         >
           <div className="flex justify-between items-start mb-3">
             <div className={`p-2 rounded-xl bg-white/5 group-hover:bg-${m.color}/10 transition-colors`}>
@@ -170,8 +170,9 @@ const PulsoChart = () => (
         <AreaChart data={MOCK_PULSO.tendencia_30_dias}>
           <defs>
             <linearGradient id="colorPulso" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+              <stop offset="5%" stopColor="#2DD4BF" stopOpacity={0.35} />
+              <stop offset="50%" stopColor="#3B82F6" stopOpacity={0.1} />
+              <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -198,10 +199,12 @@ const PulsoChart = () => (
           <Area
             type="monotone"
             dataKey="valor"
-            stroke="#3B82F6"
-            strokeWidth={2}
+            stroke="#2DD4BF"
+            strokeWidth={2.5}
             fillOpacity={1}
             fill="url(#colorPulso)"
+            dot={false}
+            activeDot={{ r: 5, stroke: '#2DD4BF', strokeWidth: 2, fill: '#020617' }}
           />
         </AreaChart>
       </ResponsiveContainer>
