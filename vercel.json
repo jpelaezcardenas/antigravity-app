@@ -19,36 +19,8 @@
             "destination": "/crear-empresa-wizard.html"
         },
         {
-            "source": "/app/overview",
-            "destination": "/app/overview.html"
-        },
-        {
-            "source": "/app/config",
-            "destination": "/app/config.html"
-        },
-        {
-            "source": "/app/bunker",
-            "destination": "/app/bunker.html"
-        },
-        {
-            "source": "/app/fiscal",
-            "destination": "/app/fiscal.html"
-        },
-        {
-            "source": "/app/radar",
-            "destination": "/app/radar.html"
-        },
-        {
-            "source": "/app/patrimonio",
-            "destination": "/app/patrimonio.html"
-        },
-        {
-            "source": "/app/flujo-detalle",
-            "destination": "/app/flujo-detalle.html"
-        },
-        {
-            "source": "/flujo-detalle",
-            "destination": "/flujo-detalle.html"
+            "source": "/app/:path*",
+            "destination": "/app/index.html"
         },
         {
             "source": "/wizard/api/:path*",
