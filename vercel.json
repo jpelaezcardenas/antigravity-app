@@ -16,11 +16,6 @@
             "source": "/login",
             "destination": "/app/overview",
             "permanent": true
-        },
-        {
-            "source": "/bunker",
-            "destination": "/bunker/",
-            "permanent": false
         }
     ],
     "rewrites": [
@@ -29,20 +24,16 @@
             "destination": "/crear-empresa-wizard.html"
         },
         {
-            "source": "/bunker/:path*",
-            "destination": "/app/"
+            "source": "/app/dashboard-assets/:path*",
+            "destination": "/app/dashboard-assets/:path*"
         },
         {
-            "source": "/bunker",
-            "destination": "/app/"
-        },
-        {
-            "source": "/app/_next/:path*",
-            "destination": "https://contexia-app.vercel.app/_next/:path*"
+            "source": "/app/assets/:path*",
+            "destination": "/app/assets/:path*"
         },
         {
             "source": "/app/:path*",
-            "destination": "https://contexia-app.vercel.app/app/:path*"
+            "destination": "/app/"
         },
         {
             "source": "/wizard/api/:path*",
