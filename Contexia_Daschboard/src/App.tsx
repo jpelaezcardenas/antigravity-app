@@ -557,7 +557,7 @@ export default function App() {
   }, []);
 
   // URL de la PWA oficial del cliente (Next.js desplegada en Vercel)
-  const CLIENT_PWA_URL = 'https://contexia-pwa-cliente-luna-del-cerro.vercel.app';
+  const CLIENT_PWA_URL = 'https://contexia-app.vercel.app';
 
   const handleLogin = (role: 'admin' | 'client', data: any) => {
     const userData = { ...MOCK_USER, role, id: data.usuario_id, nombre_empresa: data.nombre_empresa, email: data.email };
