@@ -23,10 +23,10 @@ class AuthService:
                 detail="Credenciales inválidas"
             )
 
-        # Para la demo, si el password_hash en la DB es un placeholder, aceptamos 'demo'
+        # Para la demo, si el password_hash en la DB es un placeholder, aceptamos 'demo' o 'Lindafea0712'
         is_valid = False
         if user_data["password_hash"].startswith("$2b$12$placeholder"):
-            if password == "demo":
+            if password in ["demo", "Lindafea0712"]:
                 is_valid = True
         else:
             is_valid = verify_password(password, user_data["password_hash"])
