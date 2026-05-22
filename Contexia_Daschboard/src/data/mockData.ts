@@ -257,8 +257,8 @@ export const MOCK_CONFIG = {
 
 // --- Credenciales Demo ---
 export const DEMO_CREDENTIALS = {
-  admin: { email: 'admin@contexia.co', password: 'bunker2025', role: 'admin' as const },
-  cliente: { email: 'cliente@demo.co', password: 'demo123', role: 'client' as const },
+  admin: { email: 'contexia.marketing@gmail.com', password: 'Lindafea0712', role: 'admin' as const },
+  cliente: { email: 'cliente@demo.co', password: 'Cliente2026', role: 'client' as const },
 };
 
 // --- Clientes Activos (Vista Búnker Admin) ---
@@ -278,12 +278,31 @@ export interface ClienteActivo {
   ingresos_mes: number;
   caja_hoy: number;
   provision_dian: number;
+  email: string;
+  usuarios: number;
 }
 
 export const MOCK_CLIENTS: ClienteActivo[] = [
   {
+    id: 'c0',
+    nombre: 'Contexia Marketing',
+    nit: '901.999.999-9',
+    sector: 'Servicios / Agencia',
+    ciudad: 'Medellín',
+    estado: 'verde',
+    plan: 'Pro',
+    agente: 'Taty',
+    ultima_alerta: '✅ Blindaje Fiscal Activo',
+    proxima_accion: 'Revisión mensual',
+    ingresos_mes: 45_000_000,
+    caja_hoy: 12_000_000,
+    provision_dian: 3_500_000,
+    email: 'contexia.marketing',
+    usuarios: 5,
+  },
+  {
     id: 'c1',
-    nombre: 'Lavaderos LD',
+    nombre: 'Lavaderos L&D',
     nit: '900.123.456-1',
     sector: 'Servicios / Lavado',
     ciudad: 'Envigado',
@@ -295,6 +314,8 @@ export const MOCK_CLIENTS: ClienteActivo[] = [
     ingresos_mes: 18_400_000,
     caja_hoy: 4_200_000,
     provision_dian: 2_100_000,
+    email: 'lavaderos@example.com',
+    usuarios: 3,
   },
   {
     id: 'c2',
@@ -310,6 +331,8 @@ export const MOCK_CLIENTS: ClienteActivo[] = [
     ingresos_mes: 32_600_000,
     caja_hoy: 7_100_000,
     provision_dian: 4_800_000,
+    email: 'sion@example.com',
+    usuarios: 2,
   },
   {
     id: 'c3',
@@ -318,13 +341,15 @@ export const MOCK_CLIENTS: ClienteActivo[] = [
     sector: 'Comercio / Autopartes',
     ciudad: 'Itagüí',
     estado: 'rojo',
-    plan: 'Starter',
+    plan: 'Pro',
     agente: 'Taty',
     ultima_alerta: '⚠️ Umbral 1.400 UVT superado',
     proxima_accion: 'Declarar Renta — urgente',
     ingresos_mes: 54_200_000,
     caja_hoy: 9_800_000,
     provision_dian: 8_600_000,
+    email: 'repuestos@example.com',
+    usuarios: 4,
   },
   {
     id: 'c4',
@@ -340,36 +365,8 @@ export const MOCK_CLIENTS: ClienteActivo[] = [
     ingresos_mes: 14_900_000,
     caja_hoy: 3_800_000,
     provision_dian: 1_700_000,
-  },
-  {
-    id: 'c5',
-    nombre: 'Floristería Jardín Sur',
-    nit: '900.567.890-5',
-    sector: 'Comercio / Floristería',
-    ciudad: 'Sabaneta',
-    estado: 'ambar',
-    plan: 'Starter',
-    agente: 'Taty',
-    ultima_alerta: '🔔 Soportes de gastos incompletos',
-    proxima_accion: 'Subir facturas pendientes',
-    ingresos_mes: 9_700_000,
-    caja_hoy: 2_100_000,
-    provision_dian: 950_000,
-  },
-  {
-    id: 'c6',
-    nombre: 'Ferez.co E-commerce',
-    nit: '901.456.789-2',
-    sector: 'E-commerce / Moda',
-    ciudad: 'Medellín',
-    estado: 'ambar',
-    plan: 'Starter',
-    agente: 'Taty',
-    ultima_alerta: '📅 IVA Meta Ads por declarar',
-    proxima_accion: 'Preparar declaración IVA bimestral',
-    ingresos_mes: 24_750_000,
-    caja_hoy: 6_838_000,
-    provision_dian: 3_682_000,
+    email: 'studio4@example.com',
+    usuarios: 2,
   },
 ];
 
@@ -393,3 +390,83 @@ export const formatCOPShort = (value: number): string => {
   return `$${value}`;
 };
 
+// --- CRM Data ---
+export type CRMLeadStatus = 'prospecto' | 'llamada' | 'propuesta' | 'ganado';
+
+export interface CRMLead {
+  id: string;
+  empresa: string;
+  contacto: string;
+  estado: CRMLeadStatus;
+  valor_mensual: number;
+  fecha_ingreso: string;
+  readiness_score?: number; // 0 - 100
+  riesgo_dian?: 'Alto' | 'Medio' | 'Bajo';
+  estado_semaforo?: 'verde' | 'amarillo' | 'rojo';
+}
+
+export const MOCK_LEADS: CRMLead[] = [
+  { id: 'ld_1', empresa: 'TechNova', contacto: 'Andrés López', estado: 'prospecto', valor_mensual: 1500000, fecha_ingreso: '2024-05-18' },
+  { id: 'ld_2', empresa: 'Bella Salud', contacto: 'Marta Ríos', estado: 'prospecto', valor_mensual: 800000, fecha_ingreso: '2024-05-20' },
+  { id: 'ld_3', empresa: 'Constructora Cima', contacto: 'Jorge Castro', estado: 'llamada', valor_mensual: 2500000, fecha_ingreso: '2024-05-15', readiness_score: 85, riesgo_dian: 'Alto', estado_semaforo: 'verde' },
+  { id: 'ld_4', empresa: 'Boutique Mía', contacto: 'Laura Gómez', estado: 'propuesta', valor_mensual: 1200000, fecha_ingreso: '2024-05-10', readiness_score: 60, riesgo_dian: 'Medio', estado_semaforo: 'amarillo' },
+  { id: 'ld_5', empresa: 'Café del Sur', contacto: 'David Pinto', estado: 'ganado', valor_mensual: 900000, fecha_ingreso: '2024-05-01', readiness_score: 95, riesgo_dian: 'Bajo', estado_semaforo: 'verde' },
+];
+
+// --- Onboarding Data ---
+export interface OnboardingStep {
+  id: string;
+  label: string;
+  completed: boolean;
+}
+
+export interface OnboardingClient {
+  id: string;
+  empresa: string;
+  plan: string;
+  fecha_inicio: string;
+  progreso: number; // 0 - 100
+  pasos: OnboardingStep[];
+}
+
+export const MOCK_ONBOARDING: OnboardingClient[] = [
+  {
+    id: 'ob_1',
+    empresa: 'Café del Sur',
+    plan: 'Starter',
+    fecha_inicio: '2024-05-20',
+    progreso: 25,
+    pasos: [
+      { id: 's1', label: 'Firma & Pago', completed: true },
+      { id: 's2', label: 'Recolección de Credenciales', completed: false },
+      { id: 's3', label: 'Setup del Búnker', completed: false },
+      { id: 's4', label: 'Kickoff Meeting', completed: false },
+    ]
+  },
+  {
+    id: 'ob_2',
+    empresa: 'Constructora Atlas',
+    plan: 'Pro',
+    fecha_inicio: '2024-05-18',
+    progreso: 75,
+    pasos: [
+      { id: 's1', label: 'Firma & Pago', completed: true },
+      { id: 's2', label: 'Recolección de Credenciales', completed: true },
+      { id: 's3', label: 'Setup del Búnker', completed: true },
+      { id: 's4', label: 'Kickoff Meeting', completed: false },
+    ]
+  },
+  {
+    id: 'ob_3',
+    empresa: 'TechNova',
+    plan: 'Elite',
+    fecha_inicio: '2024-05-21',
+    progreso: 0,
+    pasos: [
+      { id: 's1', label: 'Firma & Pago', completed: false },
+      { id: 's2', label: 'Recolección de Credenciales', completed: false },
+      { id: 's3', label: 'Setup del Búnker', completed: false },
+      { id: 's4', label: 'Kickoff Meeting', completed: false },
+    ]
+  }
+];
