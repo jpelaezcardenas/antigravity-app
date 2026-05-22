@@ -33,7 +33,7 @@
         },
         {
             "source": "/app/:path*",
-            "destination": "/app/index.html"
+            "destination": "/app/"
         },
         {
             "source": "/wizard/api/:path*",
@@ -47,7 +47,5 @@
             "source": "/wizard",
             "destination": "https://contexia-wizard.vercel.app/wizard"
         }
-    ],
-    "cleanUrls": true,
-    "trailingSlash": false
+    ]
 }
