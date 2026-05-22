@@ -118,7 +118,23 @@
       "Read(//mnt/c/Users/jpela/Projects/Contexia/**)",
       "Bash(curl -X POST http://localhost:3100/api/payments/validate-coupon -H 'Content-Type: application/json' -d '{\"code\":\"LANZAMIENTO50\"}')",
       "Bash(find \"C:\\\\\\\\Users\\\\\\\\jpela\\\\\\\\Projects\\\\\\\\Contexia\" -name \"*.ts\" -o -name \"*.tsx\")",
-      "Bash(xargs grep -l \"type WizardState\")"
+      "Bash(xargs grep -l \"type WizardState\")",
+      "Bash(python -m py_compile agents/llm_engine.py core/model_selector.py presentation/agents_endpoints.py)",
+      "Bash(python scripts/verify_cloud_only_setup.py)",
+      "Bash(python ../../../scripts/verify_cloud_only_setup.py)",
+      "Bash(python -c \"from dotenv import load_dotenv; load_dotenv\\(\\); import os; print\\('OPENROUTER:', 'OK' if os.getenv\\('OPENROUTER_API_KEY'\\) else 'NOT SET'\\); print\\('GROQ:', 'OK' if os.getenv\\('GROQ_API_KEY'\\) else 'NOT SET'\\)\")",
+      "Bash(timeout 5 python main.py)",
+      "Bash(timeout 8 python main.py)",
+      "Bash(python test_llm_staging.py)",
+      "Bash(timeout 10 python main.py)",
+      "Bash(timeout 15 python main.py)",
+      "Bash(curl -s http://localhost:8080/docs)",
+      "Bash(findstr \"8080\")",
+      "Bash(python main.py)",
+      "Bash(curl -s -X POST http://localhost:8080/api/v1/agents/taty/ask -H 'Content-Type: application/json' -d '{\"question\": \"Qué es Renta en Colombia?\", \"company_id\": \"stage1-test\"}')",
+      "Bash(curl -s -X POST http://localhost:8080/api/v1/agents/centinela/decide -H 'Content-Type: application/json' -d '{\"data\": {\"renta\": 15000000}, \"company_id\": \"stage1-test\"}')",
+      "Bash(curl -s http://localhost:8080/openapi.json)",
+      "Bash(curl -s http://localhost:8080/api/v1/health)"
     ]
   }
 }
