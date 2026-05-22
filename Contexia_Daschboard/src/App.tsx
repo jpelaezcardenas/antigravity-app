@@ -89,20 +89,29 @@ const AlertItem = ({ type, title, desc }: any) => {
   );
 };
 
-const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose, onBackToBunker, customNavItems }: any) => {
+const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose, onBackToBunker, customNavItems, clientName }: any) => {
   const itemsToRender = customNavItems || navItems;
   return (
-  <>
+  <div className="flex flex-col h-full relative z-20">
     <div className="flex items-center justify-between mb-8 px-2">
-      <a href="https://wa.me/573018948151" target="_blank" rel="noopener noreferrer" 
-         className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white py-2.5 px-3 rounded-full transition-all hover:scale-[1.03] shadow-[0_0_20px_rgba(37,211,102,0.3)] hover:shadow-[0_0_30px_rgba(37,211,102,0.45)] active:scale-95">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ctx-teal to-ctx-violet flex items-center justify-center shadow-lg">
+          <span className="font-orbitron font-bold text-white text-lg">{clientName ? clientName.charAt(0) : 'C'}</span>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <h2 className="text-sm font-bold text-white truncate leading-tight">{clientName || 'Cliente'}</h2>
+          <p className="text-[10px] text-ctx-teal font-rajdhani uppercase tracking-widest truncate">STARTER</p>
+        </div>
+      </div>
+      {onClose && <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg lg:hidden ml-2"><X className="w-5 h-5 text-gray-400" /></button>}
+    </div>
+    <a href="https://wa.me/573018948151" target="_blank" rel="noopener noreferrer" 
+         className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white py-2.5 px-3 rounded-full transition-all hover:scale-[1.03] shadow-[0_0_20px_rgba(37,211,102,0.3)] hover:shadow-[0_0_30px_rgba(37,211,102,0.45)] active:scale-95 mb-6">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
           <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
         </svg>
         <span className="text-[10px] font-bold font-rajdhani uppercase tracking-wider text-center leading-none">Tu Amiga Contadora<br/>Taty 24/7</span>
       </a>
-      {onClose && <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg lg:hidden ml-2"><X className="w-5 h-5 text-gray-400" /></button>}
-    </div>
     <nav className="space-y-1 flex-1">
       {itemsToRender.map((item: any) => (
         <button key={item.id}
@@ -144,7 +153,7 @@ const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose, onBackToBu
         <span className="text-sm font-rajdhani uppercase tracking-widest font-bold">Cerrar Sesión</span>
       </button>
     </div>
-  </>
+  </div>
   );
 };
 
@@ -555,6 +564,9 @@ export default function App() {
     setUser(userData);
     setAuthState(role);
     setActiveTab(role === 'admin' ? 'inicio' : 'inicio');
+    if (role === 'client') {
+      setActiveClientId('c1');
+    }
   };
 
   const handleSelectClient = (clientId: string) => {
@@ -626,8 +638,9 @@ export default function App() {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-72 backdrop-blur-2xl border-r border-white/5 flex-col p-6 fixed h-screen z-30" style={{ background: 'linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(2,6,23,0.98) 100%)' }}>
         <SidebarContent activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout}
+          clientName={activeClient.nombre}
           onBackToBunker={user?.role === 'admin' ? handleBackToBunker : undefined}
-          customNavItems={user?.role === 'admin' ? navItems.filter(i => ['social-ops', 'configuracion'].includes(i.id)) : undefined} />
+          customNavItems={user?.role === 'admin' ? navItems.filter(i => ['social-ops', 'configuracion'].includes(i.id)) : navItems.filter(i => !['social-ops', 'configuracion'].includes(i.id))} />
       </aside>
 
       {/* Mobile Drawer */}
@@ -639,8 +652,9 @@ export default function App() {
             <motion.aside initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: 'spring', damping: 25 }}
               className="fixed left-0 top-0 h-screen w-72 bg-navy-light/95 backdrop-blur-xl border-r border-white/5 flex flex-col p-6 z-50 lg:hidden">
               <SidebarContent activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} onClose={() => setMobileMenuOpen(false)}
+                clientName={activeClient.nombre}
                 onBackToBunker={user?.role === 'admin' ? handleBackToBunker : undefined}
-                customNavItems={user?.role === 'admin' ? navItems.filter(i => ['social-ops', 'configuracion'].includes(i.id)) : undefined} />
+                customNavItems={user?.role === 'admin' ? navItems.filter(i => ['social-ops', 'configuracion'].includes(i.id)) : navItems.filter(i => !['social-ops', 'configuracion'].includes(i.id))} />
             </motion.aside>
           </>
         )}
