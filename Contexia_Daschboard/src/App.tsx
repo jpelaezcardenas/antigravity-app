@@ -439,6 +439,7 @@ const BunkerView = ({
 const LoginView = ({ onLogin }: { onLogin: (role: 'admin' | 'client', data: any) => void }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'client'>('client');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -451,7 +452,7 @@ const LoginView = ({ onLogin }: { onLogin: (role: 'admin' | 'client', data: any)
       const { api } = await import('./services/api');
       const response = await api.login({ email, password });
       // response contains: { token, usuario_id, nombre_empresa, role }
-      onLogin(response.role as 'admin' | 'client', response);
+      onLogin(selectedRole, response);
     } catch (err: any) {
       setError(err.message || 'Error de conexión con el servidor');
     } finally {
@@ -497,15 +498,15 @@ const LoginView = ({ onLogin }: { onLogin: (role: 'admin' | 'client', data: any)
             <div className="bg-white/3 border border-white/8 rounded-xl p-4 space-y-2">
               <p className="text-gray-500 text-[10px] font-rajdhani uppercase tracking-widest text-center mb-1">Acceso Demo</p>
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => { setEmail(DEMO_CREDENTIALS.admin.email); setPassword(DEMO_CREDENTIALS.admin.password); }}
-                  className="py-2 px-3 rounded-lg bg-ctx-teal/10 border border-ctx-teal/20 hover:bg-ctx-teal/20 transition-colors text-center">
+                <button type="button" onClick={() => { setEmail(DEMO_CREDENTIALS.admin.email); setPassword(DEMO_CREDENTIALS.admin.password); setSelectedRole('admin'); }}
+                  className={`py-2 px-3 rounded-lg border transition-colors text-center ${selectedRole === 'admin' ? 'bg-ctx-teal/30 border-ctx-teal/50' : 'bg-ctx-teal/10 border-ctx-teal/20 hover:bg-ctx-teal/20'}`}>
                   <p className="text-ctx-teal text-[9px] font-black font-rajdhani uppercase tracking-widest">Admin</p>
-                  <p className="text-gray-400 text-[9px] font-rajdhani truncate">admin@contexia.co</p>
+                  <p className="text-gray-400 text-[9px] font-rajdhani truncate">Búnker Maestro</p>
                 </button>
-                <button type="button" onClick={() => { setEmail(DEMO_CREDENTIALS.cliente.email); setPassword(DEMO_CREDENTIALS.cliente.password); }}
-                  className="py-2 px-3 rounded-lg bg-ctx-violet/10 border border-ctx-violet/20 hover:bg-ctx-violet/20 transition-colors text-center">
+                <button type="button" onClick={() => { setEmail(DEMO_CREDENTIALS.cliente.email); setPassword(DEMO_CREDENTIALS.cliente.password); setSelectedRole('client'); }}
+                  className={`py-2 px-3 rounded-lg border transition-colors text-center ${selectedRole === 'client' ? 'bg-ctx-violet/30 border-ctx-violet/50' : 'bg-ctx-violet/10 border-ctx-violet/20 hover:bg-ctx-violet/20'}`}>
                   <p className="text-ctx-violet text-[9px] font-black font-rajdhani uppercase tracking-widest">Cliente</p>
-                  <p className="text-gray-400 text-[9px] font-rajdhani truncate">cliente@demo.co</p>
+                  <p className="text-gray-400 text-[9px] font-rajdhani truncate">PWA Oficial</p>
                 </button>
               </div>
             </div>
