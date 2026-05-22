@@ -556,17 +556,23 @@ export default function App() {
     setLoading(false);
   }, []);
 
+  // URL de la PWA oficial del cliente (Next.js desplegada en Vercel)
+  const CLIENT_PWA_URL = 'https://contexia-pwa-cliente-luna-del-cerro.vercel.app';
+
   const handleLogin = (role: 'admin' | 'client', data: any) => {
     const userData = { ...MOCK_USER, role, id: data.usuario_id, nombre_empresa: data.nombre_empresa, email: data.email };
     localStorage.setItem('cx_user', JSON.stringify(userData));
     localStorage.setItem('token', data.token);
     
+    if (role === 'client') {
+      // Redirigir a la PWA oficial del cliente
+      window.location.href = `${CLIENT_PWA_URL}/app/overview`;
+      return;
+    }
+
     setUser(userData);
     setAuthState(role);
-    setActiveTab(role === 'admin' ? 'inicio' : 'inicio');
-    if (role === 'client') {
-      setActiveClientId('c1');
-    }
+    setActiveTab('inicio');
   };
 
   const handleSelectClient = (clientId: string) => {
