@@ -114,14 +114,28 @@ def get_task_tier(task_type: str) -> str:
 
     Returns: "tier_1", "tier_2", or "tier_3"
     """
-    model = choose_model_for_task(task_type)
+    task_type = task_type.lower().strip()
 
-    if model == LLMProvider.OPENROUTER_FREE:
+    # Tier 1: Non-sensitive data
+    if task_type in ["taty_faq", "taty_faq_lookup", "faq", "data_extraction",
+                      "extract_data", "social_content_gen", "social_content_generation",
+                      "social_analysis", "general_inquiry", "ask_question"]:
         return "tier_1"
-    elif model == LLMProvider.OLLAMA:
+
+    # Tier 2: Financial data (free cloud)
+    if task_type in ["pulso_analysis", "pulso_analyze", "pulso",
+                      "centinela_monitoring", "centinela_monitor", "centinela_check",
+                      "transaction_review", "cash_flow_analysis"]:
         return "tier_2"
-    else:
+
+    # Tier 3: Critical fiscal/compliance (always Groq)
+    if task_type in ["centinela_decision", "centinela_fiscal_decision",
+                      "compliance_audit", "fiscal_strategy", "tax_planning",
+                      "legal_review", "regulatory_check", "dian_review"]:
         return "tier_3"
+
+    # Default to Tier 3 (safest)
+    return "tier_3"
 
 
 def get_task_description(task_type: str) -> dict:
