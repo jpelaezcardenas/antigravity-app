@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Settings, Building2, Receipt, Link2, Bell, Save } from 'lucide-react';
+import { Settings, Building2, Receipt, Link2, Bell, Save, Loader2 } from 'lucide-react';
 import { MOCK_CONFIG } from '../../data/mockData';
+import { api } from '../../services/api';
 
 const Toggle = ({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) => (
   <button onClick={onToggle} className={`relative w-11 h-6 rounded-full transition-colors ${enabled ? 'bg-ctx-teal' : 'bg-white/10'}`}>
@@ -9,9 +10,27 @@ const Toggle = ({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
   </button>
 );
 
-export const ConfiguracionView = () => {
-  const [config, setConfig] = useState(MOCK_CONFIG);
+export const ConfiguracionView = ({ userEmail }: { userEmail?: string }) => {
+  const [config, setConfig] = useState<any>(MOCK_CONFIG);
+  const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const savedUser = localStorage.getItem('cx_user');
+        const user = savedUser ? JSON.parse(savedUser) : null;
+        const targetId = user?.activeClientId || user?.id || 'c6';
+        const data = await api.getConfiguracion(targetId);
+        setConfig(data);
+      } catch (error) {
+        console.error("Failed to load config", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchConfig();
+  }, []);
 
   const toggleIntegracion = (i: number) => {
     const updated = [...config.integraciones];
@@ -19,11 +38,30 @@ export const ConfiguracionView = () => {
     setConfig({ ...config, integraciones: updated });
   };
 
-  const toggleNotif = (key: keyof typeof config.notificaciones) => {
+  const toggleNotif = (key: string) => {
     setConfig({ ...config, notificaciones: { ...config.notificaciones, [key]: !config.notificaciones[key] } });
   };
 
-  const handleSave = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };
+  const handleSave = async () => {
+    try {
+      const savedUser = localStorage.getItem('cx_user');
+      const user = savedUser ? JSON.parse(savedUser) : null;
+      const targetId = user?.activeClientId || user?.id || 'c6';
+      await api.updateConfiguracion(targetId, config);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      console.error("Failed to save config", e);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-10 h-10 text-ctx-teal animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -38,7 +76,7 @@ export const ConfiguracionView = () => {
             { label: 'Nombre', value: config.empresa.nombre },
             { label: 'NIT', value: config.empresa.nit },
             { label: 'Plan', value: config.empresa.plan },
-            { label: 'Email', value: config.empresa.email },
+            { label: 'Email', value: userEmail || config.empresa.email },
             { label: 'Teléfono', value: config.empresa.telefono },
             { label: 'Ciudad', value: config.empresa.ciudad },
           ].map(f => (

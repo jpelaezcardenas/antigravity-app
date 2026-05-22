@@ -1,92 +1,185 @@
-/**
- * Contexia API Client
- * 
- * Centralized Axios instance with:
- * - JWT injection via request interceptor
- * - Automatic token expiry handling (401 → redirect to login)
- * - Typed API methods organized by module
- */
+const API_BASE_URL = 'http://127.0.0.1:8000/api/v1/agents';
+const BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
-import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.contexia.online/api/v1';
-
-const api: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 15000, // 15 second timeout
-  headers: {
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  },
-});
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+};
 
-// --- Request Interceptor: Inject JWT ---
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+export const api = {
+  // AUTH
+  login: async (credentials: { email: string; password: string }) => {
+    const response = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Error de autenticación');
     }
-    return config;
+    return response.json();
   },
-  (error) => Promise.reject(error),
-);
 
-// --- Response Interceptor: Handle 401 (expired/invalid token) ---
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid — clear session and redirect to login
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      // Only redirect if we're not already on the login page
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/app/';
-      }
-    }
-    return Promise.reject(error);
+  // PULSO TODAY
+  getPulsoToday: async (companyId: string) => {
+    const response = await fetch(`${API_BASE_URL}/pulso/today`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_id: companyId }),
+    });
+    if (!response.ok) throw new Error('Error fetching Pulso Today');
+    return response.json();
   },
-);
 
+  // CENTINELA ALERTS
+  getCentinelaAlerts: async (usuarioId: string) => {
+    const response = await fetch(`${BASE_URL}/centinela/${usuarioId}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Error fetching Centinela Alerts');
+    return response.json();
+  },
 
-// --- Auth API ---
-export const authApi = {
-  login: (credentials: { email: string; password: string }) =>
-    api.post<{ token: string; usuario_id: string; nombre_empresa: string }>(
-      '/auth/login',
-      credentials,
-    ),
+  // TATY ASK
+  askTaty: async (companyId: string, question: string) => {
+    const response = await fetch(`${BASE_URL}/llm/analyze`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ prompt: question, system_prompt: "Eres Taty, una experta financiera y estratega de contenido." }),
+    });
+    if (!response.ok) throw new Error('Error in Taty Ask');
+    return response.json();
+  },
+
+  // FULL PIPELINE
+  runFullPipeline: async (payload: { company_url: string; campaign_objective: string; budget: number; target_channels: string[]; company_id: string }) => {
+    const response = await fetch(`${BASE_URL}/agents/orchestrator/full-pipeline`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error('Error running Full Pipeline');
+    return response.json();
+  },
+
+  // ONBOARDING
+  getOnboardingClients: async () => {
+    const response = await fetch(`${BASE_URL}/onboarding/clients`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Error fetching Onboarding Clients');
+    return response.json();
+  },
+
+  toggleOnboardingStep: async (clientId: string, stepId: string, completed: boolean) => {
+    const response = await fetch(`${BASE_URL}/onboarding/clients/${clientId}/steps/${stepId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ completed }),
+    });
+    if (!response.ok) throw new Error('Error toggling Onboarding Step');
+    return response.json();
+  },
+
+  sendMagicReminder: async (clientId: string) => {
+    const response = await fetch(`${BASE_URL}/onboarding/clients/${clientId}/remind`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Error sending Magic Reminder');
+    return response.json();
+  },
+
+  // CRM PIPELINE
+  getCrmLeads: async () => {
+    const response = await fetch(`${BASE_URL}/crm/leads`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Error fetching CRM Leads');
+    return response.json();
+  },
+
+  updateLeadStatus: async (leadId: string, newStatus: string) => {
+    const response = await fetch(`${BASE_URL}/crm/leads/${leadId}/status`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ estado: newStatus }),
+    });
+    if (!response.ok) throw new Error('Error updating CRM Lead Status');
+    return response.json();
+  },
+
+  autoQualifyLead: async (leadId: string) => {
+    const response = await fetch(`${BASE_URL}/crm/leads/${leadId}/qualify`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Error qualifying CRM Lead');
+    return response.json();
+  },
+
+  // SOCIAL CONTENT OPS
+  getSocialDashboardMetrics: async () => {
+    const response = await fetch(`${BASE_URL}/social/dashboard/metrics`, { headers: getAuthHeaders() });
+    if (!response.ok) throw new Error('Error fetching Social Dashboard Metrics');
+    return response.json();
+  },
+
+  getSocialCampaigns: async (estado?: string, tipo?: string) => {
+    let url = `${BASE_URL}/social/campaigns`;
+    const params = new URLSearchParams();
+    if (estado) params.append('estado', estado);
+    if (tipo) params.append('tipo', tipo);
+    if (params.toString()) url += `?${params.toString()}`;
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    if (!response.ok) throw new Error('Error fetching Social Campaigns');
+    return response.json();
+  },
+
+  getSocialPosts: async (campaignId: string) => {
+    const response = await fetch(`${BASE_URL}/social/campaigns/${campaignId}/posts`, { headers: getAuthHeaders() });
+    if (!response.ok) throw new Error('Error fetching Social Posts');
+    return response.json();
+  },
+
+  createSocialPost: async (postData: any) => {
+    const response = await fetch(`${BASE_URL}/social/posts`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(postData),
+    });
+    if (!response.ok) throw new Error('Error creating Social Post');
+    return response.json();
+  },
+
+  updateSocialPost: async (postId: string, postData: any) => {
+    const response = await fetch(`${BASE_URL}/social/posts/${postId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(postData),
+    });
+    if (!response.ok) throw new Error('Error updating Social Post');
+    return response.json();
+  },
+
+  getSocialCalendar: async (year: number, month: number) => {
+    const response = await fetch(`${BASE_URL}/social/calendar/${year}/${month}`, { headers: getAuthHeaders() });
+    if (!response.ok) throw new Error('Error fetching Social Calendar');
+    return response.json();
+  },
+
+  generateSocialContent: async (topic: string, platform: string) => {
+    const prompt = `Escribe un post para ${platform} sobre el siguiente tema: ${topic}. El post debe ser persuasivo, profesional pero cercano, e incluir emojis apropiados y al menos 3 hashtags estratégicos al final. NO respondas con comentarios, solo entrega el copy final listo para publicar.`;
+    const response = await fetch(`${BASE_URL}/llm/analyze`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ prompt, system_prompt: "Eres Taty, una experta en marketing digital y creación de contenido." })
+    });
+    if (!response.ok) throw new Error('Error generando contenido con IA');
+    return response.json();
+  },
 };
-
-// --- Pulso API ---
-export const pulsoApi = {
-  getPulso: (usuarioId: string) =>
-    api.get(`/pulso/${usuarioId}`),
-};
-
-// --- Centinela API ---
-export const centinelaApi = {
-  getAlertas: (usuarioId: string) =>
-    api.get(`/centinela/${usuarioId}`),
-};
-
-// --- Cobro API ---
-export const cobroApi = {
-  getCartera: (usuarioId: string) =>
-    api.get(`/cobro/${usuarioId}`),
-  
-  registrarIntento: (usuarioId: string, data: {
-    factura_id: string;
-    tipo_evento: string;
-    resultado: string;
-    monto_comprometido?: number;
-    fecha_pago_comprometida?: string;
-  }) =>
-    api.post(`/cobro/${usuarioId}/intento`, data),
-  
-  generarCarta: (usuarioId: string, data: { factura_id: string; tipo: string }) =>
-    api.post<{ contenido: string }>(`/cobro/${usuarioId}/carta`, data),
-};
-
-export default api;

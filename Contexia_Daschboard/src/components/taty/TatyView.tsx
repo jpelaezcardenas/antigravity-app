@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send } from 'lucide-react';
-import { MOCK_CHAT_INITIAL, TATY_RESPONSES, TATY_SUGGESTIONS, type ChatMessage } from '../../data/mockData';
+import { MOCK_CHAT_INITIAL, TATY_SUGGESTIONS, type ChatMessage } from '../../data/mockData';
+import { api } from '../../services/api';
 
 // WhatsApp SVG icon inline
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -10,14 +11,7 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const getResponse = (msg: string): string => {
-  const lower = msg.toLowerCase();
-  if (lower.includes('impuesto') || lower.includes('apartar')) return TATY_RESPONSES['impuestos'];
-  if (lower.includes('renta') || lower.includes('declarar')) return TATY_RESPONSES['renta'];
-  if (lower.includes('deducci') || lower.includes('deducir')) return TATY_RESPONSES['deducciones'];
-  if (lower.includes('iva') || lower.includes('bimestral')) return TATY_RESPONSES['iva'];
-  return TATY_RESPONSES['default'];
-};
+// API call replaced getResponse
 
 export const TatyView = () => {
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_CHAT_INITIAL);
@@ -29,18 +23,24 @@ export const TatyView = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, typing]);
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     if (!text.trim()) return;
     const userMsg: ChatMessage = { id: `msg_${Date.now()}`, role: 'user', content: text.trim(), timestamp: new Date().toISOString() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setTyping(true);
 
-    setTimeout(() => {
-      const resp: ChatMessage = { id: `msg_${Date.now() + 1}`, role: 'taty', content: getResponse(text), timestamp: new Date().toISOString() };
+    try {
+      const data = await api.askTaty('31676930-b476-472b-bced-fd25f973cf8a', text.trim());
+      const resp: ChatMessage = { id: `msg_${Date.now() + 1}`, role: 'taty', content: data.answer || data.response || "No response", timestamp: new Date().toISOString() };
       setMessages(prev => [...prev, resp]);
+    } catch (error) {
+      console.error("Error asking Taty:", error);
+      const errResp: ChatMessage = { id: `msg_${Date.now() + 1}`, role: 'taty', content: "Ay, tuve un problemita conectándome. ¿Me repites?", timestamp: new Date().toISOString() };
+      setMessages(prev => [...prev, errResp]);
+    } finally {
       setTyping(false);
-    }, 1200 + Math.random() * 800);
+    }
   };
 
   return (

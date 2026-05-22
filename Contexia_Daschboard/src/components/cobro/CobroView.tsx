@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Phone, FileText, X, DollarSign, AlertTriangle, Clock } from 'lucide-react';
-import { MOCK_CARTERA, formatCOP, type FacturaVencida } from '../../data/mockData';
+import { formatCOP, type FacturaVencida } from '../../data/mockData';
+import { api } from '../../services/api';
 
 const getSeveridad = (dias: number) => {
   if (dias >= 45) return { label: 'Crítica', color: 'red', bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30' };
@@ -98,9 +99,39 @@ const CartaPreview = ({ factura, onClose }: { factura: FacturaVencida; onClose: 
 export const CobroView = () => {
   const [modalFactura, setModalFactura] = useState<FacturaVencida | null>(null);
   const [cartaFactura, setCartaFactura] = useState<FacturaVencida | null>(null);
-  const totalVencido = MOCK_CARTERA.reduce((s, f) => s + f.monto, 0);
-  const criticas = MOCK_CARTERA.filter(f => f.dias_vencida >= 45);
-  const urgentes = MOCK_CARTERA.filter(f => f.dias_vencida >= 15 && f.dias_vencida < 45);
+  
+  const [cartera, setCartera] = useState<FacturaVencida[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCartera = async () => {
+      try {
+        const saved = localStorage.getItem('cx_user');
+        const user = saved ? JSON.parse(saved) : null;
+        // Default to active client if admin, else own user id
+        const targetId = user?.activeClientId || user?.id || 'c6';
+        const data = await api.getCarteraVencida(targetId);
+        setCartera(data);
+      } catch (error) {
+        console.error("Failed to load cartera", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCartera();
+  }, []);
+
+  const totalVencido = cartera.reduce((s, f) => s + f.monto, 0);
+  const criticas = cartera.filter(f => f.dias_vencida >= 45);
+  const urgentes = cartera.filter(f => f.dias_vencida >= 15 && f.dias_vencida < 45);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="w-10 h-10 border-4 border-ctx-teal border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -138,7 +169,7 @@ export const CobroView = () => {
               </tr>
             </thead>
             <tbody>
-              {MOCK_CARTERA.map(f => {
+              {cartera.map(f => {
                 const sev = getSeveridad(f.dias_vencida);
                 return (
                   <tr key={f.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
@@ -164,7 +195,7 @@ export const CobroView = () => {
 
       {/* Mobile Cards */}
       <div className="space-y-3 md:hidden">
-        {MOCK_CARTERA.map((f, i) => {
+        {cartera.map((f, i) => {
           const sev = getSeveridad(f.dias_vencida);
           return (
             <motion.div key={f.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
