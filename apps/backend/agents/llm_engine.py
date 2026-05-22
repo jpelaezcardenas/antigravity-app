@@ -59,7 +59,6 @@ class LLMEngine:
         self.gemini_api_key = None
         self.openrouter_api_key = None
         self.openrouter_free_api_key = None
-        self.ollama_base_url = None
 
         self.provider_order = [
             LLMProvider.OPENROUTER_FREE,
