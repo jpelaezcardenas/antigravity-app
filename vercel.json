@@ -11,6 +11,11 @@
             "source": "/app",
             "destination": "/app/overview",
             "permanent": false
+        },
+        {
+            "source": "/login",
+            "destination": "/app/overview",
+            "permanent": true
         }
     ],
     "rewrites": [
