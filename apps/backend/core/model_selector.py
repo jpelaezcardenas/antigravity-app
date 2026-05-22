@@ -1,9 +1,9 @@
 """
 Model Selector: Automatically decide which LLM provider to use based on task type.
 
-Strategy:
+Strategy (Cloud-Only):
 - TIER 1 (Free, Non-Sensitive): OpenRouter Free (FAQ, social, general)
-- TIER 2 (Private, Financial): Ollama Local (Pulso, Centinela monitoring)
+- TIER 2 (Free, Financial): OpenRouter Free (Pulso, Centinela monitoring) with Groq fallback
 - TIER 3 (Critical, Fiscal): Groq (Compliance, fiscal decisions)
 """
 
@@ -72,7 +72,8 @@ def choose_model_for_task(task_type: str) -> LLMProvider:
         return LLMProvider.OPENROUTER_FREE
 
     # ============================================
-    # TIER 2: Ollama Local (Financial, private)
+    # TIER 2: OpenRouter Free (Financial, free cloud)
+    # Note: Fallback to Groq if rate-limited
     # ============================================
     if task_type in [
         "pulso_analysis",
@@ -84,7 +85,7 @@ def choose_model_for_task(task_type: str) -> LLMProvider:
         "transaction_review",
         "cash_flow_analysis",
     ]:
-        return LLMProvider.OLLAMA
+        return LLMProvider.OPENROUTER_FREE
 
     # ============================================
     # TIER 3: Groq (Critical, fiscal/compliance)
@@ -141,10 +142,10 @@ def get_task_description(task_type: str) -> dict:
             "examples": "FAQ, social media, general queries"
         },
         "tier_2": {
-            "name": "Financial (Private)",
-            "model": "Ollama Local",
-            "privacy": "Data stays on server (100% private)",
-            "cost": "$0 (local compute)",
+            "name": "Financial (Free Cloud)",
+            "model": "OpenRouter Free",
+            "privacy": "Data sent to OpenRouter cloud (acceptable for financial analysis)",
+            "cost": "$0 (free tier, ~100 req/day)",
             "examples": "Pulso analysis, Centinela monitoring"
         },
         "tier_3": {
@@ -173,13 +174,13 @@ ROUTING_EXAMPLES = {
     },
     "pulso_analysis": {
         "description": "Analyze user's daily cash flow",
-        "model": "Ollama Local",
-        "reason": "Financial data, must stay private"
+        "model": "OpenRouter Free",
+        "reason": "Financial data, free cloud OK, fallback Groq if rate-limited"
     },
     "centinela_monitoring": {
         "description": "Check fiscal threshold status",
-        "model": "Ollama Local",
-        "reason": "Financial monitoring, local is fine"
+        "model": "OpenRouter Free",
+        "reason": "Financial monitoring, free cloud stable, fallback Groq if needed"
     },
     "centinela_decision": {
         "description": "Recommend if user should file tax return",

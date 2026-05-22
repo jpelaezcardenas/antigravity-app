@@ -29,8 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 class LLMProvider(Enum):
-    """Available LLM providers in failover order"""
-    OLLAMA = "ollama"
+    """Available LLM providers in failover order (Cloud-Only, no local models)"""
     OPENROUTER_FREE = "openrouter_free"
     GROQ = "groq"
     CEREBRAS = "cerebras"
@@ -63,7 +62,6 @@ class LLMEngine:
         self.ollama_base_url = None
 
         self.provider_order = [
-            LLMProvider.OLLAMA,
             LLMProvider.OPENROUTER_FREE,
             LLMProvider.GROQ,
             LLMProvider.CEREBRAS,
@@ -74,10 +72,7 @@ class LLMEngine:
         self._initialize_clients()
 
     def _initialize_clients(self):
-        """Initialize all available LLM clients"""
-        # Ollama (Local)
-        self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-
+        """Initialize all available LLM clients (Cloud-Only, no local models)"""
         # OpenRouter Free (Gratis)
         self.openrouter_free_api_key = os.getenv("OPENROUTER_API_KEY")
 
@@ -139,11 +134,7 @@ class LLMEngine:
             try:
                 logger.info(f"Attempting LLM request via {provider.value}")
 
-                if provider == LLMProvider.OLLAMA:
-                    response = self._call_ollama(
-                        prompt, system_prompt, max_tokens, temperature, timeout
-                    )
-                elif provider == LLMProvider.OPENROUTER_FREE:
+                if provider == LLMProvider.OPENROUTER_FREE:
                     response = self._call_openrouter_free(
                         prompt, system_prompt, max_tokens, temperature
                     )
@@ -189,37 +180,6 @@ class LLMEngine:
         error_summary = "\n".join(errors_log)
         logger.error(f"All LLM providers failed:\n{error_summary}")
         raise AllProvidersFailedError(f"All LLM providers exhausted. Errors:\n{error_summary}")
-
-    def _call_ollama(self, prompt: str, system_prompt: str, max_tokens: int, temp: float, timeout: int) -> str:
-        """Call Ollama API (local)"""
-        url = f"{self.ollama_base_url}/api/chat"
-
-        payload = {
-            "model": "deepseek-coder-6.7b",  # Default model, can be overridden
-            "messages": [
-                {"role": "system", "content": system_prompt or "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            "stream": False,
-            "options": {
-                "num_predict": max_tokens,
-                "temperature": temp,
-            }
-        }
-
-        try:
-            response = requests.post(url, json=payload, timeout=timeout)
-            response.raise_for_status()
-            result = response.json()
-
-            if "message" in result and "content" in result["message"]:
-                return result["message"]["content"]
-
-            raise ValueError("Invalid response format from Ollama")
-        except requests.exceptions.Timeout:
-            raise TimeoutError(f"Ollama request timeout after {timeout}s")
-        except requests.exceptions.ConnectionError:
-            raise ConnectionError(f"Cannot connect to Ollama at {self.ollama_base_url}")
 
     def _call_openrouter_free(self, prompt: str, system_prompt: str, max_tokens: int, temp: float) -> str:
         """Call OpenRouter Free API"""
