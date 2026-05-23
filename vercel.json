@@ -1,6 +1,7 @@
 {
     "name": "contexia-web-app",
     "version": 2,
+    "outputDirectory": ".",
     "redirects": [
         {
             "source": "/",

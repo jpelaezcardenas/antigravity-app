@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "build": "echo 'No build needed'"
+  },
   "dependencies": {
     "pdf-parse": "^1.1.1",
     "pdf2json": "^4.0.3"
