@@ -72,6 +72,10 @@
             "destination": "https://contexia-wizard.vercel.app/wizard/api/:path*/"
         },
         {
+            "source": "/wizard/",
+            "destination": "https://contexia-wizard.vercel.app/wizard"
+        },
+        {
             "source": "/wizard/:path*",
             "destination": "https://contexia-wizard.vercel.app/wizard/:path*"
         },
