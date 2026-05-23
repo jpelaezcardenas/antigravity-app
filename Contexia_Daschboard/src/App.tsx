@@ -458,10 +458,20 @@ export default function App() {
     setLoading(false);
   }, []);
 
+  // URL de la PWA oficial del cliente (Next.js desplegada en Vercel con dominio personalizado)
+  const CLIENT_PWA_URL = 'https://app.contexia.online';
+
   const handleLogin = (role: 'admin' | 'client') => {
     const userData = { ...MOCK_USER, role };
     localStorage.setItem('cx_user', JSON.stringify(userData));
     localStorage.setItem('token', MOCK_USER.token);
+    
+    if (role === 'client') {
+      // Redirigir a la PWA oficial del cliente
+      window.location.href = `${CLIENT_PWA_URL}/app/overview`;
+      return;
+    }
+
     setUser(userData);
     setAuthState(role);
   };
