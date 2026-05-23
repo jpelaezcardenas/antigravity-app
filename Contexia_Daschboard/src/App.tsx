@@ -550,12 +550,8 @@ export default function App() {
     const saved = localStorage.getItem('cx_user');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed.role === 'client') {
-        window.location.href = 'https://app.contexia.online';
-        return;
-      }
       setUser(parsed);
-      setAuthState('admin');
+      setAuthState(parsed.role || 'client');
       if (parsed.activeClientId) setActiveClientId(parsed.activeClientId);
     }
     setLoading(false);
@@ -565,12 +561,6 @@ export default function App() {
     const userData = { ...MOCK_USER, role, id: data.usuario_id, nombre_empresa: data.nombre_empresa, email: data.email };
     localStorage.setItem('cx_user', JSON.stringify(userData));
     localStorage.setItem('token', data.token);
-    
-    if (role === 'client') {
-      // Redirigir al cliente a la app antigua en vivo
-      window.location.href = 'https://app.contexia.online';
-      return;
-    }
     
     setUser(userData);
     setAuthState(role);
