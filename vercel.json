@@ -55,6 +55,10 @@
             "destination": "/app-admin/index.html"
         },
         {
+            "source": "/crear-empresa",
+            "destination": "/crear-empresa.html"
+        },
+        {
             "source": "/crear-empresa-wizard",
             "destination": "/crear-empresa-wizard.html"
         },
