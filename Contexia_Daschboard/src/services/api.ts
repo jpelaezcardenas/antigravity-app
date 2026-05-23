@@ -1,5 +1,5 @@
-const API_BASE_URL = 'https://antigravity-app-production-dc78.up.railway.app/api/v1/agents';
-const BASE_URL = 'https://antigravity-app-production-dc78.up.railway.app/api/v1';
+const API_BASE_URL = 'https://antigravity-app-production-175a.up.railway.app/api/v1/agents';
+const BASE_URL = 'https://antigravity-app-production-175a.up.railway.app/api/v1';
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
