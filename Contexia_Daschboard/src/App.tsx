@@ -151,10 +151,10 @@ const SidebarContent = ({ activeTab, setActiveTab, onLogout, onClose, onBackToBu
 const DashboardHome = ({ setActiveTab, clienteNombre }: { setActiveTab: (t: string) => void; clienteNombre: string }) => (
   <>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <StatCard icon={TrendingUp} label="Ingresos" value={formatCOPShort(MOCK_PULSO.ingresos_brutos)} change="+5.2%" positive accentColor="#2DD4BF" />
-      <StatCard icon={Wallet} label="Caja Real (Hoy)" value={formatCOPShort(MOCK_PULSO.dinero_tuyo_hoy)} change="+8.1%" positive accentColor="#3B82F6" />
-      <StatCard icon={ShieldCheck} label="Provisión DIAN" value={formatCOPShort(MOCK_PULSO.provision_dian)} change="Fija" positive accentColor="#8B5CF6" />
-      <StatCard icon={Radar} label="Margen" value={`${((MOCK_PULSO.margen_bruto / MOCK_PULSO.ingresos_brutos) * 100).toFixed(1)}%`} change="+2%" positive accentColor="#F97316" />
+      <StatCard icon={TrendingUp} label="Ingresos" value={formatCOPShort(MOCK_PULSO.ingresos_brutos)} change="+5.2%" positive accentColor="#3B82F6" />
+      <StatCard icon={Wallet} label="Caja Real (Hoy)" value={formatCOPShort(MOCK_PULSO.dinero_tuyo_hoy)} change="+8.1%" positive accentColor="#60A5FA" />
+      <StatCard icon={ShieldCheck} label="Provisión DIAN" value={formatCOPShort(MOCK_PULSO.provision_dian)} change="Fija" positive accentColor="#1D4ED8" />
+      <StatCard icon={Radar} label="Margen" value={`${((MOCK_PULSO.margen_bruto / MOCK_PULSO.ingresos_brutos) * 100).toFixed(1)}%`} change="+2%" positive accentColor="#1E40AF" />
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
       <div className="lg:col-span-2 space-y-8">
@@ -624,7 +624,7 @@ export default function App() {
           descripcion="Predicción de caja y carga tributaria de los próximos 90 días con Machine Learning. Sabrás cuánto deberás antes de que llegue la fecha."
           features={['ML Predictivo', 'Proyección 90 días', 'Escenarios múltiples', 'Alertas tempranas']} />
       );
-      case 'social-ops': return <SocialOpsView />;
+      case 'social-ops': return user?.role === 'admin' ? <SocialOpsView /> : <DashboardHome setActiveTab={setActiveTab} clienteNombre={activeClient.nombre} />;
       case 'configuracion': return <ConfiguracionView />;
       default: return <DashboardHome setActiveTab={setActiveTab} />;
     }
@@ -636,7 +636,7 @@ export default function App() {
       <aside className="hidden lg:flex w-72 backdrop-blur-2xl border-r border-white/5 flex-col p-6 fixed h-screen z-30" style={{ background: 'linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(2,6,23,0.98) 100%)' }}>
         <SidebarContent activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout}
           onBackToBunker={user?.role === 'admin' ? handleBackToBunker : undefined}
-          customNavItems={user?.role === 'admin' ? navItems.filter(i => ['social-ops', 'configuracion'].includes(i.id)) : undefined} />
+          customNavItems={user?.role === 'admin' ? navItems : navItems.filter(i => i.id !== 'social-ops')} />
       </aside>
 
       {/* Mobile Drawer */}
@@ -649,7 +649,7 @@ export default function App() {
               className="fixed left-0 top-0 h-screen w-72 bg-navy-light/95 backdrop-blur-xl border-r border-white/5 flex flex-col p-6 z-50 lg:hidden">
               <SidebarContent activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} onClose={() => setMobileMenuOpen(false)}
                 onBackToBunker={user?.role === 'admin' ? handleBackToBunker : undefined}
-                customNavItems={user?.role === 'admin' ? navItems.filter(i => ['social-ops', 'configuracion'].includes(i.id)) : undefined} />
+                customNavItems={user?.role === 'admin' ? navItems : navItems.filter(i => i.id !== 'social-ops')} />
             </motion.aside>
           </>
         )}
