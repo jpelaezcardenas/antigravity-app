@@ -551,7 +551,7 @@ export default function App() {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.role === 'client') {
-        window.location.href = 'https://www.contexia.online/app/overview';
+        window.location.href = 'https://app.contexia.online';
         return;
       }
       setUser(parsed);
