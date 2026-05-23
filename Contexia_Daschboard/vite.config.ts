@@ -17,7 +17,7 @@ export default defineConfig(({mode}) => {
       },
     },
     build: {
-      outDir: '../app',
+      outDir: '../app-admin',
       assetsDir: 'dashboard-assets',
       emptyOutDir: true,
     },

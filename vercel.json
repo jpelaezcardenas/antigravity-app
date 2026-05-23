@@ -8,11 +8,6 @@
             "permanent": false
         },
         {
-            "source": "/app",
-            "destination": "/app/overview",
-            "permanent": false
-        },
-        {
             "source": "/login",
             "destination": "/app/overview",
             "permanent": true
@@ -20,20 +15,52 @@
     ],
     "rewrites": [
         {
+            "source": "/app",
+            "destination": "/app-admin/index.html"
+        },
+        {
+            "source": "/app/overview",
+            "destination": "/app/overview.html"
+        },
+        {
+            "source": "/app/fiscal",
+            "destination": "/app/fiscal.html"
+        },
+        {
+            "source": "/app/radar",
+            "destination": "/app/radar.html"
+        },
+        {
+            "source": "/app/patrimonio",
+            "destination": "/app/patrimonio.html"
+        },
+        {
+            "source": "/app/flujo-detalle",
+            "destination": "/app/flujo-detalle.html"
+        },
+        {
+            "source": "/app/bunker",
+            "destination": "/app/bunker.html"
+        },
+        {
+            "source": "/app/dashboard-assets/:path*",
+            "destination": "/app-admin/dashboard-assets/:path*"
+        },
+        {
+            "source": "/_next/:path*",
+            "destination": "/_next/:path*"
+        },
+        {
+            "source": "/app/:path*",
+            "destination": "/app-admin/index.html"
+        },
+        {
             "source": "/crear-empresa-wizard",
             "destination": "/crear-empresa-wizard.html"
         },
         {
-            "source": "/app/dashboard-assets/:path*",
-            "destination": "/app/dashboard-assets/:path*"
-        },
-        {
             "source": "/app/assets/:path*",
             "destination": "/app/assets/:path*"
-        },
-        {
-            "source": "/app/:path*",
-            "destination": "/app/"
         },
         {
             "source": "/wizard/api/:path*",
