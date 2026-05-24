@@ -8,6 +8,7 @@ from presentation.taty_endpoints import router as taty_router
 from presentation.telegram_endpoints import router as telegram_router
 from presentation.kb_endpoints import router as kb_router
 from presentation.radar_endpoints import router as radar_router
+from presentation.wizard_endpoints import router as wizard_router
 
 api_router = APIRouter()
 
@@ -20,3 +21,4 @@ api_router.include_router(taty_router, prefix="/agents", tags=["taty"])
 api_router.include_router(telegram_router, prefix="/channels", tags=["telegram"])
 api_router.include_router(kb_router, prefix="/kb", tags=["knowledge-base"])
 api_router.include_router(radar_router, prefix="/radar", tags=["radar"])
+api_router.include_router(wizard_router, prefix="/wizard", tags=["wizard"])

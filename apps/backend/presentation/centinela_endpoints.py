@@ -134,6 +134,81 @@ async def evaluate_centinela(request: CentinelaEvaluateRequest) -> CentinelaEval
         )
 
 
+class CentinelaAlertsListResponse(BaseModel):
+    """Response for GET /centinela/alerts/{company_id}"""
+    company_id: str
+    alerts: List[CentinelaAlert]
+    alert_count: int
+    critical_count: int
+    warning_count: int
+    risk_level: str
+    source: str = Field(..., description="'supabase' or 'demo_fallback'")
+
+
+@router.get(
+    "/alerts/{company_id}",
+    response_model=CentinelaAlertsListResponse,
+    summary="Get Centinela alerts for a company (Pulso feed)",
+)
+async def get_company_alerts(
+    company_id: str,
+    limit: int = 20,
+    severity: Optional[str] = None,
+) -> CentinelaAlertsListResponse:
+    """Return active Centinela alerts for a company, most recent first."""
+    try:
+        logger.info(f"Centinela.get_alerts({company_id}, limit={limit}, severity={severity})")
+        centinela = get_centinela_service()
+        raw_alerts = centinela.get_alerts_for_company(
+            company_id=company_id, limit=limit, severity=severity
+        )
+
+        # Detect source: if rule_id pattern + no created_at → demo fallback
+        source = "supabase" if (raw_alerts and "created_at" in raw_alerts[0]) else "demo_fallback"
+
+        critical_count = sum(1 for a in raw_alerts if a.get("severity") == "critical")
+        warning_count = sum(1 for a in raw_alerts if a.get("severity") == "warning")
+
+        if critical_count >= 2:
+            risk_level = "critical"
+        elif critical_count >= 1 or warning_count >= 3:
+            risk_level = "high"
+        elif warning_count >= 1:
+            risk_level = "medium"
+        else:
+            risk_level = "low"
+
+        alert_models = [
+            CentinelaAlert(
+                rule_id=a["rule_id"],
+                rule_name=a["rule_name"],
+                severity=a["severity"],
+                title=a["title"],
+                description=a["description"],
+                recommendation=a.get("recommendation"),
+                evidence=a.get("evidence", {}),
+            )
+            for a in raw_alerts
+        ]
+
+        return CentinelaAlertsListResponse(
+            company_id=company_id,
+            alerts=alert_models,
+            alert_count=len(raw_alerts),
+            critical_count=critical_count,
+            warning_count=warning_count,
+            risk_level=risk_level,
+            source=source,
+        )
+
+    except Exception as e:
+        logger.error(f"Error in get_company_alerts: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching alerts for {company_id}",
+        )
+
+
 @router.get(
     "/health",
     summary="Health check",

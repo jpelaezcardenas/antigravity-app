@@ -416,6 +416,62 @@ class CentinelaService:
             logger.error(f"Error saving alerts: {str(e)}")
             return []
 
+    def get_alerts_for_company(
+        self,
+        company_id: str,
+        limit: int = 20,
+        severity: Optional[str] = None,
+    ) -> List[Dict]:
+        """
+        Retrieve persisted alerts for a company, most recent first.
+
+        Falls back to evaluating against a synthetic demo profile if Supabase
+        unavailable, so the Pulso feed always has signal during MVP.
+        """
+        try:
+            supabase = get_supabase()
+            query = (
+                supabase.table("centinela_alerts")
+                .select("*")
+                .eq("company_id", company_id)
+                .order("created_at", desc=True)
+                .limit(limit)
+            )
+            if severity:
+                query = query.eq("severity", severity)
+            result = query.execute()
+            return result.data or []
+        except Exception as e:
+            logger.warning(
+                f"Supabase unavailable for get_alerts_for_company({company_id}): {e}. "
+                "Falling back to on-the-fly evaluation against demo profile."
+            )
+            return self._evaluate_demo_profile(company_id, severity)
+
+    def _evaluate_demo_profile(
+        self, company_id: str, severity: Optional[str] = None
+    ) -> List[Dict]:
+        """Evaluate rules against a synthetic profile so MVP demo never returns empty."""
+        demo_data = {
+            "regime": "Régimen Simple",
+            "annual_revenue": 9_500_000_000,
+            "service_revenue": 1_200_000_000,
+            "retention_paid": 15_000_000,
+            "sector": "Servicios Digitales",
+            "gross_margin_percent": 15,
+            "dian_debt": 3_500_000,
+            "dian_debt_overdue_days": 45,
+            "total_assets": 800_000_000,
+            "total_liabilities": 350_000_000,
+            "total_equity": 460_000_000,
+            "accounts_receivable": 120_000_000,
+            "allowance_for_doubtful_accounts": 2_000_000,
+        }
+        alerts = self.evaluate(company_id, demo_data)
+        if severity:
+            alerts = [a for a in alerts if a.get("severity") == severity]
+        return alerts
+
 
 # Singleton
 _centinela_service = None
