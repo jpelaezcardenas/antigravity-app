@@ -247,3 +247,70 @@ Detección automática al primer uso: si `SUPABASE_URL+KEY` están definidos y l
 **Memorias actualizadas:**
 - `contexia-app-live-mode.md` (nueva) — documenta override de CLAUDE.md
 - Spec sección 12 (este bloque) — referencia ejecución DAY 3
+
+---
+
+## 13. DAY 4 — T15–T16 (2026-05-24, path a 3 usuarios live)
+
+### Contexto del retake
+
+Nueva sesión retomando con dos hallazgos críticos vs handoff:
+1. Todo el código DAY 3 estaba sin commitear en `deploy-prod` (Agents 4-7, KB, infra, tests).
+2. `deploy-prod` divergía de `main` (5 ahead / 2 behind tras commit DAY 3).
+
+**Acciones de saneamiento:**
+- Limpieza `.gitignore` (artefactos `__next.*`, dumps, scripts ad-hoc).
+- Commit bundled T10-T14 (single commit `2f238b7`).
+- Merge clean de `origin/main` (recoge `CentinelaAlertsCard.tsx` + `types/centinela.ts`).
+- Push directo `deploy-prod → main` (worktree local de main bloqueado).
+
+### T15: GET /api/v1/centinela/alerts/{company_id}
+
+Wiring del feed del Pulso. Cerró el gap explícito de la sección 12.
+
+**Cambios:**
+- `services/centinela_service.py`: nuevo método `get_alerts_for_company(company_id, limit, severity)` que consulta `centinela_alerts` en Supabase con fallback a `_evaluate_demo_profile()` (siempre devuelve señal en el MVP).
+- `presentation/centinela_endpoints.py`: GET con shape consumido por Pulso ActiveAlerts: `{alerts, alert_count, critical_count, warning_count, risk_level, source}`. Soporta `?severity=critical` y `?limit=N`.
+
+**Tests:** `tests/test_centinela_alerts_get.py` — 4 casos (supabase ok, supabase down, severity filter, endpoint smoke).
+
+### T16: POST /api/v1/wizard/auditoria-sombra
+
+Hook GTM principal. Onboarding 15-min sin código nuevo por cliente.
+
+**Servicio:** `services/wizard_service.py` — multi-cliente por design (NIT → `company_id` determinístico). Funciones puras:
+- `derive_company_id(nit)` — `900123456-1` → `ctx-900123456`
+- `build_synthetic_profile(sector, regime, monthly_revenue)` — heurística realista por sector (5 sectores: Servicios Digitales, Comercio, Importaciones, Restaurantes, Construcción)
+- `build_next_steps(status_level, alert_count)` — copy diferenciado por severidad
+- `run_auditoria_sombra(...)` — orquesta NIT → profile → Centinela → AnalystAgent → reporte
+
+**Endpoint:** `presentation/wizard_endpoints.py` con validación Pydantic (incl. `EmailStr`).
+
+**Output:** `{company_id, status_level, executive_summary, top_risks, opportunities, alerts_preview, next_steps, audit_duration_seconds}`.
+
+**Tests:** `tests/test_wizard_auditoria_sombra.py` — 12 casos (NIT parsing, perfil por sector, next_steps por severidad, e2e wizard, HTTP 200/422).
+
+### Validación E2E con 3 prospectos simulados
+
+Smoke vía TestClient (Estudio Cordillera / Importadora Andina / La Casita) — los 4 endpoints (Wizard, Pulso Centinela, Radar, Taty) responden 200 para los 3 `company_id` derivados. Wizard p95 < 20ms (sin LLM real; con LLM esperamos < 3s del failover chain).
+
+**Hallazgo de coherencia (no MVP-blocking):** Wizard ejecuta Centinela in-memory pero no llama `save_alerts()` (Supabase no configurado). Por eso GET /alerts devuelve el demo fallback, no las alertas específicas del prospecto recién auditado. Para coherencia plena necesitamos backend de alertas persistente (Supabase o memoria compartida) — DAY 5+.
+
+### Test suite
+
+**69 passed, 1 skipped** (DAY 3 cerró en 46; +23 nuevos entre T15 y T16). Ver `tests/test_centinela_alerts_get.py` y `tests/test_wizard_auditoria_sombra.py`.
+
+### Estado del deploy de producción
+
+- `main` actualizada a `3924534` (incluye T10-T16).
+- Railway production seguía sirviendo build viejo al cierre de sesión (DAY 2 endpoints OK, DAY 3-4 endpoints 404). Causa probable: rama monitoreada distinta a `main` o webhook necesitando trigger manual. **Acción de ops pendiente:** verificar config Railway → branch `main`.
+
+### Gaps remanentes para 3 usuarios live reales
+
+| Gap | Impacto | Owner próxima sesión |
+|-----|---------|----------------------|
+| Railway no desplegó DAY 3-4 | Bloqueante | Trigger manual / verificar branch monitoreada |
+| Wizard frontend (Vercel) llamando a `/wizard/auditoria-sombra` | Bloqueante onboarding UI | `contexia-wizard.vercel.app` ya existe (ver `vercel.json` rewrites) — solo wiring |
+| Persistencia de alertas Wizard → Pulso | Coherencia demo | Implementar memoria compartida o aplicar Supabase migration |
+| pgvector aplicado a Supabase + chunks reales | Calidad Taty | Aplicar migración + correr `/kb/seed-dian` |
+| Agent 6 en Radar (narrativas dinámicas) | Polish | Diferido |
