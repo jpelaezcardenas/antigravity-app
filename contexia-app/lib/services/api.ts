@@ -111,3 +111,42 @@ export async function checkTatyHealth(): Promise<boolean> {
     return false;
   }
 }
+
+// ============================================================================
+// Centinela - Fiscal Risk Detection Engine
+// ============================================================================
+
+import type { CentinelaEvaluateRequest, CentinelaEvaluateResponse } from "@/lib/types/centinela";
+
+/**
+ * Evaluates fiscal risk using Centinela rules
+ */
+export async function evaluateCentinela(
+  request: CentinelaEvaluateRequest
+): Promise<CentinelaEvaluateResponse> {
+  const url = new URL(`${API_BASE}/centinela/evaluate`);
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        company_id: request.company_id,
+        financial_data: request.financial_data,
+        save_alerts: request.save_alerts ?? false,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Centinela API error: ${response.status}`);
+    }
+
+    const data = (await response.json()) as CentinelaEvaluateResponse;
+    return data;
+  } catch (error) {
+    console.error("Error calling Centinela API:", error);
+    throw error;
+  }
+}

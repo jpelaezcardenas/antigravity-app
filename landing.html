@@ -311,8 +311,31 @@
         .interview-card {
             padding: 1.25rem 2rem;
         }
-        .interview-card.open {
-            padding: 2rem;
+
+        /* Animación del menú móvil dropdown premium */
+        #mobile-menu {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease-in-out;
+        }
+        #mobile-menu.open {
+            max-height: 600px;
+            opacity: 1;
+            padding-top: 1.5rem;
+            padding-bottom: 1.5rem;
+        }
+
+        /* Transformación del botón hamburguesa a X */
+        #mobile-menu-btn.open #line1 {
+            transform: translateY(8px) rotate(45deg);
+        }
+        #mobile-menu-btn.open #line2 {
+            opacity: 0;
+            transform: scale(0);
+        }
+        #mobile-menu-btn.open #line3 {
+            transform: translateY(-8px) rotate(-45deg);
         }
     </style>
 </head>
@@ -322,9 +345,9 @@
     <!-- Navbar -->
     <nav class="w-full border-b border-slate-800 bg-[#020617]/90 backdrop-blur-xl fixed top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between py-4 min-h-[120px]">
+            <div class="flex items-center justify-between py-3 md:py-4 min-h-[76px] md:min-h-[120px]">
                 <a href="javascript:void(0)" onclick="openLogoLightbox()" class="flex items-center group" title="Click para ver el logo completo">
-                    <div class="h-32 md:h-40 w-auto flex items-center justify-center flex-shrink-0">
+                    <div class="h-14 md:h-32 lg:h-40 w-auto flex items-center justify-center flex-shrink-0">
                         <img src="assets/img/logo_official.png" alt="Contexia"
                             class="h-full w-auto object-contain transition-transform group-hover:scale-105 scale-110 translate-y-1 mix-blend-screen">
                     </div>
@@ -368,14 +391,14 @@
                         </a>
                     </div>
                 </div>
-                <button id="mobile-menu-btn" class="md:hidden text-slate-300 hover:text-white p-2"><svg class="w-6 h-6"
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6h16M4 12h16M4 18h16" />
-                    </svg></button>
+                <button id="mobile-menu-btn" class="md:hidden text-slate-300 hover:text-white p-2.5 focus:outline-none flex flex-col gap-1.5 justify-center items-center group" aria-label="Toggle menu">
+                    <span class="w-6 h-0.5 bg-current transition-all duration-300 block origin-center" id="line1"></span>
+                    <span class="w-6 h-0.5 bg-current transition-all duration-300 block origin-center" id="line2"></span>
+                    <span class="w-6 h-0.5 bg-current transition-all duration-300 block origin-center" id="line3"></span>
+                </button>
             </div>
         </div>
-        <div id="mobile-menu" class="hidden md:hidden border-t border-slate-800 px-4 py-6 space-y-4 bg-navy/95 backdrop-blur-xl">
+        <div id="mobile-menu" class="md:hidden border-t border-slate-800 px-4 space-y-4 bg-[#020617]/98 backdrop-blur-xl">
             <div class="flex items-center justify-center pb-4 border-b border-white/5">
                 <div class="flex items-center gap-2">
                     <span class="relative flex h-2 w-2">
@@ -400,11 +423,11 @@
     </nav>
 
     <!-- Entrevista Rápida -->
-    <section id="entrevista" class="pt-56 md:pt-64 pb-20 relative overflow-hidden">
+    <section id="entrevista" class="pt-28 md:pt-64 pb-20 relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-b from-violet/5 via-transparent to-teal/5 pointer-events-none"></div>
         <div class="max-w-4xl mx-auto px-6 lg:px-8 relative">
             <div class="text-center mb-12 fade-in">
-                <h2 class="text-3xl md:text-4xl font-black mb-4">¿Te estresa la <span class="gradient-text">DIAN</span> cada vez que vendes online?</h2>
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-black mb-4">¿Te estresa la <span class="gradient-text">DIAN</span> cada vez que vendes online?</h2>
                 <p class="text-white text-xl font-semibold mb-2">Queremos escucharte.</p>
                 <p class="text-slate-400 max-w-2xl mx-auto text-lg">Cuéntanos cómo manejas hoy tus impuestos y obligaciones con la DIAN, ¡Gracias por ayudar!</p>
                 <div class="mt-6 flex items-center justify-center gap-6 text-sm text-slate-500">
@@ -519,7 +542,7 @@
         <div class="max-w-7xl mx-auto px-6 lg:px-8 relative">
             <div class="grid lg:grid-cols-2 gap-12 items-center">
                 <div class="fade-in">
-                    <h1 class="text-5xl md:text-6xl lg:text-7xl font-black leading-[1.1] mb-8">Tu <span
+                    <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.1] mb-8">Tu <span
                             class="gradient-text">tranquilidad financiera</span> automatizada con IA</h1>
                     <p class="text-lg text-slate-400 mb-10 max-w-xl">Contexia es el GPS de flujo de caja, impuestos y
                         riesgo regulatorio para PyMEs. Olvídate de las sorpresas con la DIAN y toma el control de tu
@@ -1034,8 +1057,12 @@
     <!-- Scripts -->
     <script>
         // Mobile menu toggle
-        document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
-            document.getElementById('mobile-menu')?.classList.toggle('hidden');
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileMenuBtn?.addEventListener('click', () => {
+            mobileMenuBtn.classList.toggle('open');
+            mobileMenu?.classList.toggle('open');
         });
 
         // Scroll reveal animation
@@ -1051,7 +1078,8 @@
         // Close mobile menu on link click
         document.querySelectorAll('#mobile-menu a').forEach(link => {
             link.addEventListener('click', () => {
-                document.getElementById('mobile-menu')?.classList.add('hidden');
+                mobileMenuBtn?.classList.remove('open');
+                mobileMenu?.classList.remove('open');
             });
         });
     </script>
