@@ -23,6 +23,8 @@ export interface AuditResult {
   readinessBand: "verde" | "ambar" | "rojo";
   riesgos: Array<{ nivel: string; titulo: string; descripcion: string; accion: string; esBannerCIIU1090?: boolean }>;
   oportunidades: Array<{ titulo: string; descripcion: string; impactoEstimado?: string }>;
+  executiveSummary?: string;
+  statusLevel?: "sana" | "vigilancia" | "alerta" | "crítica";
 }
 
 interface WizardStore {

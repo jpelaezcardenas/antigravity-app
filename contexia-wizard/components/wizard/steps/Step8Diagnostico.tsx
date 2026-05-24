@@ -162,6 +162,75 @@ export default function Step8Diagnostico({ onBack }: Props) {
         tiene_bpa: store.paso6?.tiene_bpa,
       });
 
+      // ─── 1. Mapeo e Integración con Backend de Auditoría Sombra ───
+      const sectorInput = store.paso2?.sector || "";
+      let mappedSector = "Servicios Digitales";
+      if (/comercio|venta/i.test(sectorInput)) {
+        mappedSector = "Comercio";
+      } else if (/importa/i.test(sectorInput)) {
+        mappedSector = "Importaciones";
+      } else if (/restaurante|alimento|comida/i.test(sectorInput)) {
+        mappedSector = "Restaurantes";
+      } else if (/construc|obra|ing/i.test(sectorInput)) {
+        mappedSector = "Construcción";
+      }
+
+      let mappedRegime = "Régimen Simple";
+      if (store.paso5?.regimen_preferido === "ordinario") {
+        mappedRegime = "Régimen Común";
+      }
+
+      const nitInput = store.paso2?.nit_actual || store.paso1?.cedula || "900123456-1";
+      const emailInputStr = store.paso1?.email || "growth@contexia.online";
+      const monthlyRevenue = store.paso4?.ingresos_mensuales || 8000000;
+      const notesInput = `Dirección: ${store.paso2?.direccion || "Envigado"}. Socios: ${store.paso3?.representante_legal || "N/A"}.`;
+
+      let shadowAuditReport: any = null;
+      const BACKEND_API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://antigravity-app-production-175a.up.railway.app/api/v1";
+
+      try {
+        const shadowRes = await fetch(`${BACKEND_API_BASE}/wizard/auditoria-sombra`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nit: nitInput,
+            razon_social: store.paso2?.nombre_opcion1 || store.paso1?.nombre || "Mi Empresa",
+            email: emailInputStr,
+            sector: mappedSector,
+            regime: mappedRegime,
+            monthly_revenue_cop: monthlyRevenue,
+            notes: notesInput,
+          }),
+        });
+
+        if (shadowRes.ok) {
+          shadowAuditReport = await shadowRes.json();
+          console.info("Auditoría sombra cargada del backend con éxito:", shadowAuditReport);
+        } else {
+          console.warn("Backend Shadow Audit retornó error:", shadowRes.status);
+        }
+      } catch (backendErr) {
+        console.error("Error conectando al backend de Auditoría Sombra (Fallback local activo):", backendErr);
+      }
+
+      // Si el backend responde, usamos sus riesgos y oportunidades curados
+      const riesgosFinal = shadowAuditReport && shadowAuditReport.top_risks?.length > 0
+        ? shadowAuditReport.top_risks.map((r: any) => ({
+            nivel: r.nivel || "MEDIO",
+            titulo: r.titulo || "Riesgo DIAN",
+            descripcion: r.descripcion || "",
+            accion: r.accion || "Revisar inmediatamente con un asesor Contexia.",
+          }))
+        : riesgos;
+
+      const oportunidadesFinal = shadowAuditReport && shadowAuditReport.opportunities?.length > 0
+        ? shadowAuditReport.opportunities.map((o: any) => ({
+            titulo: o.titulo || "Oportunidad tributaria",
+            descripcion: o.descripcion || "",
+            impactoEstimado: o.impactoEstimado || "",
+          }))
+        : oportunidades;
+
       const result: AuditResult = {
         recomendacion: comparativo.recomendacion,
         ingresosAnuales,
@@ -173,18 +242,27 @@ export default function Step8Diagnostico({ onBack }: Props) {
         ahorroPotencial: comparativo.ahorroPotencialAnual,
         readinessScore: readiness.score,
         readinessBand: readiness.band,
-        riesgos,
-        oportunidades,
+        riesgos: riesgosFinal,
+        oportunidades: oportunidadesFinal,
+        executiveSummary: shadowAuditReport?.executive_summary || undefined,
+        statusLevel: shadowAuditReport?.status_level || undefined,
       };
 
+      // Si el backend asigna un company_id real, lo persistimos en el leadId para sincronizar Radar/Centinela
+      if (shadowAuditReport?.company_id) {
+        store.setLeadId(shadowAuditReport.company_id);
+      }
+
       store.setAuditResult(result);
+      
       // Track audit execution
       ga4.auditExecuted({
         regimen: result.recomendacion,
         readiness_score: result.readinessScore,
-        riesgos_count: riesgos.length,
+        riesgos_count: riesgosFinal.length,
         ahorro_potencial: result.ahorroPotencial,
       });
+
       // Save to Supabase + dispara alerta interna a equipo Contexia
       try {
         const res = await fetch("/wizard/api/audit/execute", {
@@ -198,7 +276,7 @@ export default function Step8Diagnostico({ onBack }: Props) {
           }),
         });
         const json = await res.json().catch(() => ({}));
-        // Persiste el leadId devuelto por el server para que el PDF/email funcionen
+        // Persiste el leadId devuelto por el server local para que el PDF/email funcionen si no existía ya
         if (json?.leadId && !store.leadId) {
           store.setLeadId(json.leadId);
         }
@@ -333,6 +411,56 @@ export default function Step8Diagnostico({ onBack }: Props) {
             </div>
           </div>
         </div>
+
+        {/* A.2 — Resumen Ejecutivo Premium (LLM AI-Analyst) */}
+        {result.executiveSummary && (
+          <div className="ctx-card" style={{
+            background: "rgba(15, 23, 42, 0.4)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "16px",
+            padding: "1.5rem",
+            position: "relative",
+            overflow: "hidden"
+          }}>
+            {/* Ambient background blur */}
+            <div style={{
+              position: "absolute",
+              top: "-50px",
+              right: "-50px",
+              width: "150px",
+              height: "150px",
+              background: "rgba(45, 212, 191, 0.15)",
+              filter: "blur(40px)",
+              borderRadius: "50%",
+              pointerEvents: "none"
+            }} />
+            
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
+              <span style={{ fontSize: "1.5rem", flexShrink: 0 }}>🤖</span>
+              <div>
+                <h4 className="font-orbitron" style={{
+                  color: "var(--ctx-teal)",
+                  fontWeight: 800,
+                  fontSize: "0.875rem",
+                  margin: "0 0 0.5rem",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase"
+                }}>
+                  Análisis de Inteligencia Artificial (AnalystAgent)
+                </h4>
+                <p style={{
+                  color: "rgba(255, 255, 255, 0.85)",
+                  fontSize: "0.9375rem",
+                  lineHeight: 1.6,
+                  margin: 0,
+                  fontStyle: "italic"
+                }}>
+                  "{result.executiveSummary}"
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* B — Proyección financiera */}
         <div className="ctx-card">

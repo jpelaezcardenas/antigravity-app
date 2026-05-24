@@ -7,8 +7,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supabaseAdmin
       .rpc("__exec_sql", {
         sql: "ALTER TABLE leads DISABLE ROW LEVEL SECURITY;",
-      } as any)
-      .catch(() => null);
+      } as any);
 
     if (error) {
       // Try direct SQL query if RPC doesn't work
