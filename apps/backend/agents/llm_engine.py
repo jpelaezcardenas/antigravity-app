@@ -108,7 +108,11 @@ class LLMEngine:
         response_format: str = "text",
         max_tokens: int = 4000,
         temperature: float = 0.7,
-        timeout: int = 30
+        timeout: int = 30,
+        synonyms: Optional[Dict[str, str]] = None,
+        list_keys: Optional[set] = None,
+        required_keys: Optional[set] = None,
+        max_json_retries: int = 1,
     ) -> Union[Dict, str]:
         """
         Get AI response with automatic failover and JSON auto-healing.
@@ -120,6 +124,13 @@ class LLMEngine:
             max_tokens: Maximum tokens in response
             temperature: Sampling temperature (0-1)
             timeout: Request timeout in seconds
+            synonyms: Optional alias-to-canonical map applied after JSON parse
+                (e.g., {"hallazgos": "riesgos", "resumen": "resumen_ejecutivo"})
+            list_keys: Optional set of keys whose values must be lists
+                (dict values are wrapped: {"x": {...}} -> {"x": [{...}]})
+            required_keys: Optional set of keys whose absence triggers re-prompt
+            max_json_retries: How many times to re-prompt the LLM with the
+                parsing error context if json validation fails. Default 1.
 
         Returns:
             Dict if response_format="json", str if response_format="text"
@@ -128,6 +139,88 @@ class LLMEngine:
             AllProvidersFailedError: If all providers fail
         """
 
+        if response_format == "json":
+            return self._get_json_with_retry(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                timeout=timeout,
+                synonyms=synonyms or {},
+                list_keys=list_keys or set(),
+                required_keys=required_keys or set(),
+                max_retries=max_json_retries,
+            )
+
+        return self._call_with_failover(
+            prompt, system_prompt, max_tokens, temperature, timeout
+        )
+
+    def _get_json_with_retry(
+        self,
+        prompt: str,
+        system_prompt: str,
+        max_tokens: int,
+        temperature: float,
+        timeout: int,
+        synonyms: Dict[str, str],
+        list_keys: set,
+        required_keys: set,
+        max_retries: int,
+    ) -> Dict:
+        """Run JSON request with up to `max_retries` re-prompts on validation failure."""
+        last_error: Optional[str] = None
+        current_prompt = prompt
+
+        for attempt in range(max_retries + 1):
+            raw = self._call_with_failover(
+                current_prompt, system_prompt, max_tokens, temperature, timeout
+            )
+            parsed = self._parse_llm_response(raw, synonyms=synonyms, list_keys=list_keys)
+
+            valid, missing = self._validate_required(parsed, required_keys)
+            parse_failed = parsed.get("parsing_error") is True
+
+            if valid and not parse_failed:
+                return parsed
+
+            last_error = (
+                f"Missing required keys: {sorted(missing)}"
+                if missing
+                else "Response was not valid JSON; fallback structure returned"
+            )
+            logger.warning(
+                f"JSON validation failed (attempt {attempt + 1}/{max_retries + 1}): {last_error}"
+            )
+
+            if attempt < max_retries:
+                current_prompt = (
+                    f"{prompt}\n\n"
+                    f"IMPORTANT: Your previous response failed validation: {last_error}. "
+                    f"Return ONLY a valid JSON object containing keys "
+                    f"{sorted(required_keys) if required_keys else 'as specified above'}. "
+                    f"No prose, no markdown fences."
+                )
+
+        return parsed  # Return last (possibly fallback) parsed result
+
+    @staticmethod
+    def _validate_required(parsed: Dict, required_keys: set) -> tuple:
+        """Return (is_valid, missing_keys)."""
+        if not required_keys:
+            return True, set()
+        missing = {k for k in required_keys if k not in parsed}
+        return (len(missing) == 0), missing
+
+    def _call_with_failover(
+        self,
+        prompt: str,
+        system_prompt: str,
+        max_tokens: int,
+        temperature: float,
+        timeout: int,
+    ) -> str:
+        """Run the provider failover loop and return raw text response."""
         errors_log = []
 
         for provider in self.provider_order:
@@ -160,9 +253,6 @@ class LLMEngine:
                     )
 
                 logger.info(f"[OK] Success with {provider.value}")
-
-                if response_format == "json":
-                    return self._parse_llm_response(response)
                 return response
 
             except (RateLimitError, APIError, APIConnectionError, requests.RequestException, TimeoutError) as e:
@@ -319,65 +409,98 @@ class LLMEngine:
         )
         return response.choices[0].message.content
 
-    def _parse_llm_response(self, response: str) -> Dict:
+    def _parse_llm_response(
+        self,
+        response: str,
+        synonyms: Optional[Dict[str, str]] = None,
+        list_keys: Optional[set] = None,
+    ) -> Dict:
         """
         Parse and auto-heal malformed JSON responses.
 
-        Implements multiple recovery strategies:
+        Recovery layers (in order):
         1. Strip markdown wrappers (```json ... ```)
-        2. Fix trailing commas
-        3. Semantic key mapping
-        4. Type coercion
-        5. Regex extraction
-        6. Structured fallback
+        2. Direct json.loads
+        3. Fix trailing commas
+        4. Regex extraction of {...} block
+        5. Synonym key remapping (caller-provided)
+        6. Type coercion (dict -> [dict] for list_keys)
+        7. Safe fallback structure with parsing_error=True
 
         Args:
             response: Raw LLM response text
+            synonyms: Map from alias keys to canonical keys
+            list_keys: Keys whose values should be lists (wrap dicts)
 
         Returns:
-            Parsed JSON dictionary
+            Parsed JSON dictionary (always a dict; never raises)
         """
+        synonyms = synonyms or {}
+        list_keys = list_keys or set()
 
-        # Strategy 1: Remove markdown wrappers
+        parsed = self._try_parse_layers(response)
+
+        if parsed is None:
+            logger.warning("Could not parse JSON response, returning structured fallback")
+            return {
+                "raw_response": response[:500],
+                "parsing_error": True,
+                "status": "fallback",
+                "message": "LLM response could not be parsed as JSON",
+            }
+
+        if synonyms:
+            parsed = self._apply_synonyms(parsed, synonyms)
+        if list_keys:
+            parsed = self._coerce_lists(parsed, list_keys)
+        return parsed
+
+    @staticmethod
+    def _try_parse_layers(response: str) -> Optional[Dict]:
+        """Run the regex-only repair layers. Returns parsed dict or None."""
         cleaned = response.strip()
         if cleaned.startswith("```"):
-            # Extract content between triple backticks
-            match = re.search(r'```(?:json)?\s*(.*?)\s*```', cleaned, re.DOTALL)
+            match = re.search(r"```(?:json)?\s*(.*?)\s*```", cleaned, re.DOTALL)
             if match:
                 cleaned = match.group(1).strip()
 
-        # Strategy 2: Try direct JSON parse first
         try:
             return json.loads(cleaned)
         except json.JSONDecodeError:
             pass
 
-        # Strategy 3: Fix trailing commas
-        fixed = re.sub(r',(\s*[}\]])', r'\1', cleaned)
+        fixed = re.sub(r",(\s*[}\]])", r"\1", cleaned)
         try:
             return json.loads(fixed)
         except json.JSONDecodeError:
             pass
 
-        # Strategy 4: Extract JSON object with regex
-        json_match = re.search(r'\{[\s\S]*\}', fixed)
+        json_match = re.search(r"\{[\s\S]*\}", fixed)
         if json_match:
-            json_str = json_match.group(0)
-            # Fix any remaining issues
-            json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+            candidate = re.sub(r",(\s*[}\]])", r"\1", json_match.group(0))
             try:
-                return json.loads(json_str)
+                return json.loads(candidate)
             except json.JSONDecodeError:
                 pass
 
-        # Strategy 5: Structured fallback
-        logger.warning(f"Could not parse JSON response, returning structured fallback")
-        return {
-            "raw_response": response[:500],
-            "parsing_error": True,
-            "status": "fallback",
-            "message": "LLM response could not be parsed as JSON"
-        }
+        return None
+
+    @staticmethod
+    def _apply_synonyms(parsed: Dict, synonyms: Dict[str, str]) -> Dict:
+        """Rename alias keys to canonical keys (alias wins only if canonical absent)."""
+        for alias, canonical in synonyms.items():
+            if alias in parsed and canonical not in parsed:
+                parsed[canonical] = parsed.pop(alias)
+        return parsed
+
+    @staticmethod
+    def _coerce_lists(parsed: Dict, list_keys: set) -> Dict:
+        """For each key in list_keys, wrap a dict value into a single-item list."""
+        for key in list_keys:
+            value = parsed.get(key)
+            if isinstance(value, dict):
+                parsed[key] = [value]
+        return parsed
 
 
 # Global LLM engine instance
@@ -398,28 +521,21 @@ def get_ai_response(
     response_format: str = "text",
     max_tokens: int = 4000,
     temperature: float = 0.7,
+    synonyms: Optional[Dict[str, str]] = None,
+    list_keys: Optional[set] = None,
+    required_keys: Optional[set] = None,
+    max_json_retries: int = 1,
 ) -> Union[Dict, str]:
-    """
-    Convenience function to get AI response via the global engine.
-
-    Args:
-        prompt: User message/query
-        system_prompt: System message for model context
-        response_format: "json" or "text"
-        max_tokens: Maximum tokens in response
-        temperature: Sampling temperature (0-1)
-
-    Returns:
-        Dict if response_format="json", str if response_format="text"
-
-    Raises:
-        AllProvidersFailedError: If all providers fail
-    """
+    """Convenience wrapper around the global LLM engine."""
     engine = get_llm_engine()
     return engine.get_ai_response(
         prompt=prompt,
         system_prompt=system_prompt,
         response_format=response_format,
         max_tokens=max_tokens,
-        temperature=temperature
+        temperature=temperature,
+        synonyms=synonyms,
+        list_keys=list_keys,
+        required_keys=required_keys,
+        max_json_retries=max_json_retries,
     )

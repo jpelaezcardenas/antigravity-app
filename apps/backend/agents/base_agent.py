@@ -159,12 +159,15 @@ class BaseAgent(ABC):
         response_format: str = "text",
         max_tokens: int = 4000,
         temperature: float = 0.7,
+        anonymize: bool = True,
         **kwargs
     ) -> Union[Dict, str, Any]:
         """
-        Call LLM with automatic failover and JSON auto-healing.
+        Call LLM with automatic failover, JSON auto-healing, and SOSP anonymization.
 
-        Uses llm_engine.py with Groq → Cerebras → Mistral → Gemini → OpenRouter.
+        Uses llm_engine.py with the configured failover chain. By default the
+        prompt is anonymized (NITs/emails/phones/money) before being sent and
+        the response is rehydrated. This is the Contexia SOSP rule.
 
         Args:
             prompt: User prompt/query
@@ -172,31 +175,43 @@ class BaseAgent(ABC):
             response_format: "json" or "text"
             max_tokens: Maximum response tokens
             temperature: Sampling temperature (0-1)
+            anonymize: Set False ONLY for prompts that contain no PII/fiscal data
+                (e.g., a pure language task with no Colombian data). Default True.
             **kwargs: Additional arguments passed to LLM engine
+                (synonyms, list_keys, required_keys, max_json_retries).
 
         Returns:
             Dict if response_format="json", str if response_format="text"
         """
         try:
             from agents.llm_engine import get_ai_response
-        except ImportError:
-            logger.error("llm_engine module not found")
+            from agents.anonymizer import Anonymizer
+        except ImportError as e:
+            logger.error(f"LLM modules not found: {e}")
             return {} if response_format == "json" else ""
 
         try:
             default_system = f"You are a {self.name} agent for Contexia helping with {self.role.value} tasks."
             final_system_prompt = system_prompt or default_system
 
-            logger.debug(f"{self.name} calling LLM with format={response_format}")
+            if anonymize:
+                masked_prompt, mask_map = Anonymizer.mask(prompt)
+            else:
+                masked_prompt, mask_map = prompt, None
+
+            logger.debug(f"{self.name} calling LLM with format={response_format} anonymize={anonymize}")
 
             response = get_ai_response(
-                prompt=prompt,
+                prompt=masked_prompt,
                 system_prompt=final_system_prompt,
                 response_format=response_format,
                 max_tokens=max_tokens,
                 temperature=temperature,
                 **kwargs
             )
+
+            if mask_map is not None:
+                response = _rehydrate(response, mask_map)
 
             logger.debug(f"{self.name} received LLM response")
             return response
@@ -231,6 +246,18 @@ class BaseAgent(ABC):
 
     def __repr__(self) -> str:
         return f"<{self.name} v{self.version} ({self.role.value})>"
+
+
+def _rehydrate(response: Any, mask_map) -> Any:
+    """Replace anonymization tokens with originals inside a string or dict."""
+    if isinstance(response, str):
+        from agents.anonymizer import Anonymizer
+        return Anonymizer.unmask(response, mask_map)
+    if isinstance(response, dict):
+        return {k: _rehydrate(v, mask_map) for k, v in response.items()}
+    if isinstance(response, list):
+        return [_rehydrate(v, mask_map) for v in response]
+    return response
 
 
 class AgentInput:

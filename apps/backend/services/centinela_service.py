@@ -312,7 +312,7 @@ class Rule9DeudaDIAN(CentinelaRule):
                 "rule_name": self.name,
                 "severity": self.severity,
                 "title": "Obligación pendiente con DIAN",
-                "description": f"Deuda por ${dian_debt:,.0f}} con {dian_debt_overdue_days} días de mora",
+                "description": f"Deuda por ${dian_debt:,.0f} con {dian_debt_overdue_days} días de mora",
                 "recommendation": "Establecer plan de pago con DIAN o pagar inmediatamente",
                 "evidence": {
                     "dian_debt": dian_debt,
@@ -345,7 +345,7 @@ class Rule10InconsistenciaContable(CentinelaRule):
                 "rule_name": self.name,
                 "severity": self.severity,
                 "title": "Balance general no cuadra",
-                "description": f"Diferencia de ${variance:,.0f}} ({variance_percent:.2f}%)",
+                "description": f"Diferencia de ${variance:,.0f} ({variance_percent:.2f}%)",
                 "recommendation": "Auditar asientos contables y ciclos de cierre",
                 "evidence": {
                     "total_assets": assets,
