@@ -22,6 +22,9 @@ try:
     from openai import OpenAI, RateLimitError, APIError, APIConnectionError
 except ImportError:
     OpenAI = None
+    class RateLimitError(Exception): pass
+    class APIError(Exception): pass
+    class APIConnectionError(Exception): pass
 
 import requests
 try:
