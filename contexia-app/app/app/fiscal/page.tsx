@@ -7,7 +7,7 @@ import { TatyEscalationCard } from "@/components/fiscal/TatyEscalationCard";
 
 export default function FiscalPage() {
   return (
-    <div className="px-container-margin-mobile md:px-container-margin-desktop flex flex-col gap-gutter max-w-4xl mx-auto w-full mt-2">
+    <div className="px-container-margin-mobile md:px-container-margin-desktop flex flex-col gap-gutter max-w-7xl mx-auto w-full mt-2">
       <FiscalRiskStatusCard status={fiscalMock.risk} />
       <ExAnteDetectionCard data={fiscalMock.exAnte} />
       <ShadowAuditCard data={fiscalMock.shadowAudit} />
