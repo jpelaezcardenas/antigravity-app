@@ -5,6 +5,7 @@ from presentation.centinela_endpoints import router as centinela_router
 from presentation.cobro_endpoints import router as cobro_router
 from presentation.agents_endpoints import router as agents_router
 from presentation.taty_endpoints import router as taty_router
+from presentation.telegram_endpoints import router as telegram_router
 
 api_router = APIRouter()
 
@@ -14,3 +15,4 @@ api_router.include_router(centinela_router, prefix="/centinela", tags=["centinel
 api_router.include_router(cobro_router, prefix="/cobro", tags=["cobro"])
 api_router.include_router(agents_router, prefix="/agents", tags=["agents"])
 api_router.include_router(taty_router, prefix="/agents", tags=["taty"])
+api_router.include_router(telegram_router, prefix="/channels", tags=["telegram"])
