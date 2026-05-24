@@ -17,9 +17,8 @@ from services.taty_service import get_taty_service
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/taty",
     tags=["taty-contadora"],
-)
+)  # prefix handled by router.py include_router()
 
 
 # ============================================================================

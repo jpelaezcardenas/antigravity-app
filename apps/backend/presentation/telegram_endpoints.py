@@ -11,14 +11,14 @@ import hashlib
 from typing import Optional
 import os
 import json
-import aiohttp
+import httpx
 
 from services.taty_service import get_taty_service
 from core.supabase_client import get_supabase
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/telegram", tags=["telegram"])
+router = APIRouter(tags=["telegram"])  # prefix handled by router.py include_router()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "taty-secret-key")
@@ -150,9 +150,9 @@ async def send_telegram_message(chat_id: int, text: str):
     }
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=payload) as resp:
-                if resp.status != 200:
-                    logger.error(f"❌ Error de Telegram API: {resp.status}")
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(url, json=payload)
+            if resp.status_code != 200:
+                logger.error(f"❌ Error de Telegram API: {resp.status_code}")
     except Exception as e:
         logger.error(f"❌ No se pudo enviar mensaje: {str(e)}")

@@ -30,7 +30,7 @@ async def get_pulso_diario(
     Protected: User can only access their own pulso (IDOR protection).
     Admins can access any user's pulso.
     """
-    await verify_resource_ownership(current_user, usuario_id)
+    await verify_resource_ownership(current_user, usuario_id)  # Fixed: added await
 
     result = await pulso_service.calcular_pulso_diario(usuario_id)
     if not result:

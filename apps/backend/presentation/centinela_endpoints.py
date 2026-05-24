@@ -18,9 +18,8 @@ from core.supabase_client import get_supabase
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/centinela",
     tags=["centinela"],
-)
+)  # prefix handled by router.py include_router()
 
 
 # ============================================================================
@@ -74,6 +73,7 @@ class CentinelaEvaluateResponse(BaseModel):
     response_model=CentinelaEvaluateResponse,
     summary="Evaluate company against Centinela rules"
 )
+@router.options("/evaluate")  # Enable CORS preflight
 async def evaluate_centinela(request: CentinelaEvaluateRequest) -> CentinelaEvaluateResponse:
     """Evaluate company financial data against Centinela rules."""
     try:
