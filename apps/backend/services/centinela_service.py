@@ -54,7 +54,7 @@ class Rule1UVTExcedido(CentinelaRule):
 
     def evaluate(self, data: Dict) -> Optional[Dict]:
         """Verifica si ingresos anuales superan límites del régimen"""
-        regime = data.get("regimen", "")
+        regime = data.get("regime", "")
         annual_revenue = data.get("annual_revenue", 0)
 
         if regime == "Régimen Simple":
