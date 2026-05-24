@@ -4,7 +4,10 @@ Demo mock visual de la app Contexia. Stack: Next.js 16 App Router + React 19 + T
 
 ## Reglas duras
 
-- **Sin backend, sin fetch, sin auth, sin DB.** Todo es mock local tipado en `lib/mock/`.
+- **Live + mock fallback** (cambio 2026-05-27, PHASE 2 DAY 3): Los componentes integrados con backend (Taty, Centinela, Radar) hacen `fetch` real a la API FastAPI vía el cliente en `lib/api/`. Si el backend falla (5xx, network error), caen al mock correspondiente en `lib/mock/` para no romper la demo. Componentes que aún no tienen endpoint backend siguen siendo mock-only.
+- **API base URL**: `NEXT_PUBLIC_API_URL` (default `http://localhost:8000`). Toda llamada va por `lib/api/client.ts`.
+- **Sin auth todavía**: el `company_id` se pasa como prop o se hardcodea (`ctx-001` por defecto) hasta que se conecte autenticación real.
+- **Sin DB en frontend**: nada de localStorage para datos de negocio; sí permitido para preferencias UI mínimas (tema, último scenario seleccionado).
 - **Fuente de verdad visual**: el export de Stitch y los screenshots `screen.png` del ZIP `stitch_contexia_evolution_cfo_as_a_service`. No rediseñar pantallas que Stitch ya definió.
 - **Sin CDN**: nada de React/Tailwind/Babel por unpkg. Las únicas URLs externas son Google Fonts (Inter, JetBrains Mono, Material Symbols) cargadas desde [app/layout.tsx](app/layout.tsx).
 - **Sin librerías nuevas** salvo que sea estrictamente necesario. Stack mínimo.
@@ -21,12 +24,12 @@ La demo debe **sentirse real**. Estado local con `useState` siempre que un contr
 - Filtros, drawers, selects, sliders pueden modificar lo que se muestra.
 - Las alertas y tarjetas pueden expandirse, colapsarse o navegar a vistas mock.
 - Cualquier cambio de estado puede tocar métricas, mensajes, badges, colores y CTAs visibles.
+- **Llamadas a backend reales** (Taty/Centinela/Radar y futuros endpoints): siempre con fallback al mock en caso de error.
 
 **No:**
-- Llamadas a backend o APIs reales.
-- Cálculos financieros precisos contra datos externos.
-- Persistencia (localStorage, cookies, DB).
-- Auth ni roles reales.
+- Cálculos financieros precisos contra datos externos (los costos siguen siendo demos).
+- Persistencia de datos de negocio en localStorage (sólo prefs UI mínimas).
+- Auth ni roles reales (todavía — fase 3).
 
 **Patrón estándar — toggle con mocks por escenario:**
 

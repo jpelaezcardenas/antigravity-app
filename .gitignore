@@ -58,3 +58,31 @@ apps/backend/.env
 lidr-specboot/
 
 **/.claude/settings.local.json
+
+# Next.js debug artifacts (dumps from build/runtime)
+__next.*
+__next._*.txt
+_not-found
+_not-found.txt
+_not-found/
+crear-empresa-wizard.txt
+crear-empresa-wizard/
+flujo-detalle.txt
+index.txt
+
+# Ad-hoc scripts and dumps (not project code)
+all_commits.txt
+git-history.txt
+check_db.py
+check_vercel.py
+check_vercel2.py
+test_api.py
+test_login.py
+
+# Dev logs
+contexia-app/dev-server.log
+*.log
+
+# Social Media OPs (separate workspace)
+Social Media OPs Systems/
+

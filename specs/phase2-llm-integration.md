@@ -176,3 +176,74 @@ Agents 5–7 (Repurposer, Analyst, Distribution) + `agent_orchestrator` expandid
 3. NO depender de `response_format=json_object` — el parser regex es guardián obligatorio
 4. Respetar `max_chars` del proveedor más limitado
 5. Anonimizar NITs/nombres/montos ANTES del LLM (regla SOSP Contexia, NO viene de EAFIT)
+
+---
+
+## 12. DAY 3 — T10–T14 (2026-05-27)
+
+### T10: Agents 4–7 (Editor, Repurposer, Analyst, Distribution)
+
+Cuatro agentes nuevos heredan de `BaseAgent`. Todos usan `call_llm(anonymize=True)`. Registrados en `AgentRole` enum y exportados en `agents/__init__.py`.
+
+| Agente | Rol | Salida clave |
+|--------|-----|--------------|
+| **Editor** (`agent_4_editor.py`) | Pule borrador, valida cumplimiento fiscal/legal, gate binario | `{is_compliant, polished_content, issues, confidence}` |
+| **Repurposer** (`agent_5_repurposer.py`) | Adapta a canal (telegram/dashboard/sms/email) con límites duros | `{variants: {channel: text}, skipped_channels}` |
+| **Analyst** (`agent_6_analyst.py`) | Sintetiza alertas Centinela → semáforo + riesgos + oportunidades | `{status_level, executive_summary, top_risks, opportunities, key_metrics}` |
+| **Distribution** (`agent_7_distribution.py`) | Orquesta entrega (telegram + dashboard implementados; sms/whatsapp/email stub) | `{deliveries: [...], summary: {sent, failed, skipped}}` |
+
+**Tests:** `tests/test_agents_4_7.py` — 17 casos con `call_llm` stubeado. Sin llamadas reales a LLM en CI.
+
+### T11: KB Seeding con pgvector + fallback memoria
+
+**Servicio:** `services/kb_seeding_service.py` con dos backends pluggables:
+1. **pgvector** (preferido) — Supabase `knowledge_chunks` con `embedding vector(1536)` + función RPC `match_knowledge_chunks`
+2. **memoria** (fallback) — keyword match con tokenizer normalizado (stopwords ES/EN, acentos opcionales)
+
+Detección automática al primer uso: si `SUPABASE_URL+KEY` están definidos y la tabla existe, usa pgvector; si no, usa memoria. **El código aplica sin tener pgvector configurado.**
+
+**Migración:** `apps/backend/supabase/migrations/20260527_knowledge_chunks.sql` — extensión `vector`, tabla, índice IVFFlat, RPC con cosine similarity, RLS.
+
+**Seed DIAN:** `apps/backend/kb/dian_chunks.json` con 48 chunks curados (UVT, régimen simple, retención, IVA, facturación electrónica, plazos 2026, sanciones, ICA, exógena, precios de transferencia, etc.). Idempotente por `content_hash`.
+
+**API:**
+- `POST /api/v1/kb/seed` — sembrar chunks para un `client_id`
+- `POST /api/v1/kb/seed-dian` — cargar el seed curado (idempotente)
+- `GET  /api/v1/kb/status` — backend activo + counts
+- `POST /api/v1/kb/search` — debug / eval de retrieval
+
+**Tests:** `tests/test_kb_seeding.py` — 11 casos cubriendo seed idempotente, retrieval con/sin acentos, fallback al pool global, status del backend.
+
+### T12: Frontend wire-up (decision override 2026-05-27)
+
+`contexia-app/CLAUDE.md` decía "sin backend, sin fetch". Tras conflicto detectado durante DAY 3, el usuario autorizó cambio explícito: ahora la app llama APIs reales con fallback a mocks si el backend falla.
+
+**Wired:**
+- `TatyView` → `POST /api/v1/agents/taty/ask` (ya estaba listo desde DAY 2)
+- `app/app/radar/page.tsx` → `GET /api/v1/radar/scenarios?company_id=X` (nuevo, con fallback `radarMock`)
+
+**Backend nuevo:** `presentation/radar_endpoints.py` con `/scenarios` y `/health`. Computa heurísticamente las tres escenarios desde `_BASE_PROFILES`.
+
+**Diferido:**
+- Centinela: el backend tiene `POST /centinela/evaluate` pero falta `GET /centinela/alerts/{company_id}` para feed del Pulso. ActiveAlerts.tsx sigue consumiendo prop estática.
+
+### T13: Nodos Contexia — infraestructura draft
+
+**Archivos:** `infrastructure/nodos/`
+- `docker-compose.yml` — n8n + minio (NAS mock) + vpn-tunnel stub (comentado)
+- `.env.example` + `README.md`
+- `cli/contexia-node.py` — subcomandos `init` (funcional), `status`/`sync`/`teardown` (stubs)
+
+**Validación:** `python contexia-node.py init --company "Test Corp" --location envigado` genera `.env.<node-id>` con secretos aleatorios.
+
+**Diferido:** WireGuard real, auto-registro en API central, endpoint `/wizard/auditoria-sombra`.
+
+### T14: E2E pipeline + docs
+
+**Test:** `tests/test_agent_pipeline.py` ejecuta Planner→Generator→Editor→Repurposer→Analyst→Distribution con LLMs stubeados. 3 casos: full chain, editor blocking, analyst status driving urgency.
+
+**Suite total:** 46 passed + 1 skipped (E2E LLM gated por `RUN_E2E_LLM=1`).
+
+**Memorias actualizadas:**
+- `contexia-app-live-mode.md` (nueva) — documenta override de CLAUDE.md
+- Spec sección 12 (este bloque) — referencia ejecución DAY 3

@@ -6,6 +6,38 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api/v1";
 
 // ============================================================================
+// Radar - Scenario Projections
+// ============================================================================
+
+import type { Scenario, RadarScenarioData } from "@/lib/types/contexia";
+
+export interface RadarResponse {
+  header: { title: string; subtitle: string };
+  scenarios: Record<Scenario, RadarScenarioData>;
+  company_id: string;
+  generated_at: string;
+}
+
+/**
+ * Fetch 3-scenario fiscal projection from backend.
+ * Throws on network/HTTP error — caller decides whether to fall back to mock.
+ */
+export async function fetchRadarScenarios(company_id: string): Promise<RadarResponse> {
+  const url = new URL(`${API_BASE}/radar/scenarios`);
+  url.searchParams.set("company_id", company_id);
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Radar API error: ${response.status}`);
+  }
+  return (await response.json()) as RadarResponse;
+}
+
+// ============================================================================
 // Taty Contadora - Fiscal AI Agent
 // ============================================================================
 

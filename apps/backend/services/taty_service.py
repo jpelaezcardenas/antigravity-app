@@ -22,8 +22,12 @@ import json
 
 from agents.llm_engine import get_ai_response
 from agents.anonymizer import Anonymizer
+from services.kb_seeding_service import retrieve_similar, ensure_dian_loaded
 
 logger = logging.getLogger(__name__)
+
+# Load DIAN seed into the KB store at module import (idempotent, no-op if already loaded)
+ensure_dian_loaded()
 
 
 class TatyAgentService:
@@ -234,39 +238,42 @@ class TatyAgentService:
         self, question: str, profile: Dict
     ) -> Tuple[List[Dict], List[str]]:
         """
-        Retrieve relevant knowledge chunks (MVP: keyword match; later: embeddings).
+        Retrieve relevant knowledge chunks via kb_seeding_service.
+
+        Backend selection (pgvector vs in-memory) is handled by the service.
+        Falls back to legacy KNOWLEDGE_SOURCES dict if the service returns nothing.
 
         Returns:
-            (chunks, sources_used)
+            (chunks, sources_used) where chunks have shape {source, content/text, ...}
         """
-        chunks = []
-        sources_used = []
+        client_id = profile.get("company_id", "__global__")
+        results = retrieve_similar(query=question, client_id=client_id, top_k=5)
 
-        # MVP: Simple keyword matching
-        question_lower = question.lower()
-        keywords = {
-            "uvt": ["dian_normograma"],
-            "régimen simple": ["dian_normograma"],
-            "renta": ["dian_normograma"],
-            "retención": ["dian_normograma"],
-            "iva": ["dian_normograma"],
-            "facturación electrónica": ["dian_normograma"],
-            "cambio de régimen": ["dian_normograma"],
-            "matriz financiera": ["contexia_fiscal"],
-            "índice braille": ["contexia_fiscal"],
-        }
+        # Normalize chunk shape: kb_seeding uses 'content', legacy used 'text'
+        chunks: List[Dict] = []
+        sources_used: List[str] = []
+        for r in results:
+            text = r.get("content") or r.get("text") or ""
+            source = r.get("source", "DIAN")
+            chunks.append({"text": text, "source": source})
+            if source not in sources_used:
+                sources_used.append(source)
 
-        for keyword, source_ids in keywords.items():
-            if keyword in question_lower:
-                for source_id in source_ids:
-                    if source_id in profile["fuentes_habilitadas"]:
-                        if source_id not in sources_used:
-                            sources_used.append(source_id)
-                        # Add all chunks from this source
-                        for chunk in self.KNOWLEDGE_SOURCES[source_id]["chunks"]:
-                            chunks.append(chunk)
+        # Legacy fallback for chunks not yet in KB (Matriz Financiera, Índice Braille keywords)
+        if not chunks:
+            question_lower = question.lower()
+            legacy_keywords = {
+                "matriz financiera": "contexia_fiscal",
+                "índice braille": "contexia_fiscal",
+            }
+            for kw, src_id in legacy_keywords.items():
+                if kw in question_lower and src_id in profile.get("fuentes_habilitadas", []):
+                    for chunk in self.KNOWLEDGE_SOURCES[src_id]["chunks"]:
+                        chunks.append(chunk)
+                        if chunk["source"] not in sources_used:
+                            sources_used.append(chunk["source"])
 
-        logger.debug(f"Retrieved {len(chunks)} chunks from {len(sources_used)} sources")
+        logger.debug(f"Retrieved {len(chunks)} chunks via kb_seeding_service")
         return chunks, sources_used
 
     def _build_prompt(self, question: str, chunks: List[Dict], profile: Dict) -> str:

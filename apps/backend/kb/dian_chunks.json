@@ -1,0 +1,242 @@
+[
+  {
+    "source": "Resolución DIAN 238/2025 — UVT",
+    "content": "El UVT para 2026 es de $52.374 según Resolución DIAN 238 de 2025. La UVT es la Unidad de Valor Tributario que sirve como referencia para ajustar valores absolutos en el sistema tributario colombiano.",
+    "metadata": {"topic": "uvt", "year": 2026}
+  },
+  {
+    "source": "Estatuto Tributario Art. 905 — Régimen Simple",
+    "content": "El Régimen Simple de Tributación está dirigido a personas naturales y jurídicas cuyos ingresos brutos anuales sean inferiores a 100.000 UVT. Incluye al ICA y reemplaza el impuesto de renta con tarifas progresivas según ingresos.",
+    "metadata": {"topic": "regimen_simple", "norma": "ET Art. 905"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 908 — Tarifas Régimen Simple",
+    "content": "Las tarifas del Régimen Simple van de 1.8% a 11.6% según el grupo de actividad económica. Tiendas y minimercados: 2-11.6%. Servicios profesionales: 5.9-14.5%. Manufactura: 1.6-5.4%.",
+    "metadata": {"topic": "regimen_simple_tarifas"}
+  },
+  {
+    "source": "Decreto 1625/2016 — Retención en la Fuente",
+    "content": "La retención en la fuente por servicios prestados por personas jurídicas es del 4% sobre el valor del servicio. Por honorarios profesionales es del 10% u 11% según el monto. Por arrendamiento de bienes raíces es del 3.5%.",
+    "metadata": {"topic": "retencion_fuente"}
+  },
+  {
+    "source": "DIAN Concepto 2024 — Retención Servicios Generales",
+    "content": "La retención por servicios generales prestados por personas naturales no obligadas a declarar es del 6%. Para servicios técnicos es del 4%. Aplica si el pago supera 4 UVT.",
+    "metadata": {"topic": "retencion_servicios"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 420 — IVA",
+    "content": "El IVA general en Colombia es del 19% sobre la base gravable. Hay tarifa diferencial del 5% para algunos bienes (productos agropecuarios, medicamentos) y exenciones para servicios de salud, educación, transporte público y financieros.",
+    "metadata": {"topic": "iva", "tarifa_general": 19}
+  },
+  {
+    "source": "Resolución DIAN 000042/2020 — Facturación Electrónica",
+    "content": "Desde 2022, todos los responsables de IVA y no responsables que sean comerciantes deben emitir factura electrónica de venta. La transmisión a DIAN es obligatoria en tiempo real vía proveedor tecnológico autorizado.",
+    "metadata": {"topic": "facturacion_electronica"}
+  },
+  {
+    "source": "DIAN — Documento Equivalente Electrónico",
+    "content": "El documento equivalente electrónico reemplaza recibos de caja, tiquetes POS y otros documentos en operaciones donde no se requiere factura. Obligatorio desde 2024 para grandes contribuyentes.",
+    "metadata": {"topic": "documento_equivalente"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 365 — RUT",
+    "content": "El Registro Único Tributario (RUT) es el mecanismo único para identificar, ubicar y clasificar a los sujetos de obligaciones tributarias. Es obligatorio para todas las personas naturales y jurídicas que realicen actividades económicas.",
+    "metadata": {"topic": "rut"}
+  },
+  {
+    "source": "DIAN — Cambio de Régimen Tributario",
+    "content": "Un contribuyente del Régimen Simple puede solicitar cambio al Régimen Ordinario únicamente al inicio del año fiscal mediante actualización del RUT. El cambio inverso requiere cumplir los topes de ingresos.",
+    "metadata": {"topic": "cambio_regimen"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 240 — Renta Personas Jurídicas",
+    "content": "La tarifa general del impuesto sobre la renta para personas jurídicas en 2026 es del 35%. Aplica sobrecarga del 5% para entidades financieras, llevándolas al 40%.",
+    "metadata": {"topic": "renta_juridicas", "tarifa": 35}
+  },
+  {
+    "source": "Estatuto Tributario Art. 241 — Renta Personas Naturales",
+    "content": "El impuesto de renta de personas naturales aplica tarifa progresiva por rangos: 0% hasta 1.090 UVT, 19% entre 1.090 y 1.700 UVT, 28% entre 1.700 y 4.100 UVT, 33% entre 4.100 y 8.670 UVT, 35% entre 8.670 y 18.970 UVT, 37% entre 18.970 y 31.000 UVT, y 39% más de 31.000 UVT.",
+    "metadata": {"topic": "renta_naturales"}
+  },
+  {
+    "source": "DIAN — Plazos Declaración de Renta 2026",
+    "content": "Los plazos de declaración y pago del impuesto de renta para personas naturales 2026 inician en agosto según los dos últimos dígitos del NIT, escalonados hasta octubre.",
+    "metadata": {"topic": "plazos_renta"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 235-2 — Rentas Exentas",
+    "content": "Son rentas exentas del impuesto de renta los aportes obligatorios a pensión, salud, ARL, hasta cierto tope. También las cesantías, los intereses sobre cesantías y la indemnización por accidentes de trabajo.",
+    "metadata": {"topic": "rentas_exentas"}
+  },
+  {
+    "source": "Ley 1819/2016 — Régimen ZESE",
+    "content": "El Régimen Especial ZESE (Zonas Económicas y Sociales Especiales) ofrece tarifa de renta del 0% durante 5 años para nuevas empresas en Buenaventura, Quibdó, La Guajira, Norte de Santander y otras zonas designadas.",
+    "metadata": {"topic": "zese"}
+  },
+  {
+    "source": "DIAN — Impuesto al Patrimonio",
+    "content": "El impuesto al patrimonio aplica para personas naturales con patrimonio líquido superior a 72.000 UVT al 1 de enero. Tarifas progresivas: 0.5%, 1% y 1.5% según rangos de patrimonio.",
+    "metadata": {"topic": "patrimonio"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 484 — IVA Bienes Excluidos",
+    "content": "Están excluidos del IVA: servicios de salud humana, servicios de educación, transporte público de pasajeros, servicios financieros, arrendamiento de vivienda urbana, y servicios públicos domiciliarios.",
+    "metadata": {"topic": "iva_excluidos"}
+  },
+  {
+    "source": "DIAN — Devoluciones y Compensaciones IVA",
+    "content": "Los productores de bienes exentos pueden solicitar devolución de IVA pagado en insumos. El proceso requiere certificación de revisor fiscal y aplicación dentro de los 2 años siguientes al período gravable.",
+    "metadata": {"topic": "iva_devoluciones"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 771-2 — Soporte de Costos",
+    "content": "Para que costos y deducciones sean aceptados fiscalmente deben estar respaldados por factura electrónica, documento equivalente, o documento soporte en adquisiciones a no obligados a facturar. Sin soporte válido, la DIAN rechaza la deducción.",
+    "metadata": {"topic": "soporte_costos"}
+  },
+  {
+    "source": "DIAN — Información Exógena 2026",
+    "content": "Las personas naturales y jurídicas con ingresos brutos superiores a 500 millones de pesos en 2025 deben reportar información exógena en 2026: clientes, proveedores, empleados, pagos, retenciones.",
+    "metadata": {"topic": "exogena"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 631 — Sanciones",
+    "content": "Las sanciones por no declarar son del 20% del valor de las consignaciones bancarias o ingresos del periodo. Sanción por extemporaneidad: 5% del impuesto a cargo por cada mes o fracción de retardo, hasta 100%.",
+    "metadata": {"topic": "sanciones"}
+  },
+  {
+    "source": "DIAN — Calendario Tributario 2026",
+    "content": "Calendario clave 2026: IVA bimestral vence entre el 8 y 22 de cada bimestre par. Retención en la fuente mensual entre el 6 y 25 del mes siguiente. Renta personas naturales: agosto-octubre. ICA territorial varía por municipio.",
+    "metadata": {"topic": "calendario_2026"}
+  },
+  {
+    "source": "Ley 2010/2019 — Beneficios Tributarios PYMES",
+    "content": "Las pequeñas empresas con ingresos brutos inferiores a 50.000 UVT en su año fiscal pueden acceder a tarifa progresiva de renta: 9% el primer año, 14% el segundo, 19% el tercero, antes de pagar la tarifa plena.",
+    "metadata": {"topic": "beneficios_pymes"}
+  },
+  {
+    "source": "DIAN — Régimen Tributario Especial",
+    "content": "Las entidades sin ánimo de lucro pueden acceder al Régimen Tributario Especial, con tarifa del 20% sobre el beneficio neto. Requiere registro anual ante DIAN antes del 31 de marzo.",
+    "metadata": {"topic": "rte"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 25 — Ingresos No Constitutivos",
+    "content": "No constituyen renta los pagos en especie a empleados (alimentación, transporte) hasta 41 UVT mensuales, los aportes al fondo de empleados y las indemnizaciones por seguros.",
+    "metadata": {"topic": "ingresos_no_constitutivos"}
+  },
+  {
+    "source": "DIAN — Notificación Electrónica",
+    "content": "Desde 2023, todas las notificaciones de DIAN a contribuyentes se realizan por buzón electrónico vía portal MUISCA. Los contribuyentes tienen 5 días hábiles para responder requerimientos.",
+    "metadata": {"topic": "notificacion_electronica"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 614 — Conciliación Fiscal",
+    "content": "La conciliación fiscal es el procedimiento para reconciliar las diferencias entre la información contable y fiscal. Es obligatoria para todos los contribuyentes del régimen ordinario y debe presentarse junto con la declaración de renta.",
+    "metadata": {"topic": "conciliacion_fiscal"}
+  },
+  {
+    "source": "DIAN — Precios de Transferencia",
+    "content": "Las operaciones con vinculados económicos o ubicados en paraísos fiscales superiores a 61.000 UVT requieren documentación de precios de transferencia. Aplica reportes país-por-país para grupos con ingresos >81 millones EUR.",
+    "metadata": {"topic": "precios_transferencia"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 408 — Pago Tributarios Exterior",
+    "content": "Los pagos al exterior por servicios técnicos, asistencia técnica, consultoría o regalías están sujetos a retención en la fuente del 20%. Si hay convenio de doble tributación, puede haber reducción.",
+    "metadata": {"topic": "retencion_exterior"}
+  },
+  {
+    "source": "DIAN — Beneficio Tributario Empleo Joven",
+    "content": "Las empresas que contraten jóvenes menores de 28 años pueden deducir el 120% del pago de salarios y aportes parafiscales durante 3 años. Requiere registro previo en SENA y reporte trimestral.",
+    "metadata": {"topic": "empleo_joven"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 437 — Responsables de IVA",
+    "content": "Son responsables de IVA los comerciantes, productores e importadores de bienes gravados. No son responsables quienes tengan ingresos brutos inferiores a 3.500 UVT anuales y cumplan otros requisitos. Estos últimos no facturan con IVA pero deben emitir documento equivalente.",
+    "metadata": {"topic": "responsables_iva"}
+  },
+  {
+    "source": "DIAN — Devolución de Saldos a Favor",
+    "content": "Los saldos a favor de renta o IVA pueden ser solicitados en devolución dentro de los 2 años posteriores al vencimiento del término para declarar. El plazo de resolución por DIAN es de 50 días hábiles.",
+    "metadata": {"topic": "saldos_favor"}
+  },
+  {
+    "source": "Resolución DIAN 165/2023 — Nómina Electrónica",
+    "content": "El documento soporte de nómina electrónica es obligatorio para todos los empleadores desde 2023. Debe transmitirse a DIAN en los primeros 10 días del mes siguiente al pago.",
+    "metadata": {"topic": "nomina_electronica"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 869 — Abuso Tributario",
+    "content": "La DIAN puede recaracterizar operaciones cuando detecte abuso en materia tributaria: simulación, fraude a la ley, o uso de estructuras sin sustancia económica. La sanción puede llegar al 200% del impuesto evadido.",
+    "metadata": {"topic": "abuso_tributario"}
+  },
+  {
+    "source": "DIAN — Convenios de Doble Tributación",
+    "content": "Colombia tiene convenios de doble tributación con España, México, Chile, Suiza, Canadá, India, Corea, República Checa, Portugal, entre otros. Permiten reducir retenciones por pagos al exterior y evitar doble imposición sobre la renta.",
+    "metadata": {"topic": "doble_tributacion"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 481 — IVA Bienes Exentos",
+    "content": "Son bienes exentos de IVA con derecho a devolución: exportaciones, libros y revistas de carácter científico y cultural, animales vivos de la especie bovina excepto para corridas de toros, carnes frescas y refrigeradas.",
+    "metadata": {"topic": "iva_exentos"}
+  },
+  {
+    "source": "DIAN — Sanción Mínima 2026",
+    "content": "La sanción mínima para el año 2026 es de 10 UVT, equivalente a $523.740. Aplica como piso para cualquier sanción tributaria que sea menor a este valor.",
+    "metadata": {"topic": "sancion_minima"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 850 — Solicitud de Devolución",
+    "content": "Para solicitar devolución de saldos a favor, el contribuyente debe presentar formulario 010, certificación bancaria, y soportes de la operación. La DIAN puede solicitar revisión adicional o cruzar información antes de aprobar.",
+    "metadata": {"topic": "solicitud_devolucion"}
+  },
+  {
+    "source": "DIAN — Régimen Simple vs Ordinario para Servicios",
+    "content": "Para empresas de servicios con ingresos inferiores a 12.000 UVT, el Régimen Simple suele ser más favorable (5.9% sobre ingreso bruto vs 35% sobre utilidad). Para empresas con altos costos deducibles, el Régimen Ordinario puede ser preferible.",
+    "metadata": {"topic": "comparacion_regimenes"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 107 — Deducciones por Costos",
+    "content": "Son deducibles los costos y gastos necesarios para producir la renta, siempre que tengan relación de causalidad con la actividad, sean proporcionales y estén soportados con factura electrónica o documento equivalente.",
+    "metadata": {"topic": "deducciones_costos"}
+  },
+  {
+    "source": "DIAN — ICA Municipal",
+    "content": "El Impuesto de Industria y Comercio (ICA) es de orden municipal y varía por ciudad. Bogotá: tarifas de 4.14 a 13.8 por mil. Medellín: 2 a 13 por mil. Se declara y paga mensual o bimestral según el municipio.",
+    "metadata": {"topic": "ica"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 596 — Declaración Anual de Activos en el Exterior",
+    "content": "Las personas naturales con activos en el exterior superiores a 2.000 UVT deben presentar declaración anual de activos en el exterior. Plazo: igual al de renta. Sanción por omisión: 5% del valor de los activos.",
+    "metadata": {"topic": "activos_exterior"}
+  },
+  {
+    "source": "DIAN — Beneficio Tributario por Donación",
+    "content": "Las donaciones a entidades sin ánimo de lucro registradas en el RTE son deducibles hasta el 25% de la renta líquida. Requieren certificado de la entidad y registro previo. No aplica para donaciones políticas.",
+    "metadata": {"topic": "donaciones"}
+  },
+  {
+    "source": "Estatuto Tributario Art. 600 — Periodicidad IVA",
+    "content": "La periodicidad de declaración de IVA depende del ingreso bruto: bimestral si supera 92.000 UVT anual, cuatrimestral si está entre 15.000 y 92.000 UVT, anual si es menor a 15.000 UVT.",
+    "metadata": {"topic": "periodicidad_iva"}
+  },
+  {
+    "source": "Contexia — Matriz Financiera",
+    "content": "La Matriz Financiera de Contexia evalúa cuatro dimensiones: liquidez (ratio corriente, prueba ácida), solvencia (endeudamiento, cobertura de intereses), rentabilidad (ROE, ROA, margen neto) y escalabilidad (crecimiento ingresos, palanca operativa).",
+    "metadata": {"topic": "matriz_financiera", "source_type": "contexia_internal"}
+  },
+  {
+    "source": "Contexia — Índice Braille",
+    "content": "El Índice Braille de Contexia mide el patrimonio neto sobre activos totales. Un índice superior al 50% indica solidez financiera. Inferior al 30% requiere acción correctiva inmediata. Entre 30-50% es zona de vigilancia.",
+    "metadata": {"topic": "indice_braille", "source_type": "contexia_internal"}
+  },
+  {
+    "source": "Contexia — Pulso 8AM Semáforo",
+    "content": "El Pulso 8AM clasifica el estado fiscal diario en cuatro niveles: SANA (verde, sin alertas), VIGILANCIA (amarillo, 1-2 alertas menores), ALERTA (naranja, riesgo medio), CRÍTICA (rojo, acción inmediata requerida). Se envía cada mañana a las 8AM hora Colombia.",
+    "metadata": {"topic": "pulso_8am", "source_type": "contexia_internal"}
+  },
+  {
+    "source": "Contexia — Centinela Ex-Ante",
+    "content": "Centinela es el módulo de detección de riesgos ex-ante de Contexia. Combina 10+ reglas determinísticas (matriz financiera) con un modelo probabilístico (índice Braille) para alertar sobre problemas fiscales o financieros ANTES de que se materialicen.",
+    "metadata": {"topic": "centinela", "source_type": "contexia_internal"}
+  }
+]
