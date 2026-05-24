@@ -11,9 +11,10 @@ export const fiscalMock = {
   shadowAudit: {
     findings: [],
   },
-  thresholds: {
-    uvt: { limit: 8380, used: 10000000, percent: 119 },
-  },
+  thresholds: [
+    { id: "1", label: "Tope Responsable de IVA", current: 3100, max: 3500, unit: "UVT" },
+    { id: "2", label: "Tope Régimen Simple", current: 80000, max: 100000, unit: "UVT" }
+  ],
   taty: {
     lastQuestion: null,
   },
