@@ -1,6 +1,0 @@
-node_modules
-dist
-build
-.vercel
-package-lock.json
-*.md
