@@ -1,47 +1,156 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from application.centinela_service import CentinelaService
-from core.deps import get_current_user, verify_resource_ownership
+"""
+Centinela Rules Engine - REST API endpoints.
 
-router = APIRouter()
-centinela_service = CentinelaService()
+Expone motor de detección fiscal ex-ante para:
+- Dashboard (Centinela card)
+- Auditoría programada
+- Validación en tiempo real
+"""
 
+from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
+import logging
 
-@router.get("/alerts")
-async def get_centinela_alerts(company_id: str = Query(...)):
-    """
-    GET /api/v1/centinela/alerts?company_id=...
-    Response: Dict with alerts_by_severity
+from services.centinela_service import get_centinela_service
+from core.supabase_client import get_supabase
 
-    Public endpoint for demo (no auth required for MVP)
-    """
-    # Demo: Use company_id as usuario_id for now
-    alertas = await centinela_service.evaluar_umbrales(company_id)
+logger = logging.getLogger(__name__)
 
-    # Wrapper: Convert List[AlertaTributaria] → Dict with severity grouping
-    by_severity = {
-        "critical": [a for a in alertas if a.severidad == "roja"],
-        "warning": [a for a in alertas if a.severidad == "amarilla"],
-        "info": [a for a in alertas if a.severidad == "verde"]
-    }
-
-    return {
-        "total_alerts": len(alertas),
-        "alerts_by_severity": by_severity,
-        "company_id": company_id
-    }
+router = APIRouter(
+    prefix="/centinela",
+    tags=["centinela"],
+)
 
 
-@router.get("/{usuario_id}")
-async def get_centinela_fiscal(
-    usuario_id: str,
-    current_user: dict = Depends(get_current_user),
-):
-    """
-    GET /api/v1/centinela/{usuario_id}
-    Response: List[AlertaTributaria]
+# ============================================================================
+# Request/Response Models
+# ============================================================================
 
-    Protected: User can only access their own fiscal alerts (IDOR protection).
-    """
-    verify_resource_ownership(current_user, usuario_id)
 
-    return await centinela_service.evaluar_umbrales(usuario_id)
+class CentinelaEvaluateRequest(BaseModel):
+    """Request to evaluate company data against Centinela rules."""
+    company_id: str = Field(
+        ...,
+        description="Client identifier (e.g., 'ctx-001')"
+    )
+    financial_data: Dict[str, Any] = Field(
+        ...,
+        description="Financial data to evaluate (annual_revenue, regime, etc.)"
+    )
+    save_alerts: bool = Field(
+        True,
+        description="Whether to save alerts to Supabase"
+    )
+
+
+class CentinelaAlert(BaseModel):
+    """A Centinela rule alert"""
+    rule_id: str = Field(..., description="Rule identifier (R001-R010)")
+    rule_name: str = Field(..., description="Human-readable rule name")
+    severity: str = Field(..., description="'info', 'warning', 'critical'")
+    title: str = Field(..., description="Alert title")
+    description: str = Field(..., description="Alert description")
+    recommendation: Optional[str] = Field(None, description="Recommended action")
+    evidence: Dict[str, Any] = Field(..., description="Data that triggered the alert")
+
+
+class CentinelaEvaluateResponse(BaseModel):
+    """Response from Centinela evaluation"""
+    company_id: str = Field(..., description="Client identifier")
+    alerts: List[CentinelaAlert] = Field(..., description="Triggered alerts")
+    alert_count: int = Field(..., description="Total alerts triggered")
+    critical_count: int = Field(..., description="Critical severity alerts")
+    warning_count: int = Field(..., description="Warning severity alerts")
+    risk_level: str = Field(..., description="'low', 'medium', 'high', 'critical'")
+    saved_alert_ids: List[str] = Field(
+        default_factory=list,
+        description="IDs of saved alerts in Supabase"
+    )
+
+
+@router.post(
+    "/evaluate",
+    response_model=CentinelaEvaluateResponse,
+    summary="Evaluate company against Centinela rules"
+)
+async def evaluate_centinela(request: CentinelaEvaluateRequest) -> CentinelaEvaluateResponse:
+    """Evaluate company financial data against Centinela rules."""
+    try:
+        logger.info(f"Centinela.evaluate() for company_id={request.company_id}")
+
+        centinela = get_centinela_service()
+        alerts = centinela.evaluate(
+            company_id=request.company_id,
+            data=request.financial_data
+        )
+
+        saved_ids = []
+        if request.save_alerts and alerts:
+            saved_ids = centinela.save_alerts(alerts)
+
+        critical_count = sum(1 for a in alerts if a["severity"] == "critical")
+        warning_count = sum(1 for a in alerts if a["severity"] == "warning")
+
+        if critical_count >= 2:
+            risk_level = "critical"
+        elif critical_count >= 1 or warning_count >= 3:
+            risk_level = "high"
+        elif warning_count >= 1:
+            risk_level = "medium"
+        else:
+            risk_level = "low"
+
+        logger.info(f"Centinela evaluation: {len(alerts)} alerts, risk_level={risk_level}")
+
+        alert_models = [
+            CentinelaAlert(
+                rule_id=a["rule_id"],
+                rule_name=a["rule_name"],
+                severity=a["severity"],
+                title=a["title"],
+                description=a["description"],
+                recommendation=a.get("recommendation"),
+                evidence=a.get("evidence", {}),
+            )
+            for a in alerts
+        ]
+
+        return CentinelaEvaluateResponse(
+            company_id=request.company_id,
+            alerts=alert_models,
+            alert_count=len(alerts),
+            critical_count=critical_count,
+            warning_count=warning_count,
+            risk_level=risk_level,
+            saved_alert_ids=saved_ids,
+        )
+
+    except Exception as e:
+        logger.error(f"Error in evaluate_centinela: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error evaluating Centinela rules"
+        )
+
+
+@router.get(
+    "/health",
+    summary="Health check",
+)
+async def centinela_health():
+    """Check if Centinela service is ready."""
+    try:
+        centinela = get_centinela_service()
+        return {
+            "status": "ok",
+            "service": "centinela",
+            "rules_count": len(centinela.rules),
+            "ready": True
+        }
+    except Exception as e:
+        logger.error(f"Centinela health check failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Centinela service not ready"
+        )
