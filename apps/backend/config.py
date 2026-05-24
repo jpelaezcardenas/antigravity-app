@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = ""
     LLM_MODEL: str = "llama-3.3-70b-versatile"
 
+    # Taty channels
+    TELEGRAM_BOT_TOKEN: str = ""
+    TATY_TELEGRAM_COMPANY_ID: str = "31676930-b476-472b-bced-fd25f973cf8a"
+
     @property
     def origins_list(self) -> List[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]

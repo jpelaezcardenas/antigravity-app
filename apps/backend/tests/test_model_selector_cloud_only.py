@@ -59,7 +59,8 @@ class TestCloudOnlyArchitecture:
         tier3_tasks = [
             "centinela_decision",
             "compliance_audit",
-            "fiscal_strategy"
+            "fiscal_strategy",
+            "taty_fiscal_rag",
         ]
 
         for task in tier3_tasks:
@@ -95,6 +96,7 @@ class TestCloudOnlyArchitecture:
             ("taty_faq", LLMProvider.OPENROUTER_FREE),
             ("pulso_analysis", LLMProvider.OPENROUTER_FREE),
             ("centinela_decision", LLMProvider.GROQ),
+            ("taty_fiscal_rag", LLMProvider.GROQ),
         ]
 
         for task, expected_model in tasks:

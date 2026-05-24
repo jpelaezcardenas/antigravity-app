@@ -1,6 +1,6 @@
 # Constantes tributarias para Colombia (UVT 2026)
 
-UVT_2026 = 49799  # Valor de la UVT para 2026
+UVT_2026 = 52374  # Resolucion DIAN 000238 de 2025
 
 # Umbrales en UVT
 UMBRAL_RENTA_UVT = 1400

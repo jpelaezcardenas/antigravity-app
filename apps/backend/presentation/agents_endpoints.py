@@ -10,6 +10,11 @@ from pydantic import BaseModel
 import logging
 
 from agents.llm_engine import get_ai_response, AllProvidersFailedError
+from application.taty_agent_service import (
+    TatyAgentRequest,
+    TatyAgentResponse,
+    taty_agent_service,
+)
 from core.model_selector import choose_model_for_task, get_task_description
 
 logger = logging.getLogger(__name__)
@@ -24,6 +29,9 @@ class AskRequest(BaseModel):
     question: str
     company_id: str
     context: str = ""
+    channel: str = "dashboard"
+    conversation_id: str | None = None
+    user_id: str | None = None
 
 
 class AnalysisRequest(BaseModel):
@@ -44,44 +52,24 @@ class AgentResponse(BaseModel):
 # TIER 1: OpenRouter Free (Non-Sensitive)
 # ============================================
 
-@router.post("/taty/ask")
+@router.post("/taty/ask", response_model=TatyAgentResponse)
 async def taty_ask(request: AskRequest):
     """
-    Taty FAQ: Answer user questions about taxes, processes, etc.
+    Taty Fiscal: answer user questions with lightweight RAG, citations,
+    latency tracking, and human-review flags.
 
-    Automatically uses: OpenRouter Free (no sensitive data)
+    Response keeps result/response aliases for current dashboard compatibility.
     """
     try:
-        model = choose_model_for_task("taty_faq")
-
-        system_prompt = f"""You are Taty, a helpful assistant for Contexia.
-Your role is to answer questions about:
-- Tax basics (Renta, IVA, retenciones)
-- Invoicing and receipts
-- Financial processes
-- General accounting concepts
-
-Company context: {request.context if request.context else "General knowledge"}
-
-Be clear, concise, and in Spanish."""
-
-        response = get_ai_response(
-            prompt=request.question,
-            system_prompt=system_prompt,
-            response_format="text",
-            max_tokens=1000,
-            temperature=0.7
+        taty_request = TatyAgentRequest(
+            company_id=request.company_id,
+            question=request.question,
+            channel=request.channel if request.channel in {"dashboard", "telegram", "whatsapp", "api"} else "api",
+            conversation_id=request.conversation_id,
+            user_id=request.user_id,
+            context=request.context,
         )
-
-        task_desc = get_task_description("taty_faq")
-
-        return AgentResponse(
-            result=response,
-            model_used=model.value,
-            task_type="taty_faq",
-            tier=task_desc["tier"],
-            success=True
-        )
+        return taty_agent_service.ask(taty_request)
 
     except AllProvidersFailedError as e:
         logger.error(f"Taty Ask failed: {str(e)}")
@@ -89,6 +77,22 @@ Be clear, concise, and in Spanish."""
     except Exception as e:
         logger.error(f"Unexpected error in Taty Ask: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/taty/history")
+async def taty_history(company_id: str, limit: int = 10):
+    """
+    Compatibility endpoint for clients that already ask for Taty history.
+
+    The MVP service logs requests server-side. Persistent conversation storage
+    can be wired to Supabase after the pilot schema is applied.
+    """
+    return {
+        "company_id": company_id,
+        "limit": limit,
+        "messages": [],
+        "success": True,
+    }
 
 
 @router.post("/social/generate-content")

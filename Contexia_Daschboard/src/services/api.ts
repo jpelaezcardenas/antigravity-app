@@ -46,10 +46,14 @@ export const api = {
 
   // TATY ASK
   askTaty: async (companyId: string, question: string) => {
-    const response = await fetch(`${BASE_URL}/llm/analyze`, {
+    const response = await fetch(`${BASE_URL}/agents/taty/ask`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ prompt: question, system_prompt: "Eres Taty, una experta financiera y estratega de contenido." }),
+      body: JSON.stringify({
+        company_id: companyId,
+        question,
+        channel: 'dashboard',
+      }),
     });
     if (!response.ok) throw new Error('Error in Taty Ask');
     return response.json();

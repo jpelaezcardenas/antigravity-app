@@ -107,7 +107,8 @@ class LLMEngine:
         response_format: str = "text",
         max_tokens: int = 4000,
         temperature: float = 0.7,
-        timeout: int = 30
+        timeout: int = 30,
+        preferred_provider: LLMProvider | None = None,
     ) -> Union[Dict, str]:
         """
         Get AI response with automatic failover and JSON auto-healing.
@@ -129,7 +130,14 @@ class LLMEngine:
 
         errors_log = []
 
-        for provider in self.provider_order:
+        provider_order = self.provider_order
+        if preferred_provider:
+            provider_order = [
+                preferred_provider,
+                *[provider for provider in self.provider_order if provider != preferred_provider],
+            ]
+
+        for provider in provider_order:
             try:
                 logger.info(f"Attempting LLM request via {provider.value}")
 
@@ -397,6 +405,7 @@ def get_ai_response(
     response_format: str = "text",
     max_tokens: int = 4000,
     temperature: float = 0.7,
+    preferred_provider: LLMProvider | None = None,
 ) -> Union[Dict, str]:
     """
     Convenience function to get AI response via the global engine.
@@ -420,5 +429,6 @@ def get_ai_response(
         system_prompt=system_prompt,
         response_format=response_format,
         max_tokens=max_tokens,
-        temperature=temperature
+        temperature=temperature,
+        preferred_provider=preferred_provider,
     )

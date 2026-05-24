@@ -32,7 +32,7 @@ export const TatyView = () => {
 
     try {
       const data = await api.askTaty('31676930-b476-472b-bced-fd25f973cf8a', text.trim());
-      const resp: ChatMessage = { id: `msg_${Date.now() + 1}`, role: 'taty', content: data.answer || data.response || "No response", timestamp: new Date().toISOString() };
+      const resp: ChatMessage = { id: `msg_${Date.now() + 1}`, role: 'taty', content: data.answer || data.response || data.result || "No response", timestamp: new Date().toISOString() };
       setMessages(prev => [...prev, resp]);
     } catch (error) {
       console.error("Error asking Taty:", error);

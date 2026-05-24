@@ -19,6 +19,7 @@ class TaskType(Enum):
     SOCIAL_CONTENT_GEN = "social_content_gen"
     SOCIAL_ANALYSIS = "social_analysis"
     GENERAL_INQUIRY = "general_inquiry"
+    TATY_FISCAL_RAG = "taty_fiscal_rag"
 
     # Tier 2: Financial data, private
     PULSO_ANALYSIS = "pulso_analysis"
@@ -96,6 +97,7 @@ def choose_model_for_task(task_type: str) -> LLMProvider:
         "compliance_audit",
         "fiscal_strategy",
         "tax_planning",
+        "taty_fiscal_rag",
         "legal_review",
         "regulatory_check",
         "dian_review",
@@ -131,6 +133,7 @@ def get_task_tier(task_type: str) -> str:
     # Tier 3: Critical fiscal/compliance (always Groq)
     if task_type in ["centinela_decision", "centinela_fiscal_decision",
                       "compliance_audit", "fiscal_strategy", "tax_planning",
+                      "taty_fiscal_rag",
                       "legal_review", "regulatory_check", "dian_review"]:
         return "tier_3"
 
@@ -200,6 +203,11 @@ ROUTING_EXAMPLES = {
         "description": "Recommend if user should file tax return",
         "model": "Groq",
         "reason": "Critical fiscal decision, need reliability"
+    },
+    "taty_fiscal_rag": {
+        "description": "Taty fiscal answer grounded in official and Contexia sources",
+        "model": "Groq",
+        "reason": "Fiscal guidance with citations and escalation rules"
     },
     "compliance_audit": {
         "description": "Audit user compliance with DIAN rules",
