@@ -24,7 +24,10 @@ except ImportError:
     OpenAI = None
 
 import requests
-from config import settings
+try:
+    from ..config import settings
+except ImportError:
+    from config import settings
 
 logger = logging.getLogger(__name__)
 
