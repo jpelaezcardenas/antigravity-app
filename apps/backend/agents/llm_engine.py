@@ -24,6 +24,7 @@ except ImportError:
     OpenAI = None
 
 import requests
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -73,13 +74,13 @@ class LLMEngine:
     def _initialize_clients(self):
         """Initialize all available LLM clients (Cloud-Only, no local models)"""
         # OpenRouter Free (Gratis)
-        self.openrouter_free_api_key = os.getenv("OPENROUTER_API_KEY")
+        self.openrouter_free_api_key = settings.OPENROUTER_API_KEY
 
-        groq_key = os.getenv("GROQ_API_KEY")
+        groq_key = settings.GROQ_API_KEY
         if groq_key and Groq:
             self.groq_client = Groq(api_key=groq_key)
 
-        cerebras_key = os.getenv("CEREBRAS_API_KEY")
+        cerebras_key = settings.CEREBRAS_API_KEY
         if cerebras_key and OpenAI:
             self.cerebras_client = OpenAI(
                 api_key=cerebras_key,
@@ -88,7 +89,7 @@ class LLMEngine:
         else:
             self.cerebras_client = None
 
-        mistral_key = os.getenv("MISTRAL_API_KEY")
+        mistral_key = settings.MISTRAL_API_KEY
         if mistral_key and OpenAI:
             self.mistral_client = OpenAI(
                 api_key=mistral_key,
@@ -97,8 +98,8 @@ class LLMEngine:
         else:
             self.mistral_client = None
 
-        self.gemini_api_key = os.getenv("GEMINI_API_KEY")
-        self.openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+        self.gemini_api_key = settings.GEMINI_API_KEY
+        self.openrouter_api_key = settings.OPENROUTER_API_KEY
 
     def get_ai_response(
         self,
