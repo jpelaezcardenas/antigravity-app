@@ -20,6 +20,7 @@ import { ConfiguracionView } from './components/configuracion/ConfiguracionView'
 import SocialOpsView from './components/social-ops/SocialOpsView';
 import { CRMView } from './components/crm/CRMView';
 import { OnboardingView } from './components/onboarding/OnboardingView';
+import { ClientDashboard } from './components/ClientDashboard';
 
 const chartData = [
   { name: '1', ingresos: 4000, egresos: 2400 },
@@ -446,23 +447,16 @@ const LoginView = ({ onLogin }: { onLogin: (role: 'admin' | 'client', data: any)
     e.preventDefault();
     setError('');
     setLoading(true);
-    
+
     try {
       const { api } = await import('./services/api');
-      // BYPASS: Autenticación hardcodeada para credenciales demo para que el usuario pueda ver el UI
-      let response: any = {};
-      if (email === 'contexia.marketing@gmail.com' || email === 'cliente@demo.co') {
-        response = {
-          token: 'mock-jwt-token-contexia-2024',
-          usuario_id: 'usr_001',
-          nombre_empresa: email === 'cliente@demo.co' ? 'Ferez.co E-commerce' : 'Contexia Admin',
-          role: email === 'cliente@demo.co' ? 'client' : 'admin'
-        };
-      } else {
-        response = await api.login({ email, password });
-      }
+      // Call real API for all users (backend handles demo users and production users)
+      const response = await api.login({ email, password });
       console.log('Login response:', response);
-      onLogin(response.role as 'admin' | 'client', response);
+
+      // Determine role based on email or response (backend can set this)
+      const role = email === 'cliente@demo.co' || email.includes('cliente') ? 'client' : 'admin';
+      onLogin(role, response);
     } catch (err: any) {
       setError(err.message || 'Error de conexión con el servidor');
     } finally {
@@ -614,7 +608,7 @@ export default function App() {
 
   const renderTab = () => {
     switch (activeTab) {
-      case 'inicio': return <DashboardHome setActiveTab={setActiveTab} clienteNombre={activeClient.nombre} />;
+      case 'inicio': return user?.role === 'client' ? <ClientDashboard setActiveTab={setActiveTab} clienteNombre={activeClient.nombre} /> : <DashboardHome setActiveTab={setActiveTab} clienteNombre={activeClient.nombre} />;
       case 'pulso': return <PulsoDiarioView />;
       case 'centinela': return <CentinelaView />;
       case 'taty': return <TatyView />;
@@ -624,9 +618,9 @@ export default function App() {
           descripcion="Predicción de caja y carga tributaria de los próximos 90 días con Machine Learning. Sabrás cuánto deberás antes de que llegue la fecha."
           features={['ML Predictivo', 'Proyección 90 días', 'Escenarios múltiples', 'Alertas tempranas']} />
       );
-      case 'social-ops': return user?.role === 'admin' ? <SocialOpsView /> : <DashboardHome setActiveTab={setActiveTab} clienteNombre={activeClient.nombre} />;
+      case 'social-ops': return user?.role === 'admin' ? <SocialOpsView /> : <ClientDashboard setActiveTab={setActiveTab} clienteNombre={activeClient.nombre} />;
       case 'configuracion': return <ConfiguracionView />;
-      default: return <DashboardHome setActiveTab={setActiveTab} />;
+      default: return user?.role === 'client' ? <ClientDashboard setActiveTab={setActiveTab} clienteNombre={activeClient.nombre} /> : <DashboardHome setActiveTab={setActiveTab} clienteNombre={activeClient.nombre} />;
     }
   };
 
@@ -636,7 +630,7 @@ export default function App() {
       <aside className="hidden lg:flex w-72 backdrop-blur-2xl border-r border-white/5 flex-col p-6 fixed h-screen z-30" style={{ background: 'linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(2,6,23,0.98) 100%)' }}>
         <SidebarContent activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout}
           onBackToBunker={user?.role === 'admin' ? handleBackToBunker : undefined}
-          customNavItems={user?.role === 'admin' ? navItems : navItems.filter(i => i.id !== 'social-ops')} />
+          customNavItems={navItems} />
       </aside>
 
       {/* Mobile Drawer */}
@@ -649,40 +643,51 @@ export default function App() {
               className="fixed left-0 top-0 h-screen w-72 bg-navy-light/95 backdrop-blur-xl border-r border-white/5 flex flex-col p-6 z-50 lg:hidden">
               <SidebarContent activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} onClose={() => setMobileMenuOpen(false)}
                 onBackToBunker={user?.role === 'admin' ? handleBackToBunker : undefined}
-                customNavItems={user?.role === 'admin' ? navItems : navItems.filter(i => i.id !== 'social-ops')} />
+                customNavItems={navItems} />
             </motion.aside>
           </>
         )}
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-72">
+      <div className="flex-1 flex flex-col min-w-0 w-full lg:ml-72">
         {/* Top Nav */}
-        <header className="h-16 lg:h-20 border-b border-white/5 flex items-center justify-between px-4 lg:px-8 bg-navy-dark/50 backdrop-blur-md sticky top-0 z-20">
-          <div className="flex items-center gap-3">
+        <header className="h-20 lg:h-24 border-b border-white/5 flex items-center justify-between px-4 lg:px-8 bg-navy-dark/95 backdrop-blur-xl sticky top-0 z-20 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+          <div className="flex items-center gap-6">
             <button onClick={() => setMobileMenuOpen(true)} className="p-2 hover:bg-white/10 rounded-xl lg:hidden">
               <Menu className="w-5 h-5 text-gray-400" />
             </button>
-            <div className="hidden sm:block relative w-64 lg:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-              <input type="text" placeholder="Buscar..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-ctx-teal/50" />
+            <div className="hidden lg:flex items-center gap-3">
+              <img src="assets/img/logo_official_transparent.png" alt="Contexia" className="h-12 object-contain" />
+            </div>
+            
+            {/* Nav Links (Desktop) */}
+            <div className="hidden lg:flex items-center gap-6 ml-4">
+              {['pulso', 'fiscal', 'radar', 'patrimonio'].map((tab) => (
+                <button 
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`text-[11px] font-orbitron font-bold uppercase tracking-[0.15em] transition-all hover:text-ctx-teal ${
+                    activeTab === tab ? 'text-ctx-teal' : 'text-gray-400'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex bg-white/5 border border-white/10 rounded-full px-3 py-1.5 items-center gap-2">
-              <div className="w-2 h-2 bg-ctx-teal rounded-full animate-pulse" />
-              <span className="text-[10px] font-rajdhani uppercase tracking-wider text-gray-300">En línea</span>
-            </div>
-            <button className="p-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors relative">
-              <Bell className="w-4 h-4 text-gray-400" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-ctx-violet rounded-full" />
-            </button>
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:block text-right pr-6 border-r border-white/10">
-                <p className="text-sm font-bold text-white leading-none mb-1">{activeClient.nombre}</p>
-                <p className="text-[10px] text-ctx-teal uppercase tracking-[0.2em] font-bold">Starter</p>
+
+          <div className="flex items-center gap-4">
+            
+            <button className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full border border-[#7C3AED] bg-[#7C3AED]/10 hover:bg-[#7C3AED]/20 transition-colors shadow-[0_0_15px_rgba(124,58,237,0.2)]">
+              <Search className="w-4 h-4 text-[#A78BFA]" />
+              <div className="flex flex-col items-start">
+                <span className="text-[11px] font-orbitron font-bold text-white uppercase tracking-widest">Auditoría Sombra</span>
+                <span className="text-[8px] text-[#A78BFA] uppercase tracking-widest">(Simulación con la DIAN)</span>
               </div>
+            </button>
+            
+            <div className="flex items-center gap-4 border-l border-white/10 pl-4">
 
               <button onClick={() => setActiveTab('taty')} className="relative group flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 pr-6 hover:bg-white/10 hover:border-ctx-teal/30 transition-all duration-500 cursor-pointer text-left" style={{ boxShadow: '0 0 20px rgba(45, 212, 191, 0.1)' }}>
                 <div className="relative w-14 h-20 rounded-xl overflow-hidden border border-white/20 shadow-xl">

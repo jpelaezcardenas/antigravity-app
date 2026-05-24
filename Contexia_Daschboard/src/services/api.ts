@@ -1,5 +1,9 @@
-const API_BASE_URL = 'https://antigravity-app-production-175a.up.railway.app/api/v1/agents';
-const BASE_URL = 'https://antigravity-app-production-175a.up.railway.app/api/v1';
+// Use localhost for development, production URL for deployed builds
+const BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  ? 'http://localhost:8000/api/v1'
+  : 'https://antigravity-app-production-175a.up.railway.app/api/v1';
+
+const API_BASE_URL = `${BASE_URL}/agents`;
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');

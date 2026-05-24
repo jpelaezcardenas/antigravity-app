@@ -28,3 +28,4 @@ class TokenResponse(BaseModel):
     token: str
     usuario_id: str
     nombre_empresa: str
+    email: str

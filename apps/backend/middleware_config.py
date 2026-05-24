@@ -36,7 +36,7 @@ limiter = Limiter(key_func=get_remote_address)
 # ============================================================================
 
 # Load from .env or use defaults
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3002,http://localhost:5173,http://localhost:3000").split(",")
 
 print(f"[INFO] CORS enabled for origins: {ALLOWED_ORIGINS}")
 

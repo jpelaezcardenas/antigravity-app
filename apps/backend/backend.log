@@ -1,0 +1,11 @@
+INFO:     Will watch for changes in these directories: ['C:\\Users\\contexia\\Projects\\antigravity-app\\apps\\backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [41676] using WatchFiles
+2026-05-23 22:37:45,621 - contexia-api - INFO - CORS middleware applied
+2026-05-23 22:37:45,622 - contexia-api - INFO - Rate limiter applied (30 requests/minute per IP)
+2026-05-23 22:37:45,622 - contexia-api - INFO - Request logging middleware applied
+2026-05-23 22:37:45,622 - contexia-api - INFO - Global exception handler applied
+INFO:     Started server process [36824]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'middleware_config.py'. Reloading...

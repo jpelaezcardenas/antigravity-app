@@ -11,26 +11,50 @@ class AuthService:
 
     async def login(self, email: str, password: str):
         # Manejo de usuarios de prueba para demo
-        # En producción se usaría el hash real de la DB
-        # Pero el plan dice que el password es 'demo' para los 3 usuarios de prueba
-        
+        # Permitir login de demo sin requerir BD para testing
+
+        # Demo users hardcoded for MVP testing
+        DEMO_USERS = {
+            "cliente@demo.co": {
+                "id": "usr_cliente_demo",
+                "nombre_empresa": "Ferez.co E-commerce",
+                "password": "demo"
+            },
+            "contexia.marketing@gmail.com": {
+                "id": "usr_admin_demo",
+                "nombre_empresa": "Contexia Admin",
+                "password": "Lindafea0712"
+            }
+        }
+
+        # Check demo users first (for MVP testing)
+        if email in DEMO_USERS:
+            demo_user = DEMO_USERS[email]
+            if password == demo_user["password"]:
+                token = create_access_token(data={"sub": demo_user["id"], "email": email})
+                logger.info(f"Demo login successful for {email}")
+                return {
+                    "token": token,
+                    "usuario_id": demo_user["id"],
+                    "nombre_empresa": demo_user["nombre_empresa"],
+                    "email": email
+                }
+            else:
+                logger.warning(f"Login failed: Invalid password for demo user {email}")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Credenciales inválidas"
+                )
+
+        # Try database lookup for other users
         user_data = await self.usuario_repo.get_by_email(email)
-        
+
         if not user_data:
             logger.warning(f"Login failed: User {email} not found")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Credenciales inválidas"
             )
-
-        # Bypass for demo user with empty hash
-        if email == "contexia.marketing@gmail.com" and password == "Lindafea0712":
-            token = create_access_token(data={"sub": str(user_data["id"]), "email": email})
-            return {
-                "token": token,
-                "usuario_id": str(user_data["id"]),
-                "nombre_empresa": user_data["nombre_empresa"]
-            }
 
         # Para la demo, si el password_hash en la DB es un placeholder, aceptamos 'demo' o 'Lindafea0712'
         is_valid = False
@@ -48,9 +72,10 @@ class AuthService:
             )
 
         token = create_access_token(data={"sub": user_data["id"], "email": user_data["email"]})
-        
+
         return {
             "token": token,
             "usuario_id": str(user_data["id"]),
-            "nombre_empresa": user_data["nombre_empresa"]
+            "nombre_empresa": user_data["nombre_empresa"],
+            "email": user_data["email"]
         }

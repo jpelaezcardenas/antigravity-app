@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     JWT_EXPIRE_MINUTES: int = 30  # Short-lived tokens (was 1440 = 24h)
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
-    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000,https://contexia.online,https://www.contexia.online"
+    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://localhost:3002,https://contexia.online,https://www.contexia.online"
 
     # LLM Provider API Keys & Settings
     GROQ_API_KEY: str = ""

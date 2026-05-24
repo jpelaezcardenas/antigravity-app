@@ -27,10 +27,20 @@ app = FastAPI(
 
 # --- Middleware Stack (order matters: last added = first executed) ---
 
-# 1. CORS — uses centralized config from settings
+# 1. CORS — hardcoded to ensure all local dev ports are allowed
+cors_origins = [
+    "http://localhost:3002",  # Frontend dev server (Vite)
+    "http://localhost:3000",  # Alternative frontend port
+    "http://localhost:5173",  # Vite default port
+    "http://localhost:5174",  # Alternative Vite port
+    "http://localhost:5175",  # Alternative Vite port
+    "https://contexia.online",
+    "https://app.contexia.online",
+    "https://www.contexia.online",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.origins_list,
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
