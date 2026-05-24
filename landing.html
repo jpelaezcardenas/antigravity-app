@@ -345,13 +345,33 @@
     <!-- Navbar -->
     <nav class="w-full border-b border-slate-800 bg-[#020617]/90 backdrop-blur-xl fixed top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between py-3 md:py-4 min-h-[76px] md:min-h-[120px]">
+            <div class="flex items-center justify-between py-2 md:py-4 min-h-[92px] md:min-h-[120px]">
                 <a href="javascript:void(0)" onclick="openLogoLightbox()" class="flex items-center group" title="Click para ver el logo completo">
-                    <div class="h-14 md:h-32 lg:h-40 w-auto flex items-center justify-center flex-shrink-0">
+                    <div class="h-20 md:h-32 lg:h-40 w-auto flex items-center justify-center flex-shrink-0">
                         <img src="assets/img/logo_official.png" alt="Contexia"
                             class="h-full w-auto object-contain transition-transform group-hover:scale-105 scale-110 translate-y-1 mix-blend-screen">
                     </div>
                 </a>
+
+                <!-- Avatar de la Contadora Taty (Center - Mobile Only) -->
+                <div class="flex md:hidden items-center justify-center flex-1 mx-2">
+                    <a href="https://wa.me/573018948151" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full py-1 px-2.5 hover:bg-white/10 hover:border-teal/50 transition-all duration-300">
+                        <div class="relative w-8 h-8 rounded-full overflow-hidden border border-white/20 shadow-md flex-shrink-0">
+                            <img src="assets/img/profiles/tatiana_full.png" alt="Taty" class="w-full h-full object-cover object-top">
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#020617]/80 via-transparent to-transparent"></div>
+                        </div>
+                        <div class="flex flex-col text-left">
+                            <div class="flex items-center gap-1">
+                                <span class="relative flex h-1.5 w-1.5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal"></span>
+                                </span>
+                                <span class="text-[8px] text-teal font-black uppercase tracking-widest leading-none" style="font-family: 'Rajdhani', sans-serif;">Online</span>
+                            </div>
+                            <span class="text-[10px] text-white font-bold leading-tight">Taty</span>
+                        </div>
+                    </a>
+                </div>
                 
                 <div class="hidden md:flex items-center gap-8">
                     <div class="flex items-center gap-6 text-sm font-bold uppercase tracking-widest">
