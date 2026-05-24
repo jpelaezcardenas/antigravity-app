@@ -42,16 +42,28 @@ POST /api/v1/agents/ask             → HTTP 200 (routing works) ✓
 
 ---
 
-## Known Issues Found & Documented
+## BONUS: Extended Testing Complete (Late Day 1)
 
-### Issue #1: Inconsistent Field Names in Rules
-- R001 uses `"regimen"` (Spanish)
-- R002 uses `"regime"` (English)
-- Should standardize across all rules
+### Field Name Standardization (RESOLVED)
+- ✅ R001 now uses `"regime"` (English) to match R002-R010
+- ✅ All 10 rules now expect consistent English field names
+- ✅ Commit: `7dcaa85 T5: Standardize field name 'regimen' → 'regime' in Rule1UVTExcedido`
 
-### Issue #2: 5 Rules Untested
-- R003, R006, R007, R008, R009, R010 require complex data structures
-- Scheduled for next testing phase
+### All 10 Rules Tested & Passing ✅
+| Rule | Test | Result | Evidence |
+|------|------|--------|----------|
+| R001 | UVT Excedido | ✅ | warning, 10M > 8.3k limit |
+| R002 | Retención No Pagada | ✅ | critical, 0 paid vs 1.5M due |
+| R003 | Facturación Irregular | ✅ | warning, invoice gaps detected |
+| R004 | Cambio Régimen No Reportado | ✅ | critical, not notified to DIAN |
+| R005 | Provisiones Insuficientes | ✅ | warning, 1M < 2.5M required |
+| R006 | Margen Bruto Sospechoso | ✅ | warning, 10% < 20-40% range |
+| R007 | Operación Relacionada No Reportada | ✅ | critical, undeclared transaction |
+| R008 | Activo Sobrevaluado | ✅ | warning, 2% depreciation < 5% |
+| R009 | Deuda DIAN | ✅ | critical, 5M debt overdue 90 days |
+| R010 | Inconsistencia Contable | ✅ | critical, balance variance 10% |
+
+**Pass Rate:** 10/10 (100%)
 
 ---
 
@@ -68,29 +80,37 @@ POST /api/v1/agents/ask             → HTTP 200 (routing works) ✓
 
 ## Next Immediate Steps
 
-### For Monday (2026-05-27, DAY 2)
+### Remaining Work (Ready for Monday 2026-05-27, DAY 2)
 
-1. **Staging Deployment**
-   - Merge feature branch to `develop` (triggers Railway staging auto-deploy)
-   - Validate endpoints on staging: https://antigravity-app-production-175a.up.railway.app/api/v1
-   - Run E2E tests against staging
+#### ✅ COMPLETED Today (2026-05-24 Extended)
+- Field name standardization (R001: "regimen" → "regime")
+- All 10 Centinela rules tested and validated (10/10 passing)
+- Commits pushed to feature branch
 
-2. **T5 Remaining Rules**
-   - Test R003-R010 with realistic Colombian tax data
-   - Validate complex rule scenarios
-   - Enable `save_alerts=true` and verify Supabase writes
+#### 🚀 READY TO START Monday
+1. **Staging Deployment (PRIORITY 1)**
+   - Merge feature branch to `develop` (git merge feature/phase2-llm-taty-centinela develop)
+   - Triggers Railway staging auto-deploy (~5-10 min)
+   - Validate endpoints: POST /api/v1/centinela/evaluate → HTTP 200 on staging
+   - Verify Supabase connection in staging environment
 
-3. **Dashboard Integration (T7)**
+2. **Dashboard Integration (T7)**
    - Connect Centinela card to `/api/v1/centinela/evaluate`
-   - Render alerts in TatyView.tsx (severity colors, risk level badge)
-   - Test alert refresh cycle
+   - Render alerts in TatyView.tsx (severity colors: warning=yellow, critical=red)
+   - Risk level badge display (low/medium/high/critical)
+   - Test alert refresh cycle (6-hourly batch)
 
-4. **Other PATH 1 Tests**
-   - T1: Auth (GET /api/v1/auth/login) — may still need browser automation
-   - T2: Taty Avatar Chat (POST /api/v1/agents/ask) — ready for testing
-   - T3: Pulso Dashboard (GET /api/v1/pulso/{usuario_id}) — ready for testing
-   - T4: Telegram Bot — ready for testing
-   - T6: Full Compliance Pipeline — depends on above
+3. **Enable Alert Persistence**
+   - Set `save_alerts=true` in endpoint calls
+   - Verify Supabase alerts table receives data
+   - Validate alert history in dashboard
+
+4. **Remaining E2E Tests (PATH 1)**
+   - T1: Auth (GET /api/v1/auth/login)
+   - T2: Taty Avatar Chat (POST /api/v1/agents/ask)
+   - T3: Pulso Dashboard (GET /api/v1/pulso/{usuario_id})
+   - T4: Telegram Bot
+   - T6: Full Compliance Pipeline
 
 ---
 
