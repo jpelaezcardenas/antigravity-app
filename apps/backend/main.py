@@ -37,6 +37,8 @@ cors_origins = [
     "https://contexia.online",
     "https://app.contexia.online",
     "https://www.contexia.online",
+    "https://contexia-wizard.vercel.app",
+    "https://wizard.contexia.online",
 ]
 app.add_middleware(
     CORSMiddleware,
