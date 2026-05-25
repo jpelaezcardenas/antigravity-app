@@ -7,6 +7,16 @@
             "source": "/",
             "destination": "/landing.html",
             "permanent": false
+        },
+        {
+            "source": "/login",
+            "destination": "/wizard/login/",
+            "permanent": false
+        },
+        {
+            "source": "/login.html",
+            "destination": "/wizard/login/",
+            "permanent": false
         }
     ],
     "rewrites": [
