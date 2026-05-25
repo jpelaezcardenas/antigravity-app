@@ -113,16 +113,13 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get("sb-access-token")?.value;
   const secret = process.env.SUPABASE_JWT_SECRET;
 
-  // If the secret isn't configured, fail-open with a console warning rather than locking
-  // out everyone in environments that haven't set the env var yet. This is a deliberate
-  // MVP choice — flip to fail-closed once SUPABASE_JWT_SECRET is verified set in prod.
-  if (!secret) {
-    console.warn("[middleware] SUPABASE_JWT_SECRET not set — auth gate disabled for", pathname);
-    return;
-  }
-
   const loginUrl = new URL("/login.html", req.url);
   loginUrl.searchParams.set("next", pathname + search);
+
+  if (!secret) {
+    console.error("[middleware] SUPABASE_JWT_SECRET not set — failing closed for", pathname);
+    return Response.redirect(loginUrl, 302);
+  }
 
   if (!token) {
     return Response.redirect(loginUrl, 302);

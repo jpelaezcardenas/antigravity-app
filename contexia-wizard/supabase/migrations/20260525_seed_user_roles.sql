@@ -10,7 +10,7 @@ WHERE email = 'contexia.marketing@gmail.com';
 -- Clientes
 UPDATE auth.users
 SET raw_app_meta_data = raw_app_meta_data || '{"role":"cliente","roles":["cliente"]}'::jsonb
-WHERE email IN ('growth@contexia.online', 'fperez@ferez.co', 'carlos@importacionesmtz.co');
+WHERE email IN ('growth@contexia.online', 'fperez@ferez.co');
 
 -- Verify
 SELECT email, raw_app_meta_data->'role' AS role
@@ -18,7 +18,6 @@ FROM auth.users
 WHERE email IN (
   'contexia.marketing@gmail.com',
   'growth@contexia.online',
-  'fperez@ferez.co',
-  'carlos@importacionesmtz.co'
+  'fperez@ferez.co'
 )
 ORDER BY email;
