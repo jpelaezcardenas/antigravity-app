@@ -10,22 +10,17 @@
         },
         {
             "source": "/login",
-            "destination": "https://contexia-wizard.vercel.app/wizard/",
-            "permanent": false
-        },
-        {
-            "source": "/login.html",
-            "destination": "https://contexia-wizard.vercel.app/wizard/",
+            "destination": "/login.html",
             "permanent": false
         },
         {
             "source": "/app/login",
-            "destination": "https://contexia-wizard.vercel.app/wizard/",
+            "destination": "/login.html",
             "permanent": false
         },
         {
             "source": "/app/login.html",
-            "destination": "https://contexia-wizard.vercel.app/wizard/",
+            "destination": "/login.html",
             "permanent": false
         },
         {
