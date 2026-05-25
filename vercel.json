@@ -91,7 +91,7 @@
         },
         {
             "source": "/wizard/",
-            "destination": "https://contexia-wizard.vercel.app/wizard/"
+            "destination": "https://contexia-wizard.vercel.app/wizard"
         },
         {
             "source": "/wizard/:path*",
@@ -99,7 +99,7 @@
         },
         {
             "source": "/wizard",
-            "destination": "https://contexia-wizard.vercel.app/wizard/"
+            "destination": "https://contexia-wizard.vercel.app/wizard"
         }
     ]
 }
