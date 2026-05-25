@@ -338,7 +338,8 @@
     (function () {
       var SUPABASE_URL = "https://kpynymwghfwshvcvevxq.supabase.co";
       var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDAwMTksImV4cCI6MjA5NDYxNjAxOX0.skNy5PKg0oFIqZD-2GyMZFTVA68OxrS1rBKkFiWAhwA";
-      var ADMIN_EMAIL = "contexia.marketing@gmail.com";
+      var ADMIN_EMAILS = new Set(["contexia.marketing@gmail.com"]);
+      var CLIENT_EMAILS = new Set(["fperez@ferez.co", "carlos@importacionesmtz.co"]);
       var role = new URLSearchParams(window.location.search).get("role") || "client";
       var form = document.getElementById("login-form");
       var message = document.getElementById("message");
@@ -352,7 +353,18 @@
       }
 
       function isAdminEmail(email) {
-        return normalizeEmail(email) === ADMIN_EMAIL;
+        return ADMIN_EMAILS.has(normalizeEmail(email));
+      }
+
+      function isClientEmail(email) {
+        return CLIENT_EMAILS.has(normalizeEmail(email));
+      }
+
+      function getRoleForEmail(email) {
+        var normalized = normalizeEmail(email);
+        if (ADMIN_EMAILS.has(normalized)) return "admin";
+        if (CLIENT_EMAILS.has(normalized)) return "client";
+        return "client";
       }
 
       function setBusy(isBusy, label) {
@@ -375,18 +387,20 @@
       }
 
       function destinationFor(email) {
-        if (role === "admin" && !isAdminEmail(email)) {
-          throw new Error("Este correo no tiene acceso admin.");
+        var autoRole = getRoleForEmail(email);
+        if (!isAdminEmail(email) && !isClientEmail(email)) {
+          throw new Error("Este correo no tiene acceso.");
         }
-        return role === "admin" ? "/app/bunker" : "/app/overview";
+        return autoRole === "admin" ? "/app/bunker" : "/app/overview";
       }
 
       function storeSession(session, email) {
         var normalized = normalizeEmail(email);
+        var autoRole = getRoleForEmail(email);
         localStorage.setItem("cx_user", JSON.stringify({
           email: normalized,
-          role: role,
-          is_admin: normalized === ADMIN_EMAIL
+          role: autoRole,
+          is_admin: ADMIN_EMAILS.has(normalized)
         }));
         if (session && session.access_token) localStorage.setItem("token", session.access_token);
       }

@@ -12,6 +12,7 @@
       (function() {
         var SUPABASE_URL = "https://kpynymwghfwshvcvevxq.supabase.co";
         var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDAwMTksImV4cCI6MjA5NDYxNjAxOX0.skNy5PKg0oFIqZD-2GyMZFTVA68OxrS1rBKkFiWAhwA";
+        var ADMIN_EMAILS = new Set(["contexia.marketing@gmail.com"]);
         var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         function loadReactApp() {
@@ -28,8 +29,7 @@
             return;
           }
           var normalized = String(session.user.email || "").trim().toLowerCase();
-          var ADMIN_EMAIL = "contexia.marketing@gmail.com";
-          var isAdmin = normalized === ADMIN_EMAIL;
+          var isAdmin = ADMIN_EMAILS.has(normalized);
           if (!isAdmin) {
             window.location.assign("/app/overview");
             return;
