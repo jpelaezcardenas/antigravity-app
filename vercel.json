@@ -46,6 +46,10 @@
             "destination": "/app/patrimonio.html"
         },
         {
+            "source": "/app/config",
+            "destination": "/app/config.html"
+        },
+        {
             "source": "/flujo-detalle",
             "destination": "/app/flujo-detalle.html"
         },
