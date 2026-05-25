@@ -20,6 +20,13 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["telegram"])  # prefix handled by router.py include_router()
 
+
+@router.post("/health")
+async def telegram_health():
+    """Quick health check for webhook routing."""
+    logger.info("✅ Telegram health check - routing works!")
+    return {"ok": True, "status": "webhook endpoint is reachable"}
+
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "taty-secret-key")
 
