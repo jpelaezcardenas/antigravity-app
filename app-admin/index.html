@@ -6,6 +6,37 @@
     <meta name="description" content="Contexia - Portal de Clientes. GPS Financiero con IA para PyMEs colombianas: flujo de caja, impuestos y riesgo fiscal." />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <title>Contexia - Portal de Clientes</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      (function() {
+        var SUPABASE_URL = "https://kpynymwghfwshvcvevxq.supabase.co";
+        var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDAwMTksImV4cCI6MjA5NDYxNjAxOX0.skNy5PKg0oFIqZD-2GyMZFTVA68OxrS1rBKkFiWAhwA";
+        var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        client.auth.getSession().then(function(result) {
+          var session = result && result.data && result.data.session;
+          if (!session || !session.user) {
+            window.location.assign("/login.html");
+            return;
+          }
+          var normalized = String(session.user.email || "").trim().toLowerCase();
+          var ADMIN_EMAIL = "contexia.marketing@gmail.com";
+          var isAdmin = normalized === ADMIN_EMAIL;
+          if (!isAdmin) {
+            window.location.assign("/app/overview");
+            return;
+          }
+          window.localStorage.setItem("cx_user", JSON.stringify({
+            email: normalized,
+            role: "admin",
+            is_admin: true
+          }));
+        }).catch(function(error) {
+          console.error("Session check failed:", error);
+          window.location.assign("/login.html");
+        });
+      })();
+    </script>
     <script type="module" crossorigin src="/app/dashboard-assets/index-DblwMcm3.auth-logout-20260524.js"></script>
     <link rel="stylesheet" crossorigin href="/app/dashboard-assets/index-CegUaKmh.css">
   </head>
