@@ -108,12 +108,19 @@ async def telegram_webhook(request: Request):
 
         logger.debug(f"🔵 Querying telegram_chat_mappings for chat_id={chat_id}")
         try:
-            result = supabase.table("telegram_chat_mappings").select("company_id").eq("telegram_chat_id", chat_id).single().execute()
-            company_id = result.data["company_id"]
+            # Use eq filter without .single() to get all results
+            result = supabase.table("telegram_chat_mappings").select("company_id").eq("telegram_chat_id", str(chat_id)).execute()
+
+            if not result.data or len(result.data) == 0:
+                logger.warning(f"❌ No hay empresa mapeada para chat_id={chat_id}")
+                await send_telegram_message(chat_id, "❌ Este chat no está configurado.\nContacta a soporte.")
+                return {"ok": True}
+
+            company_id = result.data[0]["company_id"]
             logger.info(f"✅ Encontrado: chat_id={chat_id} → empresa={company_id}")
         except Exception as e:
-            logger.warning(f"❌ No hay empresa mapeada para chat_id={chat_id}: {str(e)}")
-            await send_telegram_message(chat_id, "❌ Este chat no está configurado.\nContacta a soporte.")
+            logger.error(f"❌ Error querying telegram_chat_mappings: {str(e)}", exc_info=True)
+            await send_telegram_message(chat_id, "❌ Error de configuración.\nContacta a soporte.")
             return {"ok": True}
 
         # PASO 4: Llamar a Taty
