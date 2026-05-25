@@ -17,6 +17,11 @@
             "source": "/login.html",
             "destination": "/wizard/login/",
             "permanent": false
+        },
+        {
+            "source": "/logout",
+            "destination": "/logout.html",
+            "permanent": false
         }
     ],
     "rewrites": [
