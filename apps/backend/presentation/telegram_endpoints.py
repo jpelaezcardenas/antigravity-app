@@ -156,6 +156,8 @@ async def telegram_webhook(request: Request):
 
         return {"ok": True}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"❌ Error en webhook: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Error procesando webhook")
