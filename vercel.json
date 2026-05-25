@@ -10,12 +10,12 @@
         },
         {
             "source": "/login",
-            "destination": "/wizard/login/",
+            "destination": "/wizard/login",
             "permanent": false
         },
         {
             "source": "/login.html",
-            "destination": "/wizard/login/",
+            "destination": "/wizard/login",
             "permanent": false
         },
         {
@@ -87,11 +87,11 @@
         },
         {
             "source": "/wizard/api/:path*",
-            "destination": "https://contexia-wizard.vercel.app/wizard/api/:path*/"
+            "destination": "https://contexia-wizard.vercel.app/wizard/api/:path*"
         },
         {
             "source": "/wizard/",
-            "destination": "https://contexia-wizard.vercel.app/wizard"
+            "destination": "https://contexia-wizard.vercel.app/wizard/"
         },
         {
             "source": "/wizard/:path*",
@@ -99,7 +99,7 @@
         },
         {
             "source": "/wizard",
-            "destination": "https://contexia-wizard.vercel.app/wizard"
+            "destination": "https://contexia-wizard.vercel.app/wizard/"
         }
     ]
 }
