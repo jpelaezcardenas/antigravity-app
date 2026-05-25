@@ -71,6 +71,8 @@ async def telegram_webhook(request: Request):
     5. Envía la respuesta de vuelta a Telegram
     """
     try:
+        logger.debug("🔵 Webhook request received")
+
         body = await request.body()
         body_str = body.decode('utf-8')
 
@@ -81,11 +83,13 @@ async def telegram_webhook(request: Request):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Firma inválida")
 
         # PASO 2: Parsear el mensaje
+        logger.debug("🔵 Parsing message")
         update_data = json.loads(body_str)
         update = TelegramUpdate(**update_data)
 
         # Si no hay mensaje o texto, ignorar
         if not update.message or not update.message.text:
+            logger.debug("⚪ No message or text, ignoring")
             return {"ok": True}
 
         chat_id = update.message.chat.id
@@ -95,18 +99,24 @@ async def telegram_webhook(request: Request):
         logger.info(f"📱 Telegram: chat_id={chat_id}, pregunta={user_text[:50]}")
 
         # PASO 3: Buscar la empresa en Supabase
+        logger.debug("🔵 Getting Supabase client")
         supabase = get_supabase()
+
+        logger.debug(f"🔵 Querying telegram_chat_mappings for chat_id={chat_id}")
         try:
             result = supabase.table("telegram_chat_mappings").select("company_id").eq("telegram_chat_id", chat_id).single().execute()
             company_id = result.data["company_id"]
             logger.info(f"✅ Encontrado: chat_id={chat_id} → empresa={company_id}")
         except Exception as e:
-            logger.warning(f"❌ No hay empresa mapeada para chat_id={chat_id}")
+            logger.warning(f"❌ No hay empresa mapeada para chat_id={chat_id}: {str(e)}")
             await send_telegram_message(chat_id, "❌ Este chat no está configurado.\nContacta a soporte.")
             return {"ok": True}
 
         # PASO 4: Llamar a Taty
+        logger.debug("🔵 Getting Taty service")
         taty = get_taty_service()
+
+        logger.debug(f"🔵 Calling taty.ask() for company={company_id}")
         response = taty.ask(
             company_id=company_id,
             question=user_text,
@@ -115,6 +125,7 @@ async def telegram_webhook(request: Request):
         )
 
         # PASO 5: Preparar respuesta
+        logger.debug("🔵 Preparing response")
         answer = response.get("answer", "Error procesando pregunta")
 
         citations_text = ""
@@ -130,6 +141,7 @@ async def telegram_webhook(request: Request):
         full_response = f"{answer}{citations_text}{escalation}"
 
         # PASO 6: Enviar respuesta a Telegram
+        logger.debug("🔵 Sending response to Telegram")
         await send_telegram_message(chat_id, full_response)
         logger.info(f"✅ Respuesta enviada en {response['latency_ms']}ms")
 
