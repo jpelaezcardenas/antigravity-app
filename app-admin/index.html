@@ -7,11 +7,19 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <title>Contexia - Portal de Clientes</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" crossorigin href="/app/dashboard-assets/index-CegUaKmh.css">
     <script>
       (function() {
         var SUPABASE_URL = "https://kpynymwghfwshvcvevxq.supabase.co";
         var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDAwMTksImV4cCI6MjA5NDYxNjAxOX0.skNy5PKg0oFIqZD-2GyMZFTVA68OxrS1rBKkFiWAhwA";
         var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function loadReactApp() {
+          var script = document.createElement('script');
+          script.src = "/app/dashboard-assets/index-DblwMcm3.auth-logout-20260524.js";
+          script.crossOrigin = "anonymous";
+          document.head.appendChild(script);
+        }
 
         client.auth.getSession().then(function(result) {
           var session = result && result.data && result.data.session;
@@ -31,14 +39,13 @@
             role: "admin",
             is_admin: true
           }));
+          loadReactApp();
         }).catch(function(error) {
           console.error("Session check failed:", error);
           window.location.assign("/login.html");
         });
       })();
     </script>
-    <script crossorigin src="/app/dashboard-assets/index-DblwMcm3.auth-logout-20260524.js"></script>
-    <link rel="stylesheet" crossorigin href="/app/dashboard-assets/index-CegUaKmh.css">
   </head>
   <body>
     <div id="root"></div>
