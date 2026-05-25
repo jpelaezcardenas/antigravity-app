@@ -339,7 +339,7 @@
       var SUPABASE_URL = "https://kpynymwghfwshvcvevxq.supabase.co";
       var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDAwMTksImV4cCI6MjA5NDYxNjAxOX0.skNy5PKg0oFIqZD-2GyMZFTVA68OxrS1rBKkFiWAhwA";
       var ADMIN_EMAILS = new Set(["contexia.marketing@gmail.com"]);
-      var CLIENT_EMAILS = new Set(["fperez@ferez.co", "carlos@importacionesmtz.co"]);
+      var CLIENT_EMAILS = new Set(["growth@contexia.online", "fperez@ferez.co", "carlos@importacionesmtz.co"]);
       var role = new URLSearchParams(window.location.search).get("role") || "client";
       var form = document.getElementById("login-form");
       var message = document.getElementById("message");
@@ -381,16 +381,16 @@
       }
 
       function syncRoleVisibility() {
-        var visible = isAdminEmail(emailInput.value);
-        roleToggle.classList.toggle("visible", visible);
-        if (!visible && role === "admin") setRole("client");
+        // Role toggle is permanently hidden: each email maps to exactly one role.
+        roleToggle.classList.remove("visible");
+        if (role === "admin") setRole("client");
       }
 
       function destinationFor(email) {
-        var autoRole = getRoleForEmail(email);
         if (!isAdminEmail(email) && !isClientEmail(email)) {
           throw new Error("Este correo no tiene acceso.");
         }
+        var autoRole = getRoleForEmail(email);
         return autoRole === "admin" ? "/app/bunker" : "/app/overview";
       }
 
@@ -402,7 +402,14 @@
           role: autoRole,
           is_admin: ADMIN_EMAILS.has(normalized)
         }));
-        if (session && session.access_token) localStorage.setItem("token", session.access_token);
+        if (session && session.access_token) {
+          localStorage.setItem("token", session.access_token);
+          // Cookie consumed by middleware.ts for /app/* gate. Lifetime = token exp (Supabase default 1h),
+          // refreshed by Supabase JS on next auth event. SameSite=Lax so it travels on top-level navigations.
+          var maxAge = session.expires_in || 3600;
+          document.cookie = "sb-access-token=" + session.access_token +
+            "; Path=/; Max-Age=" + maxAge + "; SameSite=Lax; Secure";
+        }
       }
 
       document.querySelectorAll("[data-role]").forEach(function (btn) {
@@ -415,20 +422,52 @@
 
       emailInput.addEventListener("input", syncRoleVisibility);
 
+      function auditLogin(payload) {
+        // Fire-and-forget; keepalive lets the POST survive the redirect that follows.
+        try {
+          fetch("/wizard/api/auth/audit-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            keepalive: true,
+          }).catch(function () {});
+        } catch (e) {}
+      }
+
       form.addEventListener("submit", async function (event) {
         event.preventDefault();
         message.textContent = "";
         setBusy(true, "...");
+        var email = emailInput.value.trim();
         try {
-          var email = emailInput.value.trim();
           var result = await client.auth.signInWithPassword({
             email: email,
             password: document.getElementById("password").value
           });
           if (result.error) throw result.error;
           storeSession(result.data.session, email);
-          window.location.assign(destinationFor(email));
+          var dest = destinationFor(email);
+          auditLogin({
+            email: email,
+            outcome: "success",
+            method: "password",
+            requested_role: role,
+            resolved_role: dest === "/app/bunker" ? "admin" : "cliente",
+            destination: dest,
+          });
+          window.location.assign(dest);
         } catch (error) {
+          var code = error && error.status ? String(error.status) : (error && error.code) || null;
+          var outcome = "invalid_credentials";
+          if (error && /not.*access|no tiene acceso/i.test(error.message || "")) outcome = "not_authorized";
+          auditLogin({
+            email: email,
+            outcome: outcome,
+            method: "password",
+            requested_role: role,
+            error_code: code,
+            error_message: error && error.message ? error.message : null,
+          });
           message.textContent = error.message || "No fue posible iniciar sesion.";
         } finally {
           setBusy(false);
