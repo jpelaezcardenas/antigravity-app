@@ -7,11 +7,6 @@
             "source": "/",
             "destination": "/landing.html",
             "permanent": false
-        },
-        {
-            "source": "/login",
-            "destination": "/app/overview",
-            "permanent": true
         }
     ],
     "rewrites": [
@@ -45,7 +40,7 @@
         },
         {
             "source": "/app/bunker",
-            "destination": "/app/bunker.html"
+            "destination": "/app-admin/index.html"
         },
         {
             "source": "/app/dashboard-assets/:path*",
