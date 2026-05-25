@@ -76,11 +76,13 @@ async def telegram_webhook(request: Request):
         body = await request.body()
         body_str = body.decode('utf-8')
 
-        # PASO 1: Verificar firma de Telegram
+        # PASO 1: Verificar firma de Telegram (opcional - solo si secret está configurado)
         signature = request.headers.get("X-Telegram-Bot-API-Secret-Header")
-        if not signature or not verify_telegram_signature(body_str, signature):
+        if TELEGRAM_WEBHOOK_SECRET and signature and not verify_telegram_signature(body_str, signature):
             logger.warning("❌ Firma de Telegram inválida")
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Firma inválida")
+        elif not signature and TELEGRAM_WEBHOOK_SECRET:
+            logger.debug("⚠️ Webhook secret configured but Telegram didn't send signature header - webhook registered without secret?")
 
         # PASO 2: Parsear el mensaje
         logger.debug("🔵 Parsing message")
