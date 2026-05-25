@@ -69,6 +69,8 @@ crear-empresa-wizard.txt
 crear-empresa-wizard/
 flujo-detalle.txt
 index.txt
+login.txt
+login_retry.txt
 
 # Ad-hoc scripts and dumps (not project code)
 all_commits.txt
@@ -82,6 +84,12 @@ test_login.py
 # Dev logs
 contexia-app/dev-server.log
 *.log
+
+# Retired local UI surfaces. Production login is root /login.html.
+contexia-app/
+contexia-wizard/app/login/
+contexia-wizard/app/dashboard/
+contexia-wizard/public/contexia-logo*.png
 
 # Social Media OPs (separate workspace)
 Social Media OPs Systems/

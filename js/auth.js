@@ -3,6 +3,7 @@
  * Roles: empresario, contador, admin
  */
 
+// Canonical production access is /login.html; this helper only supports retired static pages.
 window.auth = {
     key: 'cx_session',
 
@@ -66,7 +67,7 @@ window.auth = {
 
     logout() {
         localStorage.removeItem(this.key);
-        window.location.href = 'login.html';
+        window.location.href = '/login.html';
     },
 
     checkAuth() {
@@ -74,7 +75,7 @@ window.auth = {
         const isLoginPage = window.location.pathname.includes('login');
 
         if (!session && !isLoginPage) {
-            window.location.href = 'login.html';
+            window.location.href = '/login.html';
         } else if (session && isLoginPage) {
             const user = JSON.parse(session);
             window.location.href = user.homePage || 'pulso_diario.html';
