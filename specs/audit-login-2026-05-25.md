@@ -78,9 +78,12 @@
 - **Aplicado**: `logout.html` ahora llama `supabase.auth.signOut({ scope: 'global' })` (revoca refresh token server-side, mata sesiones en todos los devices del usuario), limpia `cx_session` legacy, mantiene la limpieza previa de localStorage/sessionStorage/IndexedDB/cookies, y tiene fallback de 2s si signOut cuelga.
 - **Pendiente**: `js/auth.js` ya murió (P0-1) y `cx_session` no se escribe más. Backend `auth_router.py` queda fuera de scope hasta que se decida si vive o muere en P0-2.
 
-**P0-4. Listas de emails autorizadas duplicadas** — `login.html:~340-360` (ADMIN_EMAILS/CLIENT_EMAILS) y `contexia-wizard/app/dashboard/page.tsx:10-18`
-- Dos listas hardcodeadas que pueden divergir. Ya divergen: `dashboard/page.tsx` incluye `fperez@ferez.co` y `cliente@demo.co`; `login.html` debe verificarse.
-- **Acción**: mover a `app_metadata.role` en Supabase (fuente única), eliminar listas locales.
+**P0-4. Listas de emails autorizadas duplicadas** (FIX APLICADO 2026-05-25)
+- **Aplicado**:
+  - `login.html`: borrados `ADMIN_EMAILS`, `CLIENT_EMAILS`, `isAdminEmail()`, `isClientEmail()`, `getRoleForEmail()`. Reemplazados por `readRoleFromUser(user)` que lee `user.app_metadata.role` directamente del JWT post-signIn. Si el usuario no tiene rol → error "Tu cuenta no tiene un rol asignado".
+  - `app-admin/index.html`: borrado `ADMIN_EMAILS`. Reemplazado por `isAdminRole(user)` que lee `session.user.app_metadata.role`.
+  - Migration `20260525_seed_user_roles.sql` — actualiza `auth.users.raw_app_meta_data` para los 4 usuarios conocidos (admin: contexia.marketing; clientes: growth, fperez, carlos). Correr en proyecto AUTH (`kpynymwghfwshvcvevxq`), NO wizard.
+- **Resultado**: cero hardcodings de emails. Para agregar nuevos usuarios, solo crear en Supabase + setear `app_metadata.role`. Cero cambios de código.
 
 ### P1 — funcionales / deuda
 
@@ -91,9 +94,35 @@
   - `vercel.json`: agregados redirects `/wizard/dashboard` y `/wizard/dashboard/` → `/login.html` (red de seguridad para bookmarks viejos).
   - 0 referencias restantes en el repo (grep limpio).
 
-**P1-2. Bundles `_next/static/chunks/*.js` huérfanos en root** — origen probable del SyntaxError admin
-- Restos de un build anterior de Next que conviven con el wizard nuevo. Posible mismatch de versión cargado por `app-admin/index.html`.
-- **Acción**: auditar qué bundle carga `app-admin/index.html`; borrar bundles huérfanos.
+**P1-2. Bundles `_next/static/chunks/*.js` huérfanos en root** (AUDITORÍA COMPLETA 2026-05-25)
+- **Hallazgos**:
+  - 36 chunks en `_next/static/chunks/`. 23 referenciados por HTMLs servidos por vercel.json. **13 orphan** (no referenciados por ninguna ruta viva).
+  - `app/bunker.html` (HTML, no chunk) también es **orphan**: vercel.json hace rewrite `/app/bunker` → `/app-admin/index.html`, nunca a `app/bunker.html`.
+  - Hipótesis original incorrecta: el SyntaxError NO viene de chunks `_next/`. Viene del bundle React del admin: `/app/dashboard-assets/index-DblwMcm3.auth-logout-20260524.js`. Es un bundle del build admin, no del Next prerendered.
+- **Orphan chunks identificados** (seguros de borrar, ninguna ruta viva los carga):
+  ```
+  _next/static/chunks/0-gv~y5dlwprq.js
+  _next/static/chunks/0.s6vwp0ntx4k.js
+  _next/static/chunks/04bb.3eqtcy79.js
+  _next/static/chunks/04h13f3v71fai.js
+  _next/static/chunks/08_r.qj7~st08.js
+  _next/static/chunks/09p3uv5s9u26c.js
+  _next/static/chunks/0_9~sqg04jz4a.js
+  _next/static/chunks/0ql0e4rfxk6~f.js
+  _next/static/chunks/0s23vw4lfsaz-.js
+  _next/static/chunks/0xevlzx9jntyl.js
+  _next/static/chunks/0zr9o072pshx_.js
+  _next/static/chunks/142.utdrk1tl~.js
+  _next/static/chunks/16182nerkh7zp.js
+  ```
+  Más `app/bunker.html` y sus chunks únicos (los compartidos siguen siendo usados por otros HTMLs).
+- **Acción recomendada** (NO ejecutada en este PR para mantener scope ajustado):
+  1. Borrar los 13 chunks orphan + `app/bunker.html`.
+  2. **Solución estructural**: agregar `_next/` y `app/dashboard-assets/` a `.gitignore`. Estos son build artifacts — no deberían estar en git. Pipeline CI debería correr `next build` antes de deploy. Hoy están commiteados, lo que genera (a) acumulación de orphans y (b) diffs gigantes en cada rebuild. **Refactor mayor — backlog post-MVP**.
+- **SyntaxError admin separado** (issue distinto a P1-2):
+  - Bundle real con el bug: `/app/dashboard-assets/index-DblwMcm3.auth-logout-20260524.js` (~hotfix del 2026-05-24).
+  - Inspeccionar manualmente o regenerar desde el repo fuente del admin SPA (no está en este monorepo).
+  - Crear ticket separado P1-2b para diagnóstico del bundle admin.
 
 **P1-3. OAuth callback redirige a `/login.html?oauth=1`** — `login.html:443`
 - Tras OAuth, vuelve al login y un handler en línea 459+ rerutea. Funciona pero suma un round-trip visible y enmascara errores.
