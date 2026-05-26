@@ -35,7 +35,6 @@ cors_origins = [
     "http://localhost:5174",  # Alternative Vite port
     "http://localhost:5175",  # Alternative Vite port
     "https://contexia.online",
-    "https://app.contexia.online",
     "https://www.contexia.online",
     "https://contexia-wizard.vercel.app",
     "https://wizard.contexia.online",
