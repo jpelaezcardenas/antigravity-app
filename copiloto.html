@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
     <script src="./js/layout.js"></script>
-    <script src="./js/auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
         tailwind.config = {
@@ -68,8 +67,8 @@
 <body class="bg-white text-slate-900 min-h-screen flex flex-col">
     <!-- TopNavBar -->
     <!-- TopNavBar Removed as per user request -->
-    <main class="flex-1 flex flex-col max-w-[1600px] mx-auto w-full px-4 lg:px-10 py-6" x-data="{ 
-        user: window.auth.getUser(),
+    <main class="flex-1 flex flex-col max-w-[1600px] mx-auto w-full px-4 lg:px-10 py-6" x-data="{
+        user: JSON.parse(localStorage.getItem('cx_user') || '{}'),
         init() {
             // Dynamic personalization logic
         }

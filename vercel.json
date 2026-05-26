@@ -34,6 +34,16 @@
             "permanent": false
         },
         {
+            "source": "/wizard/dashboard",
+            "destination": "/login.html",
+            "permanent": false
+        },
+        {
+            "source": "/wizard/dashboard/",
+            "destination": "/login.html",
+            "permanent": false
+        },
+        {
             "source": "/wizard/",
             "destination": "/wizard",
             "permanent": false

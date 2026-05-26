@@ -3,17 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Contexia - Portal de Clientes. GPS Financiero con IA para PyMEs colombianas: flujo de caja, impuestos y riesgo fiscal." />
+    <meta name="description" content="Contexia Bunker — Admin Console. Onboarding, CRM y gestión centralizada de clientes." />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
-    <title>Contexia - Portal de Clientes</title>
+    <title>Contexia · Bunker Admin</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" crossorigin href="/app/dashboard-assets/index-CegUaKmh.css">
     <script>
       (function() {
         var SUPABASE_URL = "https://kpynymwghfwshvcvevxq.supabase.co";
         var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDAwMTksImV4cCI6MjA5NDYxNjAxOX0.skNy5PKg0oFIqZD-2GyMZFTVA68OxrS1rBKkFiWAhwA";
-        var ADMIN_EMAILS = new Set(["contexia.marketing@gmail.com"]);
         var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function isAdminRole(user) {
+          if (!user) return false;
+          var meta = user.app_metadata || {};
+          var role = String(meta.role || meta.account_role || "").toLowerCase();
+          if (["admin", "superadmin", "contexia_admin"].indexOf(role) !== -1) return true;
+          var roles = meta.roles;
+          return Array.isArray(roles) && roles.some(function(r) { return String(r).toLowerCase() === "admin"; });
+        }
 
         function loadReactApp() {
           var script = document.createElement('script');
@@ -28,14 +36,12 @@
             window.location.assign("/login.html");
             return;
           }
-          var normalized = String(session.user.email || "").trim().toLowerCase();
-          var isAdmin = ADMIN_EMAILS.has(normalized);
-          if (!isAdmin) {
+          if (!isAdminRole(session.user)) {
             window.location.assign("/app/overview");
             return;
           }
           window.localStorage.setItem("cx_user", JSON.stringify({
-            email: normalized,
+            email: String(session.user.email || "").trim().toLowerCase(),
             role: "admin",
             is_admin: true
           }));
