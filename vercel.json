@@ -54,7 +54,25 @@
             "permanent": false
         }
     ],
+    "headers": [
+        {
+            "source": "/app/:path*",
+            "headers": [
+                { "key": "Cache-Control", "value": "private, no-store, max-age=0, must-revalidate" }
+            ]
+        },
+        {
+            "source": "/app-admin/:path*",
+            "headers": [
+                { "key": "Cache-Control", "value": "private, no-store, max-age=0, must-revalidate" }
+            ]
+        }
+    ],
     "rewrites": [
+        {
+            "source": "/api/v1/:path*",
+            "destination": "https://antigravity-app-production-175a.up.railway.app/api/v1/:path*"
+        },
         {
             "source": "/app",
             "destination": "/app-admin/index.html"
@@ -89,7 +107,11 @@
         },
         {
             "source": "/app/bunker",
-            "destination": "/app-admin/index.html"
+            "destination": "/app/bunker/index.html"
+        },
+        {
+            "source": "/app/bunker/:path*",
+            "destination": "/app/bunker/:path*"
         },
         {
             "source": "/app/dashboard-assets/:path*",

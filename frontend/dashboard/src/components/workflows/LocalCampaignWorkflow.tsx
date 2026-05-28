@@ -180,7 +180,9 @@ const LocalCampaignWorkflow: React.FC<{
                 <span>Posts</span>
               </div>
               <div className="stat-card">
-                <strong>{Object.values(cityData.canales).reduce((a: number, b: number) => a + b, 0)}</strong>
+                <strong>
+                  {Object.values(cityData.canales as Record<string, number>).reduce((a: number, b: number) => a + b, 0)}
+                </strong>
                 <span>Total actividades</span>
               </div>
               <div className="stat-card">

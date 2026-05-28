@@ -15,6 +15,7 @@ import httpx
 
 from services.taty_service import get_taty_service
 from core.supabase_client import get_supabase
+from services.social_ops_service import get_social_ops_service
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +103,14 @@ async def telegram_webhook(request: Request):
 
         logger.info(f"📱 Telegram: chat_id={chat_id}, pregunta={user_text[:50]}")
 
+        # Social Content Ops uses Telegram as the Zero-UI command channel.
+        # Only explicit ops commands are routed here so Taty keeps handling fiscal Q&A.
+        social_ops = get_social_ops_service()
+        if social_ops.is_social_ops_command(user_text):
+            result = social_ops.handle_telegram_update(update_data)
+            await send_telegram_message(chat_id, build_social_ops_telegram_reply(result))
+            return {"ok": True, "social_ops": True, "result": result}
+
         # PASO 3: Buscar la empresa en Supabase
         logger.debug("🔵 Getting Supabase client")
         supabase = get_supabase()
@@ -122,6 +131,20 @@ async def telegram_webhook(request: Request):
             logger.error(f"❌ Error querying telegram_chat_mappings: {str(e)}", exc_info=True)
             await send_telegram_message(chat_id, "❌ Error de configuración.\nContacta a soporte.")
             return {"ok": True}
+
+        # If onboarding is active for this company, treat Telegram messages as onboarding intake
+        # (client should not fill long forms; capture facts conversationally).
+        social_ops = get_social_ops_service()
+        active_ws = social_ops.get_active_onboarding_for_company(company_id)
+        if active_ws:
+            intake = social_ops.intake_onboarding(
+                workspace_id=active_ws["id"],
+                text=user_text,
+                source="telegram",
+                actor_handle=str(update.message.from_user.username) if update.message.from_user and getattr(update.message.from_user, "username", None) else (user_id or "client"),
+            )
+            await send_telegram_message(chat_id, build_taty_onboarding_reply(active_ws, intake))
+            return {"ok": True, "taty_mode": "onboarding", "workspace_id": active_ws["id"]}
 
         # PASO 4: Llamar a Taty
         logger.debug("🔵 Getting Taty service")
@@ -163,6 +186,49 @@ async def telegram_webhook(request: Request):
     except Exception as e:
         logger.error(f"❌ Error en webhook: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Error procesando webhook")
+
+
+def build_social_ops_telegram_reply(result: dict) -> str:
+    """Build a safe Telegram acknowledgement for Social Ops commands."""
+    drafts = result.get("command_drafts") or []
+    events = result.get("events") or []
+    if drafts:
+        draft = drafts[-1]
+        return (
+            "Social Content Ops recibio el comando.\n"
+            f"Accion detectada: {draft['action']}.\n"
+            "Estado: pending_approval. No se ejecuto ningun cambio de infraestructura, "
+            "publicacion o agenda critica sin aprobacion."
+        )
+    if events:
+        lead = events[-1].get("lead") or {}
+        diagnosis = events[-1].get("diagnosis") or {}
+        return (
+            "Social Content Ops registro el evento inbound.\n"
+            f"Lead: {lead.get('display_name', 'sin nombre')}.\n"
+            f"Etapa: {diagnosis.get('maturity_stage', 'pendiente')}.\n"
+            f"Siguiente paso: {diagnosis.get('next_stage', 'diagnostico')}."
+        )
+    return "Social Content Ops no encontro texto procesable en el mensaje."
+
+
+def build_taty_onboarding_reply(workspace: dict, intake: dict) -> str:
+    missing = intake.get("missing") or []
+    present = intake.get("present") or []
+    company = workspace.get("company_name", "cliente")
+    sla = (workspace.get("sla") or {}).get("client_credentials_response_hours", 48)
+
+    summary = (
+        f"Onboarding 21D activo para {company}.\n"
+        f"Captura conversacional recibida. Presentes: {len(present)}. Faltantes: {len(missing)}.\n"
+    )
+    if missing:
+        summary += "Pendiente por capturar: " + ", ".join(missing) + ".\n"
+    summary += (
+        "Regla: nada sensible se ejecuta sin aprobacion. "
+        f"SLA credenciales: {sla}h por solicitud."
+    )
+    return summary
 
 
 async def send_telegram_message(chat_id: int, text: str):
