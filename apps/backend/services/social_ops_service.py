@@ -645,6 +645,9 @@ class SocialOpsService:
             actor_handle=actor_handle,
             actor_name=str(normalized_event.get("actor_name") or actor_handle),
         )
+        # Mirror the parent lead first so child rows (inbound events, pipeline events,
+        # agent runs) don't violate the lead_id foreign key when persistence is enabled.
+        self._mirror_supabase("social_leads", self._lead_row(lead), upsert=True)
         diagnosis = self.analyze_text(text)
         event_id = str(uuid4())
         event = {
