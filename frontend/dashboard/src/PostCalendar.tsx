@@ -27,13 +27,13 @@ const PostCalendar: React.FC<PostCalendarProps> = ({ campaignId }) => {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-lg font-semibold text-cyan-400 mb-4 capitalize">{monthName}</h3>
+        <h3 className="text-lg font-semibold text-primary mb-4 capitalize">{monthName}</h3>
       </div>
 
       <div className="bg-blue-950 border border-blue-800 rounded-lg p-6">
         <div className="grid grid-cols-7 gap-2">
           {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-            <div key={day} className="text-center text-sm font-semibold text-cyan-400 py-2">
+            <div key={day} className="text-center text-sm font-semibold text-primary py-2">
               {day}
             </div>
           ))}
@@ -47,8 +47,8 @@ const PostCalendar: React.FC<PostCalendarProps> = ({ campaignId }) => {
               key={day}
               className={`aspect-square flex items-center justify-center rounded text-sm font-medium transition ${
                 mockScheduledDays.includes(day)
-                  ? 'bg-cyan-600 text-white'
-                  : 'bg-blue-900 text-gray-300 hover:bg-blue-800'
+                  ? 'bg-primary-dim text-white'
+                  : 'bg-blue-900 text-muted hover:bg-blue-800'
               }`}
             >
               {day}
@@ -58,28 +58,28 @@ const PostCalendar: React.FC<PostCalendarProps> = ({ campaignId }) => {
       </div>
 
       <div className="bg-blue-950 border border-blue-800 rounded-lg p-6">
-        <h4 className="text-cyan-400 font-semibold mb-3">📅 Posts Programados</h4>
+        <h4 className="text-primary font-semibold mb-3">📅 Posts Programados</h4>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between items-center p-2 bg-blue-900 rounded">
             <span>Mayo 5 - Instagram</span>
-            <span className="text-cyan-400">Aversión a Pérdidas</span>
+            <span className="text-primary">Aversión a Pérdidas</span>
           </div>
           <div className="flex justify-between items-center p-2 bg-blue-900 rounded">
             <span>Mayo 12 - Facebook</span>
-            <span className="text-cyan-400">Dropshipper Case Study</span>
+            <span className="text-primary">Dropshipper Case Study</span>
           </div>
           <div className="flex justify-between items-center p-2 bg-blue-900 rounded">
             <span>Mayo 19 - TikTok</span>
-            <span className="text-cyan-400">Efecto Dotación</span>
+            <span className="text-primary">Efecto Dotación</span>
           </div>
           <div className="flex justify-between items-center p-2 bg-blue-900 rounded">
             <span>Mayo 26 - Instagram</span>
-            <span className="text-cyan-400">Claridad Predictiva</span>
+            <span className="text-primary">Claridad Predictiva</span>
           </div>
         </div>
       </div>
 
-      <button className="w-full px-4 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold rounded-lg transition">
+      <button className="w-full px-4 py-3 bg-gradient-to-r from-primary to-blue-600 hover:from-primary-dim hover:to-blue-700 text-white font-semibold rounded-lg transition">
         ➕ Programar Nuevo Post
       </button>
     </div>

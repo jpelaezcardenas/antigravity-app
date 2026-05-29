@@ -39,21 +39,21 @@ const BunkerApp: React.FC = () => {
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-slate-950/70 border border-white/10 rounded-lg p-6">
-                <p className="text-gray-400 text-sm">Presupuesto Total</p>
-                <p className="text-2xl font-bold text-cyan-400">$10,000</p>
+              <div className="card-premium p-6">
+                <p className="text-muted text-sm">Presupuesto Total</p>
+                <p className="text-2xl font-display font-bold text-primary">$10,000</p>
               </div>
-              <div className="bg-slate-950/70 border border-white/10 rounded-lg p-6">
-                <p className="text-gray-400 text-sm">Gastado</p>
-                <p className="text-2xl font-bold text-yellow-400">$8,500</p>
+              <div className="card-premium p-6">
+                <p className="text-muted text-sm">Gastado</p>
+                <p className="text-2xl font-display font-bold text-warning">$8,500</p>
               </div>
-              <div className="bg-slate-950/70 border border-white/10 rounded-lg p-6">
-                <p className="text-gray-400 text-sm">Posts Publicados</p>
-                <p className="text-2xl font-bold text-green-400">26</p>
+              <div className="card-premium p-6">
+                <p className="text-muted text-sm">Posts Publicados</p>
+                <p className="text-2xl font-display font-bold text-success">26</p>
               </div>
-              <div className="bg-slate-950/70 border border-white/10 rounded-lg p-6">
-                <p className="text-gray-400 text-sm">Engagement Promedio</p>
-                <p className="text-2xl font-bold text-purple-400">8.4%</p>
+              <div className="card-premium p-6">
+                <p className="text-muted text-sm">Engagement Promedio</p>
+                <p className="text-2xl font-display font-bold text-secondary">8.4%</p>
               </div>
             </div>
           </div>
@@ -65,10 +65,10 @@ const BunkerApp: React.FC = () => {
             {!isCreatingCampaign ? (
               <>
                 <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold text-cyan-200">Gestión de Campañas</h2>
+                  <h2 className="text-xl font-semibold text-primary">Gestión de Campañas</h2>
                   <button
                     onClick={() => setIsCreatingCampaign(true)}
-                    className="px-6 py-2 bg-cyan-500 hover:bg-cyan-300 text-slate-950 font-semibold rounded-lg transition"
+                    className="px-6 py-2 bg-primary hover:bg-primary-dim text-obsidian font-semibold rounded-lg transition"
                   >
                     Nueva Campaña
                   </button>
@@ -76,14 +76,14 @@ const BunkerApp: React.FC = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Business DNA */}
-                  <div className="bg-slate-950/70 border border-white/10 rounded-lg p-6">
-                    <h2 className="text-lg font-semibold text-cyan-200 mb-4">Business DNA</h2>
+                  <div className="card-premium p-6">
+                    <h2 className="text-lg font-semibold text-primary mb-4">Business DNA</h2>
                     <BusinessDNA campaignId={selectedCampaign.id} />
                   </div>
 
                   {/* Campaign Suggestions */}
-                  <div className="bg-slate-950/70 border border-white/10 rounded-lg p-6">
-                    <h2 className="text-lg font-semibold text-cyan-200 mb-4">Sugerencias</h2>
+                  <div className="card-premium p-6">
+                    <h2 className="text-lg font-semibold text-primary mb-4">Sugerencias</h2>
                     <CampaignSuggestions
                       campaignId={selectedCampaign.id}
                       onSelectSuggestion={(sug) => {
@@ -99,13 +99,13 @@ const BunkerApp: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setIsCreatingCampaign(false)}
-                    className="text-cyan-200 hover:text-cyan-100 font-semibold"
+                    className="text-primary hover:text-primary/80 font-semibold"
                   >
                     ← Volver
                   </button>
-                  <h2 className="text-xl font-semibold text-cyan-200">Crear Nueva Campaña</h2>
+                  <h2 className="text-xl font-semibold text-primary">Crear Nueva Campaña</h2>
                 </div>
-                <div className="bg-slate-950/70 border border-white/10 rounded-lg p-8">
+                <div className="card-premium p-8">
                   <CampaignWizard />
                 </div>
               </div>
@@ -116,16 +116,16 @@ const BunkerApp: React.FC = () => {
         {/* CONTENIDO TAB */}
         {activeTab === 'content' && (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-cyan-200">Biblioteca de Contenido</h2>
+            <h2 className="text-xl font-semibold text-primary">Biblioteca de Contenido</h2>
 
-            <div className="bg-slate-950/70 border border-white/10 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-cyan-200 mb-4">Image Manager</h3>
+            <div className="card-premium p-6">
+              <h3 className="text-lg font-semibold text-primary mb-4">Image Manager</h3>
               <ImageManager onSelectImage={setSelectedImage} />
             </div>
 
             {selectedImage && (
-              <div className="bg-slate-950/70 border border-white/10 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-cyan-200 mb-4">Imagen Seleccionada</h3>
+              <div className="card-premium p-6">
+                <h3 className="text-lg font-semibold text-primary mb-4">Imagen Seleccionada</h3>
                 <div className="flex gap-4">
                   <img
                     src={selectedImage.image_url}
@@ -134,11 +134,11 @@ const BunkerApp: React.FC = () => {
                   />
                   <div>
                     <p className="font-semibold">{selectedImage.titulo}</p>
-                    <p className="text-sm text-gray-400">Categoría: {selectedImage.categoria}</p>
-                    <p className="text-sm text-gray-400">Usado: {selectedImage.usos_totales} veces</p>
+                    <p className="text-sm text-muted">Categoría: {selectedImage.categoria}</p>
+                    <p className="text-sm text-muted">Usado: {selectedImage.usos_totales} veces</p>
                     <button
                       onClick={() => setActiveTab('editor')}
-                      className="mt-3 px-4 py-2 bg-cyan-500 hover:bg-cyan-300 text-slate-950 text-sm rounded"
+                      className="mt-3 px-4 py-2 bg-primary hover:bg-primary-dim text-obsidian text-sm rounded"
                     >
                       Usar en Post
                     </button>
@@ -147,8 +147,8 @@ const BunkerApp: React.FC = () => {
               </div>
             )}
 
-            <div className="bg-slate-950/70 border border-white/10 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-cyan-200 mb-4">Content Library</h3>
+            <div className="card-premium p-6">
+              <h3 className="text-lg font-semibold text-primary mb-4">Content Library</h3>
               <ContentLibrary />
             </div>
           </div>
@@ -157,10 +157,10 @@ const BunkerApp: React.FC = () => {
         {/* CALENDARIO TAB */}
         {activeTab === 'calendar' && (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-cyan-200 mb-4">Workflows & Calendario</h2>
+            <h2 className="text-xl font-semibold text-primary mb-4">Workflows & Calendario</h2>
 
             {/* Workflow Type Selector */}
-            <div className="bg-slate-950/70 border border-white/10 rounded-lg p-4">
+            <div className="card-premium p-4">
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {[
                   { id: 'instagram', label: '📅 Instagram Calendar', icon: '📅' },
@@ -174,8 +174,8 @@ const BunkerApp: React.FC = () => {
                     onClick={() => setActiveWorkflow(workflow.id as WorkflowType)}
                     className={`px-4 py-2 text-sm font-medium rounded transition whitespace-nowrap ${
                       activeWorkflow === workflow.id
-                        ? 'bg-cyan-500 text-slate-950'
-                        : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                        ? 'bg-primary text-obsidian glow-teal-soft'
+                        : 'bg-white/5 text-muted hover:bg-white/10'
                     }`}
                   >
                     {workflow.icon} {workflow.label}
@@ -185,7 +185,7 @@ const BunkerApp: React.FC = () => {
             </div>
 
             {/* Workflow Content */}
-            <div className="bg-slate-950/70 border border-white/10 rounded-lg p-6">
+            <div className="card-premium p-6">
               {activeWorkflow === 'instagram' && (
                 <InstagramCalendarWorkflow
                   campaignId={selectedCampaign.id}
@@ -225,8 +225,8 @@ const BunkerApp: React.FC = () => {
             </div>
 
             {/* Classic Calendar View */}
-            <div className="bg-slate-950/70 border border-white/10 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-cyan-200 mb-4">Vista Clásica</h3>
+            <div className="card-premium p-6">
+              <h3 className="text-lg font-semibold text-primary mb-4">Vista Clásica</h3>
               <PostCalendar campaignId={selectedCampaign.id} />
             </div>
           </div>
@@ -234,8 +234,8 @@ const BunkerApp: React.FC = () => {
 
         {/* EDITOR TAB */}
         {activeTab === 'editor' && (
-          <div className="bg-slate-950/70 border border-white/10 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-cyan-200 mb-4">Editor de Posts</h2>
+          <div className="card-premium p-6">
+            <h2 className="text-xl font-semibold text-primary mb-4">Editor de Posts</h2>
             <PostEditor
               campaignId={selectedCampaign.id}
               selectedImage={selectedImage}
@@ -245,18 +245,18 @@ const BunkerApp: React.FC = () => {
 
         {/* CONFIG TAB */}
         {activeTab === 'config' && (
-          <div className="bg-slate-950/70 border border-white/10 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-cyan-200 mb-4">Configuración</h2>
+          <div className="card-premium p-6">
+            <h2 className="text-xl font-semibold text-primary mb-4">Configuración</h2>
             <div className="space-y-4">
-              <div className="p-4 bg-white/5 rounded border border-white/10">
+              <div className="p-4 bg-white/5 rounded-lg border border-outline/40">
                 <p className="text-sm">Integraciones</p>
-                <button className="mt-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-300 text-slate-950 text-sm rounded">
+                <button className="mt-2 px-4 py-2 bg-primary hover:bg-primary-dim text-obsidian text-sm rounded">
                   Conectar Meta (Facebook/Instagram)
                 </button>
               </div>
-              <div className="p-4 bg-white/5 rounded border border-white/10">
+              <div className="p-4 bg-white/5 rounded-lg border border-outline/40">
                 <p className="text-sm">API Keys</p>
-                <p className="text-xs text-gray-400 mt-2">Estado: Connected ✅</p>
+                <p className="text-xs text-muted mt-2">Estado: Connected ✅</p>
               </div>
             </div>
           </div>

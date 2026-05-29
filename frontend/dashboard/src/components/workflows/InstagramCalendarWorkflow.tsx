@@ -128,7 +128,7 @@ const InstagramCalendarWorkflow: React.FC<InstagramCalendarWorkflowProps> = ({
   };
 
   if (loading) {
-    return <div className="text-center py-8 text-gray-400">Generando calendario...</div>;
+    return <div className="text-center py-8 text-muted">Generando calendario...</div>;
   }
 
   if (error && !calendar) {
@@ -136,7 +136,7 @@ const InstagramCalendarWorkflow: React.FC<InstagramCalendarWorkflowProps> = ({
   }
 
   if (!calendar) {
-    return <div className="text-center py-8 text-gray-400">Sin datos disponibles</div>;
+    return <div className="text-center py-8 text-muted">Sin datos disponibles</div>;
   }
 
   const groupedByWeek = calendar.posts.reduce((acc, post) => {
@@ -149,11 +149,11 @@ const InstagramCalendarWorkflow: React.FC<InstagramCalendarWorkflowProps> = ({
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-blue-950 border border-blue-800 rounded-lg p-6">
-        <h2 className="text-2xl font-bold text-cyan-400 mb-2">📅 Instagram Calendar Workflow</h2>
-        <p className="text-gray-400 mb-4">{campaignObjective}</p>
+        <h2 className="text-2xl font-bold text-primary mb-2">📅 Instagram Calendar Workflow</h2>
+        <p className="text-muted mb-4">{campaignObjective}</p>
 
         <div className="flex gap-4 items-center mb-4">
-          <label className="text-gray-300">Semanas a generar:</label>
+          <label className="text-muted">Semanas a generar:</label>
           <select
             value={weeks}
             onChange={(e) => setWeeks(parseInt(e.target.value))}
@@ -182,7 +182,7 @@ const InstagramCalendarWorkflow: React.FC<InstagramCalendarWorkflowProps> = ({
       <div className="space-y-4">
         {Object.entries(groupedByWeek).map(([weekNum, weekPosts]) => (
           <div key={weekNum} className="bg-blue-950 border border-blue-800 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-cyan-400 mb-4">📆 Semana {weekNum}</h3>
+            <h3 className="text-lg font-semibold text-primary mb-4">📆 Semana {weekNum}</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               {weekPosts.map((post, idx) => {
@@ -199,7 +199,7 @@ const InstagramCalendarWorkflow: React.FC<InstagramCalendarWorkflowProps> = ({
                     <div className="text-white text-sm font-semibold mb-2 line-clamp-2">
                       {post.post.titulo}
                     </div>
-                    <div className="text-xs text-gray-300 line-clamp-2 mb-2">
+                    <div className="text-xs text-muted line-clamp-2 mb-2">
                       {post.post.contenido}
                     </div>
                     <div className={`text-xs ${colors.text}`}>
@@ -215,27 +215,27 @@ const InstagramCalendarWorkflow: React.FC<InstagramCalendarWorkflowProps> = ({
 
       {/* Metrics Panel */}
       <div className="bg-blue-950 border border-blue-800 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-cyan-400 mb-4">📊 Métricas Esperadas</h3>
+        <h3 className="text-lg font-semibold text-primary mb-4">📊 Métricas Esperadas</h3>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-blue-900 rounded p-4 text-center">
-            <div className="text-2xl font-bold text-cyan-400">{calendar.total_posts}</div>
-            <div className="text-xs text-gray-400">Total Posts</div>
+            <div className="text-2xl font-bold text-primary">{calendar.total_posts}</div>
+            <div className="text-xs text-muted">Total Posts</div>
           </div>
 
           <div className="bg-blue-900 rounded p-4 text-center">
             <div className="text-2xl font-bold text-green-400">{calendar.metrics.expected_reach.toLocaleString()}</div>
-            <div className="text-xs text-gray-400">Reach Esperado</div>
+            <div className="text-xs text-muted">Reach Esperado</div>
           </div>
 
           <div className="bg-blue-900 rounded p-4 text-center">
             <div className="text-2xl font-bold text-yellow-400">{calendar.metrics.expected_engagement}</div>
-            <div className="text-xs text-gray-400">Engagement Total</div>
+            <div className="text-xs text-muted">Engagement Total</div>
           </div>
 
           <div className="bg-blue-900 rounded p-4 text-center">
             <div className="text-2xl font-bold text-purple-400">{calendar.metrics.expected_engagement_rate}</div>
-            <div className="text-xs text-gray-400">Tasa de Engagement</div>
+            <div className="text-xs text-muted">Tasa de Engagement</div>
           </div>
         </div>
 
@@ -262,28 +262,28 @@ const InstagramCalendarWorkflow: React.FC<InstagramCalendarWorkflowProps> = ({
           <div className="bg-blue-950 border border-blue-800 rounded-lg p-8 max-w-2xl w-full max-h-96 overflow-y-auto">
             <button
               onClick={() => setSelectedPost(null)}
-              className="float-right text-cyan-400 hover:text-cyan-300 text-2xl"
+              className="float-right text-primary hover:text-primary/80 text-2xl"
             >
               ✕
             </button>
 
-            <h3 className="text-2xl font-bold text-cyan-400 mb-4">{selectedPost.post.titulo}</h3>
+            <h3 className="text-2xl font-bold text-primary mb-4">{selectedPost.post.titulo}</h3>
 
             <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
               <div>
-                <span className="text-gray-400">Fecha:</span>
+                <span className="text-muted">Fecha:</span>
                 <div className="text-white font-semibold">{selectedPost.fecha}</div>
               </div>
               <div>
-                <span className="text-gray-400">Hora:</span>
+                <span className="text-muted">Hora:</span>
                 <div className="text-white font-semibold">{selectedPost.hora}</div>
               </div>
               <div>
-                <span className="text-gray-400">Día:</span>
+                <span className="text-muted">Día:</span>
                 <div className="text-white font-semibold">{selectedPost.dia_semana}</div>
               </div>
               <div>
-                <span className="text-gray-400">Pillar:</span>
+                <span className="text-muted">Pillar:</span>
                 <div className="text-white font-semibold capitalize">{selectedPost.pillar}</div>
               </div>
             </div>
@@ -293,17 +293,17 @@ const InstagramCalendarWorkflow: React.FC<InstagramCalendarWorkflowProps> = ({
             </div>
 
             <div className="mb-4">
-              <span className="text-gray-400 text-sm">Hashtags:</span>
+              <span className="text-muted text-sm">Hashtags:</span>
               <div className="flex flex-wrap gap-2 mt-2">
                 {selectedPost.post.hashtags.map((tag, idx) => (
-                  <span key={idx} className="bg-cyan-600 text-white text-xs rounded-full px-3 py-1">
+                  <span key={idx} className="bg-primary-dim text-white text-xs rounded-full px-3 py-1">
                     {tag}
                   </span>
                 ))}
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-cyan-600 to-blue-600 rounded p-4 text-white text-center font-semibold">
+            <div className="bg-gradient-to-r from-primary to-blue-600 rounded p-4 text-white text-center font-semibold">
               {selectedPost.post.cta}
             </div>
           </div>

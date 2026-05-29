@@ -194,7 +194,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({ onSelectImage }) => {
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
-          <label className="text-sm text-gray-400">Categoría</label>
+          <label className="text-sm text-muted">Categoría</label>
           <select
             value={categoria}
             onChange={(e) => setCategoria(e.target.value)}
@@ -209,7 +209,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({ onSelectImage }) => {
         </div>
 
         <div>
-          <label className="text-sm text-gray-400">Generado por</label>
+          <label className="text-sm text-muted">Generado por</label>
           <select
             value={generatedBy}
             onChange={(e) => setGeneratedBy(e.target.value)}
@@ -226,13 +226,13 @@ const ImageManager: React.FC<ImageManagerProps> = ({ onSelectImage }) => {
 
       {/* Image Grid */}
       {loading ? (
-        <div className="text-center py-8 text-gray-400">Cargando imágenes...</div>
+        <div className="text-center py-8 text-muted">Cargando imágenes...</div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {filteredImages.map((image) => (
             <div
               key={image.id}
-              className="relative group bg-blue-950 rounded overflow-hidden cursor-pointer hover:ring-2 hover:ring-cyan-400 transition"
+              className="relative group bg-blue-950 rounded overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition"
               onClick={() => onSelectImage?.(image)}
             >
               {/* Image */}
@@ -246,7 +246,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({ onSelectImage }) => {
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex flex-col justify-between p-2">
                 <div>
                   <p className="text-xs text-white font-semibold truncate">{image.titulo}</p>
-                  <p className="text-xs text-gray-300">{image.categoria}</p>
+                  <p className="text-xs text-muted">{image.categoria}</p>
                 </div>
 
                 {/* Quick Actions */}
@@ -256,7 +256,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({ onSelectImage }) => {
                       e.stopPropagation();
                       onSelectImage?.(image);
                     }}
-                    className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white text-xs py-1 rounded"
+                    className="flex-1 bg-primary-dim hover:bg-primary-dim text-white text-xs py-1 rounded"
                   >
                     Usar
                   </button>
@@ -282,7 +282,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({ onSelectImage }) => {
       )}
 
       {filteredImages.length === 0 && !loading && (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-muted">
           <p>No hay imágenes que coincidan con los filtros</p>
           <p className="text-xs mt-2">Crea, sube o importa imágenes para comenzar</p>
         </div>

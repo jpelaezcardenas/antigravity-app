@@ -113,7 +113,7 @@ export default function MetricasDashboard() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Alcance Total', value: '—', icon: '👁️', gradient: 'from-blue-500/20 to-cyan-500/10' },
+            { label: 'Alcance Total', value: '—', icon: '👁️', gradient: 'from-blue-500/20 to-primary/10' },
             { label: 'Engagement', value: '—', icon: '💬', gradient: 'from-purple-500/20 to-pink-500/10' },
             { label: 'Posts', value: '0', icon: '📝', gradient: 'from-emerald-500/20 to-green-500/10' },
             { label: 'Mejor Score', value: '—', icon: '🏆', gradient: 'from-amber-500/20 to-orange-500/10' },
@@ -124,19 +124,19 @@ export default function MetricasDashboard() {
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-lg">{card.icon}</span>
-                <span className="text-[11px] text-gray-400 uppercase tracking-wider">{card.label}</span>
+                <span className="text-[11px] text-muted uppercase tracking-wider">{card.label}</span>
               </div>
-              <p className="text-2xl font-bold text-gray-300">{card.value}</p>
+              <p className="text-2xl font-bold text-muted">{card.value}</p>
             </div>
           ))}
         </div>
 
         <div className="flex flex-col items-center justify-center py-16 space-y-4 bg-blue-950/30 rounded-xl border border-blue-800/20">
-          <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/10 flex items-center justify-center">
+          <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/10 to-purple-500/10 border border-primary/10 flex items-center justify-center">
             <span className="text-5xl">📊</span>
           </div>
-          <h3 className="text-lg font-semibold text-gray-300">Aún no hay métricas</h3>
-          <p className="text-sm text-gray-500 max-w-lg text-center leading-relaxed">
+          <h3 className="text-lg font-semibold text-muted">Aún no hay métricas</h3>
+          <p className="text-sm text-muted max-w-lg text-center leading-relaxed">
             Las métricas aparecerán aquí cuando se publique contenido y se sincronice desde integraciones (Meta/TikTok/LinkedIn)
             o se registre desde el core. Cada publicación se clasifica como Ganador, Promedio o Perdedor según su score.
           </p>
@@ -151,7 +151,7 @@ export default function MetricasDashboard() {
                 setLoading(false);
               }
             }}
-            className="mt-2 px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold"
+            className="mt-2 px-5 py-2 rounded-xl bg-primary-dim hover:bg-primary text-white text-sm font-semibold"
           >
             Simular métricas
           </button>
@@ -181,31 +181,31 @@ export default function MetricasDashboard() {
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/10 border border-blue-800/30 rounded-xl p-4 backdrop-blur-sm">
+        <div className="bg-gradient-to-br from-blue-500/20 to-primary/10 border border-blue-800/30 rounded-xl p-4 backdrop-blur-sm">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg">👁️</span>
-            <span className="text-[11px] text-gray-400 uppercase tracking-wider">Alcance Total</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider">Alcance Total</span>
           </div>
-          <p className="text-2xl font-bold text-cyan-300">{computed.totalAlcance.toLocaleString('es-CO')}</p>
+          <p className="text-2xl font-bold text-primary">{computed.totalAlcance.toLocaleString('es-CO')}</p>
         </div>
         <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/10 border border-blue-800/30 rounded-xl p-4 backdrop-blur-sm">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg">💬</span>
-            <span className="text-[11px] text-gray-400 uppercase tracking-wider">Engagement</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider">Engagement</span>
           </div>
           <p className="text-2xl font-bold text-purple-300">{computed.avgEngagement}%</p>
         </div>
         <div className="bg-gradient-to-br from-emerald-500/20 to-green-500/10 border border-blue-800/30 rounded-xl p-4 backdrop-blur-sm">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg">📝</span>
-            <span className="text-[11px] text-gray-400 uppercase tracking-wider">Posts</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider">Posts</span>
           </div>
           <p className="text-2xl font-bold text-emerald-300">{computed.totalPosts}</p>
         </div>
         <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-blue-800/30 rounded-xl p-4 backdrop-blur-sm">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg">🏆</span>
-            <span className="text-[11px] text-gray-400 uppercase tracking-wider">Mejor Score</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider">Mejor Score</span>
           </div>
           <p className="text-2xl font-bold text-amber-300">{computed.bestScore || '—'}</p>
         </div>
@@ -213,13 +213,13 @@ export default function MetricasDashboard() {
 
       <div className="bg-blue-950/50 border border-blue-800/40 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-blue-800/30 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-300">Detalle por Publicación</h3>
-          <span className="text-[10px] uppercase tracking-widest text-gray-500">source: {source}</span>
+          <h3 className="text-sm font-semibold text-muted">Detalle por Publicación</h3>
+          <span className="text-[10px] uppercase tracking-widest text-muted">source: {source}</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-[11px] text-gray-500 uppercase tracking-wider border-b border-blue-800/20">
+              <tr className="text-[11px] text-muted uppercase tracking-wider border-b border-blue-800/20">
                 <th className="px-4 py-3 text-left">Fecha</th>
                 <th className="px-4 py-3 text-right">Alcance</th>
                 <th className="px-4 py-3 text-right">Reacciones</th>
@@ -233,12 +233,12 @@ export default function MetricasDashboard() {
             <tbody>
               {metricas.map((m) => (
                 <tr key={m.id} className="border-b border-blue-800/10 hover:bg-blue-900/20 transition">
-                  <td className="px-4 py-3 text-gray-300 font-mono text-xs">{m.fecha_captura}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{Number(m.alcance).toLocaleString('es-CO')}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{m.reacciones}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{m.comentarios}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{m.compartidos}</td>
-                  <td className="px-4 py-3 text-right text-cyan-300 font-semibold">
+                  <td className="px-4 py-3 text-muted font-mono text-xs">{m.fecha_captura}</td>
+                  <td className="px-4 py-3 text-right text-muted">{Number(m.alcance).toLocaleString('es-CO')}</td>
+                  <td className="px-4 py-3 text-right text-muted">{m.reacciones}</td>
+                  <td className="px-4 py-3 text-right text-muted">{m.comentarios}</td>
+                  <td className="px-4 py-3 text-right text-muted">{m.compartidos}</td>
+                  <td className="px-4 py-3 text-right text-primary font-semibold">
                     {Number(m.engagement_rate).toFixed(2)}%
                   </td>
                   <td className="px-4 py-3 text-right text-amber-300 font-bold">{m.score ?? '—'}</td>
@@ -246,7 +246,7 @@ export default function MetricasDashboard() {
                     {m.clasificacion ? (
                       <span
                         className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${
-                          CLASIFICACION_STYLES[m.clasificacion] || 'bg-white/5 text-slate-300 border border-white/10'
+                          CLASIFICACION_STYLES[m.clasificacion] || 'bg-white/5 text-muted border border-outline/40'
                         }`}
                       >
                         {clasificacionLabels[m.clasificacion] ?? m.clasificacion}

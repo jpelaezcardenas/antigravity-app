@@ -157,11 +157,11 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
 
       {/* Section 1: Audience Profile */}
       <div className="bg-blue-950 rounded-lg p-6 border border-blue-800">
-        <h3 className="text-lg font-semibold text-cyan-400 mb-4">👥 Perfil de Audiencia</h3>
+        <h3 className="text-lg font-semibold text-primary mb-4">👥 Perfil de Audiencia</h3>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-300 mb-2">Edad Target</label>
+            <label className="block text-sm text-muted mb-2">Edad Target</label>
             <input
               type="text"
               value={dna.audience_profile.edad || ''}
@@ -172,7 +172,7 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-2">Nivel de Ingresos</label>
+            <label className="block text-sm text-muted mb-2">Nivel de Ingresos</label>
             <select
               value={dna.audience_profile.ingresos || ''}
               onChange={(e) => updateAudienceProfile('ingresos', e.target.value)}
@@ -187,7 +187,7 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-2">Profesión/Tipo de Negocio</label>
+            <label className="block text-sm text-muted mb-2">Profesión/Tipo de Negocio</label>
             <input
               type="text"
               value={dna.audience_profile.profesion || ''}
@@ -198,7 +198,7 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-2">Ubicación</label>
+            <label className="block text-sm text-muted mb-2">Ubicación</label>
             <input
               type="text"
               value={dna.audience_profile.ubicacion || ''}
@@ -209,7 +209,7 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-2">Pain Points (Problemas)</label>
+            <label className="block text-sm text-muted mb-2">Pain Points (Problemas)</label>
             <textarea
               value={(dna.audience_profile.pain_points || []).join(', ')}
               onChange={(e) => updateAudienceProfile('pain_points', e.target.value.split(',').map((p) => p.trim()))}
@@ -223,11 +223,11 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
 
       {/* Section 2: Tone Guidelines */}
       <div className="bg-blue-950 rounded-lg p-6 border border-blue-800">
-        <h3 className="text-lg font-semibold text-cyan-400 mb-4">🎨 Tono de Marca</h3>
+        <h3 className="text-lg font-semibold text-primary mb-4">🎨 Tono de Marca</h3>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-300 mb-2">Formalidad</label>
+            <label className="block text-sm text-muted mb-2">Formalidad</label>
             <select
               value={dna.tone_guidelines.formalidad || ''}
               onChange={(e) => updateToneGuidelines('formalidad', e.target.value)}
@@ -242,7 +242,7 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-2">Jerga/Lenguaje</label>
+            <label className="block text-sm text-muted mb-2">Jerga/Lenguaje</label>
             <select
               value={dna.tone_guidelines.jerga || ''}
               onChange={(e) => updateToneGuidelines('jerga', e.target.value)}
@@ -263,13 +263,13 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
               id="emojis"
               className="w-4 h-4"
             />
-            <label htmlFor="emojis" className="text-sm text-gray-300">
+            <label htmlFor="emojis" className="text-sm text-muted">
               ✨ Usar emojis frecuentemente
             </label>
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-2">Longitud de Posts</label>
+            <label className="block text-sm text-muted mb-2">Longitud de Posts</label>
             <select
               value={dna.tone_guidelines.length || ''}
               onChange={(e) => updateToneGuidelines('length', e.target.value)}
@@ -286,7 +286,7 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
 
       {/* Section 3: Objectives */}
       <div className="bg-blue-950 rounded-lg p-6 border border-blue-800">
-        <h3 className="text-lg font-semibold text-cyan-400 mb-4">🎯 Objetivos de Campaña</h3>
+        <h3 className="text-lg font-semibold text-primary mb-4">🎯 Objetivos de Campaña</h3>
 
         <div className="space-y-3">
           <div className="flex gap-2">
@@ -307,7 +307,7 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
                 addObjective(select.value);
                 select.value = '';
               }}
-              className="px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded text-sm"
+              className="px-3 py-2 bg-primary-dim hover:bg-primary-dim text-white rounded text-sm"
             >
               ➕
             </button>
@@ -315,9 +315,9 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
 
           <div className="flex flex-wrap gap-2">
             {dna.objectives.map((obj) => (
-              <span key={obj} className="bg-cyan-600 text-white px-3 py-1 rounded text-sm flex items-center gap-2">
+              <span key={obj} className="bg-primary-dim text-white px-3 py-1 rounded text-sm flex items-center gap-2">
                 {obj}
-                <button onClick={() => removeObjective(obj)} className="text-cyan-200 hover:text-white">
+                <button onClick={() => removeObjective(obj)} className="text-primary hover:text-white">
                   ✕
                 </button>
               </span>
@@ -328,7 +328,7 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
 
       {/* Section 4: Key Differentiators */}
       <div className="bg-blue-950 rounded-lg p-6 border border-blue-800">
-        <h3 className="text-lg font-semibold text-cyan-400 mb-4">✨ Diferenciales Clave</h3>
+        <h3 className="text-lg font-semibold text-primary mb-4">✨ Diferenciales Clave</h3>
 
         <div className="space-y-3">
           <input
@@ -351,7 +351,7 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
           <div className="space-y-2">
             {dna.key_differentiators.map((diff) => (
               <div key={diff} className="flex justify-between items-center bg-blue-900 p-2 rounded">
-                <span className="text-sm text-gray-300">{diff}</span>
+                <span className="text-sm text-muted">{diff}</span>
                 <button
                   onClick={() => removeDifferentiator(diff)}
                   className="text-red-500 hover:text-red-400 text-sm"
@@ -368,7 +368,7 @@ const BusinessDNA: React.FC<BusinessDNAProps> = ({ campaignId, onSave }) => {
       <button
         onClick={handleSave}
         disabled={loading}
-        className="w-full px-4 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold rounded-lg transition disabled:opacity-50"
+        className="w-full px-4 py-3 bg-gradient-to-r from-primary to-blue-600 hover:from-primary-dim hover:to-blue-700 text-white font-semibold rounded-lg transition disabled:opacity-50"
       >
         {loading ? '💾 Guardando...' : '💾 Guardar Business DNA'}
       </button>

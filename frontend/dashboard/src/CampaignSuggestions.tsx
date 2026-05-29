@@ -139,8 +139,8 @@ const CampaignSuggestions: React.FC<CampaignSuggestionsProps> = ({
             onClick={() => setFilterStatus(status)}
             className={`px-4 py-2 text-sm transition ${
               filterStatus === status
-                ? 'text-cyan-400 border-b-2 border-cyan-400'
-                : 'text-gray-400 hover:text-gray-300'
+                ? 'text-primary border-b-2 border-primary'
+                : 'text-muted hover:text-muted'
             }`}
           >
             {status === 'all' && '📋 Todas'}
@@ -153,9 +153,9 @@ const CampaignSuggestions: React.FC<CampaignSuggestionsProps> = ({
 
       {/* Suggestions List */}
       {loading ? (
-        <div className="text-center py-8 text-gray-400">Cargando sugerencias...</div>
+        <div className="text-center py-8 text-muted">Cargando sugerencias...</div>
       ) : filteredSuggestions.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-muted">
           <p>No hay sugerencias en este estado</p>
           <p className="text-xs mt-2">
             {filterStatus === 'all'
@@ -173,12 +173,12 @@ const CampaignSuggestions: React.FC<CampaignSuggestionsProps> = ({
                   ? 'bg-green-950/20 border-green-800'
                   : suggestion.status === 'rejected'
                     ? 'bg-red-950/20 border-red-800'
-                    : 'bg-blue-950 border-blue-800 hover:border-cyan-600'
+                    : 'bg-blue-950 border-blue-800 hover:border-primary'
               }`}
             >
               {/* Status Badge */}
               <div className="flex justify-between items-start mb-3">
-                <span className="text-xs font-semibold text-cyan-400">
+                <span className="text-xs font-semibold text-primary">
                   🎯 {suggestion.suggested_platform.toUpperCase()}
                 </span>
                 <span className={`text-xs px-2 py-1 rounded ${
@@ -196,19 +196,19 @@ const CampaignSuggestions: React.FC<CampaignSuggestionsProps> = ({
 
               {/* Copy Preview */}
               <div className="bg-black/30 rounded p-3 mb-3">
-                <p className="text-sm text-gray-100 whitespace-pre-wrap">{suggestion.suggested_copy}</p>
+                <p className="text-sm text-ink whitespace-pre-wrap">{suggestion.suggested_copy}</p>
               </div>
 
               {/* Metadata */}
               <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
                 <div>
-                  <p className="text-gray-400">Razón:</p>
-                  <p className="text-cyan-300">{suggestion.reason}</p>
+                  <p className="text-muted">Razón:</p>
+                  <p className="text-primary">{suggestion.reason}</p>
                 </div>
                 {suggestion.suggested_time && (
                   <div>
-                    <p className="text-gray-400">Hora sugerida:</p>
-                    <p className="text-cyan-300">{suggestion.suggested_time}</p>
+                    <p className="text-muted">Hora sugerida:</p>
+                    <p className="text-primary">{suggestion.suggested_time}</p>
                   </div>
                 )}
               </div>
@@ -237,7 +237,7 @@ const CampaignSuggestions: React.FC<CampaignSuggestionsProps> = ({
               {suggestion.status === 'accepted' && (
                 <button
                   onClick={() => onSelectSuggestion?.(suggestion)}
-                  className="w-full px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm rounded transition"
+                  className="w-full px-3 py-2 bg-primary-dim hover:bg-primary-dim text-white text-sm rounded transition"
                 >
                   📝 Usar en Post Editor
                 </button>
@@ -249,12 +249,12 @@ const CampaignSuggestions: React.FC<CampaignSuggestionsProps> = ({
 
       {/* Generate New Suggestions (placeholder) */}
       <div className="bg-blue-950 rounded-lg p-4 border border-blue-800">
-        <p className="text-sm text-gray-300 mb-3">
+        <p className="text-sm text-muted mb-3">
           💡 Sugerencias basadas en tu Business DNA. Acepta para usar en el editor.
         </p>
         <button
           onClick={fetchSuggestions}
-          className="w-full px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm rounded transition"
+          className="w-full px-4 py-2 bg-primary-dim hover:bg-primary-dim text-white text-sm rounded transition"
         >
           🔄 Recargar Sugerencias
         </button>

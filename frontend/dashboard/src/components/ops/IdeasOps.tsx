@@ -93,7 +93,7 @@ export default function IdeasOps() {
   };
 
   if (loading) {
-    return <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-slate-300">Cargando ideas…</div>;
+    return <div className="rounded-xl border border-outline/40 bg-white/5 p-6 text-muted">Cargando ideas…</div>;
   }
 
   return (
@@ -102,9 +102,9 @@ export default function IdeasOps() {
 
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Ideas</p>
-          <p className="text-sm text-slate-300">
-            Fuente: <span className="text-slate-100">{source}</span>
+          <p className="text-xs uppercase tracking-[0.2em] text-muted">Ideas</p>
+          <p className="text-sm text-muted">
+            Fuente: <span className="text-ink">{source}</span>
           </p>
         </div>
         <button
@@ -116,7 +116,7 @@ export default function IdeasOps() {
               text: 'Sembrar nuevas ideas para la semana',
             }).catch(() => null)
           }
-          className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/15"
+          className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/15"
         >
           Sembrar (demo)
         </button>
@@ -124,22 +124,22 @@ export default function IdeasOps() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {COLUMNS.map((col) => (
-          <div key={col.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+          <div key={col.id} className="rounded-xl border border-outline/40 bg-white/5 p-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-white">{col.label}</p>
-              <span className="text-xs text-slate-400">{(grouped.get(col.id) || []).length}</span>
+              <span className="text-xs text-muted">{(grouped.get(col.id) || []).length}</span>
             </div>
             <div className="mt-3 space-y-2 min-h-10">
               {(grouped.get(col.id) || []).map((idea) => (
-                <div key={idea.id} className="rounded-xl border border-white/10 bg-slate-950/60 p-3">
-                  <p className="text-sm text-slate-100 leading-snug">{idea.tema_raw}</p>
-                  <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-400">
-                    {idea.pilar && <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5">{idea.pilar}</span>}
+                <div key={idea.id} className="rounded-xl border border-outline/40 bg-slate-950/60 p-3">
+                  <p className="text-sm text-ink leading-snug">{idea.tema_raw}</p>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-muted">
+                    {idea.pilar && <span className="rounded-md border border-outline/40 bg-white/5 px-2 py-0.5">{idea.pilar}</span>}
                     {idea.formato_sugerido && (
-                      <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5">{idea.formato_sugerido}</span>
+                      <span className="rounded-md border border-outline/40 bg-white/5 px-2 py-0.5">{idea.formato_sugerido}</span>
                     )}
                     {typeof idea.score_potencial === 'number' && (
-                      <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5">{idea.score_potencial}/10</span>
+                      <span className="rounded-md border border-outline/40 bg-white/5 px-2 py-0.5">{idea.score_potencial}/10</span>
                     )}
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
@@ -147,7 +147,7 @@ export default function IdeasOps() {
                       <button
                         disabled={busyId === idea.id}
                         onClick={() => generate(idea)}
-                        className="col-span-2 rounded-lg bg-cyan-500 text-slate-950 py-2 text-xs font-bold hover:bg-cyan-300 disabled:opacity-50"
+                        className="col-span-2 rounded-lg bg-primary text-obsidian py-2 text-xs font-bold hover:bg-primary-dim disabled:opacity-50"
                       >
                         Generar IA
                       </button>
@@ -177,9 +177,9 @@ export default function IdeasOps() {
       </div>
 
       {draftText && (
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="rounded-xl border border-outline/40 bg-white/5 p-4">
           <p className="text-sm font-semibold text-white">Borrador generado</p>
-          <pre className="mt-3 whitespace-pre-wrap text-sm text-slate-200 leading-6">{draftText}</pre>
+          <pre className="mt-3 whitespace-pre-wrap text-sm text-ink leading-6">{draftText}</pre>
         </div>
       )}
     </div>

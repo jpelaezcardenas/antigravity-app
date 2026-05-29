@@ -112,7 +112,7 @@ export default function OnboardingOps() {
   if (loading) {
     return (
       <div className="grid min-h-[360px] place-items-center rounded-lg border border-slate-700 bg-slate-950/60">
-        <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">Cargando Onboarding 21D</p>
+        <p className="text-sm uppercase tracking-[0.2em] text-primary">Cargando Onboarding 21D</p>
       </div>
     );
   }
@@ -122,11 +122,11 @@ export default function OnboardingOps() {
       <section className="rounded-lg border border-slate-700 bg-slate-950/60 p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">Onboarding 21D</p>
+            <p className="text-[11px] uppercase tracking-[0.24em] text-primary">Onboarding 21D</p>
             <h3 className="text-lg font-semibold text-white">De firma a Pulso Diario en 21 dias</h3>
-            <p className="text-xs text-slate-500">S1/S2/S3 + Go-Live, sin duplicarse dentro de Operaciones.</p>
+            <p className="text-xs text-muted">S1/S2/S3 + Go-Live, sin duplicarse dentro de Operaciones.</p>
           </div>
-          <Badge className="border-cyan-500/30 bg-cyan-500/10 text-cyan-200">Sidebar Onboarding</Badge>
+          <Badge className="border-primary/30 bg-primary/10 text-primary">Sidebar Onboarding</Badge>
         </div>
       </section>
 
@@ -146,49 +146,49 @@ export default function OnboardingOps() {
         <form onSubmit={handleStartOnboarding} className="space-y-4 rounded-lg border border-slate-700 bg-slate-950/60 p-4">
           <div>
             <h3 className="text-lg font-semibold text-white">Onboarding 21D</h3>
-            <p className="text-xs text-slate-500">De firma a Pulso Diario en 21 dias (S1/S2/S3 + Go-Live).</p>
+            <p className="text-xs text-muted">De firma a Pulso Diario en 21 dias (S1/S2/S3 + Go-Live).</p>
           </div>
           <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Empresa</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted">Empresa</span>
             <input
               value={onboardingStartForm.company_name}
               onChange={(event) => setOnboardingStartForm((prev) => ({ ...prev, company_name: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
+              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-primary"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Email</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted">Email</span>
             <input
               value={onboardingStartForm.customer_email}
               onChange={(event) => setOnboardingStartForm((prev) => ({ ...prev, customer_email: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
+              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-primary"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Pago / referencia</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted">Pago / referencia</span>
             <input
               value={onboardingStartForm.payment_reference}
               onChange={(event) => setOnboardingStartForm((prev) => ({ ...prev, payment_reference: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
+              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-primary"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Plan</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted">Plan</span>
             <input
               value={onboardingStartForm.plan_name}
               onChange={(event) => setOnboardingStartForm((prev) => ({ ...prev, plan_name: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
+              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-primary"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Owner handle</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted">Owner handle</span>
             <input
               value={onboardingStartForm.owner_handle}
               onChange={(event) => setOnboardingStartForm((prev) => ({ ...prev, owner_handle: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
+              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-primary"
             />
           </label>
-          <button className="w-full rounded-md bg-emerald-400 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-emerald-300">
+          <button className="w-full rounded-md bg-emerald-400 px-4 py-2 text-sm font-bold text-obsidian hover:bg-emerald-300">
             Iniciar onboarding
           </button>
         </form>
@@ -198,12 +198,12 @@ export default function OnboardingOps() {
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-white">Workspace</h3>
-                <p className="text-xs text-slate-500">Selecciona un cliente para intake y seed.</p>
+                <p className="text-xs text-muted">Selecciona un cliente para intake y seed.</p>
               </div>
               <select
                 value={selectedWorkspaceId}
                 onChange={(event) => setSelectedWorkspaceId(event.target.value)}
-                className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
+                className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-primary"
               >
                 <option value="">Sin workspace</option>
                 {(onboarding?.items || []).map((ws: OnboardingWorkspace) => (
@@ -219,12 +219,12 @@ export default function OnboardingOps() {
                 .map((ws: OnboardingWorkspace) => (
                   <React.Fragment key={ws.id}>
                     <div className="rounded-md border border-slate-700 bg-slate-900/60 p-3">
-                      <p className="text-xs uppercase tracking-wider text-slate-400">SLA credenciales</p>
-                      <p className="mt-1 text-sm text-slate-200">{ws.sla?.client_credentials_response_hours ?? 48}h</p>
+                      <p className="text-xs uppercase tracking-wider text-muted">SLA credenciales</p>
+                      <p className="mt-1 text-sm text-ink">{ws.sla?.client_credentials_response_hours ?? 48}h</p>
                     </div>
                     <div className="rounded-md border border-slate-700 bg-slate-900/60 p-3">
-                      <p className="text-xs uppercase tracking-wider text-slate-400">QA adopcion dia 7</p>
-                      <p className="mt-1 text-sm text-slate-200">{ws.qa_targets?.adoption_day7 ?? '>=3 logins/7d'}</p>
+                      <p className="text-xs uppercase tracking-wider text-muted">QA adopcion dia 7</p>
+                      <p className="mt-1 text-sm text-ink">{ws.qa_targets?.adoption_day7 ?? '>=3 logins/7d'}</p>
                     </div>
                   </React.Fragment>
                 ))}
@@ -234,7 +234,7 @@ export default function OnboardingOps() {
           <form onSubmit={handleIntake} className="space-y-3 rounded-lg border border-slate-700 bg-slate-950/60 p-4">
             <div>
               <h3 className="text-lg font-semibold text-white">Intake sin formularios</h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted">
                 Pega hechos en lenguaje natural; la IA extrae credenciales presentes/faltantes y datos base.
               </p>
             </div>
@@ -242,22 +242,22 @@ export default function OnboardingOps() {
               value={intakeText}
               onChange={(event) => setIntakeText(event.target.value)}
               rows={5}
-              className="w-full resize-none rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
+              className="w-full resize-none rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-primary"
             />
             <div className="flex flex-col gap-2 md:flex-row">
-              <button className="flex-1 rounded-md bg-cyan-500 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-cyan-300">
+              <button className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-bold text-obsidian hover:bg-primary-dim">
                 Analizar intake
               </button>
               <button
                 type="button"
                 onClick={handleCreateSeed}
-                className="flex-1 rounded-md bg-amber-400 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-amber-300"
+                className="flex-1 rounded-md bg-amber-400 px-4 py-2 text-sm font-bold text-obsidian hover:bg-amber-300"
               >
                 Crear seed draft
               </button>
             </div>
             {lastIntake && (
-              <div className="rounded-md border border-slate-700 bg-slate-900/60 p-3 text-sm text-slate-200">
+              <div className="rounded-md border border-slate-700 bg-slate-900/60 p-3 text-sm text-ink">
                 <div className="flex flex-wrap gap-2">
                   <Badge className="border-emerald-500/40 bg-emerald-500/10 text-emerald-200">
                     presentes: {lastIntake.present.length}
@@ -266,7 +266,7 @@ export default function OnboardingOps() {
                     faltantes: {lastIntake.missing.length}
                   </Badge>
                 </div>
-                <p className="mt-3 text-xs text-slate-400">Faltantes: {(lastIntake.missing || []).join(', ') || 'ninguno'}</p>
+                <p className="mt-3 text-xs text-muted">Faltantes: {(lastIntake.missing || []).join(', ') || 'ninguno'}</p>
               </div>
             )}
           </form>
@@ -277,7 +277,7 @@ export default function OnboardingOps() {
               {(onboarding?.template_steps || []).map((step) => (
                 <div key={step.id} className="rounded-md border border-slate-700 bg-slate-900/60 p-3">
                   <p className="text-sm font-semibold text-white">{step.label}</p>
-                  <p className="mt-1 text-xs text-slate-400">{step.description}</p>
+                  <p className="mt-1 text-xs text-muted">{step.description}</p>
                 </div>
               ))}
             </div>

@@ -91,19 +91,19 @@ export const CampaignCreatorStep3: React.FC = () => {
         <div className="grid grid-cols-3 gap-4 py-4 border-t border-b border-gray-200">
           {option.total_posts && (
             <div>
-              <p className="text-xs text-gray-500">Total Posts</p>
+              <p className="text-xs text-muted">Total Posts</p>
               <p className="text-lg font-semibold text-gray-900">{option.total_posts}</p>
             </div>
           )}
           {option.duration_weeks && (
             <div>
-              <p className="text-xs text-gray-500">Duration</p>
+              <p className="text-xs text-muted">Duration</p>
               <p className="text-lg font-semibold text-gray-900">{option.duration_weeks}w</p>
             </div>
           )}
           {option.expected_roi && (
             <div>
-              <p className="text-xs text-gray-500">Expected ROI</p>
+              <p className="text-xs text-muted">Expected ROI</p>
               <p className="text-lg font-semibold text-green-600">{option.expected_roi.toFixed(1)}x</p>
             </div>
           )}

@@ -56,8 +56,8 @@ const CalendarioEditorial: React.FC = () => {
         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/20 flex items-center justify-center text-4xl">
           📅
         </div>
-        <h3 className="text-lg font-semibold text-gray-300">Calendario vacío</h3>
-        <p className="text-sm text-gray-500 max-w-md text-center">
+        <h3 className="text-lg font-semibold text-muted">Calendario vacío</h3>
+        <p className="text-sm text-muted max-w-md text-center">
           No hay publicaciones planificadas para la semana {selectedSemana}. 
           Selecciona ideas desde el Kanban y agrégalas al calendario editorial.
         </p>
@@ -69,7 +69,7 @@ const CalendarioEditorial: React.FC = () => {
     <div className="space-y-4">
       {/* Week Selector */}
       <div className="flex items-center gap-3">
-        <span className="text-sm text-gray-400">Semana:</span>
+        <span className="text-sm text-muted">Semana:</span>
         <div className="flex gap-1">
           {[1, 2, 3, 4].map((week) => (
             <button
@@ -77,15 +77,15 @@ const CalendarioEditorial: React.FC = () => {
               onClick={() => setSelectedSemana(week)}
               className={`px-4 py-1.5 text-sm rounded-lg transition-all duration-200 ${
                 selectedSemana === week
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                  : 'bg-blue-900/30 text-gray-400 border border-blue-800/30 hover:bg-blue-900/50'
+                  ? 'bg-primary/20 text-primary border border-primary/30'
+                  : 'bg-blue-900/30 text-muted border border-blue-800/30 hover:bg-blue-900/50'
               }`}
             >
               S{week}
             </button>
           ))}
         </div>
-        <span className="text-xs text-gray-500 ml-auto font-mono">{entries.length} posts planificados</span>
+        <span className="text-xs text-muted ml-auto font-mono">{entries.length} posts planificados</span>
       </div>
 
       {/* Calendar Entries */}
@@ -94,13 +94,13 @@ const CalendarioEditorial: React.FC = () => {
           <div
             key={entry.id}
             onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
-            className="group bg-blue-950/50 border border-blue-800/40 rounded-xl overflow-hidden cursor-pointer hover:border-cyan-500/20 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/5"
+            className="group bg-blue-950/50 border border-blue-800/40 rounded-xl overflow-hidden cursor-pointer hover:border-primary/20 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
           >
             {/* Main Row */}
             <div className="flex items-center gap-4 p-4">
               {/* Date Column */}
               <div className="flex-shrink-0 w-20 text-center">
-                <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wide">
+                <p className="text-xs font-semibold text-primary uppercase tracking-wide">
                   {getDayLabel(entry.fecha_publicacion)}
                 </p>
               </div>
@@ -110,7 +110,7 @@ const CalendarioEditorial: React.FC = () => {
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-200 truncate">
+                <p className="text-sm font-medium text-ink truncate">
                   {entry.titulo_trabajo || 'Sin título'}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
@@ -120,7 +120,7 @@ const CalendarioEditorial: React.FC = () => {
                     </span>
                   )}
                   {entry.formato && (
-                    <span className="text-[10px] text-gray-400">
+                    <span className="text-[10px] text-muted">
                       {FORMATO_ICONS[entry.formato]}
                     </span>
                   )}
@@ -145,18 +145,18 @@ const CalendarioEditorial: React.FC = () => {
               <div className="border-t border-blue-800/30 bg-blue-900/20 p-4 space-y-2 animate-in slide-in-from-top-1">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-500 text-xs">Responsable</span>
-                    <p className="text-gray-300">{entry.responsable}</p>
+                    <span className="text-muted text-xs">Responsable</span>
+                    <p className="text-muted">{entry.responsable}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500 text-xs">Formato</span>
-                    <p className="text-gray-300">{entry.formato ? `${FORMATO_ICONS[entry.formato]} ${entry.formato.replace('_', ' ')}` : '—'}</p>
+                    <span className="text-muted text-xs">Formato</span>
+                    <p className="text-muted">{entry.formato ? `${FORMATO_ICONS[entry.formato]} ${entry.formato.replace('_', ' ')}` : '—'}</p>
                   </div>
                 </div>
                 {entry.notas_editoriales && (
                   <div>
-                    <span className="text-gray-500 text-xs">Notas Editoriales</span>
-                    <p className="text-gray-400 text-sm mt-0.5">{entry.notas_editoriales}</p>
+                    <span className="text-muted text-xs">Notas Editoriales</span>
+                    <p className="text-muted text-sm mt-0.5">{entry.notas_editoriales}</p>
                   </div>
                 )}
               </div>

@@ -12,7 +12,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ campaignId, selectedImage }) =>
   return (
     <div className="space-y-6">
       <div className="bg-blue-950 border border-blue-800 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-cyan-400 mb-4">📝 Contenido del Post</h3>
+        <h3 className="text-lg font-semibold text-primary mb-4">📝 Contenido del Post</h3>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -24,7 +24,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ campaignId, selectedImage }) =>
 
       {selectedImage && (
         <div className="bg-blue-950 border border-blue-800 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-cyan-400 mb-4">🖼️ Imagen Seleccionada</h3>
+          <h3 className="text-lg font-semibold text-primary mb-4">🖼️ Imagen Seleccionada</h3>
           <img
             src={selectedImage.image_url}
             alt={selectedImage.titulo}
@@ -34,7 +34,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ campaignId, selectedImage }) =>
       )}
 
       <div className="bg-blue-950 border border-blue-800 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-cyan-400 mb-4">📱 Plataforma</h3>
+        <h3 className="text-lg font-semibold text-primary mb-4">📱 Plataforma</h3>
         <select
           value={platform}
           onChange={(e) => setPlatform(e.target.value)}
@@ -46,7 +46,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ campaignId, selectedImage }) =>
         </select>
       </div>
 
-      <button className="w-full px-4 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold rounded-lg transition">
+      <button className="w-full px-4 py-3 bg-gradient-to-r from-primary to-blue-600 hover:from-primary-dim hover:to-blue-700 text-white font-semibold rounded-lg transition">
         ✨ Publicar Post
       </button>
     </div>

@@ -74,16 +74,16 @@ export const CampaignWizard: React.FC = () => {
           ))}
         </div>
         <div className="flex justify-between mt-2 text-sm">
-          <span className={currentStep >= 1 ? 'text-blue-600 font-semibold' : 'text-gray-500'}>
+          <span className={currentStep >= 1 ? 'text-blue-600 font-semibold' : 'text-muted'}>
             Company
           </span>
-          <span className={currentStep >= 2 ? 'text-blue-600 font-semibold' : 'text-gray-500'}>
+          <span className={currentStep >= 2 ? 'text-blue-600 font-semibold' : 'text-muted'}>
             Objective
           </span>
-          <span className={currentStep >= 3 ? 'text-blue-600 font-semibold' : 'text-gray-500'}>
+          <span className={currentStep >= 3 ? 'text-blue-600 font-semibold' : 'text-muted'}>
             Campaign
           </span>
-          <span className={currentStep >= 4 ? 'text-blue-600 font-semibold' : 'text-gray-500'}>
+          <span className={currentStep >= 4 ? 'text-blue-600 font-semibold' : 'text-muted'}>
             Review
           </span>
         </div>
@@ -150,7 +150,7 @@ export const CampaignWizard: React.FC = () => {
             className={`px-6 py-2 rounded-lg font-semibold ${
               isStepValid(currentStep)
                 ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-gray-300 text-muted cursor-not-allowed'
             }`}
           >
             {currentStep === 4 ? 'Publish Campaign' : 'Next'}

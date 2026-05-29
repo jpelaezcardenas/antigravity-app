@@ -90,10 +90,10 @@ const BorradoresReview: React.FC = () => {
         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/20 flex items-center justify-center text-4xl">
           ✅
         </div>
-        <h3 className="text-lg font-semibold text-gray-300">Todo aprobado</h3>
-        <p className="text-sm text-gray-500 max-w-md text-center">
+        <h3 className="text-lg font-semibold text-muted">Todo aprobado</h3>
+        <p className="text-sm text-muted max-w-md text-center">
           No hay borradores pendientes de revisión. Los nuevos borradores aparecerán aquí cuando el workflow 
-          <span className="text-cyan-400 font-mono text-xs"> WF-04-draft-creator</span> genere contenido.
+          <span className="text-primary font-mono text-xs"> WF-04-draft-creator</span> genere contenido.
         </p>
       </div>
     );
@@ -102,21 +102,21 @@ const BorradoresReview: React.FC = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-400">
-          <span className="text-cyan-400 font-semibold">{borradores.length}</span> borrador{borradores.length !== 1 ? 'es' : ''} pendiente{borradores.length !== 1 ? 's' : ''} de revisión
+        <p className="text-sm text-muted">
+          <span className="text-primary font-semibold">{borradores.length}</span> borrador{borradores.length !== 1 ? 'es' : ''} pendiente{borradores.length !== 1 ? 's' : ''} de revisión
         </p>
       </div>
 
       {borradores.map((borrador) => (
         <div
           key={borrador.id}
-          className="bg-blue-950/50 border border-blue-800/40 rounded-xl overflow-hidden transition-all duration-300 hover:border-cyan-500/20"
+          className="bg-blue-950/50 border border-blue-800/40 rounded-xl overflow-hidden transition-all duration-300 hover:border-primary/20"
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-blue-800/30">
             <div className="flex items-center gap-3">
               {statusBadge(borrador.status)}
-              <span className="text-xs text-gray-500 font-mono">v{borrador.version}</span>
+              <span className="text-xs text-muted font-mono">v{borrador.version}</span>
               {borrador.qa_humanizacion && (
                 <span className="text-[10px] bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">
                   ✓ QA Humanización
@@ -130,16 +130,16 @@ const BorradoresReview: React.FC = () => {
           <div className="p-5 space-y-4">
             {/* Hook Section */}
             <div>
-              <label className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Hook Principal</label>
+              <label className="text-[10px] uppercase tracking-wider text-muted font-semibold">Hook Principal</label>
               {editingId === borrador.id ? (
                 <textarea
                   value={editValues.hook ?? ''}
                   onChange={(e) => setEditValues({ ...editValues, hook: e.target.value })}
-                  className="w-full mt-1 bg-blue-900/50 border border-blue-700 rounded-lg p-3 text-sm text-gray-200 focus:border-cyan-500/50 focus:outline-none resize-none"
+                  className="w-full mt-1 bg-blue-900/50 border border-blue-700 rounded-lg p-3 text-sm text-ink focus:border-primary/50 focus:outline-none resize-none"
                   rows={2}
                 />
               ) : (
-                <p className="text-base font-semibold text-cyan-300 mt-1 leading-relaxed">
+                <p className="text-base font-semibold text-primary mt-1 leading-relaxed">
                   {borrador.hook || '—'}
                 </p>
               )}
@@ -150,14 +150,14 @@ const BorradoresReview: React.FC = () => {
               <div className="flex gap-2">
                 {borrador.hook_alt_1 && (
                   <div className="flex-1 bg-blue-900/20 rounded-lg p-2.5 border border-blue-800/20">
-                    <span className="text-[9px] text-gray-500 uppercase">Alt 1</span>
-                    <p className="text-xs text-gray-400 mt-0.5">{borrador.hook_alt_1}</p>
+                    <span className="text-[9px] text-muted uppercase">Alt 1</span>
+                    <p className="text-xs text-muted mt-0.5">{borrador.hook_alt_1}</p>
                   </div>
                 )}
                 {borrador.hook_alt_2 && (
                   <div className="flex-1 bg-blue-900/20 rounded-lg p-2.5 border border-blue-800/20">
-                    <span className="text-[9px] text-gray-500 uppercase">Alt 2</span>
-                    <p className="text-xs text-gray-400 mt-0.5">{borrador.hook_alt_2}</p>
+                    <span className="text-[9px] text-muted uppercase">Alt 2</span>
+                    <p className="text-xs text-muted mt-0.5">{borrador.hook_alt_2}</p>
                   </div>
                 )}
               </div>
@@ -165,16 +165,16 @@ const BorradoresReview: React.FC = () => {
 
             {/* Copy Body */}
             <div>
-              <label className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Copy</label>
+              <label className="text-[10px] uppercase tracking-wider text-muted font-semibold">Copy</label>
               {editingId === borrador.id ? (
                 <textarea
                   value={editValues.copy_body ?? ''}
                   onChange={(e) => setEditValues({ ...editValues, copy_body: e.target.value })}
-                  className="w-full mt-1 bg-blue-900/50 border border-blue-700 rounded-lg p-3 text-sm text-gray-200 focus:border-cyan-500/50 focus:outline-none resize-none"
+                  className="w-full mt-1 bg-blue-900/50 border border-blue-700 rounded-lg p-3 text-sm text-ink focus:border-primary/50 focus:outline-none resize-none"
                   rows={6}
                 />
               ) : (
-                <p className="text-sm text-gray-300 mt-1 leading-relaxed whitespace-pre-line">
+                <p className="text-sm text-muted mt-1 leading-relaxed whitespace-pre-line">
                   {borrador.copy_body || '—'}
                 </p>
               )}
@@ -183,24 +183,24 @@ const BorradoresReview: React.FC = () => {
             {/* CTA + Hashtags */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">CTA</label>
+                <label className="text-[10px] uppercase tracking-wider text-muted font-semibold">CTA</label>
                 {editingId === borrador.id ? (
                   <input
                     value={editValues.cta ?? ''}
                     onChange={(e) => setEditValues({ ...editValues, cta: e.target.value })}
-                    className="w-full mt-1 bg-blue-900/50 border border-blue-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-cyan-500/50 focus:outline-none"
+                    className="w-full mt-1 bg-blue-900/50 border border-blue-700 rounded-lg px-3 py-2 text-sm text-ink focus:border-primary/50 focus:outline-none"
                   />
                 ) : (
                   <p className="text-sm text-emerald-300/80 mt-1 italic">{borrador.cta || '—'}</p>
                 )}
               </div>
               <div>
-                <label className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Hashtags</label>
+                <label className="text-[10px] uppercase tracking-wider text-muted font-semibold">Hashtags</label>
                 {editingId === borrador.id ? (
                   <input
                     value={editValues.hashtags ?? ''}
                     onChange={(e) => setEditValues({ ...editValues, hashtags: e.target.value })}
-                    className="w-full mt-1 bg-blue-900/50 border border-blue-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-cyan-500/50 focus:outline-none"
+                    className="w-full mt-1 bg-blue-900/50 border border-blue-700 rounded-lg px-3 py-2 text-sm text-ink focus:border-primary/50 focus:outline-none"
                   />
                 ) : (
                   <p className="text-sm text-blue-400/70 mt-1">{borrador.hashtags || '—'}</p>
@@ -215,7 +215,7 @@ const BorradoresReview: React.FC = () => {
               <>
                 <button
                   onClick={() => { setEditingId(null); setEditValues({}); }}
-                  className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 transition"
+                  className="px-4 py-2 text-sm text-muted hover:text-ink transition"
                 >
                   Cancelar
                 </button>
@@ -230,7 +230,7 @@ const BorradoresReview: React.FC = () => {
               <>
                 <button
                   onClick={() => handleEdit(borrador)}
-                  className="px-4 py-2 text-sm text-gray-400 hover:text-cyan-300 border border-blue-800/30 hover:border-cyan-500/30 rounded-lg transition"
+                  className="px-4 py-2 text-sm text-muted hover:text-primary/80 border border-blue-800/30 hover:border-primary/30 rounded-lg transition"
                 >
                   ✏️ Editar
                 </button>
@@ -239,7 +239,7 @@ const BorradoresReview: React.FC = () => {
                   disabled={approvingId === borrador.id}
                   className={`px-5 py-2 text-sm font-semibold rounded-lg transition-all duration-300 ${
                     approvingId === borrador.id
-                      ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                      ? 'bg-gray-700 text-muted cursor-not-allowed'
                       : 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30'
                   }`}
                 >
