@@ -94,7 +94,7 @@ Stage 11 (Deploy to Production) is no longer optional.
 
 ### Project-Specific Details
 
-**Repository:** https://github.com/contexia/antigravity-app
+**Repository:** https://github.com/jpelaezcardenas/antigravity-app
 
 **Deploy branch:** `main` (Vercel auto-deploys)
 
@@ -166,7 +166,7 @@ A change is truly done when:
 
 | System | URL |
 |--------|-----|
-| GitHub | https://github.com/contexia/antigravity-app |
+| GitHub | https://github.com/jpelaezcardenas/antigravity-app |
 | Vercel | https://vercel.com/contexia/antigravity-app/deployments |
 | Railway | https://railway.app/[project]/deployments |
 | Production | https://contexia.online/app/bunker |
