@@ -54,7 +54,7 @@ class KBSearchRequest(BaseModel):
 )
 async def seed(request: KBSeedRequest) -> KBSeedResponse:
     try:
-        chunks_dicts = [c.dict() for c in request.chunks]
+        chunks_dicts = [c.model_dump() for c in request.chunks]
         result = seed_knowledge_base(request.client_id, chunks_dicts)
         return KBSeedResponse(**result)
     except Exception as e:

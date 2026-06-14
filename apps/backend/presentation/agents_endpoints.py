@@ -1,15 +1,17 @@
 """
 LLM Agents Endpoints: API routes for LLM-powered agent tasks.
 
-Automatically selects best model (Ollama / OpenRouter Free / Groq) based on task type.
-User never sees which model is used - completely transparent.
+Automatically selects a cloud LLM provider via a failover chain
+(OpenRouter Free / Groq / Cerebras / Mistral / Gemini) based on task type.
+The user never sees which provider is used.
 """
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import logging
 
-from agents.llm_engine import get_ai_response, AllProvidersFailedError
+from agents.llm_engine import AllProvidersFailedError
+from agents.secure_llm import get_anonymized_ai_response
 from core.model_selector import choose_model_for_task, get_task_description
 
 logger = logging.getLogger(__name__)
@@ -49,7 +51,8 @@ async def taty_ask(request: AskRequest):
     """
     Taty FAQ: Answer user questions about taxes, processes, etc.
 
-    Automatically uses: OpenRouter Free (no sensitive data)
+    The prompt and context are anonymized (SOSP) before being routed to the
+    cloud LLM failover chain, and the response is rehydrated.
     """
     try:
         model = choose_model_for_task("taty_faq")
@@ -65,7 +68,7 @@ Company context: {request.context if request.context else "General knowledge"}
 
 Be clear, concise, and in Spanish."""
 
-        response = get_ai_response(
+        response = get_anonymized_ai_response(
             prompt=request.question,
             system_prompt=system_prompt,
             response_format="text",
@@ -96,7 +99,8 @@ async def social_generate_content(request: AskRequest):
     """
     Generate social media content (posts, captions, etc).
 
-    Automatically uses: OpenRouter Free (marketing, not sensitive)
+    The prompt is anonymized (SOSP) before being routed to the cloud LLM
+    failover chain, and the response is rehydrated.
     """
     try:
         model = choose_model_for_task("social_content_gen")
@@ -107,7 +111,7 @@ Focus on: financial tips, tax advice, company updates.
 Keep it concise, use hashtags, and maintain brand voice.
 Respond in Spanish."""
 
-        response = get_ai_response(
+        response = get_anonymized_ai_response(
             prompt=request.question,
             system_prompt=system_prompt,
             response_format="text",
@@ -142,8 +146,9 @@ async def pulso_analyze(request: AnalysisRequest):
     """
     Pulso Analysis: Analyze user's daily cash flow and financial status.
 
-    Automatically uses: Ollama Local (financial data, PRIVATE)
-    Data NEVER leaves the server.
+    Financial data is anonymized (SOSP) before being routed to the cloud LLM
+    failover chain, and the response is rehydrated — per the Contexia Ground
+    Truth (anonimización pre-LLM).
     """
     try:
         model = choose_model_for_task("pulso_analysis")
@@ -163,7 +168,7 @@ Respond in Spanish JSON format with: ingresos, gastos, margen, provision_dian, d
 
 Proporciona un análisis detallado en formato JSON."""
 
-        response = get_ai_response(
+        response = get_anonymized_ai_response(
             prompt=prompt,
             system_prompt=system_prompt,
             response_format="json",
@@ -194,8 +199,9 @@ async def centinela_monitor(request: AnalysisRequest):
     """
     Centinela Monitoring: Check fiscal threshold status (Renta, IVA).
 
-    Automatically uses: Ollama Local (financial data, monitoring only)
-    Data stays on server.
+    Financial data is anonymized (SOSP) before being routed to the cloud LLM
+    failover chain, and the response is rehydrated — per the Contexia Ground
+    Truth (anonimización pre-LLM).
     """
     try:
         model = choose_model_for_task("centinela_monitoring")
@@ -214,7 +220,7 @@ Respond in JSON: umbral, porcentaje, estado, dias_estimados, recomendacion_usuar
 
 Proporciona estado actual en JSON."""
 
-        response = get_ai_response(
+        response = get_anonymized_ai_response(
             prompt=prompt,
             system_prompt=system_prompt,
             response_format="json",
@@ -279,7 +285,7 @@ Be CONSERVATIVE - if unsure, recommend filing."""
 Basado en la ley colombiana actual, ¿qué debe hacer este usuario?
 Proporciona decisión en JSON con recomendaciones."""
 
-        response = get_ai_response(
+        response = get_anonymized_ai_response(
             prompt=prompt,
             system_prompt=system_prompt,
             response_format="json",
@@ -335,7 +341,7 @@ Respond in JSON: cumplimiento, riesgos, acciones_inmediatas, documentacion_reque
 ¿Está este usuario en cumplimiento con regulaciones colombianas?
 Proporciona audit en JSON."""
 
-        response = get_ai_response(
+        response = get_anonymized_ai_response(
             prompt=prompt,
             system_prompt=system_prompt,
             response_format="json",
@@ -377,7 +383,10 @@ class FullPipelineRequest(BaseModel):
 async def full_pipeline(request: FullPipelineRequest):
     """
     POST /api/v1/agents/orchestrator/full-pipeline
-    Execute 7-agent orchestration for social content generation.
+
+    DEMO endpoint: returns a hardcoded, illustrative 7-stage response. No agents
+    are actually executed and the per-stage durations are placeholders, not real
+    timings. Wiring real orchestration is tracked as separate work.
 
     Flow: Discovery → SEO → Generator → Editor → Repurposer → Analyst → Distribution
     """
@@ -386,7 +395,7 @@ async def full_pipeline(request: FullPipelineRequest):
 
     start_time = time.time()
 
-    # Demo 7-stage pipeline
+    # Demo 7-stage pipeline — hardcoded illustrative output; agents are NOT executed.
     stages = [
         {
             "stage": 1,
@@ -475,6 +484,8 @@ async def full_pipeline(request: FullPipelineRequest):
         "company_id": request.company_id,
         "campaign_objective": request.campaign_objective,
         "total_time": f"{total_time:.2f}s",
+        "mode": "demo",
+        "note": "Illustrative demo output; agents are not actually executed and stage durations are placeholders.",
         "stages": stages,
         "status": "completed",
         "summary": {

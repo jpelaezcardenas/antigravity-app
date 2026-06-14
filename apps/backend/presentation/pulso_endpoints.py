@@ -30,7 +30,7 @@ async def get_pulso_diario(
     Protected: User can only access their own pulso (IDOR protection).
     Admins can access any user's pulso.
     """
-    await verify_resource_ownership(current_user, usuario_id)  # Fixed: added await
+    await verify_resource_ownership(current_user["id"], usuario_id)
 
     result = await pulso_service.calcular_pulso_diario(usuario_id)
     if not result:
@@ -42,13 +42,17 @@ async def get_pulso_diario(
 
 
 @router.post("/today")
-async def get_pulso_today(request: PulsoTodayRequest):
+async def get_pulso_today(
+    request: PulsoTodayRequest,
+    current_user: dict = Depends(get_current_user),
+):
     """
     POST /api/v1/pulso/today
     Request: { "company_id": "..." }
     Response: KPI Dashboard with tax filings, compliance, alerts, audit risk
 
-    Public endpoint for demo (no auth required for MVP)
+    Auth is env-gated: open while AUTH_ENFORCED is False (demo), requires a
+    valid token once AUTH_ENFORCED is True. Returns demo KPIs, not real data.
     """
     company_id = request.company_id
 

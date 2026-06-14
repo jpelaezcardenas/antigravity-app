@@ -13,6 +13,13 @@ class Settings(BaseSettings):
     JWT_SECRET: str = ""
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 30  # Short-lived tokens (was 1440 = 24h)
+    # Auth enforcement flags (env-gated rollout — see core/deps.py).
+    # AUTH_ENFORCED=False keeps the current permissive behavior so the live demo
+    # is unaffected until the frontend is confirmed to send Authorization: Bearer.
+    AUTH_ENFORCED: bool = False
+    # DEMO_AUTH_ENABLED gates the hardcoded demo-user login path in auth_service.
+    # Keep True for the MVP demo; set False in production.
+    DEMO_AUTH_ENABLED: bool = True
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://localhost:3002,https://contexia.online,https://www.contexia.online"

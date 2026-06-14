@@ -213,8 +213,10 @@ class TestDistributionAgent:
             "variants": {"telegram": "Tu IVA vence pronto"},
             "recipients": {"telegram": "@user123"},
         })
-        # telegram_service may or may not exist; either way status must be 'sent'
-        # because the agent falls back to payload return on ImportError.
+        # telegram_service is not wired, so the agent returns a draft payload for
+        # caller dispatch. Status must be 'draft' (not 'sent') to reflect reality.
         delivery = result["deliveries"][0]
         assert delivery["channel"] == "telegram"
-        assert delivery["status"] == "sent"
+        assert delivery["status"] == "draft"
+        assert "payload" in delivery
+        assert result["summary"]["drafted"] == 1

@@ -89,7 +89,7 @@ def get_onboarding():
 @router.post("/events/simulate")
 def simulate_event(payload: SocialOpsEventRequest):
     try:
-        return get_social_ops_service().simulate_event(**payload.dict())
+        return get_social_ops_service().simulate_event(**payload.model_dump())
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

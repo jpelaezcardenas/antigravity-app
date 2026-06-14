@@ -132,8 +132,10 @@ class TestAgentPipeline:
                 "variants": repurp_result["variants"],
                 "recipients": {"telegram": "@ctx_owner"},
             })
-            # Both telegram and dashboard are in IMPLEMENTED_CHANNELS
-            assert dist_result["summary"]["sent"] == 2
+            # Both telegram and dashboard are in IMPLEMENTED_CHANNELS.
+            # dashboard is sent in-memory; telegram is drafted (service not wired).
+            assert dist_result["summary"]["sent"] == 1
+            assert dist_result["summary"]["drafted"] == 1
             assert dist_result["summary"]["failed"] == 0
 
     def test_editor_blocks_non_compliant_flow(self) -> None:

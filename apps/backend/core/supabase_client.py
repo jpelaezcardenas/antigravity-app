@@ -1,17 +1,12 @@
-"""Cliente de Supabase para antigravity-app"""
+"""Supabase client accessor for antigravity-app.
 
-import os
-from supabase import create_client, Client
+Unified on the single lazy client defined in ``infrastructure.supabase_client``
+so the whole backend shares one underlying connection and one config source.
+"""
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
-_supabase_client: Client = None
+from infrastructure.supabase_client import supabase_client
 
 
-def get_supabase() -> Client:
-    """Obtiene instancia singleton de Supabase"""
-    global _supabase_client
-    if _supabase_client is None:
-        _supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
-    return _supabase_client
+def get_supabase():
+    """Return the shared lazy Supabase client (initialized on first attribute use)."""
+    return supabase_client
