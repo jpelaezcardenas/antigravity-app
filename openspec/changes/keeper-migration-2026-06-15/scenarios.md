@@ -1,4 +1,4 @@
-# Scenarios: Keeper → Bitwarden Migration
+﻿# Scenarios: Keeper â†’ Bitwarden Migration
 
 ## Scenario 1: Happy Path (Bitwarden Cloud Import Success)
 
@@ -8,18 +8,18 @@
 - bw CLI installed and authenticated locally
 
 **When:**
-- User runs checklist steps 4–11 (import, organize, validate)
+- User runs checklist steps 4â€“11 (import, organize, validate)
 
 **Then:**
-- ✅ All 300+ secrets appear in Bitwarden Web Vault
-- ✅ Folder structure matches expected (Infrastructure, LLM, Operations, Personal)
-- ✅ API keys test successfully:
+- âœ… All 300+ secrets appear in Bitwarden Web Vault
+- âœ… Folder structure matches expected (Infrastructure, LLM, Operations, Personal)
+- âœ… API keys test successfully:
   ```bash
-  bw get item [openai-key-id] → {"login": {"password": "sk-..."}}
-  curl https://api.openai.com/v1/models -H "Authorization: Bearer sk-..." → 200
+  bw get item [openai-key-id] â†’ {"login": {"password": "sk-..."}}
+  curl https://api.openai.com/v1/models -H "Authorization: Bearer sk-..." â†’ 200
   ```
-- ✅ `secrets_provider.py` in Railway staging retrieves secrets without error
-- ✅ `/api/v1/secrets/health` returns `{"status": "healthy", "latency_ms": 145}`
+- âœ… `secrets_provider.py` in Railway staging retrieves secrets without error
+- âœ… `/api/v1/secrets/health` returns `{"status": "healthy", "latency_ms": 145}`
 
 ---
 
@@ -33,9 +33,9 @@
 - User attempts to use the key via `/api/v1/agents/llm_engine` (OpenAI fallback)
 
 **Then:**
-- ❌ LLM request fails: `OpenAI API error: Invalid authentication`
-- ❌ Backend logs: `BitwardenProvider.get() returned invalid format for openai_key`
-- ✅ **Recovery:** 
+- âŒ LLM request fails: `OpenAI API error: Invalid authentication`
+- âŒ Backend logs: `BitwardenProvider.get() returned invalid format for openai_key`
+- âœ… **Recovery:** 
   1. Identify broken key via `bw list items --search openai`
   2. Delete corrupted entry: `bw delete item [bad-key-id]`
   3. Re-export Keeper, validate format, re-import
@@ -55,9 +55,9 @@
 - Checklist step 9 runs `bw import [file]` and hits rate limit
 
 **Then:**
-- ❌ Command exits: `Error: Request failed: 429 Too Many Requests`
-- ❌ Partial import state unknown (may be incomplete)
-- ✅ **Recovery:**
+- âŒ Command exits: `Error: Request failed: 429 Too Many Requests`
+- âŒ Partial import state unknown (may be incomplete)
+- âœ… **Recovery:**
   1. Wait 15 minutes (rate limit window)
   2. Run `bw logout` then `bw login [email]` to refresh session
   3. Re-run import; Bitwarden detects duplicates and skips
@@ -77,11 +77,11 @@
 - Checklist step 2 claims export is complete; user proceeds to import
 
 **Then:**
-- ❌ Migration appears successful but Railway gets `BW_VAULT_URL: [empty]`, `LLM_API_KEY: [missing]`
-- ❌ LLM endpoints fail: `500 LLM provider credential not found`
-- ❌ Social Ops ideas generation fails silently
-- ✅ **Recovery:**
-  1. Audit Keeper: Settings → Organization → Members → verify export scope
+- âŒ Migration appears successful but Railway gets `BW_VAULT_URL: [empty]`, `LLM_API_KEY: [missing]`
+- âŒ LLM endpoints fail: `500 LLM provider credential not found`
+- âŒ Social Ops ideas generation fails silently
+- âœ… **Recovery:**
+  1. Audit Keeper: Settings â†’ Organization â†’ Members â†’ verify export scope
   2. Export again with org-level permissions (admin account)
   3. Merge both exports, re-import
   4. Run `/api/v1/secrets/health` to confirm all 300+ recovered
@@ -100,13 +100,13 @@
 - Deploy to production; health check passes locally but fails on Railway
 
 **Then:**
-- ❌ Railway pod starts: `BW_VAULT_URL not set; falling back to Keeper (which is deleted)`
-- ❌ All secret reads fail: `BitwardenProvider._auth(): client_id/secret not found`
-- ✅ **Recovery:**
-  1. Check Railway dashboard: Environment → Variables
+- âŒ Railway pod starts: `BW_VAULT_URL not set; falling back to Keeper (which is deleted)`
+- âŒ All secret reads fail: `BitwardenProvider._auth(): client_id/secret not found`
+- âœ… **Recovery:**
+  1. Check Railway dashboard: Environment â†’ Variables
   2. Add/update: `SECRETS_BACKEND=bitwarden`, `BW_CLIENT_ID`, `BW_CLIENT_SECRET`, `BW_VAULT_URL`
   3. Redeploy
-  4. Verify: `curl https://api.contexia.online/api/v1/secrets/health` → 200
+  4. Verify: `curl https://api.contexia.online/api/v1/secrets/health` â†’ 200
 
 **Prevention:** Checklist step 17 (Railway config) is mandatory before step 19 (deploy).
 
@@ -123,12 +123,12 @@
 - Checklist step 28 initiates: deploy `docker-compose.yml` to Railway
 
 **Then:**
-- ✅ Vaultwarden container starts: `listening on http://vaultwarden:80`
-- ✅ PostgreSQL reachable: health check 200
-- ✅ Data migrates: `bw export → vaultwarden import`
-- ✅ Backend: update `BW_VAULT_URL=http://vaultwarden:80`
-- ✅ All endpoints still work
-- ✅ Bitwarden Cloud subscription cancelled (no longer needed)
+- âœ… Vaultwarden container starts: `listening on http://vaultwarden:80`
+- âœ… PostgreSQL reachable: health check 200
+- âœ… Data migrates: `bw export â†’ vaultwarden import`
+- âœ… Backend: update `BW_VAULT_URL=http://vaultwarden:80`
+- âœ… All endpoints still work
+- âœ… Bitwarden Cloud subscription cancelled (no longer needed)
 
 **Alternative:** Bitwarden Cloud proves stable; Phase 2 deferred indefinitely.
 
@@ -144,9 +144,9 @@
 - User tries to recover from Keeper: account gone, 7-day backup expired
 
 **Then:**
-- ❌ No recovery path; secret is lost
-- ❌ Infrastructure affected: e.g., Supabase replication key missing, backups fail
-- ✅ **Prevention (mandatory):**
+- âŒ No recovery path; secret is lost
+- âŒ Infrastructure affected: e.g., Supabase replication key missing, backups fail
+- âœ… **Prevention (mandatory):**
   - Before step 20 (Keeper delete), run FULL audit:
     ```bash
     bw list items | wc -l  # Must equal 300+ or Keeper count
@@ -157,21 +157,21 @@
 
 ---
 
-## Scenario 8: LLM Provider Cascade Failure (Groq → Cerebras → Gemini)
+## Scenario 8: LLM Provider Cascade Failure (Groq â†’ Cerebras â†’ Gemini)
 
 **Given:**
-- `llm_engine.py` uses failover: Groq (primary) → Cerebras → Mistral → Gemini → OpenRouter
+- `llm_engine.py` uses failover: Groq (primary) â†’ Cerebras â†’ Mistral â†’ Gemini â†’ OpenRouter
 - Groq key in Bitwarden is invalidated (leaked/rotated)
 
 **When:**
-- Backend calls `get_provider().get("llm/groq_api_key")` → returns old, invalid key
+- Backend calls `get_provider().get("llm/groq_api_key")` â†’ returns old, invalid key
 - Groq request fails: `401 Unauthorized`
 
 **Then:**
-- ✅ Failover triggers: tries Cerebras
-- ✅ But Cerebras key is ALSO in Bitwarden with same issue
-- ❌ Eventually hits OpenRouter free tier (slow, rate-limited)
-- ✅ **Prevention:**
+- âœ… Failover triggers: tries Cerebras
+- âœ… But Cerebras key is ALSO in Bitwarden with same issue
+- âŒ Eventually hits OpenRouter free tier (slow, rate-limited)
+- âœ… **Prevention:**
   1. Keep Groq key valid; test monthly via `/api/v1/agents/health`
   2. Use `SecretsProvider.list("LLM")` to audit all LLM keys monthly
   3. Log provider-switch events: `llm_engine: cascading to Cerebras (Groq failed)`
@@ -188,8 +188,8 @@
 - Compliance audit asks: "Who accessed the Supabase PAT on 2026-06-18?"
 
 **Then:**
-- ❌ No FastAPI audit trail; only Bitwarden shows vault access
-- ✅ **Solution:** Add logging to `SecretsProvider`:
+- âŒ No FastAPI audit trail; only Bitwarden shows vault access
+- âœ… **Solution:** Add logging to `SecretsProvider`:
   ```python
   async def get(self, key: str) -> Optional[str]:
       logger.info(f"SECRET_ACCESS: key={key}, user={current_user}, timestamp={now}")
@@ -209,8 +209,8 @@
 - `BitwardenProvider.get()` times out: `urllib3.exceptions.ConnectTimeout`
 
 **Then:**
-- ❌ LLM call fails if retry_policy not set
-- ✅ **Recovery:** Add circuit-breaker pattern:
+- âŒ LLM call fails if retry_policy not set
+- âœ… **Recovery:** Add circuit-breaker pattern:
   ```python
   if bw_health_check() fails:
       logger_alert("CRITICAL: Bitwarden provider down; falling back to local cache")
@@ -227,7 +227,7 @@
 
 | Scenario | Severity | Prevention | Detection |
 |----------|----------|-----------|-----------|
-| 1: Happy path | Low | None (success) | Checklist ✅ |
+| 1: Happy path | Low | None (success) | Checklist âœ… |
 | 2: Broken API key | High | Format validation (checklist #12) | Test LLM call |
 | 3: Auth timeout | Medium | Rate limit backoff | bw import error |
 | 4: Incomplete export | Critical | Audit Keeper scope first | Secret missing from Bw |
@@ -237,3 +237,4 @@
 | 8: LLM failover cascade | Medium | Monthly key validation | Fallback to OpenRouter |
 | 9: Audit gap | Medium | Add logging to `SecretsProvider` | Compliance audit |
 | 10: Bitwarden outage | High | Circuit-breaker + cache | Health check failure |
+

@@ -31,12 +31,12 @@ Keeper CSV export contains **330 valid secrets** across personal and Contexia co
 
 | Provider | Status | Key Format | Notes |
 |----------|--------|-----------|-------|
-| **Groq** | âœ… | `gsk_lHEBqtyS1YUV163wMhfMWGdyb...` | Primary provider |
-| **OpenAI** | âœ… | `sk-proj-HviH_BgThZ_RV00Mylc6GoYb...` | Hermes model |
-| **Gemini** | âœ… | `AIzaSyCqdypxHWdw_eDknclY_V3Q5oWAy5...` | Google Gemini 2.0 |
-| **Mistral** | âœ… | `CjGXmxBYKpTY1HL8FV8ZcMAKeFlyhors` | Mistral Large |
+| **Groq** | âœ… | `[REDACTED_GROQ_KEY]...` | Primary provider |
+| **OpenAI** | âœ… | `[REDACTED_OPENAI_KEY]...` | Hermes model |
+| **Gemini** | âœ… | `[REDACTED_GEMINI_KEY]...` | Google Gemini 2.0 |
+| **Mistral** | âœ… | `[REDACTED_MISTRAL_KEY]` | Mistral Large |
 | **Cerebras** | âœ… | `csk-dpdk3yrk4c3tr595845e36n3wpwe89...` | Backup provider |
-| **OpenRouter** | âœ… | `Sk-or-v1-d04e445e7985893e40a36ffdd...` | Fallback tier |
+| **OpenRouter** | âœ… | `[REDACTED_OPENROUTER_KEY]...` | Fallback tier |
 
 ### Infrastructure Keys (Core)
 
@@ -165,4 +165,5 @@ Backup: [Will be encrypted and stored in Keeper for 7 days post-migration]
 
 **Signed:** Contexia Infra Team  
 **Date:** 2026-06-15 16:30 UTC
+
 

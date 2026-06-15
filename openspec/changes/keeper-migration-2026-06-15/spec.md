@@ -1,4 +1,4 @@
-# OpenSpec Change: Keeper → Bitwarden Cloud → Vaultwarden Migration
+﻿# OpenSpec Change: Keeper â†’ Bitwarden Cloud â†’ Vaultwarden Migration
 
 ## Change ID
 `keeper-migration-2026-06-15`
@@ -13,25 +13,25 @@
 
 ## Proposed Solution
 
-**Phase 1 (Bitwarden Cloud):** Migrate Keeper CSV export → Bitwarden Cloud CLI (fast, low-ops setup, instant validation).
+**Phase 1 (Bitwarden Cloud):** Migrate Keeper CSV export â†’ Bitwarden Cloud CLI (fast, low-ops setup, instant validation).
 
 **Phase 2 (Vaultwarden self-hosted):** Move to Railway-hosted Vaultwarden for cost, control, HA (decision point: after 2w stable Bitwarden).
 
 ## Architectural Decisions
 
 - **SecretsProvider abstraction:** Backend never talks to Bitwarden directly; uses `SecretsProvider` interface (get/set/delete/list/health).
-- **Factory pattern:** `get_provider()` reads `SECRETS_BACKEND=bitwarden|vaultwarden` env var → returns concrete provider.
+- **Factory pattern:** `get_provider()` reads `SECRETS_BACKEND=bitwarden|vaultwarden` env var â†’ returns concrete provider.
 - **Health check:** `/api/v1/secrets/health` endpoint monitors provider latency, status, vault URL.
 - **No breaking changes:** API contract unchanged; migration transparent to consumers.
 
 ## Success Criteria
 
-1. ✅ All 300+ Keeper secrets imported to Bitwarden Cloud
-2. ✅ All API keys validated (Groq, OpenAI, Gemini, Mistral, Cerebras, OpenRouter)
-3. ✅ Backend `/api/v1/secrets/health` returns 200 in staging + production
-4. ✅ No errors in Railway logs referencing Keeper
-5. ✅ Keeper vault deleted (irreversible)
-6. ✅ Bitwarden Cloud stable for 2 weeks before Phase 2 decision
+1. âœ… All 300+ Keeper secrets imported to Bitwarden Cloud
+2. âœ… All API keys validated (Groq, OpenAI, Gemini, Mistral, Cerebras, OpenRouter)
+3. âœ… Backend `/api/v1/secrets/health` returns 200 in staging + production
+4. âœ… No errors in Railway logs referencing Keeper
+5. âœ… Keeper vault deleted (irreversible)
+6. âœ… Bitwarden Cloud stable for 2 weeks before Phase 2 decision
 
 ## Out of Scope (Phase 2)
 
@@ -47,9 +47,9 @@
 | Criterion | How to Verify |
 |-----------|---------------|
 | `secrets_provider.py` deployed | `ls apps/backend/core/secrets_provider.py` |
-| Bitwarden health check passes | `curl https://contexia.online/api/v1/secrets/health` → 200 |
+| Bitwarden health check passes | `curl https://contexia.online/api/v1/secrets/health` â†’ 200 |
 | All API keys work | Each provider (Groq, OpenAI, etc.) responds to test call |
-| Zero Keeper references in code | `grep -r "keeper" apps/ → 0 matches` |
+| Zero Keeper references in code | `grep -r "keeper" apps/ â†’ 0 matches` |
 | Keeper account deleted | Screenshot of Keeper deletion page |
 
 ---
@@ -94,3 +94,4 @@ If Keeper already deleted: Bitwarden is **only option**; no rollback possible. T
 - **Created:** 2026-06-15 15:45 UTC
 - **Author:** Contexia Infra
 - **Status:** Approved
+

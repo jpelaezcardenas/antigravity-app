@@ -1,7 +1,7 @@
-# Keeper → Bitwarden Migration: Handoff Document
+﻿# Keeper â†’ Bitwarden Migration: Handoff Document
 
 **Date Created:** 2026-06-15 16:45 UTC  
-**Status:** Phase 1 T1 COMPLETED ✅ | Ready for T2–T14  
+**Status:** Phase 1 T1 COMPLETED âœ… | Ready for T2â€“T14  
 **Previous Session:** Claude Code (Web)  
 **Continuing In:** Claude Code (Desktop/CLI)  
 **DRI:** Juan (Infra Lead)
@@ -10,7 +10,7 @@
 
 ## SESSION CONTEXT
 
-This is a **spec-first, OpenSpec-driven migration** of 330+ secrets from Keeper (exposed) → Bitwarden Cloud (Phase 1) → Vaultwarden self-hosted (Phase 2, deferred).
+This is a **spec-first, OpenSpec-driven migration** of 330+ secrets from Keeper (exposed) â†’ Bitwarden Cloud (Phase 1) â†’ Vaultwarden self-hosted (Phase 2, deferred).
 
 **Critical:** Do NOT skip OpenSpec validation. All code changes MUST be reflected in tasks.md first.
 
@@ -18,7 +18,7 @@ This is a **spec-first, OpenSpec-driven migration** of 330+ secrets from Keeper 
 
 ## CURRENT STATE (as of 2026-06-15 16:45 UTC)
 
-### ✅ COMPLETED (2 commits)
+### âœ… COMPLETED (2 commits)
 
 **Commit 1: `ed8babd`**
 - OpenSpec artifacts (5 files): spec.md, scenarios.md, tasks.md, README.md, MIGRATION_DASHBOARD.md
@@ -29,17 +29,17 @@ This is a **spec-first, OpenSpec-driven migration** of 330+ secrets from Keeper 
 - T1 validation report: reports/T1-KEEPER-EXPORT-VALIDATION-2026-06-15.md
 - Result: 330 secrets exported, all 6 LLM keys present, Supabase/Railway/Vercel credentials intact
 
-### ⏳ PENDING (T2–T14)
+### â³ PENDING (T2â€“T14)
 
 | Task | Owner | Est. Effort | Timeline | Blocker |
 |------|-------|-------------|----------|---------|
-| T2: Bitwarden Cloud account | Juan | 20m | 2026-06-15 | T1 ✅ |
+| T2: Bitwarden Cloud account | Juan | 20m | 2026-06-15 | T1 âœ… |
 | T3: bw CLI install | Dev | 30m | 2026-06-15 | T2 |
 | T4: Data import to BW | Dev | 1h | 2026-06-16 | T3 |
 | T5: Folder organization | Juan | 1h | 2026-06-16 | T4 |
 | T6: API key validation | Dev+Infra | 2h | 2026-06-16 | T5 **GATE** |
-| T7: SecretsProvider impl | Dev | 3h | 2026-06-17 | None (code ✅ exists) |
-| T8: Health endpoint | Dev | 1h | 2026-06-18 | T7 (code ✅ exists) |
+| T7: SecretsProvider impl | Dev | 3h | 2026-06-17 | None (code âœ… exists) |
+| T8: Health endpoint | Dev | 1h | 2026-06-18 | T7 (code âœ… exists) |
 | T9: Unit tests | QA | 2h | 2026-06-17 | T7 |
 | T10: Railway env vars | Infra | 20m | 2026-06-18 | T6, T7 |
 | T11: Staging deploy | Dev | 1h | 2026-06-18 | T10 |
@@ -51,23 +51,23 @@ This is a **spec-first, OpenSpec-driven migration** of 330+ secrets from Keeper 
 
 ## NEXT IMMEDIATE ACTIONS (Priority Order)
 
-### 1️⃣ T2: Create Bitwarden Cloud Account (Juan, NOW)
+### 1ï¸âƒ£ T2: Create Bitwarden Cloud Account (Juan, NOW)
 
 ```bash
-# 1. Open https://vault.bitwarden.com → Sign Up
+# 1. Open https://vault.bitwarden.com â†’ Sign Up
 # 2. Register:
 #    - Email: jpelaezcardenas@gmail.com
 #    - Master Password: Generate random 32+ chars
 #    - Save to secure location (Keeper temporarily, then delete)
 #
-# 3. Enable 2FA: Settings → Two-Step Login → Authenticator app
+# 3. Enable 2FA: Settings â†’ Two-Step Login â†’ Authenticator app
 #
 # 4. Create Organization:
 #    - Name: "Contexia"
 #    - Plan: Free (sufficient for Phase 1)
 #
 # 5. Generate API Key:
-#    - Settings → Organization → API Key
+#    - Settings â†’ Organization â†’ API Key
 #    - Save: BW_CLIENT_ID, BW_CLIENT_SECRET, BW_MASTER_PASSWORD
 #    - These MUST go to Railway env vars in T10
 #
@@ -80,7 +80,7 @@ This is a **spec-first, OpenSpec-driven migration** of 330+ secrets from Keeper 
 
 ---
 
-### 2️⃣ T3: Install & Verify bw CLI (Dev Team, after T2)
+### 2ï¸âƒ£ T3: Install & Verify bw CLI (Dev Team, after T2)
 
 ```bash
 # 1. Install bw CLI (choose your OS):
@@ -93,12 +93,12 @@ bw --version
 #
 # 3. Login to Bitwarden (from T2):
 bw login jpelaezcardenas@gmail.com
-# → Will prompt for master password, enter from T2
-# → Returns session token
+# â†’ Will prompt for master password, enter from T2
+# â†’ Returns session token
 #
 # 4. Verify sync:
 bw sync
-# → Should complete without errors
+# â†’ Should complete without errors
 #
 # 5. Add to Railway Dockerfile (if not already done):
 #    RUN apt-get install -y bw
@@ -121,29 +121,29 @@ git commit -m "docs: T3 bw CLI installed and verified locally"
 | `openspec/changes/keeper-migration-2026-06-15/tasks.md` | Task details, dependencies, rollback | Before each T |
 | `openspec/changes/keeper-migration-2026-06-15/MIGRATION_DASHBOARD.md` | Timeline, metrics, gates, risks | For progress tracking |
 | `openspec/changes/keeper-migration-2026-06-15/README.md` | Quick start guide | First thing |
-| `apps/backend/core/secrets_provider.py` | Abstract provider (✅ DONE) | Reference only |
-| `apps/backend/api/endpoints/secrets_endpoints.py` | Health endpoint (✅ DONE) | Reference only |
-| `docker-compose.vaultwarden.yml` | Phase 2 config (✅ DONE) | For T16 (Phase 2) |
+| `apps/backend/core/secrets_provider.py` | Abstract provider (âœ… DONE) | Reference only |
+| `apps/backend/api/endpoints/secrets_endpoints.py` | Health endpoint (âœ… DONE) | Reference only |
+| `docker-compose.vaultwarden.yml` | Phase 2 config (âœ… DONE) | For T16 (Phase 2) |
 
 ---
 
 ## KEY CONSTRAINTS & RULES
 
-### ❌ DO NOT
+### âŒ DO NOT
 
-- ❌ Commit code without updating OpenSpec tasks.md first (spec-first)
-- ❌ Delete Keeper before T13 validation complete (irreversible)
-- ❌ Skip T6 API validation gate (all providers MUST work)
-- ❌ Deploy production without T11 staging pass + T12 Stage 11 checklist
-- ❌ Leave Keeper CSV export on disk after T4 complete (use `shred` or `cipher /w`)
+- âŒ Commit code without updating OpenSpec tasks.md first (spec-first)
+- âŒ Delete Keeper before T13 validation complete (irreversible)
+- âŒ Skip T6 API validation gate (all providers MUST work)
+- âŒ Deploy production without T11 staging pass + T12 Stage 11 checklist
+- âŒ Leave Keeper CSV export on disk after T4 complete (use `shred` or `cipher /w`)
 
-### ✅ DO
+### âœ… DO
 
-- ✅ Run T4–T6 in parallel (import, organize, validate can overlap)
-- ✅ Update MIGRATION_DASHBOARD.md status as you complete each task
-- ✅ Add validation evidence to `reports/` folder (screenshots, curl responses)
-- ✅ Create new commits for each logical task completion
-- ✅ Use Stage 11 checklist for T12 (commit → push → verify live → report)
+- âœ… Run T4â€“T6 in parallel (import, organize, validate can overlap)
+- âœ… Update MIGRATION_DASHBOARD.md status as you complete each task
+- âœ… Add validation evidence to `reports/` folder (screenshots, curl responses)
+- âœ… Create new commits for each logical task completion
+- âœ… Use Stage 11 checklist for T12 (commit â†’ push â†’ verify live â†’ report)
 
 ---
 
@@ -177,9 +177,9 @@ git commit -m "feat: T7 integrate secrets_provider into fastapi (no changes need
 git commit -m "feat: T12 production deploy secrets migration complete (Stage 11)
 
 Verified:
-- Railway health check: 200 ✅
-- All LLM endpoints working ✅
-- Zero Keeper references in logs ✅
+- Railway health check: 200 âœ…
+- All LLM endpoints working âœ…
+- Zero Keeper references in logs âœ…
 
 OpenSpec change: keeper-migration-2026-06-15"
 ```
@@ -230,7 +230,7 @@ curl -X POST https://contexia.online/api/v1/agents/chat \
 
 ## DECISION GATES (MANDATORY STOPS)
 
-### 🛑 GATE 1: T6 Complete (All APIs Validated)
+### ðŸ›‘ GATE 1: T6 Complete (All APIs Validated)
 
 **Before proceeding to T7:**
 - [ ] All 6 LLM keys tested successfully (curl responses 200)
@@ -240,7 +240,7 @@ curl -X POST https://contexia.online/api/v1/agents/chat \
 
 **If gate fails:** Root-cause in scenarios.md (Scenario 2: API key format incompatible)
 
-### 🛑 GATE 2: T12 Production Deploy (Stage 11 Complete)
+### ðŸ›‘ GATE 2: T12 Production Deploy (Stage 11 Complete)
 
 **Before deleting Keeper (T14):**
 - [ ] Commit pushed to origin
@@ -252,7 +252,7 @@ curl -X POST https://contexia.online/api/v1/agents/chat \
 
 **If gate fails:** Rollback per scenarios.md (Scenario 5: Missing env vars)
 
-### 🛑 GATE 3: T14 Keeper Deletion (Irreversible)
+### ðŸ›‘ GATE 3: T14 Keeper Deletion (Irreversible)
 
 **Before running Keeper delete:**
 - [ ] T13 health audits PASSED
@@ -270,10 +270,10 @@ After T14 complete, **wait 2 weeks** (2 weeks stable on Bitwarden Cloud).
 
 On 2026-07-04:
 1. Review MIGRATION_DASHBOARD.md metrics (health check latency, uptime, failures)
-2. Team vote: **Proceed to Vaultwarden self-hosted (T16–T18)?** or **Stay on Cloud?**
+2. Team vote: **Proceed to Vaultwarden self-hosted (T16â€“T18)?** or **Stay on Cloud?**
 3. Document decision in `reports/2026-07-04-phase2-decision.md`
 
-If **YES**: Proceed with T16–T18 (docker-compose.vaultwarden.yml already written)  
+If **YES**: Proceed with T16â€“T18 (docker-compose.vaultwarden.yml already written)  
 If **NO**: Keep Bitwarden Cloud; close change as stable
 
 ---
@@ -324,12 +324,12 @@ git push origin main
 
 | Item | Status | Location |
 |------|--------|----------|
-| **OpenSpec** | ✅ Complete (5 docs) | openspec/changes/keeper-migration-2026-06-15/ |
-| **Code** | ✅ Written (6 files) | apps/backend/core/, apps/backend/api/endpoints/ |
-| **T1 Validation** | ✅ Complete (330 secrets) | reports/T1-KEEPER-EXPORT-VALIDATION-2026-06-15.md |
-| **T2–T3** | ⏳ Ready to start | Instructions above ↑ |
-| **T4–T14** | ⏳ Follow tasks.md | openspec/changes/keeper-migration-2026-06-15/tasks.md |
-| **Phase 2 (T15–T18)** | ⏳ Decision gate 2026-07-04 | Configs already written |
+| **OpenSpec** | âœ… Complete (5 docs) | openspec/changes/keeper-migration-2026-06-15/ |
+| **Code** | âœ… Written (6 files) | apps/backend/core/, apps/backend/api/endpoints/ |
+| **T1 Validation** | âœ… Complete (330 secrets) | reports/T1-KEEPER-EXPORT-VALIDATION-2026-06-15.md |
+| **T2â€“T3** | â³ Ready to start | Instructions above â†‘ |
+| **T4â€“T14** | â³ Follow tasks.md | openspec/changes/keeper-migration-2026-06-15/tasks.md |
+| **Phase 2 (T15â€“T18)** | â³ Decision gate 2026-07-04 | Configs already written |
 
 ---
 
@@ -338,7 +338,7 @@ git push origin main
 | Issue | Contact | Slack Channel |
 |-------|---------|---------------|
 | Bitwarden account (T2) | Juan (Infra Lead) | #infra-team |
-| Code/testing (T3–T9, T11–T13) | Dev Team | #engineering |
+| Code/testing (T3â€“T9, T11â€“T13) | Dev Team | #engineering |
 | Railway deploy (T10, T12) | Infra | #infra-team |
 | Keeper deletion approval (T14) | Juan + Tech Lead | #security |
 | Phase 2 decision (T15) | Juan + Tech Lead | #engineering |
@@ -350,12 +350,13 @@ git push origin main
 1. **This is production-critical security work.** All gates MUST pass before proceeding.
 2. **Spec-first discipline:** Update tasks.md BEFORE coding. No exceptions.
 3. **Time estimate:** 20 hours total effort, 1 week calendar time with parallel execution.
-4. **Stage 11 required:** Production deploy must include commit → push → verify live → report.
+4. **Stage 11 required:** Production deploy must include commit â†’ push â†’ verify live â†’ report.
 5. **Irreversible actions:** T14 (Keeper delete) has no rollback. Gate 3 MUST PASS.
 
 ---
 
 **Last Updated:** 2026-06-15 16:45 UTC  
-**Ready to Continue:** YES ✅  
+**Ready to Continue:** YES âœ…  
 **Next Owner:** Juan (T2)  
 **Baseline:** All OpenSpec artifacts approved and code in place
+

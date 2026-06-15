@@ -1,4 +1,4 @@
-# T10: Railway Environment Variables Setup
+﻿# T10: Railway Environment Variables Setup
 
 **Status:** Ready for execution  
 **Owner:** Infra Team  
@@ -13,17 +13,17 @@ Create a new item in Bitwarden for your API keys.
 
 ### Location in Bitwarden:
 - **Workspace:** Contexia
-- **Folder:** `Zona CONTEXIA (AAA) /Infraestructura – Root`
+- **Folder:** `Zona CONTEXIA (AAA) /Infraestructura â€“ Root`
 - **Item Name:** `Bitwarden API Keys`
 
 ### How to Create (Manual in Bitwarden Web):
 
 1. Go to https://vault.bitwarden.com
-2. Click **+ New Item** → **Login**
+2. Click **+ New Item** â†’ **Login**
 3. Fill in:
    ```
    Name: Bitwarden API Keys
-   Folder: Zona CONTEXIA (AAA) /Infraestructura – Root
+   Folder: Zona CONTEXIA (AAA) /Infraestructura â€“ Root
    Username: <your BW_CLIENT_ID>
    Password: <your BW_CLIENT_SECRET>
    ```
@@ -115,11 +115,11 @@ railway variables list
 railway variables list
 
 # Should show:
-# SECRETS_BACKEND=bitwarden ✓
-# BW_VAULT_URL=https://vault.bitwarden.com ✓
-# BW_CLIENT_ID=<masked> ✓
-# BW_CLIENT_SECRET=<masked> ✓
-# BW_MASTER_PASSWORD=<masked> ✓
+# SECRETS_BACKEND=bitwarden âœ“
+# BW_VAULT_URL=https://vault.bitwarden.com âœ“
+# BW_CLIENT_ID=<masked> âœ“
+# BW_CLIENT_SECRET=<masked> âœ“
+# BW_MASTER_PASSWORD=<masked> âœ“
 ```
 
 ---
@@ -176,14 +176,15 @@ Create it manually via https://vault.bitwarden.com using Step 1 above.
 
 ## Next Steps
 
-- ✅ T10 complete: Variables set in Railway
-- ⏳ T11: Staging deploy (verify health check)
-- ⏳ T12: Production deploy (Stage 11)
-- ⏳ T13: Health audits
-- ⏳ T14: Delete Keeper
+- âœ… T10 complete: Variables set in Railway
+- â³ T11: Staging deploy (verify health check)
+- â³ T12: Production deploy (Stage 11)
+- â³ T13: Health audits
+- â³ T14: Delete Keeper
 
 ---
 
 **Execution Time:** 20 minutes  
 **Effort:** Low (mostly CLI commands)  
 **Risk:** Medium (env vars are sensitive, but masked in Dashboard)
+

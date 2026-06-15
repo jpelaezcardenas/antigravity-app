@@ -1,7 +1,7 @@
-# Keeper → Bitwarden → Vaultwarden Migration
+﻿# Keeper â†’ Bitwarden â†’ Vaultwarden Migration
 
 **Change ID:** `keeper-migration-2026-06-15`  
-**Status:** 🟢 OpenSpec approved, ready for Phase 1  
+**Status:** ðŸŸ¢ OpenSpec approved, ready for Phase 1  
 **Owner:** Contexia Infra  
 **Timeline:** Phase 1 (1 week) + Phase 2 (deferred, 2026-07-04 gate)
 
@@ -13,7 +13,7 @@
 |------|---------|-------|
 | `spec.md` | Problem statement, solution, acceptance criteria | Phase 1 |
 | `scenarios.md` | 10 detailed scenarios + prevention/detection | Phase 1 |
-| `tasks.md` | 14 actionable tasks (T1–T14 Phase 1, T15–T18 Phase 2) | Phase 1 |
+| `tasks.md` | 14 actionable tasks (T1â€“T14 Phase 1, T15â€“T18 Phase 2) | Phase 1 |
 | `MIGRATION_DASHBOARD.md` | Status, metrics, risks, timeline, decision gate | Phase 1 |
 
 ---
@@ -41,7 +41,7 @@
 
 ### Phase 1: Bitwarden Cloud (1 Week)
 
-**Step 1–3 (Today, 2026-06-15):**
+**Step 1â€“3 (Today, 2026-06-15):**
 ```bash
 # T1: Export Keeper JSON
 # T2: Create Bitwarden Cloud account (https://vault.bitwarden.com)
@@ -49,7 +49,7 @@
 bw --version
 ```
 
-**Step 4–6 (Tomorrow, 2026-06-16):**
+**Step 4â€“6 (Tomorrow, 2026-06-16):**
 ```bash
 # T4: Import 300+ secrets
 bw import keepersecurity keeper-export-2026-06-15.json
@@ -61,7 +61,7 @@ curl -H "Authorization: Bearer $(bw get item groq_key | jq -r '.login.password')
   https://api.groq.com/openai/v1/models
 ```
 
-**Step 7–12 (2026-06-17 to 2026-06-18):**
+**Step 7â€“12 (2026-06-17 to 2026-06-18):**
 ```bash
 # T7: Code already in repo (secrets_provider.py)
 
@@ -78,17 +78,17 @@ curl -H "Authorization: Bearer $(bw get item groq_key | jq -r '.login.password')
 
 # T11: Deploy to staging, test health check
 
-# T12: Deploy to production (Stage 11: commit → push → verify live)
+# T12: Deploy to production (Stage 11: commit â†’ push â†’ verify live)
 curl https://contexia.online/api/v1/secrets/health
-# → {"status": "healthy", "provider": "bitwarden-cloud", "latency_ms": 145}
+# â†’ {"status": "healthy", "provider": "bitwarden-cloud", "latency_ms": 145}
 ```
 
-**Step 13–14 (2026-06-19 to 2026-06-20):**
+**Step 13â€“14 (2026-06-19 to 2026-06-20):**
 ```bash
 # T13: Audit health + validate all APIs work
 
 # T14: Delete Keeper vault (irreversible)
-# Log into Keeper: Settings → Delete Organization
+# Log into Keeper: Settings â†’ Delete Organization
 ```
 
 ---
@@ -119,7 +119,7 @@ curl https://contexia.online/api/v1/secrets/health
 ### Before Keeper Deleted (T14)
 - Keeper vault still readable
 - If Bitwarden fails: restore from Keeper
-- Cost: 1–2 hours re-import
+- Cost: 1â€“2 hours re-import
 
 ### After Keeper Deleted (T14)
 - **No rollback:** Bitwarden is only source
@@ -130,12 +130,12 @@ curl https://contexia.online/api/v1/secrets/health
 
 ## Success Criteria
 
-✅ All 300+ secrets imported  
-✅ All API keys validated (Groq, OpenAI, Gemini, Mistral, Cerebras, OpenRouter)  
-✅ `/api/v1/secrets/health` endpoint responds 200 in production  
-✅ All LLM calls work (no credential failures)  
-✅ Zero references to Keeper in code/logs  
-✅ Keeper account deleted (irreversible)  
+âœ… All 300+ secrets imported  
+âœ… All API keys validated (Groq, OpenAI, Gemini, Mistral, Cerebras, OpenRouter)  
+âœ… `/api/v1/secrets/health` endpoint responds 200 in production  
+âœ… All LLM calls work (no credential failures)  
+âœ… Zero references to Keeper in code/logs  
+âœ… Keeper account deleted (irreversible)  
 
 ---
 
@@ -143,10 +143,10 @@ curl https://contexia.online/api/v1/secrets/health
 
 | Decision | Status | Date |
 |----------|--------|------|
-| Use Bitwarden Cloud (Phase 1) | ✅ Approved | 2026-06-15 |
-| Later decide on Vaultwarden self-hosted (Phase 2) | ✅ Approved (deferred) | 2026-07-04 |
-| Delete Keeper after Phase 1 complete | ✅ Approved | 2026-06-20 |
-| Keep Keeper readonly for 7 days post-export | ✅ Approved | 2026-06-15 |
+| Use Bitwarden Cloud (Phase 1) | âœ… Approved | 2026-06-15 |
+| Later decide on Vaultwarden self-hosted (Phase 2) | âœ… Approved (deferred) | 2026-07-04 |
+| Delete Keeper after Phase 1 complete | âœ… Approved | 2026-06-20 |
+| Keep Keeper readonly for 7 days post-export | âœ… Approved | 2026-06-15 |
 
 ---
 
@@ -163,7 +163,7 @@ curl https://contexia.online/api/v1/secrets/health
 
 ## Approval Gate
 
-**OpenSpec Status:** ✅ **APPROVED**
+**OpenSpec Status:** âœ… **APPROVED**
 
 - [x] Problem statement clear
 - [x] Solution well-architected (provider abstraction, factory pattern)
@@ -173,7 +173,7 @@ curl https://contexia.online/api/v1/secrets/health
 - [x] Rollback strategy documented
 - [x] Timeline realistic (1 week Phase 1)
 
-**Ready to Proceed?** ✅ YES  
+**Ready to Proceed?** âœ… YES  
 **Start Phase 1:** 2026-06-15 (Today)  
 **Phase 2 Decision Date:** 2026-07-04
 
@@ -181,12 +181,13 @@ curl https://contexia.online/api/v1/secrets/health
 
 ## References
 
-- [Keeper Security Audit (2026-06-15)](../../../MEMORY.md) — 15+ secrets exposed, Railway already rotated
-- [Contexia Infrastructure Map (2026-05-30)](../../../DOCS.md) — Current stack, FastAPI on Railway, Supabase
-- [OpenSpec Standard](../../../DEPLOYMENT_STAGE/) — Stage 11 mandatory for production changes
+- [Keeper Security Audit (2026-06-15)](../../../MEMORY.md) â€” 15+ secrets exposed, Railway already rotated
+- [Contexia Infrastructure Map (2026-05-30)](../../../DOCS.md) â€” Current stack, FastAPI on Railway, Supabase
+- [OpenSpec Standard](../../../DEPLOYMENT_STAGE/) â€” Stage 11 mandatory for production changes
 
 ---
 
 **Questions?** Ask in #infra-team Slack or create issue on GitHub repo.
 
 **Last Updated:** 2026-06-15 16:15 UTC
+

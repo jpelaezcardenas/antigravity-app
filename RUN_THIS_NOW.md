@@ -52,8 +52,8 @@
 ```
 SECRETS_BACKEND=bitwarden
 BW_VAULT_URL=https://vault.bitwarden.com
-BW_CLIENT_ID=user.a0b41278-dbb2-49e1-b67e-b46a013270c7
-BW_CLIENT_SECRET=8VDctT1xHKUwuSQY7yQJ4xkoHrJwlh
+BW_CLIENT_ID=[REDACTED_BW_CLIENT_ID]
+BW_CLIENT_SECRET=[REDACTED_BW_CLIENT_SECRET]
 BW_MASTER_PASSWORD=[REDACTED_MASTER_PASSWORD]
 ```
 
@@ -310,4 +310,5 @@ curl https://contexia.online/api/v1/secrets/health
 **You have everything. Just follow the steps. 90 minutes. Done.**
 
 ðŸš€
+
 
