@@ -10,9 +10,9 @@
 
 | Task | Component | Status | Start | ETA | Owner | Notes |
 |------|-----------|--------|-------|-----|-------|-------|
-| T1 | Keeper CSV Export | ⏳ Pending | 2026-06-15 | 2026-06-15 | Juan | 300+ secrets, JSON format |
-| T2 | Bitwarden Cloud Account | ⏳ Pending | 2026-06-15 | 2026-06-15 | Juan | 2FA enabled, API keys |
-| T3 | bw CLI Install | ⏳ Pending | 2026-06-15 | 2026-06-15 | Dev | Verified locally + Railway |
+| T1 | Keeper CSV Export | ✅ Complete | 2026-06-15 | 2026-06-15 | Juan | 330 secrets validated |
+| T2 | Bitwarden Cloud Account | ✅ Complete | 2026-06-15 | 2026-06-15 | Juan | jpelaezcardenas@gmail.com, 2FA, API keys ✅ |
+| T3 | bw CLI Install | ⏳ Ready | 2026-06-15 | 2026-06-15 | Dev | Verified locally + Railway |
 | T4 | Data Import (BW) | ⏳ Pending | 2026-06-16 | 2026-06-16 | Dev | 300+ items via bw import |
 | T5 | Folder Organization | ⏳ Pending | 2026-06-16 | 2026-06-17 | Juan | Infrastructure, LLM, Ops, Personal |
 | T6 | API Key Validation | ⏳ Pending | 2026-06-16 | 2026-06-17 | Dev+Infra | All providers tested (Groq, OpenAI, etc.) |
