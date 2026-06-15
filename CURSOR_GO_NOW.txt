@@ -43,7 +43,7 @@ IMMEDIATE (T2 for Juan)
 ════════════════════════════════════════════════════════════════════════════════
 
 1. Go to https://vault.bitwarden.com → Sign Up
-2. Email: growth@contexia.online
+2. Email: jpelaezcardenas@gmail.com
 3. Master password: random 32+ characters
 4. Enable 2FA: Settings → Two-Step Login → Authenticator
 5. Create organization: "Contexia", Plan "Free"

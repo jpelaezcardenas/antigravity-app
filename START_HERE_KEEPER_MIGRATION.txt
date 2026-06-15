@@ -30,7 +30,7 @@ IMMEDIATE: Juan starts T2 (20 minutes)
 T2: Create Bitwarden Cloud Account
 
   1. Go to https://vault.bitwarden.com → Sign Up
-  2. Email: growth@contexia.online
+  2. Email: jpelaezcardenas@gmail.com
   3. Master Password: Generate random 32+ chars, save securely
   4. Enable 2FA: Settings → Two-Step Login → Authenticator app
   5. Create Organization: Name "Contexia", Plan "Free"
@@ -47,7 +47,7 @@ T3: Install & Verify bw CLI
 
   1. Install: brew install bitwarden-cli (or download from https://bitwarden.com/download)
   2. Verify: bw --version
-  3. Login: bw login growth@contexia.online
+  3. Login: bw login jpelaezcardenas@gmail.com
   4. Sync: bw sync
   5. Commit: git commit -m "docs: T3 bw CLI installed and verified"
 

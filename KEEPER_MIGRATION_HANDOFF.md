@@ -56,7 +56,7 @@ This is a **spec-first, OpenSpec-driven migration** of 330+ secrets from Keeper 
 ```bash
 # 1. Open https://vault.bitwarden.com → Sign Up
 # 2. Register:
-#    - Email: growth@contexia.online
+#    - Email: jpelaezcardenas@gmail.com
 #    - Master Password: Generate random 32+ chars
 #    - Save to secure location (Keeper temporarily, then delete)
 #
@@ -72,7 +72,7 @@ This is a **spec-first, OpenSpec-driven migration** of 330+ secrets from Keeper 
 #    - These MUST go to Railway env vars in T10
 #
 # 6. Commit progress:
-#    git commit -m "docs: T2 bitwarden cloud account created (growth@contexia.online)"
+#    git commit -m "docs: T2 bitwarden cloud account created (jpelaezcardenas@gmail.com)"
 ```
 
 **Timeline:** 20 minutes  
@@ -92,7 +92,7 @@ This is a **spec-first, OpenSpec-driven migration** of 330+ secrets from Keeper 
 bw --version
 #
 # 3. Login to Bitwarden (from T2):
-bw login growth@contexia.online
+bw login jpelaezcardenas@gmail.com
 # → Will prompt for master password, enter from T2
 # → Returns session token
 #
@@ -286,7 +286,7 @@ If **NO**: Keep Bitwarden Cloud; close change as stable
 # Increase timeout
 export BW_BASEURL=https://vault.bitwarden.com
 bw logout
-bw login growth@contexia.online --raw
+bw login jpelaezcardenas@gmail.com --raw
 # Wait for output, then try again
 ```
 
