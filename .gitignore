@@ -37,6 +37,8 @@ MANIFEST
 *.zip
 
 # Sensitive files
+.env.local
+.env
 cookies.json
 scripts/keeper-populate-vault.cmd
 load-env.ps1
