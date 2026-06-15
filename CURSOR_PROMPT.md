@@ -1,6 +1,6 @@
-# CURSOR PROMPT: Keeper → Bitwarden Migration (Phase 1)
+# CODEX PROMPT: Keeper → Bitwarden Migration (Phase 1)
 
-**Copy-paste this prompt into Cursor and follow it step by step.**
+**Copy-paste this prompt into OpenAI Codex (VS Code extension or API) and follow it step by step.**
 
 ---
 

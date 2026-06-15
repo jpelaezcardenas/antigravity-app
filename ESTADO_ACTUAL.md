@@ -1,7 +1,7 @@
 # ESTADO ACTUAL: Migración Keeper → Bitwarden
 
 **Fecha:** 2026-06-15 17:00 UTC  
-**Sesión:** Web Claude Code → Cursor (Codex Academic)
+**Sesión:** Web Claude Code → OpenAI Codex (Academic Account)
 
 ---
 

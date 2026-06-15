@@ -1,5 +1,5 @@
 ════════════════════════════════════════════════════════════════════════════════
-                    🚀 CURSOR: EMPIEZA AHORA (copy-paste esto)
+                    🚀 CODEX (OpenAI): EMPIEZA AHORA (copy-paste esto)
 ════════════════════════════════════════════════════════════════════════════════
 
 CONTEXTO: Migración de 330 secretos de Keeper → Bitwarden Cloud (1 semana)
@@ -7,7 +7,7 @@ CONTEXTO: Migración de 330 secretos de Keeper → Bitwarden Cloud (1 semana)
 ESTADO: T1 ✅ | Listo para T2 (20 minutos)
 
 ════════════════════════════════════════════════════════════════════════════════
-PASTE THIS INTO CURSOR (Ctrl+K in Codex)
+PASTE THIS INTO OpenAI CODEX (VS Code / API)
 ════════════════════════════════════════════════════════════════════════════════
 
 I need to continue a Keeper → Bitwarden Cloud migration.
