@@ -1,48 +1,25 @@
-/**
- * Hermes Gateway Proxy
- * Endpoint que el Bunker (frontend Vercel) usa para comunicarse con Hermes Gateway local
- * vía el túnel público (localtunnel).
- *
- * POST /api/hermes/status → Vercel function → HTTPS tunnel → localhost:8644/webhooks/os-status
- */
-
-import { VercelRequest, VercelResponse } from '@vercel/node';
-import * as crypto from 'crypto';
+import { createHmac } from 'crypto';
 
 const HERMES_GATEWAY_URL = process.env.NEXT_PUBLIC_HERMES_GATEWAY_URL || 'https://sharp-peas-cry.loca.lt';
 const HERMES_WEBHOOK_SECRET = process.env.HERMES_WEBHOOK_SECRET || '';
 
-if (!HERMES_WEBHOOK_SECRET) {
-  console.warn('⚠️ HERMES_WEBHOOK_SECRET not set in env — HMAC validation will fail');
-}
-
-/**
- * Computa el HMAC-SHA256 esperado para el webhook de Hermes
- */
 function computeHmacSignature(secret: string, payload: string): string {
-  return crypto.createHmac('sha256', secret).update(payload).digest('base64');
+  return createHmac('sha256', secret).update(payload).digest('base64');
 }
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-): Promise<void> {
-  // Solo POST
+export default async function handler(req: Request) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
   }
 
   try {
-    // Payload a enviar al webhook de Hermes
     const payload = JSON.stringify({
       timestamp: new Date().toISOString(),
       source: 'bunker-vercel',
     });
 
-    // Computar firma HMAC
     const signature = computeHmacSignature(HERMES_WEBHOOK_SECRET, payload);
 
-    // Hacer request al Hermes Gateway vía el túnel
     const gatewayResponse = await fetch(`${HERMES_GATEWAY_URL}/webhooks/os-status`, {
       method: 'POST',
       headers: {
@@ -52,24 +29,28 @@ export default async function handler(
       body: payload,
     });
 
-    // Parsear respuesta
     const data = await gatewayResponse.json();
 
-    // Retornar estado al frontend
-    return res.status(gatewayResponse.status).json({
+    return new Response(JSON.stringify({
       status: 'success',
       data,
       gateway_url: HERMES_GATEWAY_URL,
       timestamp: new Date().toISOString(),
+    }), {
+      status: gatewayResponse.status,
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('❌ Hermes gateway request failed:', errorMessage);
+    console.error('Hermes gateway request failed:', errorMessage);
 
-    return res.status(502).json({
+    return new Response(JSON.stringify({
       error: 'Gateway unavailable',
       message: errorMessage,
       gateway_url: HERMES_GATEWAY_URL,
+    }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 }
