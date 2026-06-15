@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from presentation.router import api_router
 from presentation.health_endpoints import router as health_router
+from api.endpoints.secrets_endpoints import router as secrets_router
 from core.middleware import SecurityHeadersMiddleware, RequestLoggingMiddleware
 from config import settings
 from middleware_config import apply_middleware
@@ -68,6 +69,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Incluir routers
 api_router.include_router(health_router)
+api_router.include_router(secrets_router)
 app.include_router(api_router, prefix="/api/v1")
 
 
