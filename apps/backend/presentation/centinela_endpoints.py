@@ -17,6 +17,18 @@ from core.supabase_client import get_supabase
 
 logger = logging.getLogger(__name__)
 
+
+def _calculate_risk_level(critical_count: int, warning_count: int) -> str:
+    """Derive an overall risk level from alert severity counts."""
+    if critical_count >= 2:
+        return "critical"
+    if critical_count >= 1 or warning_count >= 3:
+        return "high"
+    if warning_count >= 1:
+        return "medium"
+    return "low"
+
+
 router = APIRouter(
     tags=["centinela"],
 )  # prefix handled by router.py include_router()
@@ -92,14 +104,7 @@ async def evaluate_centinela(request: CentinelaEvaluateRequest) -> CentinelaEval
         critical_count = sum(1 for a in alerts if a["severity"] == "critical")
         warning_count = sum(1 for a in alerts if a["severity"] == "warning")
 
-        if critical_count >= 2:
-            risk_level = "critical"
-        elif critical_count >= 1 or warning_count >= 3:
-            risk_level = "high"
-        elif warning_count >= 1:
-            risk_level = "medium"
-        else:
-            risk_level = "low"
+        risk_level = _calculate_risk_level(critical_count, warning_count)
 
         logger.info(f"Centinela evaluation: {len(alerts)} alerts, risk_level={risk_level}")
 
@@ -169,14 +174,7 @@ async def get_company_alerts(
         critical_count = sum(1 for a in raw_alerts if a.get("severity") == "critical")
         warning_count = sum(1 for a in raw_alerts if a.get("severity") == "warning")
 
-        if critical_count >= 2:
-            risk_level = "critical"
-        elif critical_count >= 1 or warning_count >= 3:
-            risk_level = "high"
-        elif warning_count >= 1:
-            risk_level = "medium"
-        else:
-            risk_level = "low"
+        risk_level = _calculate_risk_level(critical_count, warning_count)
 
         alert_models = [
             CentinelaAlert(

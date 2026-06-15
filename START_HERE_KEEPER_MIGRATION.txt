@@ -1,0 +1,168 @@
+═══════════════════════════════════════════════════════════════════════════════
+  KEEPER → BITWARDEN MIGRATION: CONTINUE HERE (Claude Code Desktop)
+═══════════════════════════════════════════════════════════════════════════════
+
+STATUS: Phase 1 T1 COMPLETED ✅ | Ready for T2-T14
+
+═══════════════════════════════════════════════════════════════════════════════
+WHAT WAS COMPLETED (Previous Session)
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ OpenSpec artifacts (5 documents, 3 commits)
+   📄 spec.md, scenarios.md, tasks.md, README.md, MIGRATION_DASHBOARD.md
+   📂 Location: openspec/changes/keeper-migration-2026-06-15/
+
+✅ Implementation code (6 files, production-ready)
+   🐍 apps/backend/core/secrets_provider.py (250 LOC, abstract + 2 implementations)
+   ⚡ apps/backend/api/endpoints/secrets_endpoints.py (health check endpoint)
+   🐳 docker-compose.vaultwarden.yml + railway.toml + Dockerfile (Phase 2)
+
+✅ T1 Validation Complete
+   📊 Keeper export validated: 330 secrets, all LLM API keys present
+   📄 Report: openspec/changes/keeper-migration-2026-06-15/reports/T1-KEEPER-EXPORT-VALIDATION-2026-06-15.md
+
+═══════════════════════════════════════════════════════════════════════════════
+NEXT STEPS (DO THESE NOW)
+═══════════════════════════════════════════════════════════════════════════════
+
+IMMEDIATE: Juan starts T2 (20 minutes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+T2: Create Bitwarden Cloud Account
+
+  1. Go to https://vault.bitwarden.com → Sign Up
+  2. Email: jpelaezcardenas@gmail.com
+  3. Master Password: Generate random 32+ chars, save securely
+  4. Enable 2FA: Settings → Two-Step Login → Authenticator app
+  5. Create Organization: Name "Contexia", Plan "Free"
+  6. Generate API credentials: Settings → Organization → API Key
+  7. Save: BW_CLIENT_ID, BW_CLIENT_SECRET, BW_MASTER_PASSWORD
+  8. Commit: git commit -m "docs: T2 bitwarden cloud account created"
+
+  Timeline: 20 minutes
+  Blocker: T1 ✅ (already done)
+
+THEN: Dev team does T3 (30 minutes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+T3: Install & Verify bw CLI
+
+  1. Install: brew install bitwarden-cli (or download from https://bitwarden.com/download)
+  2. Verify: bw --version
+  3. Login: bw login jpelaezcardenas@gmail.com
+  4. Sync: bw sync
+  5. Commit: git commit -m "docs: T3 bw CLI installed and verified"
+
+  Timeline: 30 minutes
+  Blocker: T2 ✅ (account created)
+
+═══════════════════════════════════════════════════════════════════════════════
+FULL INSTRUCTIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+📖 READ THIS FILE:
+   → KEEPER_MIGRATION_HANDOFF.md
+
+   It contains:
+   - Full T2-T14 task breakdown with commands
+   - Testing verification commands
+   - Decision gates (MANDATORY stops)
+   - Debugging checklist
+   - Git workflow and commit templates
+
+📊 TRACK PROGRESS:
+   → openspec/changes/keeper-migration-2026-06-15/MIGRATION_DASHBOARD.md
+
+   Update status as you complete each task.
+
+═══════════════════════════════════════════════════════════════════════════════
+TIMELINE AT A GLANCE
+═══════════════════════════════════════════════════════════════════════════════
+
+2026-06-15: T1✅ + T2(start) + T3
+2026-06-16: T4–T6 (import, organize, validate) ← GATE 1: All APIs must work
+2026-06-17: T7–T9 (code + tests)
+2026-06-18: T10–T12 (Railway + production Stage 11 deploy) ← GATE 2: Live in prod
+2026-06-19: T13 (audit)
+2026-06-20: T14 (delete Keeper) ← GATE 3: IRREVERSIBLE
+2026-07-04: T15 (2-week decision gate) → Phase 2?
+
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL RULES
+═══════════════════════════════════════════════════════════════════════════════
+
+❌ DO NOT:
+   - Skip OpenSpec validation (spec-first discipline)
+   - Delete Keeper before T13 validation ✅ (irreversible)
+   - Skip T6 API validation gate
+   - Leave Keeper CSV export on disk after T4 (use shred)
+
+✅ DO:
+   - Update tasks.md BEFORE coding
+   - Run T4-T6 in parallel (independence)
+   - Follow decision gates at T6, T12, T14
+   - Use Stage 11 checklist for T12 production deploy
+
+═══════════════════════════════════════════════════════════════════════════════
+KEY FILES
+═══════════════════════════════════════════════════════════════════════════════
+
+HANDOFF:        KEEPER_MIGRATION_HANDOFF.md  ← START HERE for full instructions
+
+OPENSPEC:       openspec/changes/keeper-migration-2026-06-15/
+                ├── spec.md                 (problem/solution/criteria)
+                ├── scenarios.md            (10 detailed scenarios)
+                ├── tasks.md                (T1-T14 breakdown) ⭐ REFERENCE THIS
+                ├── README.md               (quick start)
+                ├── MIGRATION_DASHBOARD.md  (timeline, metrics, gates)
+                └── reports/                (T1 validation + future reports)
+
+CODE:           apps/backend/core/secrets_provider.py (✅ done, reference only)
+                apps/backend/api/endpoints/secrets_endpoints.py (✅ done)
+
+PHASE 2:        docker-compose.vaultwarden.yml (for T16+, not yet)
+
+═══════════════════════════════════════════════════════════════════════════════
+GIT COMMITS (Context)
+═══════════════════════════════════════════════════════════════════════════════
+
+ed8babd: feat: add keeper-to-bitwarden migration (openspec + implementation)
+177d2fc: docs: add T1 keeper export validation report
+0fe1153: docs: add professional handoff guide for phase 1 continuation
+
+Current branch: fix/security-bug-audit-2026-06-14
+
+═══════════════════════════════════════════════════════════════════════════════
+QUICK COMMAND REFERENCE
+═══════════════════════════════════════════════════════════════════════════════
+
+Clone (if starting fresh):
+  cd C:\Users\contexia\Projects\antigravity-app
+
+View OpenSpec tasks:
+  cat openspec/changes/keeper-migration-2026-06-15/tasks.md
+
+Start T2 (Juan):
+  # Read KEEPER_MIGRATION_HANDOFF.md → T2 section
+
+Commit after each task:
+  git commit -m "feat/docs: [T#] [description]
+
+  OpenSpec change: keeper-migration-2026-06-15
+  Co-Authored-By: Claude Code <noreply@anthropic.com>"
+
+Track progress:
+  # Update MIGRATION_DASHBOARD.md status column
+
+═══════════════════════════════════════════════════════════════════════════════
+SUPPORT
+═══════════════════════════════════════════════════════════════════════════════
+
+Issues?
+  → Check KEEPER_MIGRATION_HANDOFF.md "DEBUGGING CHECKLIST" section
+  → Check scenarios.md for mitigation strategies
+  → Contact: Juan (Infra Lead) for T2/T14, Dev Team for T3-T9/T11-T13
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Generated: 2026-06-15 16:50 UTC
+Ready to Continue: YES ✅
+Next Owner: Juan (T2)

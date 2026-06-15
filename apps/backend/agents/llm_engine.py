@@ -356,9 +356,12 @@ class LLMEngine:
 
         headers = {
             "Content-Type": "application/json",
+            # Pass the key via header, never in the URL query string (keys in URLs
+            # leak into server/proxy logs and Referer headers).
+            "x-goog-api-key": self.gemini_api_key,
         }
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.gemini_api_key}"
+        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
         payload = {
             "contents": [

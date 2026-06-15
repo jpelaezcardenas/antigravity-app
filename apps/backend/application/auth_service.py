@@ -1,5 +1,6 @@
 from infrastructure.repositories.usuario_repo import UsuarioRepository
 from core.security import verify_password, create_access_token
+from config import settings
 from fastapi import HTTPException, status
 import logging
 
@@ -27,8 +28,8 @@ class AuthService:
             }
         }
 
-        # Check demo users first (for MVP testing)
-        if email in DEMO_USERS:
+        # Check demo users first (for MVP testing), gated by DEMO_AUTH_ENABLED.
+        if settings.DEMO_AUTH_ENABLED and email in DEMO_USERS:
             demo_user = DEMO_USERS[email]
             if password == demo_user["password"]:
                 token = create_access_token(data={"sub": demo_user["id"], "email": email})
@@ -56,13 +57,13 @@ class AuthService:
                 detail="Credenciales inválidas"
             )
 
-        # Para la demo, si el password_hash en la DB es un placeholder, aceptamos 'demo' o 'Lindafea0712'
+        # Verify the password against the stored bcrypt hash. Malformed or legacy
+        # placeholder hashes are treated as invalid credentials, never bypassed.
         is_valid = False
-        if user_data["password_hash"].startswith("$2b$12$placeholder"):
-            if password in ["demo", "Lindafea0712"]:
-                is_valid = True
-        else:
+        try:
             is_valid = verify_password(password, user_data["password_hash"])
+        except Exception as exc:
+            logger.warning(f"Password verification error for {email}: {exc}")
 
         if not is_valid:
             logger.warning(f"Login failed: Invalid password for {email}")

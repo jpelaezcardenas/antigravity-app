@@ -21,6 +21,9 @@ api_router.include_router(pulso_router, prefix="/pulso", tags=["pulso"])
 api_router.include_router(centinela_router, prefix="/centinela", tags=["centinela"])
 api_router.include_router(cobro_router, prefix="/cobro", tags=["cobro"])
 api_router.include_router(agents_router, prefix="/agents", tags=["agents"])
+# taty_router intentionally shares the /agents prefix. Its paths (/agents/ask,
+# /agents/health) do not collide with agents_router's paths (/agents/taty/ask,
+# /agents/social/..., etc.), so both can be mounted at the same prefix.
 api_router.include_router(taty_router, prefix="/agents", tags=["taty"])
 api_router.include_router(telegram_router, prefix="/channels", tags=["telegram"])
 api_router.include_router(social_ops_router, prefix="/social-ops", tags=["social-ops"])

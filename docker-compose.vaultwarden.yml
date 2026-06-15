@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: "https://vault.contexia.online"
+      SIGNUPS_ALLOWED: "false"
+      SHOW_PASSWORD_HINT: "false"
+      INVITATIONS_ALLOWED: "true"
+      LOG_LEVEL: "info"
+      LOG_FILE: "/data/vaultwarden.log"
+      EXTENDED_LOGGING: "true"
+      LOG_DIR: "/data/logs"
+
+      ADMIN_TOKEN: "${ADMIN_TOKEN}"
+
+      DATABASE_URL: "${DATABASE_URL:-sqlite:///data/db.sqlite3}"
+
+      ROCKET_TLS: "{certs=\"/data/ssl/certs.pem\",key=\"/data/ssl/key.pem\"}"
+
+      MAIL_ENABLED: "true"
+      MAIL_FROM: "noreply@contexia.online"
+      MAIL_HOST: "smtp.resend.com"
+      MAIL_PORT: "587"
+      MAIL_SECURITY: "starttls"
+      MAIL_USERNAME: "resend"
+      MAIL_PASSWORD: "${RESEND_API_KEY}"
+
+      ENABLE_VAULT_EXPORT: "true"
+
+    volumes:
+      - vaultwarden_data:/data
+      - ./ssl:/data/ssl
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/alive"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    networks:
+      - vaultwarden_net
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: vaultwarden_db
+    restart: always
+    environment:
+      POSTGRES_DB: vaultwarden
+      POSTGRES_USER: vaultwarden
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - vaultwarden_net
+    profiles:
+      - prod
+
+volumes:
+  vaultwarden_data:
+    driver: local
+  postgres_data:
+    driver: local
+
+networks:
+  vaultwarden_net:
+    driver: bridge

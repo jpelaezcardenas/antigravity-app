@@ -14,7 +14,7 @@ Architecture:
 Performance target: P95 < 4 seconds for common questions (IVA, renta, UVT)
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 import logging
 import time
@@ -347,9 +347,14 @@ Si no tienes información suficiente, di "No tengo información suficiente para 
         latency_ms: int,
         requires_human_review: bool
     ):
-        """Log conversation (MVP: logs only; later: Supabase)."""
+        """Log a Taty conversation.
+
+        MVP: writes to the application log only — conversations are NOT persisted
+        to a database. TODO: persist to Supabase (e.g. a `taty_conversations`
+        table) once a client is wired into this service.
+        """
         log_entry = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "company_id": company_id,
             "channel": channel,
             "latency_ms": latency_ms,

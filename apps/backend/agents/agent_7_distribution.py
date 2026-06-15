@@ -62,7 +62,7 @@ class DistributionAgent(BaseAgent):
         metadata = input_data.get("metadata", {})
 
         deliveries: List[Dict] = []
-        sent = failed = skipped = 0
+        sent = failed = skipped = drafted = 0
 
         for channel, content in variants.items():
             if channel not in SUPPORTED_CHANNELS:
@@ -89,6 +89,8 @@ class DistributionAgent(BaseAgent):
 
             if result["status"] == "sent":
                 sent += 1
+            elif result["status"] == "draft":
+                drafted += 1
             else:
                 failed += 1
 
@@ -97,6 +99,7 @@ class DistributionAgent(BaseAgent):
             "summary": {
                 "total": len(variants),
                 "sent": sent,
+                "drafted": drafted,
                 "failed": failed,
                 "skipped": skipped,
             },
@@ -135,13 +138,13 @@ class DistributionAgent(BaseAgent):
                 "timestamp": datetime.now().isoformat(),
             }
         except ImportError:
-            logger.info("telegram_service not available, returning payload for caller dispatch")
+            logger.warning("telegram_service not available; returning draft payload for caller dispatch")
             return {
                 "channel": "telegram",
-                "status": "sent",
+                "status": "draft",
                 "message_id": f"payload-{company_id}-{datetime.now().timestamp()}",
                 "payload": {"recipient": recipient, "text": content},
-                "note": "telegram_service not wired; payload returned",
+                "note": "telegram_service not wired; payload returned for caller dispatch (not actually sent)",
             }
         except Exception as e:
             logger.error(f"Telegram dispatch failed: {e}")

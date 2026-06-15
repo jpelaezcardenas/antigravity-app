@@ -7,6 +7,7 @@ Aligns with Sight AI "SEO Strategist" role for campaign planning with ROI optimi
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 import logging
+import re
 from agents.base_agent import BaseAgent, AgentRole, AgentOutput
 
 logger = logging.getLogger(__name__)
@@ -154,7 +155,7 @@ Return ONLY valid JSON, no additional text."""
         # Score and rank
         ranked = []
         for opt in options:
-            if opt["option_id"] in relevant_ids:
+            if opt.get("option_id") in relevant_ids:
                 # Adjust score based on budget fit
                 budget_fit = min(budget / sum(opt["budget_allocation"].values()), 1.0)
                 opt["relevance_score"] = (opt["estimated_roi"] * budget_fit) * 100
@@ -336,6 +337,17 @@ Return ONLY valid JSON."""
             "note": "Fallback hashtags - LLM parsing failed"
         }
 
+    @staticmethod
+    def _parse_weeks(timeline: Any, default: int = 4) -> int:
+        """Parse a '<N> weeks' timeline string into an integer week count."""
+        if isinstance(timeline, (int, float)):
+            return int(timeline)
+        if isinstance(timeline, str):
+            match = re.search(r"\d+", timeline)
+            if match:
+                return int(match.group())
+        return default
+
     def recommend_combination(self, objectives: List[str], budget: float) -> Dict:
         """
         Recommend a combination of workflows for multiple objectives
@@ -347,24 +359,42 @@ Return ONLY valid JSON."""
         Returns:
             Recommended campaign combination with allocation
         """
-        total_allocation = {}
+        if not objectives:
+            return {
+                "combination": {},
+                "total_roi": 0.0,
+                "duration_weeks": 0,
+                "total_posts": 0,
+                "rationale": "No objectives provided; nothing to recommend",
+            }
+
+        per_objective_budget = budget / len(objectives)
+        total_allocation: Dict[str, Dict] = {}
 
         for obj in objectives:
-            # Generate options for each objective
-            options = self._generate_options(obj, {}, budget / len(objectives), 4, [])
-            if options:
-                # Get top option
-                top = self._rank_options(options, obj, budget / len(objectives))[0]
-                total_allocation[obj] = {
-                    "workflow": top["workflow_type"],
-                    "budget": budget / len(objectives),
-                    "estimated_roi": top["estimated_roi"]
-                }
+            # Generate and rank options for each objective
+            options = self._generate_options(obj, {}, per_objective_budget, 4, [])
+            ranked = self._rank_options(options, obj, per_objective_budget)
+            if not ranked:
+                # No option matched this objective; skip it instead of crashing on [0]
+                continue
+            top = ranked[0]
+            total_allocation[obj] = {
+                "workflow": top.get("workflow_type"),
+                "budget": per_objective_budget,
+                "estimated_roi": top.get("estimated_roi", 0),
+                "timeline": top.get("timeline", "4 weeks"),
+                "posts_count": top.get("posts_count", 0),
+            }
 
         return {
             "combination": total_allocation,
             "total_roi": sum(a["estimated_roi"] for a in total_allocation.values()),
-            "duration_weeks": max(opt.get("timeline", "4 weeks") for opt in total_allocation.values()),
-            "total_posts": sum(opt.get("posts_count", 0) for opt in total_allocation.values()),
-            "rationale": "Combination approach balances multiple objectives for maximum impact"
+            # Numeric max over parsed week counts; default 0 when nothing was allocated
+            "duration_weeks": max(
+                (self._parse_weeks(a["timeline"]) for a in total_allocation.values()),
+                default=0,
+            ),
+            "total_posts": sum(a.get("posts_count", 0) for a in total_allocation.values()),
+            "rationale": "Combination approach balances multiple objectives for maximum impact",
         }

@@ -1,0 +1,19 @@
+[build]
+dockerfile = "Dockerfile.vaultwarden"
+context = "."
+
+[deploy]
+numReplicas = 1
+startCommand = "docker-compose -f docker-compose.vaultwarden.yml --profile prod up"
+healthcheckPath = "/alive"
+healthcheckInterval = 30
+
+[environments]
+production.DOMAIN = "https://vault.contexia.online"
+production.MAIL_ENABLED = "true"
+production.DATABASE_URL = "postgresql://vaultwarden:${POSTGRES_PASSWORD}@postgres.railway.internal:5432/vaultwarden"
+
+[services]
+postgres.image = "postgres:15-alpine"
+postgres.environment.POSTGRES_DB = "vaultwarden"
+postgres.environment.POSTGRES_USER = "vaultwarden"
