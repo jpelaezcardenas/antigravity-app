@@ -1,0 +1,34 @@
+# Excluir directorios y archivos grandes
+node_modules/
+.claude/
+.cursor/
+.git/
+.github/
+.next/
+.vercel/
+build/
+dist/
+.DS_Store
+*.log
+.env.local
+.env.*.local
+
+# Frontend builds
+frontend/*/node_modules/
+frontend/*/.next/
+frontend/*/dist/
+
+# Backend
+backend/*/node_modules/
+backend/*/.venv/
+backend/*/__pycache__/
+
+# OpenSpec / specs (no necesarios en deploy)
+specs/
+openspec/
+ai-specs/
+.antigravity/
+
+# Worktrees (solo dev)
+.claude/worktrees/
+.cursor/worktrees/
