@@ -38,6 +38,8 @@ MANIFEST
 
 # Sensitive files
 cookies.json
+scripts/keeper-populate-vault.cmd
+load-env.ps1
 
 # VS Code
 .vscode/
