@@ -13,10 +13,10 @@
 | T1 | Keeper CSV Export | ✅ Complete | 2026-06-15 | 2026-06-15 | Juan | 330 secrets validated |
 | T2 | Bitwarden Cloud Account | ✅ Complete | 2026-06-15 | 2026-06-15 | Juan | jpelaezcardenas@gmail.com, 2FA, API keys ✅ |
 | T3 | bw CLI Install | ⏳ Ready | 2026-06-15 | 2026-06-15 | Dev | Verified locally + Railway |
-| T4 | Data Import (BW) | ⏳ Pending | 2026-06-16 | 2026-06-16 | Dev | 300+ items via bw import |
-| T5 | Folder Organization | ⏳ Pending | 2026-06-16 | 2026-06-17 | Juan | Infrastructure, LLM, Ops, Personal |
-| T6 | API Key Validation | ⏳ Pending | 2026-06-16 | 2026-06-17 | Dev+Infra | All providers tested (Groq, OpenAI, etc.) |
-| T7 | SecretsProvider Module | ⏳ Pending | 2026-06-17 | 2026-06-17 | Dev | 500 LOC, 2 providers, type-safe |
+| T4 | Data Import (BW) | ✅ Complete | 2026-06-16 | 2026-06-15 | Dev | 330 items imported manually ✅ |
+| T5 | Folder Organization | ✅ Complete | 2026-06-16 | 2026-06-15 | Juan | 9 folders organized by zone ✅ |
+| T6 | API Key Validation | ⏳ Ready | 2026-06-16 | 2026-06-17 | Dev+Infra | All 6 providers ready for validation |
+| T7 | SecretsProvider Module | ✅ Complete | 2026-06-17 | 2026-06-17 | Dev | Code in apps/backend/core/ ✅ |
 | T8 | /api/v1/secrets/health | ⏳ Pending | 2026-06-18 | 2026-06-18 | Dev | FastAPI endpoint, <500ms latency |
 | T9 | Unit Tests | ⏳ Pending | 2026-06-17 | 2026-06-17 | QA | 12 tests, >90% coverage |
 | T10 | Railway Env Vars | ⏳ Pending | 2026-06-18 | 2026-06-18 | Infra | 5 variables set + masked |
