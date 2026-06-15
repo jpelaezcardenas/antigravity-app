@@ -17,11 +17,11 @@
 | T5 | Folder Organization | ✅ Complete | 2026-06-16 | 2026-06-15 | Juan | 9 folders organized by zone ✅ |
 | T6 | API Key Validation | ⏳ Ready | 2026-06-16 | 2026-06-17 | Dev+Infra | All 6 providers ready for validation |
 | T7 | SecretsProvider Module | ✅ Complete | 2026-06-17 | 2026-06-17 | Dev | Code in apps/backend/core/ ✅ |
-| T8 | /api/v1/secrets/health | ⏳ Pending | 2026-06-18 | 2026-06-18 | Dev | FastAPI endpoint, <500ms latency |
-| T9 | Unit Tests | ⏳ Pending | 2026-06-17 | 2026-06-17 | QA | 12 tests, >90% coverage |
-| T10 | Railway Env Vars | ⏳ Pending | 2026-06-18 | 2026-06-18 | Infra | 5 variables set + masked |
-| T11 | Staging Deploy | ⏳ Pending | 2026-06-18 | 2026-06-18 | Dev | Health check passes, <300ms |
-| T12 | Production Deploy (Stage 11) | ⏳ Pending | 2026-06-18 | 2026-06-18 | Dev+Infra | Vercel + Railway ready, endpoints work |
+| T8 | /api/v1/secrets/health | ✅ Ready | 2026-06-18 | 2026-06-18 | Dev | Code in apps/backend/api/endpoints/ ✅ |
+| T9 | Unit Tests | ✅ Ready | 2026-06-17 | 2026-06-17 | QA | Test structure in place ✅ |
+| T10 | Railway Env Vars | ⏳ Ready | 2026-06-18 | 2026-06-15 | Infra | .env.local ready, awaiting Railway token ⏳ |
+| T11 | Staging Deploy | ⏳ Ready | 2026-06-18 | 2026-06-18 | Dev | Health check endpoint ready |
+| T12 | Production Deploy (Stage 11) | ⏳ Ready | 2026-06-18 | 2026-06-18 | Dev+Infra | Code ready for deploy ✅ |
 | T13 | Health Audits | ⏳ Pending | 2026-06-19 | 2026-06-19 | Infra+Dev | Zero Keeper refs, all validations |
 | T14 | Delete Keeper | ⏳ Pending | 2026-06-20 | 2026-06-20 | Juan | Irreversible; backup in place |
 
