@@ -1,34 +1,51 @@
-# Excluir directorios y archivos grandes
+# AGRESIVO: excluir todo lo de desarrollo/build
 node_modules/
+**/node_modules/
+.next/
+**/.next/
+build/
+dist/
+.vercel/
+.venv/
+venv/
+__pycache__/
+
+# IDE y dev
 .claude/
 .cursor/
 .git/
 .github/
-.next/
-.vercel/
-build/
-dist/
-.DS_Store
+.vscode/
+.idea/
+
+# Specs y docs (no necesarios en deploy)
+specs/
+docs/
+ai-specs/
+openspec/
+.antigravity/
+README*
+**/*.md
+
+# Logs y temporales
 *.log
+*.tmp
+.DS_Store
 .env.local
 .env.*.local
 
-# Frontend builds
-frontend/*/node_modules/
-frontend/*/.next/
-frontend/*/dist/
+# Compilados/build
+build/
+dist/
+.next/
 
-# Backend
-backend/*/node_modules/
-backend/*/.venv/
-backend/*/__pycache__/
+# Monorepo - excluir source de directorios que no se usan en deploy
+contexia-app/
+contexia-wizard/
+frontend/
+backend/
+copiloto-contratos-eafit/
 
-# OpenSpec / specs (no necesarios en deploy)
-specs/
-openspec/
-ai-specs/
-.antigravity/
-
-# Worktrees (solo dev)
+# Worktrees
 .claude/worktrees/
 .cursor/worktrees/
