@@ -60,7 +60,7 @@ Keeper CSV export contains **330 valid secrets** across personal and Contexia co
 
 | Component | Value | Status |
 |-----------|-------|--------|
-| **Bot Token** | `8959294336:AAGd_oN1EPUBz4K8uPXdgndPa21TSbyuXaw` | âœ… |
+| **Bot Token** | `[REDACTED_TELEGRAM_TOKEN]` | âœ… |
 | **Webhook URL** | `https://antigravity-app-production-175a.up.railway.app/api/v1/channels/telegram/webhook` | âœ… |
 | **Webhook Secret** | `taty-secret-key-change-in-production` | âš ï¸ (placeholder, needs rotation) |
 
