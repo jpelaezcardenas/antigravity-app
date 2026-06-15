@@ -1,4 +1,4 @@
-# T11-T14: Final Execution Plan
+﻿# T11-T14: Final Execution Plan
 
 **Date:** 2026-06-15  
 **Owner:** Juan David (Infra Lead)  
@@ -11,7 +11,7 @@
 ```bash
 # Current state
 git branch -v
-# Output: fix/security-bug-audit-2026-06-14 ✅ (ready to merge)
+# Output: fix/security-bug-audit-2026-06-14 âœ… (ready to merge)
 
 git log --oneline -1
 # Output: 5f0c38e docs: final status summary (PRODUCTION READY)
@@ -23,7 +23,7 @@ curl https://contexia.online/api/v1/secrets/health
 
 ---
 
-## T11: Staging Deploy ✅ Ready
+## T11: Staging Deploy âœ… Ready
 
 **What it is:** Verify code builds in staging environment
 
@@ -35,7 +35,7 @@ curl https://contexia.online/api/v1/secrets/health
    git merge fix/security-bug-audit-2026-06-14
    git push origin develop
    ```
-   → Railway auto-deploys to staging
+   â†’ Railway auto-deploys to staging
 
 2. **Verify staging deploy (10 min):**
    ```bash
@@ -46,11 +46,11 @@ curl https://contexia.online/api/v1/secrets/health
    railway logs --follow
    ```
 
-3. **If staging passes → proceed to T12**
+3. **If staging passes â†’ proceed to T12**
 
 ---
 
-## T12: Production Deploy (Stage 11) ⏳ READY
+## T12: Production Deploy (Stage 11) â³ READY
 
 **What it is:** Merge code to `main` and deploy to production
 
@@ -72,9 +72,9 @@ git merge origin/fix/security-bug-audit-2026-06-14 --no-edit
 git push origin main
 ```
 
-### Step 2: SET RAILWAY ENV VARS (CRITICAL ⚠️)
+### Step 2: SET RAILWAY ENV VARS (CRITICAL âš ï¸)
 
-**Go to:** https://railway.app → antigravity-app → backend-production → Variables
+**Go to:** https://railway.app â†’ antigravity-app â†’ backend-production â†’ Variables
 
 **Add these 5:**
 ```
@@ -82,16 +82,16 @@ SECRETS_BACKEND = bitwarden
 BW_VAULT_URL = https://vault.bitwarden.com
 BW_CLIENT_ID = user.a0b41278-dbb2-49e1-b67e-b46a013270c7
 BW_CLIENT_SECRET = 8VDctT1xHKUwuSQY7yQJ4xkoHrJwlh
-BW_MASTER_PASSWORD = Lindafea0712*
+BW_MASTER_PASSWORD = [REDACTED_MASTER_PASSWORD]
 ```
 
-**Save → Railway auto-redeploys**
+**Save â†’ Railway auto-redeploys**
 
 ### Step 3: Verify Production Deploy (15 min)
 
 ```bash
 # Check Vercel: https://vercel.com/luna-del-cerro/contexia-web-app
-# Status: All green checkmarks ✅
+# Status: All green checkmarks âœ…
 
 # Check Railway: https://railway.app
 # Status: "Ready" (green)
@@ -117,18 +117,18 @@ curl https://contexia.online/api/v1/secrets/health
 }
 
 # If you get error:
-# - Check Railway env vars are set ✅
+# - Check Railway env vars are set âœ…
 # - Check logs: railway logs --follow
-# - Check Keeper export is in Bitwarden ✅
+# - Check Keeper export is in Bitwarden âœ…
 ```
 
 ---
 
-## T13: Health Audits ⏳ READY
+## T13: Health Audits â³ READY
 
 **What it is:** Validate all systems working (1 hour)
 
-**Prerequisites:** T12 health check returns 200 ✅
+**Prerequisites:** T12 health check returns 200 âœ…
 
 ### Test 1: Health Endpoint (5 min)
 
@@ -139,9 +139,9 @@ for i in {1..5}; do
 done
 
 # Expected:
-# - Response 200 ✅
-# - Latency <500ms ✅
-# - No errors ✅
+# - Response 200 âœ…
+# - Latency <500ms âœ…
+# - No errors âœ…
 ```
 
 ### Test 2: LLM Providers (30 min)
@@ -214,29 +214,29 @@ cat > T13-HEALTH-AUDITS-2026-06-15.md << 'EOF'
 ## Test Results
 
 ### Health Endpoint
-- ✅ Response: 200
-- ✅ Latency: <500ms
-- ✅ Format: Valid JSON
+- âœ… Response: 200
+- âœ… Latency: <500ms
+- âœ… Format: Valid JSON
 
 ### LLM Providers (6/6)
-- ✅ GROQ: 200
-- ✅ OPENAI: 200
-- ✅ GEMINI: 200
-- ✅ MISTRAL: 200
-- ✅ CEREBRAS: 200
-- ✅ OPENROUTER: 200
+- âœ… GROQ: 200
+- âœ… OPENAI: 200
+- âœ… GEMINI: 200
+- âœ… MISTRAL: 200
+- âœ… CEREBRAS: 200
+- âœ… OPENROUTER: 200
 
 ### Backend Integration
-- ✅ Chat endpoint: 200
-- ✅ No credential errors
+- âœ… Chat endpoint: 200
+- âœ… No credential errors
 
 ### Code Audit
-- ✅ Zero Keeper references
-- ✅ All credentials in Bitwarden
-- ✅ No secrets in logs
+- âœ… Zero Keeper references
+- âœ… All credentials in Bitwarden
+- âœ… No secrets in logs
 
 ## Conclusion
-✅ **ALL TESTS PASSED** — Ready for T14 (Keeper deletion)
+âœ… **ALL TESTS PASSED** â€” Ready for T14 (Keeper deletion)
 
 ## Sign-Off
 - Auditor: [Your name]
@@ -250,16 +250,16 @@ git commit -m "docs: T13 health audits complete (all 6 providers + endpoint veri
 
 ---
 
-## T14: Delete Keeper ☠️ IRREVERSIBLE
+## T14: Delete Keeper â˜ ï¸ IRREVERSIBLE
 
-**⚠️ CRITICAL: This cannot be undone. Only execute after T13 passes.**
+**âš ï¸ CRITICAL: This cannot be undone. Only execute after T13 passes.**
 
 ### Prerequisites Checklist
-- [ ] T13 health audits all PASSED ✅
-- [ ] All 6 LLM providers working ✅
-- [ ] Health endpoint returning 200 ✅
-- [ ] Bitwarden backup exported ✅
-- [ ] Team approval obtained ✅
+- [ ] T13 health audits all PASSED âœ…
+- [ ] All 6 LLM providers working âœ…
+- [ ] Health endpoint returning 200 âœ…
+- [ ] Bitwarden backup exported âœ…
+- [ ] Team approval obtained âœ…
 
 ### Step 1: Backup Keeper (Safety net)
 
@@ -301,21 +301,21 @@ cat > T14-KEEPER-DELETION-APPROVAL-2026-06-15.md << 'EOF'
 **Approved By:** [Team lead]  
 
 ## Pre-Deletion Checklist
-- ✅ T13 health audits passed
-- ✅ All LLM providers validated
-- ✅ Bitwarden backup created (30-day retention)
-- ✅ Zero Keeper references in code
-- ✅ Team approval obtained
+- âœ… T13 health audits passed
+- âœ… All LLM providers validated
+- âœ… Bitwarden backup created (30-day retention)
+- âœ… Zero Keeper references in code
+- âœ… Team approval obtained
 
 ## Deletion Executed
 - Time: 2026-06-15 [time]
 - Command: `bw delete item <keeper-vault-id>`
-- Status: ✅ COMPLETE
+- Status: âœ… COMPLETE
 
 ## Post-Deletion Verification
-- ✅ No Keeper items in Bitwarden
-- ✅ No Keeper references in git logs
-- ✅ Production still operational (health check 200)
+- âœ… No Keeper items in Bitwarden
+- âœ… No Keeper references in git logs
+- âœ… Production still operational (health check 200)
 
 ## Backup Location
 - File: `/Backups/bitwarden-backup-2026-06-15.json` (encrypted)
@@ -323,7 +323,7 @@ cat > T14-KEEPER-DELETION-APPROVAL-2026-06-15.md << 'EOF'
 - Reason: Disaster recovery only
 
 ## Conclusion
-✅ **KEEPER DELETION COMPLETE** — Migration successful
+âœ… **KEEPER DELETION COMPLETE** â€” Migration successful
 
 ## Signatures
 - Executed: [Your name] at 2026-06-15 [time]
@@ -340,11 +340,11 @@ git push origin main
 ## Timeline
 
 ```
-NOW            T11 ✅ Staging (0-30 min)
-T11 +30min     T12 ✅ Production merge (15 min) + env vars (5 min) + verify (15 min)
-T12 +1hr       T13 ✅ Health audits (60 min)
-T13 +2hrs      T14 ☠️ Keeper deletion (5 min)
-TOTAL: 2:30hrs 🎉 Migration complete
+NOW            T11 âœ… Staging (0-30 min)
+T11 +30min     T12 âœ… Production merge (15 min) + env vars (5 min) + verify (15 min)
+T12 +1hr       T13 âœ… Health audits (60 min)
+T13 +2hrs      T14 â˜ ï¸ Keeper deletion (5 min)
+TOTAL: 2:30hrs ðŸŽ‰ Migration complete
 ```
 
 ---
@@ -373,7 +373,7 @@ git push origin main
 
 ---
 
-## Next Steps (After T14 ✅)
+## Next Steps (After T14 âœ…)
 
 1. **Phase 2 Decision Gate** (2026-07-04)
    - Monitor Bitwarden stability for 2 weeks
@@ -399,7 +399,8 @@ git push origin main
 
 ---
 
-**Status:** ✅ READY TO EXECUTE  
+**Status:** âœ… READY TO EXECUTE  
 **Execution Owner:** Juan David  
 **Approval Required:** TBD  
 **Timeline:** 2:30 hours  
+

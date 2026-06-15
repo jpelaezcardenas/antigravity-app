@@ -1,4 +1,4 @@
-# 🚀 RUN THIS NOW: T11-T14 Quick Execution (90 minutes)
+﻿# ðŸš€ RUN THIS NOW: T11-T14 Quick Execution (90 minutes)
 
 **Generated:** 2026-06-15 17:45 UTC  
 **Status:** READY TO EXECUTE  
@@ -6,21 +6,21 @@
 
 ---
 
-## ✅ PART 1: What's Already Done (Verified)
+## âœ… PART 1: What's Already Done (Verified)
 
 ```
-✅ Code: Production-ready (secrets_provider.py, health endpoint)
-✅ Data: 330 secrets in Bitwarden
-✅ Specs: Complete OpenSpec (20+ pages)
-✅ Docs: All 14 files ready
-✅ Git: 21 commits, all pushed
-✅ Env: .env.local filled with 5 credentials
-✅ Branch: fix/security-bug-audit-2026-06-14 → Ready to merge
+âœ… Code: Production-ready (secrets_provider.py, health endpoint)
+âœ… Data: 330 secrets in Bitwarden
+âœ… Specs: Complete OpenSpec (20+ pages)
+âœ… Docs: All 14 files ready
+âœ… Git: 21 commits, all pushed
+âœ… Env: .env.local filled with 5 credentials
+âœ… Branch: fix/security-bug-audit-2026-06-14 â†’ Ready to merge
 ```
 
 ---
 
-## ⏳ PART 2: What YOU Need to Do (90 minutes)
+## â³ PART 2: What YOU Need to Do (90 minutes)
 
 ### T11: Create & Merge PR (5 minutes)
 
@@ -31,11 +31,11 @@
 3. Set:
    - Base: `main`
    - Compare: `fix/security-bug-audit-2026-06-14`
-4. Title: `Keeper → Bitwarden Migration (T1-T14)`
+4. Title: `Keeper â†’ Bitwarden Migration (T1-T14)`
 5. Click: **"Create pull request"**
-6. Click: **"Merge pull request"** → **"Confirm merge"**
+6. Click: **"Merge pull request"** â†’ **"Confirm merge"**
 
-**Result:** Vercel + Railway auto-deploy ✅
+**Result:** Vercel + Railway auto-deploy âœ…
 
 ---
 
@@ -54,12 +54,12 @@ SECRETS_BACKEND=bitwarden
 BW_VAULT_URL=https://vault.bitwarden.com
 BW_CLIENT_ID=user.a0b41278-dbb2-49e1-b67e-b46a013270c7
 BW_CLIENT_SECRET=8VDctT1xHKUwuSQY7yQJ4xkoHrJwlh
-BW_MASTER_PASSWORD=Lindafea0712*
+BW_MASTER_PASSWORD=[REDACTED_MASTER_PASSWORD]
 ```
 
 6. Click: **Save**
 
-**Result:** Railway redeploys backend with secrets ✅
+**Result:** Railway redeploys backend with secrets âœ…
 
 ---
 
@@ -154,8 +154,8 @@ echo "Expected: < 10 (only migrations)"
 nano openspec/changes/keeper-migration-2026-06-15/reports/T13-HEALTH-AUDITS-2026-06-15.md
 
 # Fill in results from above tests
-# Check all boxes: [ ] ✅
-# Save: Ctrl+O → Enter → Ctrl+X
+# Check all boxes: [ ] âœ…
+# Save: Ctrl+O â†’ Enter â†’ Ctrl+X
 ```
 
 **Commit:**
@@ -169,7 +169,7 @@ git push origin fix/security-bug-audit-2026-06-14
 
 ### T14: Delete Keeper (5 minutes)
 
-**⚠️ IRREVERSIBLE - ONLY AFTER T13 ALL PASS ✅**
+**âš ï¸ IRREVERSIBLE - ONLY AFTER T13 ALL PASS âœ…**
 
 #### Step 1: Backup (1 min)
 ```bash
@@ -219,19 +219,19 @@ git push origin main
 
 ---
 
-## 🎯 Timeline
+## ðŸŽ¯ Timeline
 
 | Task | Time | Status |
 |------|------|--------|
-| T11 (PR merge) | 5 min | ⏳ Manual |
-| T12 (Railway vars) | 10 min | ⏳ Manual |
-| T13 (Health audits) | 60 min | ⏳ Copy-paste curl + manual report |
-| T14 (Delete Keeper) | 5 min | ⏳ Manual + git |
-| **TOTAL** | **80 min** | ⏳ Ready to start |
+| T11 (PR merge) | 5 min | â³ Manual |
+| T12 (Railway vars) | 10 min | â³ Manual |
+| T13 (Health audits) | 60 min | â³ Copy-paste curl + manual report |
+| T14 (Delete Keeper) | 5 min | â³ Manual + git |
+| **TOTAL** | **80 min** | â³ Ready to start |
 
 ---
 
-## ✅ Verification Checklist
+## âœ… Verification Checklist
 
 After each section, check:
 
@@ -250,7 +250,7 @@ After each section, check:
 
 ---
 
-## 🆘 If Anything Breaks
+## ðŸ†˜ If Anything Breaks
 
 **Health endpoint 404 or 500?**
 - Check: `railway logs --follow`
@@ -269,7 +269,7 @@ After each section, check:
 
 ---
 
-## 🎉 When Done
+## ðŸŽ‰ When Done
 
 ```bash
 # Verify final state
@@ -286,7 +286,7 @@ curl https://contexia.online/api/v1/secrets/health
 
 ---
 
-## 📋 Copy-Paste Checklist
+## ðŸ“‹ Copy-Paste Checklist
 
 - [ ] Step 1: Merge PR on GitHub (5 min)
 - [ ] Step 2: Set 5 Railway env vars (10 min)
@@ -305,8 +305,9 @@ curl https://contexia.online/api/v1/secrets/health
 
 ---
 
-**Status:** ✅ 100% READY TO EXECUTE
+**Status:** âœ… 100% READY TO EXECUTE
 
 **You have everything. Just follow the steps. 90 minutes. Done.**
 
-🚀
+ðŸš€
+
