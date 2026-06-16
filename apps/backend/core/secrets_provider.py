@@ -87,20 +87,41 @@ class BitwardenCloudProvider(SecretsProvider):
         if self._session_token and self._session_expires > now:
             return
 
+        # bw reads API-key credentials from BW_CLIENTID/BW_CLIENTSECRET env vars
+        base_env = {
+            **os.environ,
+            "BW_CLIENTID": self.client_id,
+            "BW_CLIENTSECRET": self.client_secret,
+            "BW_BASEURL": self.vault_url,
+        }
+
         try:
-            result = subprocess.run(
-                ["bw", "login", "--apikey", "--raw"],
-                input=f"{self.client_id}\n{self.client_secret}\n{self.master_password}",
+            # 1. Authenticate the account with the API key.
+            #    Idempotent: an existing session reports "already logged in".
+            login = subprocess.run(
+                ["bw", "login", "--apikey"],
                 capture_output=True,
                 text=True,
-                timeout=10,
-                env={**os.environ, "BW_BASEURL": self.vault_url},
+                timeout=20,
+                env=base_env,
             )
-            if result.returncode == 0:
-                self._session_token = result.stdout.strip()
-                self._session_expires = now + 3600
-            else:
-                raise RuntimeError(f"bw login failed: {result.stderr}")
+            combined = f"{login.stdout}\n{login.stderr}".lower()
+            if login.returncode != 0 and "already logged in" not in combined:
+                raise RuntimeError(f"bw login failed: {login.stderr.strip()}")
+
+            # 2. Unlock the vault with the master password to get a session token.
+            unlock = subprocess.run(
+                ["bw", "unlock", "--passwordenv", "BW_PASSWORD", "--raw"],
+                capture_output=True,
+                text=True,
+                timeout=20,
+                env={**base_env, "BW_PASSWORD": self.master_password},
+            )
+            if unlock.returncode != 0:
+                raise RuntimeError(f"bw unlock failed: {unlock.stderr.strip()}")
+
+            self._session_token = unlock.stdout.strip()
+            self._session_expires = now + 3600
         except Exception as e:
             logger.error(f"BitwardenProvider auth failed: {e}")
             raise
