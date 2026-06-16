@@ -77,7 +77,13 @@ class BitwardenCloudProvider(SecretsProvider):
             if result.returncode != 0:
                 logger.error(f"bw error: {result.stderr}")
                 raise RuntimeError(f"bw command failed: {result.stderr}")
-            return json.loads(result.stdout) if result.stdout else {}
+            if not result.stdout:
+                return {}
+            # Some bw commands (e.g. `sync`) return plain text, not JSON.
+            try:
+                return json.loads(result.stdout)
+            except json.JSONDecodeError:
+                return {"raw": result.stdout.strip()}
         except Exception as e:
             logger.error(f"BitwardenProvider._run_bw error: {e}")
             raise
