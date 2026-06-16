@@ -98,3 +98,9 @@ contexia-wizard/public/contexia-logo*.png
 # Social Media OPs (separate workspace)
 Social Media OPs Systems/
 
+
+# Local agent state & worktrees (not for deploy) — added 2026-06-15
+.claude/
+.cursor/
+.codex/
+venv_contexia/

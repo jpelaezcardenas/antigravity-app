@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type AdminNavId = 'dashboard' | 'campaign' | 'content' | 'calendar' | 'editor' | 'operations' | 'config' | 'onboarding';
+export type AdminNavId = 'dashboard' | 'campaign' | 'content' | 'calendar' | 'editor' | 'operations' | 'agentic-ops' | 'config' | 'onboarding';
 
 export default function AdminShell(props: {
   active: AdminNavId;
@@ -26,6 +26,7 @@ export default function AdminShell(props: {
     { id: 'crm', label: 'CRM / Ventas' },
     { id: 'onboarding', label: 'Onboarding' },
     { id: 'social', label: 'Social Content Ops' },
+    { id: 'agentic-ops', label: '🤖 Agentic OS' },
     { id: 'config', label: 'Configuración' },
   ];
 

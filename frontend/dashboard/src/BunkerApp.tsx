@@ -13,6 +13,7 @@ import LocalCampaignWorkflow from './components/workflows/LocalCampaignWorkflow'
 import RetargetingWorkflow from './components/workflows/RetargetingWorkflow';
 import OnboardingOps from './components/ops/OnboardingOps';
 import SocialContentOps from './components/ops/SocialContentOps';
+import AgenticOpsView from './components/ops/AgenticOpsView';
 import AdminShell, { type AdminNavId } from './components/layout/AdminShell';
 
 type TabType = AdminNavId;
@@ -266,6 +267,13 @@ const BunkerApp: React.FC = () => {
         {activeTab === 'operations' && (
           <SocialContentOps />
         )}
+
+        {/* AGENTIC OPS TAB */}
+        {activeTab === 'agentic-ops' && (
+          <AgenticOpsView />
+        )}
+
+        {/* ONBOARDING TAB */}
         {activeTab === 'onboarding' && (
           <OnboardingOps />
         )}
