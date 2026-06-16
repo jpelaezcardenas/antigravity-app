@@ -20,14 +20,22 @@ export default async function handler(req: Request) {
 
     const signature = computeHmacSignature(HERMES_WEBHOOK_SECRET, payload);
 
+    // 8s abort guard so we fail fast instead of hitting Vercel's function timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
     const gatewayResponse = await fetch(`${HERMES_GATEWAY_URL}/webhooks/os-status`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Hermes-Signature': signature,
+        // localtunnel shows an interstitial page to cloud IPs without this header
+        'bypass-tunnel-reminder': 'true',
+        'User-Agent': 'contexia-bunker/1.0',
       },
       body: payload,
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeout));
 
     const data = await gatewayResponse.json();
 
