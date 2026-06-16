@@ -1,4 +1,13 @@
-# AGRESIVO: excluir todo lo de desarrollo/build
+# Backend (deploys to Railway, NOT Vercel) — 81 MB incl. .venv
+apps/
+venv_contexia/
+**/.venv/
+**/venv/
+**/__pycache__/
+**/.pytest_cache/
+
+# Frontend builds / dev
+_next/
 node_modules/
 **/node_modules/
 .next/
@@ -6,11 +15,8 @@ node_modules/
 build/
 dist/
 .vercel/
-.venv/
-venv/
-__pycache__/
 
-# IDE y dev
+# IDE & version control
 .claude/
 .cursor/
 .git/
@@ -18,34 +24,23 @@ __pycache__/
 .vscode/
 .idea/
 
-# Specs y docs (no necesarios en deploy)
+# Docs & specs (not needed in deployed app)
 specs/
 docs/
 ai-specs/
 openspec/
 .antigravity/
-README*
-**/*.md
 
-# Logs y temporales
-*.log
-*.tmp
-.DS_Store
-.env.local
-.env.*.local
-
-# Compilados/build
-build/
-dist/
-.next/
-
-# Monorepo - excluir source de directorios que no se usan en deploy
+# Monorepo projects not served by this Vercel deploy
 contexia-app/
 contexia-wizard/
 frontend/
 backend/
 copiloto-contratos-eafit/
 
-# Worktrees
-.claude/worktrees/
-.cursor/worktrees/
+# Logs & temps
+*.log
+*.tmp
+.DS_Store
+.env.local
+.env.*.local
