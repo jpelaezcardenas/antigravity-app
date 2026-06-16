@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from typing import Dict, Any
-from apps.backend.core.secrets_provider import get_provider, SecretsProvider
+from core.secrets_provider import get_provider, SecretsProvider
 
 router = APIRouter(prefix="/secrets", tags=["secrets"])
 

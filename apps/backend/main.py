@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from presentation.router import api_router
 from presentation.health_endpoints import router as health_router
-from api.endpoints.secrets_endpoints import router as secrets_router
 from core.middleware import SecurityHeadersMiddleware, RequestLoggingMiddleware
 from config import settings
 from middleware_config import apply_middleware
@@ -69,22 +68,16 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Incluir routers
 api_router.include_router(health_router)
+
+# Secrets router — imported defensively so a failure never crashes app startup
 try:
+    from api.endpoints.secrets_endpoints import router as secrets_router
     api_router.include_router(secrets_router)
+    logger.info("Secrets router registered successfully")
 except Exception as e:
     logger.error(f"Failed to include secrets_router: {e}")
 
 app.include_router(api_router, prefix="/api/v1")
-
-# Fallback: Direct health endpoint if router import fails
-@app.get("/api/v1/secrets/health")
-async def secrets_health_fallback():
-    return {
-        "status": "healthy",
-        "provider": "bitwarden-cloud",
-        "latency_ms": 10,
-        "vault_url": "https://vault.bitwarden.com"
-    }
 
 
 if __name__ == "__main__":
