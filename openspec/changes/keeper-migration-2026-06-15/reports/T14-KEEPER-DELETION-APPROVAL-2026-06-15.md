@@ -1,5 +1,22 @@
 ﻿# T14: Keeper Deletion Approval Report
 
+> ## DECISION (2026-06-15): HOLD until 2026-07-04
+>
+> GATE 2 passed (Bitwarden health check healthy) after fixing 6 backend defects.
+> Rather than delete Keeper irreversibly on day 1, keep Keeper as a **read-only
+> backup for ~2 weeks** and delete it at the Phase 2 decision gate (**2026-07-04**),
+> once Bitwarden Cloud stability is proven.
+>
+> - [x] Bitwarden health check healthy (GATE 2)
+> - [ ] Bitwarden backup export taken (`bitwarden-backup-2026-06-15.json`, encrypted_json)
+> - [ ] Keeper kept read-only (do not add new secrets to Keeper)
+> - [ ] **2026-07-04:** review stability, then delete Keeper vault in Keeper's web/app
+> - [ ] **2026-07-15:** delete the 30-day backup export
+>
+> Note: "deleting Keeper" is a **manual action in Keeper's own web/app** (the legacy
+> password manager being retired), NOT a `bw delete item` command. The `bw` commands
+> in the template below refer to the Bitwarden vault, not to Keeper.
+
 **Date:** 2026-06-15  
 **Executed By:** [Your name]  
 **Approved By:** [Team lead]  
