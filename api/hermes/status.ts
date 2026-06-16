@@ -20,7 +20,8 @@ const HERMES_GATEWAY_URL =
 const HERMES_WEBHOOK_SECRET = process.env.HERMES_WEBHOOK_SECRET || '';
 
 function computeHmacSignature(secret: string, payload: string): string {
-  return createHmac('sha256', secret).update(payload).digest('base64');
+  // Hermes generic webhook scheme: hex HMAC-SHA256 over the raw body
+  return createHmac('sha256', secret).update(payload).digest('hex');
 }
 
 export default async function handler(req: Req, res: Res): Promise<void> {
@@ -45,8 +46,9 @@ export default async function handler(req: Req, res: Res): Promise<void> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Hermes-Signature': signature,
-        // localtunnel/cloudflared interstitial bypass + non-browser UA
+        // Hermes generic webhook auth: X-Webhook-Signature = hex HMAC-SHA256(body)
+        'X-Webhook-Signature': signature,
+        // cloudflared/localtunnel interstitial bypass + non-browser UA
         'bypass-tunnel-reminder': 'true',
         'User-Agent': 'contexia-bunker/1.0',
       },
