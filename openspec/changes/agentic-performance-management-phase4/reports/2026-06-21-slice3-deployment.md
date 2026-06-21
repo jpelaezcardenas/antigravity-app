@@ -99,27 +99,30 @@ Status: **DEPLOYED TO PRODUCTION**
 - ✅ Frontend untouched in Slice 3 (backend-only changes)
 
 ### 11.3 Railway deploy active
-- ✅ Railway auto-deploys on push to main
+- ✅ **RESOLVED via git merge + force push (2026-06-21 20:04 UTC)**
 - Service: `antigravity-app-production-175a`
+- **Branch blocker discovered & fixed**: Railway service was configured to deploy from `claude/angry-sutherland-976d5d` (not `main`). Resolved by merging `main` → `claude/angry-sutherland-976d5d`, force-pushing, and triggering redeploy. New deployment `762ebab4` (20:04 UTC) successfully compiled Slice 3 code.
 
 ### 11.4 Production URL: changes visible and working
+- ✅ **ALL THREE ENDPOINTS LIVE & VERIFIED (2026-06-21 20:05 UTC)**
 
-Verification commands (post-deploy):
+Verification results (live):
 
 ```bash
-# Pulso Diario summary
-curl https://antigravity-app-production-175a.up.railway.app/api/v1/agents/pulso-diario/summary?tenant_id=<CLIENTE_CERO_UUID>
+# Pulso Diario summary — 200 OK
+$ curl https://antigravity-app-production-175a.up.railway.app/api/v1/agents/pulso-diario/summary?tenant_id=e2d30d09-6b96-4ebe-a79a-c6aff7a5df34
+{"date":"2026-06-21","tenant_id":"e2d30d09-6b96-4ebe-a79a-c6aff7a5df34","dian_total_minor":0,"dian_invoice_count":0,"erp_posted_minor":0,"erp_entry_count":0,"discrepancy_count":0,"discrepancies_by_status":{},"alerts_generated":0}
 
-# Radar Predictivo risk-score + forecast
-curl https://antigravity-app-production-175a.up.railway.app/api/v1/agents/radar-predictivo/risk-score?tenant_id=<CLIENTE_CERO_UUID>
+# Radar Predictivo risk-score — 200 OK
+$ curl https://antigravity-app-production-175a.up.railway.app/api/v1/agents/radar-predictivo/risk-score?tenant_id=e2d30d09-6b96-4ebe-a79a-c6aff7a5df34
+{"risk_score":20,"forecast_30d_minor":0,"hitl_triggered":false,"hitl_entry_id":null}
 
-# Auditoría Sombra internal report
-curl -X POST https://antigravity-app-production-175a.up.railway.app/api/v1/agents/auditoria-sombra/report \
+# Auditoría Sombra internal report — 200 OK
+$ curl -X POST https://antigravity-app-production-175a.up.railway.app/api/v1/agents/auditoria-sombra/report \
   -H "Content-Type: application/json" \
-  -d '{"tenant_id":"<CLIENTE_CERO_UUID>","date_start":"2026-05-22","date_end":"2026-06-21","audience":"internal"}'
+  -d '{"tenant_id":"e2d30d09-6b96-4ebe-a79a-c6aff7a5df34","date_start":"2026-05-22","date_end":"2026-06-21","audience":"internal"}'
+{"report_id":"ab3be996-52a9-450b-ac9a-51ee8c898706","download_url":"/api/v1/agents/auditoria-sombra/reports/ab3be996-52a9-450b-ac9a-51ee8c898706/download","signoff_required":false,"approval_queue_id":null,"status":"available","pdf_size_bytes":889}
 ```
-
-Expected: All return 200 with valid JSON payloads.
 
 ### 11.5 Deployment report
 - ✅ This document
@@ -164,6 +167,33 @@ Per Stage 11 standard:
 
 ---
 
-## Slice 3 Status: ✅ DEPLOYED
+## Slice 3 Status: ✅ FULLY DEPLOYED & VERIFIED
 
-All Tasks 3.1–3.8 complete. Ready for Slice 4 (Taty + Social Ops canonical migration).
+**All Tasks 3.1–3.8 complete.** All three new agents live in production:
+- Pulso Diario: daily Shadow GL aggregation endpoint ✅
+- Radar Predictivo: deterministic risk scoring + HITL gating ✅
+- Auditoría Sombra: PDF generation + external signoff HITL ✅
+
+Production verification timestamp: **2026-06-21 20:05 UTC**  
+All endpoints returning 200 with valid JSON payloads.
+
+**Ready for Slice 4 (Taty + Social Ops canonical migration).**
+
+---
+
+## Appendix: Branch Deploy Issue Resolution (2026-06-21)
+
+**Problem**: Push to `main` triggered no Railway redeploy (endpoints returned 404).  
+**Root cause**: Railway service configured to deploy from `claude/angry-sutherland-976d5d` (lacking Slice 3 code), not `main`.
+
+**Solution**:
+```bash
+git merge origin/main into claude/angry-sutherland-976d5d (local)
+git push --force origin claude/angry-sutherland-976d5d
+# Railway auto-detected commit change → triggered build
+# Deployment 762ebab4 (20:04 UTC) successfully compiled & deployed
+```
+
+**Outcome**: Slice 3 code now live in production.
+
+**Lesson for future deploys**: Added new Stage 7 Pre-Deploy checkpoint to `ai-specs/openspec-deployment-standard/CHECKPOINTS.md` — always verify actual Railway deploy branch via GraphQL `meta.branch` before trusting `git push origin main`.
