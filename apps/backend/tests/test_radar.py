@@ -145,3 +145,41 @@ class TestRadar:
 
         # Same inputs should give same score
         assert score1 == score2
+
+    def test_cashflow_forecast_returns_int(self, supabase, cliente_cero_tenant_id) -> None:
+        """
+        Cashflow forecast returns a 30-day projection in minor units (BIGINT).
+        Expected: forecast is deterministic and >= 0.
+        """
+        import asyncio
+        from services.radar_service import calculate_cashflow_forecast
+
+        forecast = asyncio.run(calculate_cashflow_forecast(cliente_cero_tenant_id))
+        assert isinstance(forecast, int)
+        assert forecast >= 0
+
+    def test_cashflow_forecast_with_history(
+        self, supabase, cliente_cero_tenant_id, radar_cufe, _cleanup
+    ) -> None:
+        """
+        Cashflow forecast based on historical net flux (DIAN - ERP).
+        With DIAN invoices and no ERP entries, forecast should be > 0.
+        """
+        import asyncio
+        from services.radar_service import calculate_cashflow_forecast
+
+        # Ingest DIAN XML
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        xml = _invoice_xml(radar_cufe, total="119000.00", issue_date=today)
+
+        success, doc, error = asyncio.run(ingest_dian_xml(cliente_cero_tenant_id, xml))
+        assert success is True
+        _cleanup.append(radar_cufe)
+
+        supabase.rpc("refresh_shadow_gl_discrepancies").execute()
+
+        # Calculate forecast
+        forecast = asyncio.run(calculate_cashflow_forecast(cliente_cero_tenant_id))
+        assert isinstance(forecast, int)
+        # With one DIAN invoice (119000.00 = 11900000 minor) and no ERP, net flux is positive
+        assert forecast > 0

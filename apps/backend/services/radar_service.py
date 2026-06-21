@@ -171,3 +171,78 @@ async def calculate_risk_score(tenant_id: str, date: Optional[str] = None) -> in
     total_score = min(100, factor_discrepancy + factor_mismatch + factor_alerts + factor_overdue)
 
     return int(total_score)
+
+
+async def calculate_cashflow_forecast(tenant_id: str, days: int = 30) -> int:
+    """
+    Calculate a 30-day cashflow forecast (minor units) based on historical net flux.
+
+    Net flux = sum(DIAN invoiced) - sum(ERP posted) over the last 30 days.
+    Forecast = (net_flux / historical_days) × forecast_days
+
+    Args:
+        tenant_id: UUID of the tenant
+        days: Forecast horizon in days (default: 30)
+
+    Returns:
+        int: Projected net cashflow for the next N days in minor units. >= 0.
+             Returns 0 if no historical data.
+    """
+    supabase = get_supabase()
+
+    try:
+        # Calculate lookback window (last 30 days)
+        today = datetime.utcnow()
+        lookback_start = today - timedelta(days=30)
+        lookback_start_str = lookback_start.isoformat() + "Z"
+        today_str = today.isoformat() + "Z"
+
+        # Sum DIAN invoiced in lookback window
+        dian_rows = (
+            supabase.table("dian_xml_documents")
+            .select("total_amount_minor")
+            .eq("tenant_id", tenant_id)
+            .gte("created_at", lookback_start_str)
+            .lte("created_at", today_str)
+            .execute()
+        )
+        total_dian_minor = sum(row["total_amount_minor"] for row in dian_rows.data)
+
+        # Sum ERP posted in lookback window
+        erp_entries = (
+            supabase.table("erp_journal_entries")
+            .select("id")
+            .eq("tenant_id", tenant_id)
+            .gte("created_at", lookback_start_str)
+            .lte("created_at", today_str)
+            .execute()
+        )
+
+        total_erp_minor = 0
+        if erp_entries.data:
+            erp_lines = (
+                supabase.table("erp_journal_lines")
+                .select("debit_minor")
+                .eq("tenant_id", tenant_id)
+                .in_("entry_id", [row["id"] for row in erp_entries.data])
+                .execute()
+            )
+            total_erp_minor = sum(line["debit_minor"] for line in erp_lines.data)
+
+        # Net flux over lookback period
+        net_flux_minor = total_dian_minor - total_erp_minor
+
+        # Project to forecast horizon
+        # If we have 30 days of history, project for the next N days
+        if net_flux_minor > 0:
+            # Simple linear projection: (net_flux / 30) × forecast_days
+            forecast_minor = int((net_flux_minor / 30) * days)
+        else:
+            # If net flux is 0 or negative, forecast is 0 (conservative)
+            forecast_minor = 0
+
+        return forecast_minor
+
+    except Exception as e:
+        logger.warning(f"Error calculating cashflow forecast for tenant {tenant_id}: {e}")
+        return 0
