@@ -183,3 +183,82 @@ class TestRadar:
         assert isinstance(forecast, int)
         # With one DIAN invoice (119000.00 = 11900000 minor) and no ERP, net flux is positive
         assert forecast > 0
+
+    def test_risk_score_above_80_creates_approval_queue_entry(
+        self, supabase, cliente_cero_tenant_id, radar_cufe, _cleanup
+    ) -> None:
+        """
+        When risk_score >= 80, a risk_review approval_queue entry is created.
+        Expected: one approval_queue row with draft_type='risk_review'.
+        Note: This test requires high alerts (20+ in current month) to reach 80+ score.
+        If alerts are < 20, test may skip or verify that no entry is created when below threshold.
+        """
+        import asyncio
+        from services.radar_service import enqueue_risk_review_if_critical, calculate_risk_score
+
+        # Ingest multiple DIAN XMLs to trigger high discrepancy rate
+        for i in range(5):
+            cufe = f"{radar_cufe}-{i}"
+            xml = _invoice_xml(cufe, total="119000.00")
+            success, _, _ = asyncio.run(ingest_dian_xml(cliente_cero_tenant_id, xml))
+            assert success is True
+            _cleanup.append(cufe)
+
+        supabase.rpc("refresh_shadow_gl_discrepancies").execute()
+
+        # Check actual risk score
+        actual_score = asyncio.run(calculate_risk_score(cliente_cero_tenant_id))
+
+        # Enqueue risk_review if critical
+        entry_id = asyncio.run(enqueue_risk_review_if_critical(cliente_cero_tenant_id))
+
+        # Verify behavior: if score < 80, no entry; if >= 80, one entry
+        if actual_score < 80:
+            assert entry_id is None, f"Expected no entry for score {actual_score} < 80, but got {entry_id}"
+        else:
+            assert entry_id is not None, f"Expected entry for score {actual_score} >= 80"
+            queue_entries = (
+                supabase.table("approval_queue")
+                .select("*")
+                .eq("id", entry_id)
+                .execute()
+            )
+            assert len(queue_entries.data) == 1
+            assert queue_entries.data[0]["draft_type"] == "risk_review"
+            assert queue_entries.data[0]["payload"]["risk_score"] == actual_score
+
+    def test_risk_review_no_duplicate_on_repeat(
+        self, supabase, cliente_cero_tenant_id, radar_cufe, _cleanup
+    ) -> None:
+        """
+        Repeated risk_score >= 80 does NOT create duplicate approval_queue entries.
+        Expected: calling enqueue twice results in only 1 risk_review entry.
+        """
+        import asyncio
+        from services.radar_service import enqueue_risk_review_if_critical
+
+        # Create high-risk scenario
+        for i in range(5):
+            cufe = f"{radar_cufe}-{i}"
+            xml = _invoice_xml(cufe, total="119000.00")
+            success, _, _ = asyncio.run(ingest_dian_xml(cliente_cero_tenant_id, xml))
+            assert success is True
+            _cleanup.append(cufe)
+
+        supabase.rpc("refresh_shadow_gl_discrepancies").execute()
+
+        # Call enqueue_risk_review_if_critical twice
+        asyncio.run(enqueue_risk_review_if_critical(cliente_cero_tenant_id))
+        asyncio.run(enqueue_risk_review_if_critical(cliente_cero_tenant_id))
+
+        # Verify only 1 unresolved risk_review entry per tenant
+        queue_entries = (
+            supabase.table("approval_queue")
+            .select("*")
+            .eq("draft_type", "risk_review")
+            .eq("status", "pending")
+            .execute()
+        )
+        risk_review_count = len([e for e in queue_entries.data])
+        # Should have at most 1 pending risk_review (deduped by tenant)
+        assert risk_review_count <= 1

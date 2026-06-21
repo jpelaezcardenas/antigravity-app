@@ -15,6 +15,7 @@ Zero-division safe: defaults to 0 if no history.
 from __future__ import annotations
 
 import logging
+import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -246,3 +247,73 @@ async def calculate_cashflow_forecast(tenant_id: str, days: int = 30) -> int:
     except Exception as e:
         logger.warning(f"Error calculating cashflow forecast for tenant {tenant_id}: {e}")
         return 0
+
+
+RISK_REVIEW_THRESHOLD = 80
+
+
+async def enqueue_risk_review_if_critical(tenant_id: str) -> Optional[str]:
+    """
+    If risk_score >= 80, enqueue a risk_review approval_queue entry.
+    If a pending risk_review entry already exists for this tenant, skip (no duplicate).
+
+    Args:
+        tenant_id: UUID of the tenant
+
+    Returns:
+        str: ID of the created approval_queue entry, or None if no entry created.
+    """
+    supabase = get_supabase()
+
+    try:
+        # Calculate current risk score
+        score = await calculate_risk_score(tenant_id)
+
+        # Check if score is critical
+        if score < RISK_REVIEW_THRESHOLD:
+            logger.info(f"Risk score {score} below threshold {RISK_REVIEW_THRESHOLD} for tenant {tenant_id}, no HITL triggered")
+            return None
+
+        # Check if a pending risk_review entry already exists
+        existing = (
+            supabase.table("approval_queue")
+            .select("id")
+            .eq("draft_type", "risk_review")
+            .eq("status", "pending")
+            .execute()
+        )
+
+        if existing.data:
+            logger.info(f"Pending risk_review already exists for tenant {tenant_id}, skipping duplicate")
+            return None
+
+        # Calculate cashflow forecast
+        forecast = await calculate_cashflow_forecast(tenant_id)
+
+        # Create risk_review approval_queue entry
+        payload = {
+            "risk_score": score,
+            "forecast_30d_minor": forecast,
+            "tenant_id": tenant_id,
+            "threshold": RISK_REVIEW_THRESHOLD,
+        }
+
+        entry = supabase.table("approval_queue").insert(
+            {
+                "id": str(uuid.uuid4()),
+                "draft_type": "risk_review",
+                "payload": payload,
+                "status": "pending",
+                "reason": f"Risk score {score} exceeds threshold {RISK_REVIEW_THRESHOLD}",
+                "vectorization_status": "pending",
+                "created_at": datetime.utcnow().isoformat() + "Z",
+            }
+        ).execute()
+
+        created_id = entry.data[0]["id"] if entry.data else None
+        logger.info(f"Created risk_review approval_queue entry {created_id} for tenant {tenant_id} (score {score})")
+        return created_id
+
+    except Exception as e:
+        logger.error(f"Error enqueueing risk_review for tenant {tenant_id}: {e}")
+        return None
