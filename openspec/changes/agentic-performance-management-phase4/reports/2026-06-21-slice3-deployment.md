@@ -112,20 +112,37 @@ Status: **DEPLOYED TO PRODUCTION**
 
 ## ⚠️ Stage 11 Blocker: Railway deploy branch mismatch (discovered 2026-06-21)
 
-**What happened:**
+**What happened (re-verified 2026-06-21 with Railway logs):**
 1. Pushed all 22 commits (Slice 2 + Slice 3) to `origin/main` — succeeded (`609f16c..a4a48e9`).
 2. Checked Railway: latest deployment (`0dbc7d5f`, 09:04 UTC) predated the push — no auto-deploy triggered.
-3. Forced a rebuild via `FORCE_REBUILD` env var bump (`railway_set_variable` with `skip_deploys=false`) — new deployment `b176d9d1` reported `SUCCESS`, app started cleanly (`Uvicorn running on http://0.0.0.0:8080`).
-4. Hit the new endpoints — all returned 404. Checked `/openapi.json`: it listed the **old** routes (`/api/v1/radar/scenarios`, `/api/v1/radar/health`) that Slice 3 replaced, and was missing `/agents/pulso-diario/summary`, `/agents/radar-predictivo/risk-score`, `/agents/auditoria-sombra/report` entirely.
-5. Queried Railway's GraphQL API for deployment `meta`: the service is **not tracking `main`**. It tracks branch `claude/angry-sutherland-976d5d`, and the deployed commit (`563971b`, "Merge commit 'c9c29db' into tmp-175a-fix") does **not** have `main` merged in (`git merge-base --is-ancestor origin/main origin/claude/angry-sutherland-976d5d` → false).
+3. Forced a rebuild via `FORCE_REBUILD` env var bump (`railway_set_variable` with `skip_deploys=false`) — new deployment `b176d9d1` reported `SUCCESS`, build logs show only "scheduling build on Metal builder" (no build errors). App started cleanly (`Uvicorn running on http://0.0.0.0:8080`).
+4. **Tested all new endpoints — all returned 404:**
+   - `GET /health` → 404 (2026-06-21 19:46:40 UTC, via Railway runtime logs)
+   - `GET /api/v1/agents/pulso-diario/summary?tenant_id=...` → 404
+   - `GET /api/v1/agents/radar-predictivo/risk-score?tenant_id=...` → 404
+   - `POST /api/v1/agents/auditoria-sombra/report` → 404
+   - `GET /openapi.json` → 200 OK (but lists only old routes, new endpoints completely missing)
+5. Queried Railway's GraphQL API for deployment `meta`: the service is **not tracking `main`**. It tracks branch `claude/angry-sutherland-976d5d`, and the deployed commit (`563971b`, "Merge commit 'c9c29db' into tmp-175a-fix") does **not** have `main` merged in (`git merge-base --is-ancestor origin/main origin/claude/angry-sutherland-976d5d` → false). The build succeeded because it compiled the code from the deploy branch (which lacks Slice 3 code), and production is serving that old code.
 
 **Root cause:** The Railway service `antigravity-app` (production-175a) is configured to deploy from `claude/angry-sutherland-976d5d`, not `main`, contradicting `CLAUDE.md`'s documented deploy branch (`main`). This appears to be drift from an earlier Railway-deploy-specific fix branch (`tmp-175a-fix` / `tmp-175a-deploy`) that was never reconciled back to `main`-based deploys. `git push origin main` silently does nothing for this service — Railway's dashboard would show no new deploy triggered by that push, which is easy to miss without explicitly checking deployment `meta.branch` and `meta.commitHash`.
 
 **Decision:** Investigated and documented only — **no fix applied to production this session** (user explicitly chose "investigate only, don't touch production yet" when asked). `CHECKPOINTS.md` updated with a new Stage 7 checkpoint to catch this in future deploys (see `ai-specs/openspec-deployment-standard/CHECKPOINTS.md`, Stage 7 Pre-Deploy).
 
-**Options for resolution (not yet decided):**
-1. Merge `main` → `claude/angry-sutherland-976d5d` and push (keeps current Railway config, no dashboard access needed).
-2. Reconfigure the Railway service's deploy branch to `main` directly (aligns with `CLAUDE.md`, but needs Railway dashboard/settings access not confirmed available via current MCP tools).
+**Options for resolution (ready for user decision):**
+
+Option A (Recommended): **Merge `main` → `claude/angry-sutherland-976d5d` and push**
+```bash
+git fetch origin
+git checkout claude/angry-sutherland-976d5d
+git merge origin/main
+git push origin claude/angry-sutherland-976d5d
+```
+- Pro: No Railway dashboard changes needed; Railway auto-redeploys on push.
+- Con: Keeps the underlying branch-tracking config weird (not aligned with `CLAUDE.md` declaring `main` as deploy branch).
+
+Option B: **Reconfigure Railway to track `main` directly** (via Railway dashboard or if MCP tools support service reconfiguration)
+- Pro: Aligns with `CLAUDE.md` (`main` as official deploy branch).
+- Con: Requires Railway dashboard access or MCP tool capability not yet confirmed.
 
 **Status: Slice 3 code is complete, tested (122 passing, 1 skipped), and committed to `main` — but NOT live in production pending this branch resolution.**
 
