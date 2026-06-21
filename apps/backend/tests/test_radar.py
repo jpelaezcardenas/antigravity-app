@@ -15,10 +15,12 @@ import uuid
 from datetime import datetime, timedelta
 
 import pytest
+from fastapi.testclient import TestClient
 
 from core.supabase_client import get_supabase
 from services.shadow_gl_service import ingest_dian_xml
 from services.radar_service import calculate_risk_score
+from presentation.radar_endpoints import router as radar_router
 
 pytestmark = pytest.mark.skipif(
     os.environ.get("RUN_SHADOW_GL") != "1",
@@ -82,6 +84,15 @@ def _cleanup(supabase, cliente_cero_tenant_id):
             "evidence", {"cufe": cufe}
         ).execute()
     supabase.rpc("refresh_shadow_gl_discrepancies").execute()
+
+
+@pytest.fixture
+def radar_client():
+    """Test client for Radar endpoints."""
+    from fastapi import FastAPI
+    app = FastAPI()
+    app.include_router(radar_router)
+    return TestClient(app)
 
 
 class TestRadar:
@@ -262,3 +273,32 @@ class TestRadar:
         risk_review_count = len([e for e in queue_entries.data])
         # Should have at most 1 pending risk_review (deduped by tenant)
         assert risk_review_count <= 1
+
+    def test_risk_score_endpoint_returns_valid_json(
+        self, radar_client, supabase, cliente_cero_tenant_id, radar_cufe, _cleanup
+    ) -> None:
+        """
+        GET /risk-score endpoint returns valid RiskScoreResponse JSON.
+        """
+        import asyncio
+
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        xml = _invoice_xml(radar_cufe, total="119000.00", issue_date=today)
+
+        success, _, _ = asyncio.run(ingest_dian_xml(cliente_cero_tenant_id, xml))
+        assert success is True
+        _cleanup.append(radar_cufe)
+
+        supabase.rpc("refresh_shadow_gl_discrepancies").execute()
+
+        # Call endpoint
+        response = radar_client.get(f"/risk-score?tenant_id={cliente_cero_tenant_id}")
+        assert response.status_code == 200
+
+        data = response.json()
+        assert "risk_score" in data
+        assert "forecast_30d_minor" in data
+        assert "hitl_triggered" in data
+        assert isinstance(data["risk_score"], int)
+        assert isinstance(data["forecast_30d_minor"], int)
+        assert isinstance(data["hitl_triggered"], bool)
