@@ -1,13 +1,14 @@
 """
 Approval Queue Endpoints
 
+GET  /api/v1/approval-queue - List drafts (filter by status, draft_type)
 POST /api/v1/approval-queue/enqueue - Enqueue draft with Critic validation
 POST /api/v1/approval-queue/approve - Approve a draft and trigger vectorization
 POST /api/v1/approval-queue/reject - Reject a draft
 """
 
-from fastapi import APIRouter, HTTPException
-from typing import List
+from fastapi import APIRouter, HTTPException, Query
+from typing import List, Optional
 from pydantic import BaseModel
 import logging
 
@@ -50,6 +51,52 @@ class ApprovalResponse(BaseModel):
     decision_id: str
     status: str
     error: str = ""
+
+
+class DraftListItem(BaseModel):
+    id: str
+    draft_id: str
+    draft_type: str
+    status: str
+    reason: str
+    payload: dict
+    created_at: str
+
+
+class DraftListResponse(BaseModel):
+    drafts: List[DraftListItem]
+
+
+@router.get("", response_model=DraftListResponse)
+async def list_drafts(
+    status: Optional[str] = Query(default=None),
+    draft_type: Optional[str] = Query(default=None),
+):
+    """
+    List drafts across all draft types. Defaults to no filtering; pass
+    `status=pending_approval` to see only items awaiting review.
+    """
+    try:
+        decisions = await ApprovalQueueService.list_drafts(
+            status=status, draft_type=draft_type
+        )
+        return DraftListResponse(
+            drafts=[
+                DraftListItem(
+                    id=d.id,
+                    draft_id=d.draft_id,
+                    draft_type=d.draft_type,
+                    status=d.status.value,
+                    reason=d.reason,
+                    payload=d.payload,
+                    created_at=d.created_at.isoformat(),
+                )
+                for d in decisions
+            ]
+        )
+    except Exception as e:
+        logger.error(f"List drafts endpoint error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/enqueue", response_model=ApprovalResponse)

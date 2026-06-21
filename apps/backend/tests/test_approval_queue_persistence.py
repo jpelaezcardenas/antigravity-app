@@ -109,6 +109,66 @@ class TestEnqueuePersistence:
         assert decision.draft_type == "risk_review"
 
 
+class TestListDrafts:
+    @pytest.mark.asyncio
+    async def test_list_returns_pending_drafts_across_draft_types(self, supabase, _cleanup) -> None:
+        _, tax_decision, _ = await ApprovalQueueService.enqueue_draft(
+            draft_id=str(uuid.uuid4()),
+            draft_type="tax_correction",
+            journal_entry=_balanced_journal_entry(),
+        )
+        _, risk_decision, _ = await ApprovalQueueService.enqueue_draft(
+            draft_id=str(uuid.uuid4()),
+            draft_type="risk_review",
+            journal_entry={"risk_score": 91},
+        )
+        _cleanup.append(tax_decision.id)
+        _cleanup.append(risk_decision.id)
+
+        rows = await ApprovalQueueService.list_drafts(status="pending_approval")
+        ids = {row.id for row in rows}
+        assert tax_decision.id in ids
+        assert risk_decision.id in ids
+
+    @pytest.mark.asyncio
+    async def test_list_filters_by_draft_type(self, supabase, _cleanup) -> None:
+        _, tax_decision, _ = await ApprovalQueueService.enqueue_draft(
+            draft_id=str(uuid.uuid4()),
+            draft_type="tax_correction",
+            journal_entry=_balanced_journal_entry(),
+        )
+        _, risk_decision, _ = await ApprovalQueueService.enqueue_draft(
+            draft_id=str(uuid.uuid4()),
+            draft_type="risk_review",
+            journal_entry={"risk_score": 91},
+        )
+        _cleanup.append(tax_decision.id)
+        _cleanup.append(risk_decision.id)
+
+        rows = await ApprovalQueueService.list_drafts(draft_type="risk_review")
+        ids = {row.id for row in rows}
+        assert risk_decision.id in ids
+        assert tax_decision.id not in ids
+
+    @pytest.mark.asyncio
+    async def test_list_excludes_resolved_drafts_when_status_filtered(self, supabase, _cleanup) -> None:
+        _, decision, _ = await ApprovalQueueService.enqueue_draft(
+            draft_id=str(uuid.uuid4()),
+            draft_type="tax_correction",
+            journal_entry=_balanced_journal_entry(),
+        )
+        _cleanup.append(decision.id)
+        await ApprovalQueueService.approve_draft(
+            decision_id=decision.id,
+            approval_reason="ok",
+            approved_by="contador@contexia.com",
+        )
+
+        rows = await ApprovalQueueService.list_drafts(status="pending_approval")
+        ids = {row.id for row in rows}
+        assert decision.id not in ids
+
+
 class TestApproveRejectPersistence:
     @pytest.mark.asyncio
     async def test_approve_updates_row_and_returns_immediately(self, supabase, _cleanup) -> None:

@@ -9,7 +9,7 @@ import asyncio
 import logging
 import uuid
 from datetime import datetime
-from typing import Tuple, Dict, Any, Optional
+from typing import Tuple, Dict, Any, List, Optional
 
 from agents.agent_critic import validate_journal_entry
 from core.supabase_client import get_supabase
@@ -95,6 +95,29 @@ class ApprovalQueueService:
         except Exception as e:
             logger.error(f"Approval queue enqueue error: {str(e)}")
             return False, None, str(e)
+
+    @staticmethod
+    async def list_drafts(
+        status: Optional[str] = None,
+        draft_type: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+    ) -> List[ApprovalDecision]:
+        """
+        List drafts across all draft_type values, optionally filtered by
+        status, draft_type, and tenant_id.
+        """
+        supabase = get_supabase()
+        query = supabase.table("approval_queue").select("*")
+
+        if status:
+            query = query.eq("status", status)
+        if draft_type:
+            query = query.eq("draft_type", draft_type)
+        if tenant_id:
+            query = query.eq("tenant_id", tenant_id)
+
+        result = query.order("created_at", desc=True).execute()
+        return [_row_to_decision(row) for row in result.data]
 
     @staticmethod
     async def approve_draft(
