@@ -8,8 +8,9 @@ Reports are read-only with respect to Shadow GL tables.
 from __future__ import annotations
 
 import logging
+import uuid
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Optional, Dict, Any
 
 from core.supabase_client import get_supabase
 
@@ -185,3 +186,140 @@ ET
     lines.append(b"%%EOF")
 
     return b"\n".join(lines)
+
+
+AUDIT_REPORT_SIGNOFF_DRAFT_TYPE = "audit_report_signoff"
+
+
+async def request_audit_report(
+    tenant_id: str,
+    date_start: str,
+    date_end: str,
+    audience: Audience = "internal",
+) -> Dict[str, Any]:
+    """
+    Request an audit report with appropriate HITL gating.
+
+    Internal reports return download URL immediately.
+    External reports enqueue audit_report_signoff approval, withhold URL until approved.
+
+    Args:
+        tenant_id: UUID of the tenant
+        date_start: Start date (YYYY-MM-DD)
+        date_end: End date (YYYY-MM-DD)
+        audience: "internal" (no HITL) or "external" (requires signoff)
+
+    Returns:
+        Dict with keys:
+        - download_url: str | None (None if pending external signoff)
+        - signoff_required: bool
+        - approval_queue_id: str | None
+        - status: "available" | "pending_signoff"
+        - report_id: str (UUID for tracking)
+    """
+    # Always generate the PDF (read-only operation on Shadow GL)
+    pdf_bytes = await generate_audit_report(tenant_id, date_start, date_end, audience)
+    report_id = str(uuid.uuid4())
+
+    if audience == "internal":
+        # Internal: immediate download, no HITL
+        # In production, pdf_bytes would be uploaded to S3/Supabase Storage
+        # For now, return a placeholder URL
+        download_url = f"/api/v1/agents/auditoria-sombra/reports/{report_id}/download"
+        return {
+            "report_id": report_id,
+            "download_url": download_url,
+            "signoff_required": False,
+            "approval_queue_id": None,
+            "status": "available",
+            "pdf_size_bytes": len(pdf_bytes),
+        }
+
+    # External: enqueue audit_report_signoff approval
+    supabase = get_supabase()
+
+    payload = {
+        "tenant_id": tenant_id,
+        "date_start": date_start,
+        "date_end": date_end,
+        "audience": "external",
+        "report_id": report_id,
+        "pdf_size_bytes": len(pdf_bytes),
+    }
+
+    entry = supabase.table("approval_queue").insert(
+        {
+            "id": str(uuid.uuid4()),
+            "draft_id": report_id,
+            "draft_type": AUDIT_REPORT_SIGNOFF_DRAFT_TYPE,
+            "payload": payload,
+            "status": "pending",
+            "reason": f"External audit report signoff required for period {date_start} to {date_end}",
+            "vectorization_status": "pending",
+            "created_at": datetime.utcnow().isoformat() + "Z",
+        }
+    ).execute()
+
+    approval_queue_id = entry.data[0]["id"] if entry.data else None
+    logger.info(
+        f"Enqueued external audit report signoff {approval_queue_id} for tenant {tenant_id}"
+    )
+
+    return {
+        "report_id": report_id,
+        "download_url": None,
+        "signoff_required": True,
+        "approval_queue_id": approval_queue_id,
+        "status": "pending_signoff",
+        "pdf_size_bytes": len(pdf_bytes),
+    }
+
+
+async def get_audit_report_status(approval_queue_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Get the current status of an audit report request.
+
+    Args:
+        approval_queue_id: ID of the approval_queue entry
+
+    Returns:
+        Dict with keys:
+        - status: "pending_signoff" | "available" | "rejected"
+        - download_url: str | None (None if pending or rejected)
+        - approval_queue_id: str
+    """
+    supabase = get_supabase()
+
+    entry = (
+        supabase.table("approval_queue")
+        .select("*")
+        .eq("id", approval_queue_id)
+        .single()
+        .execute()
+    )
+
+    if not entry.data:
+        return None
+
+    queue_status = entry.data["status"]
+    payload = entry.data.get("payload", {})
+    report_id = payload.get("report_id")
+
+    if queue_status == "approved":
+        return {
+            "status": "available",
+            "download_url": f"/api/v1/agents/auditoria-sombra/reports/{report_id}/download",
+            "approval_queue_id": approval_queue_id,
+        }
+    elif queue_status == "rejected":
+        return {
+            "status": "rejected",
+            "download_url": None,
+            "approval_queue_id": approval_queue_id,
+        }
+    else:
+        return {
+            "status": "pending_signoff",
+            "download_url": None,
+            "approval_queue_id": approval_queue_id,
+        }

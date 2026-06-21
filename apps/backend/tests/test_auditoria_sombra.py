@@ -195,3 +195,126 @@ class TestAuditoriaSombra:
 
         # Should be unchanged
         assert count_before == count_after
+
+    def test_internal_report_returns_download_url_immediately(
+        self, supabase, cliente_cero_tenant_id, audit_cufe, _cleanup
+    ) -> None:
+        """
+        Internal report request returns download URL immediately, no approval queue.
+        Expected: download_url is non-None, no approval_queue entry.
+        """
+        import asyncio
+        from services.auditoria_sombra_service import request_audit_report
+
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        xml = _invoice_xml(audit_cufe, total="119000.00", issue_date=today)
+
+        success, _, _ = asyncio.run(ingest_dian_xml(cliente_cero_tenant_id, xml))
+        assert success is True
+        _cleanup.append(audit_cufe)
+
+        supabase.rpc("refresh_shadow_gl_discrepancies").execute()
+
+        date_start = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
+        date_end = datetime.utcnow().strftime("%Y-%m-%d")
+
+        result = asyncio.run(
+            request_audit_report(cliente_cero_tenant_id, date_start, date_end, audience="internal")
+        )
+
+        assert result is not None
+        assert result["download_url"] is not None
+        assert result["signoff_required"] is False
+        assert result["approval_queue_id"] is None
+        assert result["status"] == "available"
+
+    def test_external_report_requires_signoff(
+        self, supabase, cliente_cero_tenant_id, audit_cufe, _cleanup
+    ) -> None:
+        """
+        External report request creates audit_report_signoff approval_queue entry.
+        Expected: download_url is None until approved, approval_queue_id is set.
+        """
+        import asyncio
+        from services.auditoria_sombra_service import request_audit_report
+
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        xml = _invoice_xml(audit_cufe, total="119000.00", issue_date=today)
+
+        success, _, _ = asyncio.run(ingest_dian_xml(cliente_cero_tenant_id, xml))
+        assert success is True
+        _cleanup.append(audit_cufe)
+
+        supabase.rpc("refresh_shadow_gl_discrepancies").execute()
+
+        date_start = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
+        date_end = datetime.utcnow().strftime("%Y-%m-%d")
+
+        result = asyncio.run(
+            request_audit_report(cliente_cero_tenant_id, date_start, date_end, audience="external")
+        )
+
+        assert result is not None
+        assert result["download_url"] is None
+        assert result["signoff_required"] is True
+        assert result["approval_queue_id"] is not None
+        assert result["status"] == "pending_signoff"
+
+        # Verify approval_queue entry exists with draft_type='audit_report_signoff'
+        queue_entry = (
+            supabase.table("approval_queue")
+            .select("*")
+            .eq("id", result["approval_queue_id"])
+            .single()
+            .execute()
+        )
+        assert queue_entry.data["draft_type"] == "audit_report_signoff"
+        assert queue_entry.data["status"] == "pending"
+        assert "tenant_id" in queue_entry.data["payload"]
+        assert "date_start" in queue_entry.data["payload"]
+        assert "date_end" in queue_entry.data["payload"]
+
+        # Cleanup
+        supabase.table("approval_queue").delete().eq("id", result["approval_queue_id"]).execute()
+
+    def test_rejected_external_report_remains_inaccessible(
+        self, supabase, cliente_cero_tenant_id, audit_cufe, _cleanup
+    ) -> None:
+        """
+        When external report signoff is rejected, download URL remains None.
+        Expected: report status becomes 'rejected', download_url stays None.
+        """
+        import asyncio
+        from services.auditoria_sombra_service import request_audit_report, get_audit_report_status
+
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        xml = _invoice_xml(audit_cufe, total="119000.00", issue_date=today)
+
+        success, _, _ = asyncio.run(ingest_dian_xml(cliente_cero_tenant_id, xml))
+        assert success is True
+        _cleanup.append(audit_cufe)
+
+        supabase.rpc("refresh_shadow_gl_discrepancies").execute()
+
+        date_start = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
+        date_end = datetime.utcnow().strftime("%Y-%m-%d")
+
+        # Request external report
+        result = asyncio.run(
+            request_audit_report(cliente_cero_tenant_id, date_start, date_end, audience="external")
+        )
+        approval_id = result["approval_queue_id"]
+
+        # Reject via approval_queue update
+        supabase.table("approval_queue").update(
+            {"status": "rejected", "reason": "External audit not approved"}
+        ).eq("id", approval_id).execute()
+
+        # Check status
+        status_result = asyncio.run(get_audit_report_status(approval_id))
+        assert status_result is not None
+        assert status_result["status"] == "rejected"
+        assert status_result["download_url"] is None
+
+        # Cleanup
+        supabase.table("approval_queue").delete().eq("id", approval_id).execute()

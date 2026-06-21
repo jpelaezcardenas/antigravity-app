@@ -301,6 +301,7 @@ async def enqueue_risk_review_if_critical(tenant_id: str) -> Optional[str]:
         entry = supabase.table("approval_queue").insert(
             {
                 "id": str(uuid.uuid4()),
+                "draft_id": f"risk-review-{tenant_id}-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
                 "draft_type": "risk_review",
                 "payload": payload,
                 "status": "pending",
