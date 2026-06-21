@@ -1,20 +1,55 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+# Project context (Contexia — Agentic Performance Management)
+context: |
+  PROJECT: Contexia (Entidad B — APM para PyMEs colombianas)
+  GROUND_TRUTH: Base-de-conocimientos-Contexia-v2.md + Ground Truth v2.0
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  TECH STACK:
+  - Backend: FastAPI, Python 3.11
+  - Frontend: React, Next.js, Hermes Workspace
+  - Database: Supabase (PostgreSQL + pgvector)
+  - Deployment: Railway (production-175a), Vercel
+  - APIs: Siigo, DIAN, Telegram, OpenAI/Cerebras
+
+  ARCHITECTURE:
+  - Hermes Workspace: Central dashboard orchestrator
+  - 9 Agents: Centinela, Pulso, Radar, Auditoría, Taty, Social Ops, KB, Orchestrator, Approval Queue
+  - HITL: Human-in-the-Loop mandatory for sensitive actions
+  - Cliente Cero: Contexia is first production customer before externals
+
+  KEY DOCUMENTS:
+  - AGENTES.md: Catalog of 9 agents (specs, endpoints, HITL rules)
+  - CLAUDE.md: Engineering standards (baby steps, TDD, English only, OpenSpec mandatory)
+  - DEPLOYMENT_STAGE/: Stage 11 workflow (docs → design → spec → tasks → apply → deploy → archive)
+
+  STANDARDS:
+  - All code: fully typed, clear naming, deterministic (no hallucinations)
+  - Spec-driven: Documentation is source of truth
+  - Stage 11: Deployment is non-negotiable (commit + test + deploy + report)
+  - HITL: ✅ mandatory for asientos, publicaciones, /ops, cambios críticos
+  - Testing: TDD (failing tests first), E2E with Cliente Cero (real data)
+
+# Per-artifact rules
+rules:
+  proposal:
+    - Keep proposals under 500 words, focus on WHY
+    - Always include non-goals section
+    - Reference AGENTES.md for agent details
+
+  design:
+    - Explain technical decisions (WHY X over Y)
+    - Include risks + trade-offs
+    - Reference APM Nominal model if applicable
+
+  specs:
+    - Each requirement must have at least one scenario (#### Scenario:)
+    - Use SHALL/MUST for normative requirements
+    - Test cases map 1:1 from scenarios
+
+  tasks:
+    - Break into max 2-hour chunks (baby steps)
+    - Each task verifiable ("done" = testable outcome)
+    - No mega-commits; one task = one atomic change
+    - Include Stage 11 deployment in final tasks
+    - Test after each task (TDD)
