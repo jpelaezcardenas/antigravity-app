@@ -14,12 +14,12 @@
 
 ## 2. Slice 2 — Centinela Resolution + Approval Queue extension
 
-- [ ] 2.1 Write failing test for DIAN XML ingestion endpoint (valid UBL 2.1 fixture parses into `dian_xml_documents`)
-- [ ] 2.2 Implement DIAN webhook/ingestion endpoint + UBL 2.1 parser; pass test 2.1
-- [ ] 2.3 Snapshot-test the parser against ≥20 real Contexia CUFEs; fix parser edge cases until all pass
-- [ ] 2.4 Write failing test for duplicate-CUFE idempotency; implement upsert-by-CUFE to pass it
-- [ ] 2.5 Write failing test for Siigo journal sync job (mocked Siigo sandbox response → `erp_journal_entries`/`erp_journal_lines` rows)
-- [ ] 2.6 Implement Siigo journal mirror sync against sandbox credentials; pass test 2.5
+- [x] 2.1 Write failing test for DIAN XML manual ingestion endpoint (valid UBL 2.1 fixture parses into `dian_xml_documents`) — `POST /api/v1/shadow-gl/dian-xml/ingest`, not a live webhook (see design.md Slice 2 decision, 2026-06-21) — `tests/test_shadow_gl_ingestion.py`
+- [x] 2.2 Implement the manual ingestion endpoint + UBL 2.1 parser; pass test 2.1 — `services/shadow_gl_service.py` (`parse_dian_ubl_xml`, `ingest_dian_xml`) + `presentation/shadow_gl_endpoints.py`, mounted at `/api/v1/shadow-gl`; parser unit tests (4/4) + persistence integration tests against live Supabase (3/3) all GREEN; router import verified in isolation (full `main.py` smoke test blocked by pre-existing missing deps in this dev venv — jose/passlib/email-validator — unrelated to this change)
+- [ ] 2.3 **ONGOING** — snapshot-test the parser against real Contexia XML files as they become available via manual upload (not a fixed count); currently only the synthetic fixture `tests/fixtures/dian_invoice_sample.xml` has been tested. Revisit and expand once real files are provided.
+- [x] 2.4 Write failing test for duplicate-CUFE idempotency; implement upsert-by-CUFE to pass it — `test_duplicate_cufe_is_idempotent`, GREEN; re-ingesting the same CUFE returns the existing row, no duplicate inserted
+- [ ] 2.5 **DEFERRED — external connection phase.** Write failing test for Siigo journal sync job (mocked Siigo sandbox response → `erp_journal_entries`/`erp_journal_lines` rows). Blocked on Siigo sandbox credentials (design.md Open Questions, resolved as "not yet available" 2026-06-21).
+- [ ] 2.6 **DEFERRED — external connection phase.** Implement Siigo journal mirror sync against sandbox credentials; pass test 2.5. Until this lands, `erp_journal_entries`/`erp_journal_lines` are populated manually (e.g. via Supabase SQL) for testing the reconciliation view and Centinela's poller.
 - [x] 2.7 Create `approval_queue` table from scratch (`draft_type`, JSONB `payload`, `status`, `reason`, `approved_by`, `vectorization_status`, RLS) — no prior table existed, `ApprovalQueueService` was an in-memory stub; wire the service to read/write this table, replacing the placeholder logic; write test confirming `tax_correction` enqueue/approve/reject behavior matches the FASE 3 contract — `tests/test_approval_queue_persistence.py`, RED (6/9 failing/erroring, table missing) → GREEN (6/6) after migration `approval_queue_table` + service rewrite; non-journal draft types (e.g. `risk_review`) confirmed to skip Critic validation; full backend suite re-run, no regressions (4 pre-existing unrelated failures from missing `email-validator` package)
 - [ ] 2.8 Write failing test for `GET /api/v1/approval-queue` (list, filter by `draft_type`, RLS tenant scoping); implement endpoint to pass it
 - [ ] 2.9 Write failing test: Centinela poll creates one alert per new discrepancy, no duplicates on repeat poll; implement poller
@@ -27,9 +27,9 @@
 - [ ] 2.11 Write failing test: Agent Critic rejects an unbalanced Resolution draft and triggers regeneration (max 2 retries) before `needs_human_review`; implement retry loop
 - [ ] 2.12 Create `executor_outbox` migration (status, attempts, payload) + RLS
 - [ ] 2.13 Write failing test: approval of a `tax_correction` draft inserts an `executor_outbox` row and returns immediately (no synchronous Siigo call); implement
-- [ ] 2.14 Write failing test: outbox poller posts to Siigo sandbox, marks `completed`, resolves the source alert; implement poller with exponential backoff and `failed` after 5 attempts
+- [ ] 2.14 **DEFERRED — external connection phase.** Write failing test: outbox poller posts to Siigo sandbox, marks `completed`, resolves the source alert; implement poller with exponential backoff and `failed` after 5 attempts. Until Siigo credentials land, the outbox accumulates `pending` jobs that a human can inspect/post manually — this is acceptable since write-back is already HITL-gated (approval happens before the outbox job is even created).
 - [ ] 2.15 Confirm existing vectorization-on-approval behavior fires for `tax_correction` write-backs (regression test against `approval-queue` spec, no new code expected)
-- [ ] 2.16 Stage 11 — deploy Slice 2; manually trigger one real Contexia discrepancy end-to-end (detect → draft → approve → Siigo **sandbox** post); confirm prod write-back flag stays off; write deployment report
+- [ ] 2.16 Stage 11 — deploy Slice 2 (manual-ingestion scope); manually ingest one real Contexia DIAN XML end-to-end (ingest → parse → reconciliation view reflects it → detect → draft → approve → outbox job created); write deployment report. The original gate ("approved → posted to Siigo sandbox") moves to the deferred external-connection phase once 2.5/2.6/2.14 are unblocked.
 
 ## 3. Slice 3 — Pulso, Radar, Auditoría
 

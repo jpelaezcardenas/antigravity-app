@@ -67,7 +67,7 @@ The documented `GET /api/v1/approval-queue` is the correct contract (Hermes UI n
 ## Migration Plan
 
 1. **Slice 1 — Shadow GL substrate**: `tenants` (seed Contexia SAS as Cliente Cero), `dian_xml_documents`, `erp_journal_entries`, `erp_journal_lines` (with deferred balance trigger), `shadow_gl_discrepancies` materialized view. Stage 11 gate: view returns 0 rows cleanly (no real DIAN data ingested yet) — schema-only milestone.
-2. **Slice 2 — Centinela Resolution + Approval Queue extension**: DIAN XML ingestion endpoint/webhook, Siigo journal mirror sync, `approval_queue.draft_type` + `GET` list endpoint, write-back via `executor_outbox`. Stage 11 gate: one real Contexia discrepancy detected → draft → approved → posted to Siigo **sandbox**.
+2. **Slice 2 — Centinela Resolution + Approval Queue extension**: DIAN XML ingestion, Siigo journal mirror sync, `approval_queue.draft_type` + `GET` list endpoint, write-back via `executor_outbox`. **Decision (2026-06-21): ingestion starts as a manual upload endpoint (`POST /api/v1/shadow-gl/dian-xml/ingest`, raw XML in the request body), not a live DIAN webhook.** This lets the parser be trained/tested against real Contexia XML files without depending on DIAN/Siigo credentials, which are not yet confirmed available (see Open Questions). The live DIAN webhook listener and the Siigo sandbox/production API connection are deferred to a later phase, once credentials are confirmed; the parser and ingestion logic built now are reused unchanged — only the trigger (manual POST → webhook) changes. Stage 11 gate for this slice is revised accordingly: one real Contexia DIAN XML manually ingested → parsed correctly → reconciliation view reflects it. The "approved → posted to Siigo sandbox" gate moves to the deferred external-connection phase.
 3. **Slice 3 — Pulso, Radar, Auditoría**: read endpoints + conditional HITL predicates. Stage 11 gate: all three return valid JSON for Cliente Cero; Radar's conditional HITL fires at least once against seeded high-risk data.
 4. **Slice 4 — Taty + Social Ops canonical**: intent router, Telegram webhook, Social Ops endpoints serving the existing tables. Stage 11 gate: Telegram bot responds; Social Ops parallel-run matches n8n output for 1 week before cutover flag flips.
 5. **Slice 5 — Maestro Orchestrator + KB integration**: `quick_status()` on each agent, fan-out endpoint, KB lookup wired into Centinela's draft generation. Stage 11 gate: `/hermes/swarm/invoke {action: status}` returns <500ms p95; KB hit measurably reduces LLM calls on repeated anomaly patterns.
@@ -76,7 +76,7 @@ The documented `GET /api/v1/approval-queue` is the correct contract (Hermes UI n
 
 ## Open Questions
 
-- Siigo sandbox credentials: confirmed available, or do we need to request them before Slice 2 starts?
+- ~~Siigo sandbox credentials: confirmed available, or do we need to request them before Slice 2 starts?~~ **Resolved 2026-06-21**: not yet available. Slice 2 proceeds with manual XML ingestion only; Siigo journal mirror sync and the live DIAN webhook are deferred to a later phase once credentials are confirmed.
 - Who is the named Entidad A for Cliente Cero approvals during testing (whose email goes in `approved_by`)?
 - Telegram bot token (`@contexia_bot`) — already provisioned, or part of Slice 4 setup?
 - Should the Supabase advisor findings (RLS gaps, `set_hermes_tunnel` callable by anon) be opened as a separate, immediate security change before or in parallel with Slice 1? (Recommended: parallel, not blocking — flagged to Dirección separately.)

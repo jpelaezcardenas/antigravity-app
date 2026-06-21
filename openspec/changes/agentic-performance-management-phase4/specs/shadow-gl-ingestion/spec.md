@@ -15,7 +15,7 @@ The system SHALL maintain a `tenants` table keyed by Colombian NIT, with exactly
 The system SHALL parse DIAN electronic invoice/credit-note/debit-note XML (UBL 2.1) and store the parsed fields alongside the raw XML, keyed by CUFE, without mutating the original document.
 
 #### Scenario: Valid DIAN invoice ingested
-- **WHEN** a well-formed UBL 2.1 invoice XML is received via the DIAN webhook
+- **WHEN** a well-formed UBL 2.1 invoice XML is received via the ingestion endpoint (manual upload initially; a live DIAN webhook is a later, additive trigger onto the same parser)
 - **THEN** system extracts CUFE, issuer NIT, receiver NIT, issue date, total_amount_minor, tax_amount_minor, withholding_amount_minor
 - **AND** stores the complete raw XML in `dian_xml_documents.raw_xml`
 - **AND** the row is unique per `(tenant_id, cufe)`
