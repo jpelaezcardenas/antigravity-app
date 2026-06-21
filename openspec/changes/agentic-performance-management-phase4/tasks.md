@@ -1,0 +1,72 @@
+## 1. Slice 1 — Shadow GL substrate
+
+- [x] 1.1 Write failing migration test asserting `tenants`, `dian_xml_documents`, `erp_journal_entries`, `erp_journal_lines` do not yet exist with the expected columns — `tests/test_shadow_gl_schema.py`, confirmed RED (6/7 failing) before migration
+- [x] 1.2 Create migration: `tenants` table (NIT unique, `is_cliente_cero boolean`, unique partial index `WHERE is_cliente_cero`) + RLS — applied via Supabase migration `shadow_gl_tenants`
+- [x] 1.3 Seed Contexia SAS as the Cliente Cero tenant in the migration — seeded in `shadow_gl_tenants` (NIT 900000000)
+- [x] 1.4 Create migration: `dian_xml_documents` (CUFE unique per tenant, raw_xml, parsed fields, BIGINT minor-unit amounts) + RLS — applied via `shadow_gl_dian_xml_documents`
+- [x] 1.5 Create migration: `erp_journal_entries` + `erp_journal_lines` (BIGINT minor units, `source_cufe` FK-able column, no polymorphic type/id columns) + RLS — applied via `shadow_gl_erp_journal`
+- [x] 1.6 Add deferred constraint trigger `assert_entry_balanced()` on `erp_journal_lines`; write failing test inserting an unbalanced entry, confirm rollback — trigger + test passing, confirmed transactional rollback (no orphaned lines)
+- [x] 1.7 Create `shadow_gl_discrepancies` materialized view (missing_in_erp / amount_mismatch) with `pg_cron` 15-min `REFRESH ... CONCURRENTLY` job — view + unique index applied via `shadow_gl_discrepancies_view`; `pg_cron` extension enabled and job `shadow-gl-discrepancies-refresh` scheduled (`*/15 * * * *`) via `shadow_gl_discrepancies_refresh_cron`
+- [x] 1.8 Write and pass test: view returns 0 rows cleanly against the seeded Cliente Cero tenant with no data — GREEN
+- [x] 1.9 Stage 11 — deploy Slice 1 migrations to Railway/Supabase production; verify `list_tables` shows the four new tables live; write deployment report `reports/<date>-slice1-deployment.md` — migrations applied directly to production Supabase (no Railway backend code change in this slice); `list_tables` confirms all four tables + view live; report below
+
+**Note on RLS:** policies for the four new tables grant `anon, authenticated, service_role` (not `service_role`-only as originally drafted) — the backend connects with the anon key (matches the existing, already-flagged pattern on `alerts`/`campaigns`/`clients`/`snapshots`). This is the same pre-existing security gap noted in `design.md` Non-Goals, not a new one introduced here.
+
+## 2. Slice 2 — Centinela Resolution + Approval Queue extension
+
+- [ ] 2.1 Write failing test for DIAN XML ingestion endpoint (valid UBL 2.1 fixture parses into `dian_xml_documents`)
+- [ ] 2.2 Implement DIAN webhook/ingestion endpoint + UBL 2.1 parser; pass test 2.1
+- [ ] 2.3 Snapshot-test the parser against ≥20 real Contexia CUFEs; fix parser edge cases until all pass
+- [ ] 2.4 Write failing test for duplicate-CUFE idempotency; implement upsert-by-CUFE to pass it
+- [ ] 2.5 Write failing test for Siigo journal sync job (mocked Siigo sandbox response → `erp_journal_entries`/`erp_journal_lines` rows)
+- [ ] 2.6 Implement Siigo journal mirror sync against sandbox credentials; pass test 2.5
+- [ ] 2.7 Create `approval_queue` table from scratch (`draft_type`, JSONB `payload`, `status`, `reason`, `approved_by`, `vectorization_status`, RLS) — no prior table existed, `ApprovalQueueService` was an in-memory stub; wire the service to read/write this table, replacing the placeholder logic; write test confirming `tax_correction` enqueue/approve/reject behavior matches the FASE 3 contract
+- [ ] 2.8 Write failing test for `GET /api/v1/approval-queue` (list, filter by `draft_type`, RLS tenant scoping); implement endpoint to pass it
+- [ ] 2.9 Write failing test: Centinela poll creates one alert per new discrepancy, no duplicates on repeat poll; implement poller
+- [ ] 2.10 Write failing test: Resolution Agent draft generation produces a balanced draft from a seeded amount-mismatch fixture; implement against LLM cascade (Groq→Cerebras→OpenRouter→Mistral)
+- [ ] 2.11 Write failing test: Agent Critic rejects an unbalanced Resolution draft and triggers regeneration (max 2 retries) before `needs_human_review`; implement retry loop
+- [ ] 2.12 Create `executor_outbox` migration (status, attempts, payload) + RLS
+- [ ] 2.13 Write failing test: approval of a `tax_correction` draft inserts an `executor_outbox` row and returns immediately (no synchronous Siigo call); implement
+- [ ] 2.14 Write failing test: outbox poller posts to Siigo sandbox, marks `completed`, resolves the source alert; implement poller with exponential backoff and `failed` after 5 attempts
+- [ ] 2.15 Confirm existing vectorization-on-approval behavior fires for `tax_correction` write-backs (regression test against `approval-queue` spec, no new code expected)
+- [ ] 2.16 Stage 11 — deploy Slice 2; manually trigger one real Contexia discrepancy end-to-end (detect → draft → approve → Siigo **sandbox** post); confirm prod write-back flag stays off; write deployment report
+
+## 3. Slice 3 — Pulso, Radar, Auditoría
+
+- [ ] 3.1 Write failing test for `GET /api/v1/agents/pulso-diario/summary`; implement read-only daily aggregation to pass it
+- [ ] 3.2 Write failing test for zero-activity day returning zeroed totals; confirm passes
+- [ ] 3.3 Write failing test for Radar's deterministic risk-score calculation against fixture history; implement scoring function
+- [ ] 3.4 Write failing test for cashflow forecast field on the same endpoint; implement
+- [ ] 3.5 Write failing test: risk_score >= 80 creates one `risk_review` approval_queue entry, no duplicate on repeat critical score; implement conditional HITL gate
+- [ ] 3.6 Write failing test for Auditoría Sombra internal-audience report (no HITL, immediate download URL); implement PDF generation
+- [ ] 3.7 Write failing test for external-audience report requiring `audit_report_signoff` approval before the download URL is exposed; implement gate
+- [ ] 3.8 Stage 11 — deploy Slice 3; confirm all three endpoints return valid JSON for Cliente Cero and Radar's HITL fires once against seeded high-risk fixture data in production; write deployment report
+
+## 4. Slice 4 — Taty + Social Ops canonical
+
+- [ ] 4.1 Write failing test for Telegram webhook intent classification routing to Pulso/Radar reads; implement router
+- [ ] 4.2 Write failing test for low-confidence intent returning a clarifying reply with no agent call; implement fallback
+- [ ] 4.3 Write failing test: sensitive intent (correction request) creates a `taty_escalation` approval_queue entry instead of calling any write endpoint; implement escalation path
+- [ ] 4.4 Implement FastAPI endpoints for Content Ideas, Lead Reply, Sales Closure, Metrics Analyzer against existing `social_*_drafts` tables, behind `social_ops_canonical` feature flag (default off)
+- [ ] 4.5 Write failing test: Lead Reply draft is both inserted into `social_reply_drafts` and enqueued to `approval_queue` with `draft_type = 'social_reply'`; implement to pass
+- [ ] 4.6 Parallel-run flag off (n8n) vs flag on (FastAPI) for 1 week against Cliente Cero traffic; log divergences
+- [ ] 4.7 Flip `social_ops_canonical` flag on for Cliente Cero once parallel-run matches; confirm n8n traffic for these 4 agents drops to zero
+- [ ] 4.8 Stage 11 — deploy Slice 4; confirm Telegram bot responds in production and Social Ops flag-on traffic matches expectations; write deployment report
+
+## 5. Slice 5 — Maestro Orchestrator + KB integration
+
+- [ ] 5.1 Define typed `AgentProtocol` requiring `async def quick_status()`; add CI check rejecting sync registrations
+- [ ] 5.2 Write failing test: `asyncio.gather` fan-out returns a per-agent status entry for every registered agent; implement orchestrator fan-out replacing the `orchestrator_service.py` stub
+- [ ] 5.3 Write failing test: one agent timing out is marked `status: "timeout"` without blocking the others; implement per-agent timeout
+- [ ] 5.4 Write failing test: one agent raising an exception is marked `status: "error"` without crashing the request; implement per-agent exception isolation
+- [ ] 5.5 Register Pulso, Radar, Auditoría, Centinela, Taty, Social Ops `quick_status()` implementations with the orchestrator
+- [ ] 5.6 Wire `match_knowledge_chunks` lookup into Resolution Agent's draft generation (already covered functionally by `centinela-alerts`; confirm KB hits are logged and measurably reduce LLM calls on repeated patterns)
+- [ ] 5.7 Load-test `/api/v1/hermes/swarm/invoke {action: "status"}` against all registered agents; confirm <500ms p95
+- [ ] 5.8 Stage 11 — deploy Slice 5; confirm production p95 latency and KB-hit metric in logs; write deployment report
+
+## 6. Final validation and archive readiness
+
+- [ ] 6.1 Run full Cliente Cero E2E regression across all 9 agents (re-run the FASE 3 E2E suite plus new Slice 1-5 tests)
+- [ ] 6.2 Confirm every Stage 11 deployment report exists under `reports/` for Slices 1-5
+- [ ] 6.3 Resolve or explicitly defer the design.md Open Questions (Siigo sandbox credentials, named Entidad A for test approvals, Telegram bot token, Supabase advisory remediation timing) with Dirección before archiving
+- [ ] 6.4 Run `/opsx:archive` only after 6.1-6.3 are confirmed complete
