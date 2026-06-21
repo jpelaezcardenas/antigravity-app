@@ -18,6 +18,7 @@ from presentation.critic_endpoints import router as critic_router
 from presentation.approval_queue_endpoints import router as approval_queue_router
 from presentation.shadow_gl_endpoints import router as shadow_gl_router
 from presentation.pulso_diario_endpoints import router as pulso_diario_router
+from presentation.auditoria_sombra_endpoints import router as auditoria_sombra_router
 
 api_router = APIRouter()
 
@@ -43,3 +44,4 @@ api_router.include_router(critic_router, prefix="/critic", tags=["critic"])
 api_router.include_router(approval_queue_router, prefix="/approval-queue", tags=["approval-queue"])
 api_router.include_router(shadow_gl_router, prefix="/shadow-gl", tags=["shadow-gl"])
 api_router.include_router(pulso_diario_router, prefix="/agents/pulso-diario", tags=["pulso-diario"])
+api_router.include_router(auditoria_sombra_router, prefix="/agents/auditoria-sombra", tags=["auditoria-sombra"])
