@@ -160,6 +160,10 @@ class ApprovalQueueService:
 
             logger.info(f"Approval decision {decision_id} approved by {approved_by}")
 
+            # For tax_correction drafts, create an executor_outbox job (synchronous)
+            if decision.draft_type == "tax_correction":
+                ApprovalQueueService._create_outbox_job_sync(decision_id, decision)
+
             asyncio.create_task(
                 ApprovalQueueService._vectorize_and_persist(decision)
             )
@@ -214,6 +218,34 @@ class ApprovalQueueService:
         except Exception as e:
             logger.error(f"Approval queue reject error: {str(e)}")
             return False, None, str(e)
+
+    @staticmethod
+    def _create_outbox_job_sync(decision_id: str, decision: ApprovalDecision) -> None:
+        """
+        Create an executor_outbox row for tax_correction drafts.
+        Synchronous and non-blocking at the application level (DB insert is fast).
+        Exceptions are logged but do not roll back the approval.
+        """
+        supabase = get_supabase()
+        try:
+            supabase.table("executor_outbox").insert(
+                {
+                    "approval_decision_id": decision_id,
+                    "status": "pending",
+                    "attempts": 0,
+                    "payload": {
+                        "approval_id": decision_id,
+                        "draft_id": decision.draft_id,
+                        "draft_type": decision.draft_type,
+                        "reason": decision.reason,
+                        "approved_by": decision.approved_by,
+                        "payload": decision.payload,
+                    },
+                }
+            ).execute()
+            logger.info(f"Created executor_outbox job for approval {decision_id}")
+        except Exception as e:
+            logger.error(f"Failed to create executor_outbox job for approval {decision_id}: {str(e)}")
 
     @staticmethod
     async def _vectorize_and_persist(decision: ApprovalDecision) -> None:
