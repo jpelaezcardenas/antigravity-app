@@ -142,8 +142,11 @@ class TestAuditoriaSombra:
         assert pdf_bytes is not None
         assert isinstance(pdf_bytes, bytes)
         assert pdf_bytes.startswith(b"%PDF")
-        # PDF should be non-trivial in size (at least 1KB for a report with content)
-        assert len(pdf_bytes) > 1000
+        # PDF should contain real content (at least 500 bytes with stats)
+        assert len(pdf_bytes) > 500
+        # Verify PDF contains key statistics text
+        assert b"Total Transactions" in pdf_bytes
+        assert b"Discrepancies Found" in pdf_bytes
 
     def test_report_generation_is_readonly(
         self, supabase, cliente_cero_tenant_id, audit_cufe, _cleanup
