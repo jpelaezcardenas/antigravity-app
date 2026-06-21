@@ -19,7 +19,7 @@ logger = logging.getLogger("contexia-api")
 app = FastAPI(
     title="Contexia API",
     description="Backend para la plataforma de Inteligencia Financiera Contexia",
-    version="1.0.0",
+    version="1.0.1",  # financials endpoints
     # Disable API docs in production to prevent endpoint discovery
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
