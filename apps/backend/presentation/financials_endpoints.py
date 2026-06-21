@@ -5,7 +5,7 @@ from datetime import datetime
 router = APIRouter()
 
 
-@router.get("/financials")
+@router.get("")
 async def get_financials(
     company_id: str = Query(
         default="a0a0a0a0-a0a0-a0a0-a0a0-a0a0a0a0a0a0",
