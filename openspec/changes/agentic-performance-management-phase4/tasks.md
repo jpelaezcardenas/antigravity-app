@@ -33,8 +33,8 @@
 
 ## 3. Slice 3 — Pulso, Radar, Auditoría
 
-- [ ] 3.1 Write failing test for `GET /api/v1/agents/pulso-diario/summary`; implement read-only daily aggregation to pass it
-- [ ] 3.2 Write failing test for zero-activity day returning zeroed totals; confirm passes
+- [x] 3.1 Write failing test for `GET /api/v1/agents/pulso-diario/summary`; implement read-only daily aggregation to pass it — `services/pulso_diario_service.py` (`get_daily_summary(tenant_id, date)` async function) queries Shadow GL tables for daily totals (DIAN invoiced, ERP posted, discrepancies, alerts); `presentation/pulso_diario_endpoints.py` mounts endpoint at `/api/v1/agents/pulso-diario/summary` with optional date param; registered in `presentation/router.py`; `tests/test_pulso_diario.py`, GREEN (2/2)
+- [x] 3.2 Write failing test for zero-activity day returning zeroed totals; confirm passes — same test file, both tests pass (task 3.1 + 3.2 combined)
 - [ ] 3.3 Write failing test for Radar's deterministic risk-score calculation against fixture history; implement scoring function
 - [ ] 3.4 Write failing test for cashflow forecast field on the same endpoint; implement
 - [ ] 3.5 Write failing test: risk_score >= 80 creates one `risk_review` approval_queue entry, no duplicate on repeat critical score; implement conditional HITL gate
