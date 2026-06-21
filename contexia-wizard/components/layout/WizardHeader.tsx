@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { isFeria, getFeriaConfig } from "@/lib/feriaConfig";
 
 const NAV_LINKS = [
   { label: "Soluciones", href: "https://www.contexia.online/landing#soluciones" },
@@ -9,26 +10,63 @@ const NAV_LINKS = [
 ];
 
 export default function WizardHeader() {
+  const feriaMode = isFeria();
+  const config = feriaMode ? getFeriaConfig() : null;
+
   return (
     <nav 
-      className="w-full border-b border-slate-800 bg-[#020617]/90 backdrop-blur-xl fixed top-0 z-50"
-      style={{ borderBottom: "1px solid rgba(100, 116, 139, 0.2)" }}
+      className="w-full border-b border-slate-800 bg-[#020617]/90 backdrop-blur-xl fixed z-50"
+      style={{ 
+        borderBottom: "1px solid rgba(100, 116, 139, 0.2)",
+        top: feriaMode ? "40px" : "0",
+      }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-4 min-h-[120px]">
           {/* Logo Section */}
-          <a href="https://www.contexia.online/landing" className="flex items-center group" title="Volver a la landing">
-            <div className="h-32 md:h-40 w-auto flex items-center justify-center flex-shrink-0">
-              <Image 
-                src="https://www.contexia.online/assets/img/logo_official.png" 
-                alt="Contexia"
-                width={200}
-                height={160}
-                className="h-full w-auto object-contain transition-transform group-hover:scale-105 scale-110 translate-y-1 mix-blend-screen"
-                unoptimized
-              />
-            </div>
-          </a>
+          <div className="flex items-center gap-4">
+            <a href="https://www.contexia.online/landing" className="flex items-center group" title="Volver a la landing">
+              <div className="h-32 md:h-40 w-auto flex items-center justify-center flex-shrink-0">
+                <Image 
+                  src="https://www.contexia.online/assets/img/logo_official.png" 
+                  alt="Contexia"
+                  width={200}
+                  height={160}
+                  className="h-full w-auto object-contain transition-transform group-hover:scale-105 scale-110 translate-y-1 mix-blend-screen"
+                  unoptimized
+                />
+              </div>
+            </a>
+
+            {/* Feria badge next to logo */}
+            {feriaMode && config && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  background: "linear-gradient(135deg, rgba(249,115,22,0.15), rgba(168,85,247,0.15))",
+                  border: "1px solid rgba(249,115,22,0.3)",
+                  borderRadius: "12px",
+                  padding: "0.5rem 1rem",
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  color: "#fb923c",
+                  letterSpacing: "0.05em",
+                  lineHeight: 1.3,
+                }}
+              >
+                <span style={{ fontSize: "1rem" }}>🤝</span>
+                <span>
+                  {config.nombreCorto}
+                  <br />
+                  <span style={{ color: "var(--ctx-text-muted)", fontWeight: 500, fontSize: "0.6875rem" }}>
+                    Business Connections
+                  </span>
+                </span>
+              </div>
+            )}
+          </div>
           
           <div className="hidden md:flex items-center gap-8">
             <div className="flex items-center gap-6 text-sm font-bold uppercase tracking-widest">
@@ -44,11 +82,24 @@ export default function WizardHeader() {
               
               <Link 
                 href="/" 
-                className="px-8 py-3 bg-ctx-violet/10 text-white border-2 border-ctx-violet rounded-full hover:bg-ctx-violet/20 hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.6)] transition-all text-base font-bold tracking-wide shadow-[0_0_15px_-5px_rgba(139,92,246,0.4)] text-center inline-flex flex-col items-center leading-tight"
-                title="Auditoría tributaria gratuita y 100% anónima"
+                className={`px-8 py-3 text-white border-2 rounded-full transition-all text-base font-bold tracking-wide text-center inline-flex flex-col items-center leading-tight ${
+                  feriaMode 
+                    ? "border-orange-500/60 bg-orange-500/10 hover:bg-orange-500/20 shadow-[0_0_15px_-5px_rgba(249,115,22,0.4)] hover:shadow-[0_0_30px_-5px_rgba(249,115,22,0.6)]"
+                    : "border-ctx-violet bg-ctx-violet/10 hover:bg-ctx-violet/20 shadow-[0_0_15px_-5px_rgba(139,92,246,0.4)] hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.6)]"
+                }`}
+                title={feriaMode ? "Diagnóstico tributario gratuito — Estud-IA" : "Auditoría tributaria gratuita y 100% anónima"}
               >
-                <span>🔍 AUDITORÍA SOMBRA</span>
-                <span className="text-ctx-violet text-xs font-semibold">(SIMULACIÓN CON LA DIAN)</span>
+                {feriaMode ? (
+                  <>
+                    <span>🚀 DIAGNÓSTICO ESTUD-IA</span>
+                    <span className="text-orange-400 text-xs font-semibold">(GRATUITO EN LA RUEDA)</span>
+                  </>
+                ) : (
+                  <>
+                    <span>🔍 AUDITORÍA SOMBRA</span>
+                    <span className="text-ctx-violet text-xs font-semibold">(SIMULACIÓN CON LA DIAN)</span>
+                  </>
+                )}
               </Link>
             </div>
 

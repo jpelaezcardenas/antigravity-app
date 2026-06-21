@@ -19,7 +19,7 @@ logger = logging.getLogger("contexia-api")
 app = FastAPI(
     title="Contexia API",
     description="Backend para la plataforma de Inteligencia Financiera Contexia",
-    version="1.0.0",
+    version="1.0.1",  # financials endpoints
     # Disable API docs in production to prevent endpoint discovery
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
@@ -35,8 +35,9 @@ cors_origins = [
     "http://localhost:5174",  # Alternative Vite port
     "http://localhost:5175",  # Alternative Vite port
     "https://contexia.online",
-    "https://app.contexia.online",
     "https://www.contexia.online",
+    "https://contexia-wizard.vercel.app",
+    "https://wizard.contexia.online",
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -67,6 +68,15 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Incluir routers
 api_router.include_router(health_router)
+
+# Secrets router — imported defensively so a failure never crashes app startup
+try:
+    from api.endpoints.secrets_endpoints import router as secrets_router
+    api_router.include_router(secrets_router)
+    logger.info("Secrets router registered successfully")
+except Exception as e:
+    logger.error(f"Failed to include secrets_router: {e}")
+
 app.include_router(api_router, prefix="/api/v1")
 
 

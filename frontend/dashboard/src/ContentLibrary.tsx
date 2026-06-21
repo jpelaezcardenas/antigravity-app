@@ -63,8 +63,8 @@ const ContentLibrary: React.FC = () => {
           onClick={() => setFilterType('all')}
           className={`px-4 py-2 text-sm transition ${
             filterType === 'all'
-              ? 'text-cyan-400 border-b-2 border-cyan-400'
-              : 'text-gray-400 hover:text-gray-300'
+              ? 'text-primary border-b-2 border-primary'
+              : 'text-muted hover:text-muted'
           }`}
         >
           📋 Todo
@@ -73,8 +73,8 @@ const ContentLibrary: React.FC = () => {
           onClick={() => setFilterType('post')}
           className={`px-4 py-2 text-sm transition ${
             filterType === 'post'
-              ? 'text-cyan-400 border-b-2 border-cyan-400'
-              : 'text-gray-400 hover:text-gray-300'
+              ? 'text-primary border-b-2 border-primary'
+              : 'text-muted hover:text-muted'
           }`}
         >
           📝 Posts
@@ -83,8 +83,8 @@ const ContentLibrary: React.FC = () => {
           onClick={() => setFilterType('template')}
           className={`px-4 py-2 text-sm transition ${
             filterType === 'template'
-              ? 'text-cyan-400 border-b-2 border-cyan-400'
-              : 'text-gray-400 hover:text-gray-300'
+              ? 'text-primary border-b-2 border-primary'
+              : 'text-muted hover:text-muted'
           }`}
         >
           🎨 Templates
@@ -92,9 +92,9 @@ const ContentLibrary: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-gray-400">Cargando contenido...</div>
+        <div className="text-center py-8 text-muted">Cargando contenido...</div>
       ) : filteredContent.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-muted">
           <p>No hay contenido disponible</p>
         </div>
       ) : (
@@ -103,15 +103,15 @@ const ContentLibrary: React.FC = () => {
             <div key={item.id} className="bg-blue-950 border border-blue-800 rounded-lg p-4">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h4 className="text-cyan-400 font-semibold">{item.titulo}</h4>
-                  <p className="text-sm text-gray-400">{item.plataforma.toUpperCase()}</p>
+                  <h4 className="text-primary font-semibold">{item.titulo}</h4>
+                  <p className="text-sm text-muted">{item.plataforma.toUpperCase()}</p>
                 </div>
-                <span className="text-xs bg-cyan-600 text-white px-2 py-1 rounded">
+                <span className="text-xs bg-primary-dim text-white px-2 py-1 rounded">
                   {item.usos_totales} usos
                 </span>
               </div>
-              <p className="text-sm text-gray-300 mb-3">{item.contenido}</p>
-              <button className="px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm rounded transition">
+              <p className="text-sm text-muted mb-3">{item.contenido}</p>
+              <button className="px-3 py-2 bg-primary-dim hover:bg-primary-dim text-white text-sm rounded transition">
                 Usar
               </button>
             </div>

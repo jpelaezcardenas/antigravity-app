@@ -311,8 +311,31 @@
         .interview-card {
             padding: 1.25rem 2rem;
         }
-        .interview-card.open {
-            padding: 2rem;
+
+        /* Animación del menú móvil dropdown premium */
+        #mobile-menu {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease-in-out;
+        }
+        #mobile-menu.open {
+            max-height: 600px;
+            opacity: 1;
+            padding-top: 1.5rem;
+            padding-bottom: 1.5rem;
+        }
+
+        /* Transformación del botón hamburguesa a X */
+        #mobile-menu-btn.open #line1 {
+            transform: translateY(8px) rotate(45deg);
+        }
+        #mobile-menu-btn.open #line2 {
+            opacity: 0;
+            transform: scale(0);
+        }
+        #mobile-menu-btn.open #line3 {
+            transform: translateY(-8px) rotate(-45deg);
         }
     </style>
 </head>
@@ -322,20 +345,40 @@
     <!-- Navbar -->
     <nav class="w-full border-b border-slate-800 bg-[#020617]/90 backdrop-blur-xl fixed top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between py-4 min-h-[120px]">
+            <div class="flex items-center justify-between py-2 md:py-4 min-h-[92px] md:min-h-[120px]">
                 <a href="javascript:void(0)" onclick="openLogoLightbox()" class="flex items-center group" title="Click para ver el logo completo">
-                    <div class="h-32 md:h-40 w-auto flex items-center justify-center flex-shrink-0">
+                    <div class="h-20 md:h-32 lg:h-40 w-auto flex items-center justify-center flex-shrink-0">
                         <img src="assets/img/logo_official.png" alt="Contexia"
                             class="h-full w-auto object-contain transition-transform group-hover:scale-105 scale-110 translate-y-1 mix-blend-screen">
                     </div>
                 </a>
+
+                <!-- Avatar de la Contadora Taty (Center - Mobile Only) -->
+                <div class="flex md:hidden items-center justify-center flex-1 mx-2">
+                    <a href="https://wa.me/573018948151" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full py-1 px-2.5 hover:bg-white/10 hover:border-teal/50 transition-all duration-300">
+                        <div class="relative w-8 h-8 rounded-full overflow-hidden border border-white/20 shadow-md flex-shrink-0">
+                            <img src="assets/img/profiles/tatiana_full.png" alt="Taty" class="w-full h-full object-cover object-top">
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#020617]/80 via-transparent to-transparent"></div>
+                        </div>
+                        <div class="flex flex-col text-left">
+                            <div class="flex items-center gap-1">
+                                <span class="relative flex h-1.5 w-1.5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal"></span>
+                                </span>
+                                <span class="text-[8px] text-teal font-black uppercase tracking-widest leading-none" style="font-family: 'Rajdhani', sans-serif;">Online</span>
+                            </div>
+                            <span class="text-[10px] text-white font-bold leading-tight">Taty</span>
+                        </div>
+                    </a>
+                </div>
                 
                 <div class="hidden md:flex items-center gap-8">
                     <div class="flex items-center gap-6 text-sm font-bold uppercase tracking-widest">
                         <a href="#soluciones" class="text-slate-400 hover:text-white transition-colors">Soluciones</a>
                         <a href="#servicios" class="text-slate-400 hover:text-white transition-colors">Servicios</a>
                         <a href="/crear-empresa" class="text-slate-400 hover:text-teal transition-colors">Crear Empresa</a>
-                        <a href="/wizard/" class="px-8 py-3 bg-violet/10 text-white border-2 border-violet rounded-full hover:bg-violet/20 hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.6)] transition-all text-base font-bold tracking-wide shadow-[0_0_15px_-5px_rgba(139,92,246,0.4)] text-center inline-flex flex-col items-center leading-tight" title="Auditoría tributaria gratuita y 100% anónima">
+                        <a href="https://contexia-wizard.vercel.app/wizard" class="px-8 py-3 bg-violet/10 text-white border-2 border-violet rounded-full hover:bg-violet/20 hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.6)] transition-all text-base font-bold tracking-wide shadow-[0_0_15px_-5px_rgba(139,92,246,0.4)] text-center inline-flex flex-col items-center leading-tight" title="Auditoría tributaria gratuita y 100% anónima">
                             <span>🔍 AUDITORÍA SOMBRA</span>
                             <span class="text-violet text-xs font-semibold">(SIMULACIÓN CON LA DIAN)</span>
                         </a>
@@ -363,19 +406,19 @@
                             </div>
                         </a>
 
-                        <a href="/app/overview" class="inline-flex items-center justify-center px-6 py-2 border border-transparent text-sm font-medium rounded-full text-[#020617] bg-teal hover:bg-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.3)] transition-all">
+                        <a href="/login.html" class="inline-flex items-center justify-center px-6 py-2 border border-transparent text-sm font-medium rounded-full text-[#020617] bg-teal hover:bg-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.3)] transition-all">
                             Acceso App
                         </a>
                     </div>
                 </div>
-                <button id="mobile-menu-btn" class="md:hidden text-slate-300 hover:text-white p-2"><svg class="w-6 h-6"
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6h16M4 12h16M4 18h16" />
-                    </svg></button>
+                <button id="mobile-menu-btn" class="md:hidden text-slate-300 hover:text-white p-2.5 focus:outline-none flex flex-col gap-1.5 justify-center items-center group" aria-label="Toggle menu">
+                    <span class="w-6 h-0.5 bg-current transition-all duration-300 block origin-center" id="line1"></span>
+                    <span class="w-6 h-0.5 bg-current transition-all duration-300 block origin-center" id="line2"></span>
+                    <span class="w-6 h-0.5 bg-current transition-all duration-300 block origin-center" id="line3"></span>
+                </button>
             </div>
         </div>
-        <div id="mobile-menu" class="hidden md:hidden border-t border-slate-800 px-4 py-6 space-y-4 bg-navy/95 backdrop-blur-xl">
+        <div id="mobile-menu" class="md:hidden border-t border-slate-800 px-4 space-y-4 bg-[#020617]/98 backdrop-blur-xl">
             <div class="flex items-center justify-center pb-4 border-b border-white/5">
                 <div class="flex items-center gap-2">
                     <span class="relative flex h-2 w-2">
@@ -390,21 +433,21 @@
             <a href="#servicios" class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">Servicios</a>
             <a href="#entrevista" class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">Entrevista</a>
             <a href="#faq" class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">FAQ</a>
-            <a href="/wizard/" class="block text-center py-3 px-4 bg-violet/10 text-white border-2 border-violet rounded-xl text-sm font-bold tracking-wide shadow-[0_0_15px_-5px_rgba(139,92,246,0.4)]">
+            <a href="https://contexia-wizard.vercel.app/wizard" class="block text-center py-3 px-4 bg-violet/10 text-white border-2 border-violet rounded-xl text-sm font-bold tracking-wide shadow-[0_0_15px_-5px_rgba(139,92,246,0.4)]">
                 🔍 AUDITORÍA SOMBRA <span class="text-violet/80 font-medium">(Simulación con la DIAN)</span>
             </a>
-            <a href="/app/overview"
+            <a href="/login.html"
                 class="block bg-gradient-to-r from-teal to-violet text-white text-center py-3.5 rounded-xl text-sm font-bold mt-4 shadow-lg shadow-teal/20">Acceso
                 a Plataforma</a>
         </div>
     </nav>
 
     <!-- Entrevista Rápida -->
-    <section id="entrevista" class="pt-56 md:pt-64 pb-20 relative overflow-hidden">
+    <section id="entrevista" class="pt-28 md:pt-64 pb-20 relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-b from-violet/5 via-transparent to-teal/5 pointer-events-none"></div>
         <div class="max-w-4xl mx-auto px-6 lg:px-8 relative">
             <div class="text-center mb-12 fade-in">
-                <h2 class="text-3xl md:text-4xl font-black mb-4">¿Te estresa la <span class="gradient-text">DIAN</span> cada vez que vendes online?</h2>
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-black mb-4">¿Te estresa la <span class="gradient-text">DIAN</span> cada vez que vendes online?</h2>
                 <p class="text-white text-xl font-semibold mb-2">Queremos escucharte.</p>
                 <p class="text-slate-400 max-w-2xl mx-auto text-lg">Cuéntanos cómo manejas hoy tus impuestos y obligaciones con la DIAN, ¡Gracias por ayudar!</p>
                 <div class="mt-6 flex items-center justify-center gap-6 text-sm text-slate-500">
@@ -519,7 +562,7 @@
         <div class="max-w-7xl mx-auto px-6 lg:px-8 relative">
             <div class="grid lg:grid-cols-2 gap-12 items-center">
                 <div class="fade-in">
-                    <h1 class="text-5xl md:text-6xl lg:text-7xl font-black leading-[1.1] mb-8">Tu <span
+                    <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.1] mb-8">Tu <span
                             class="gradient-text">tranquilidad financiera</span> automatizada con IA</h1>
                     <p class="text-lg text-slate-400 mb-10 max-w-xl">Contexia es el GPS de flujo de caja, impuestos y
                         riesgo regulatorio para PyMEs. Olvídate de las sorpresas con la DIAN y toma el control de tu
@@ -1034,8 +1077,12 @@
     <!-- Scripts -->
     <script>
         // Mobile menu toggle
-        document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
-            document.getElementById('mobile-menu')?.classList.toggle('hidden');
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileMenuBtn?.addEventListener('click', () => {
+            mobileMenuBtn.classList.toggle('open');
+            mobileMenu?.classList.toggle('open');
         });
 
         // Scroll reveal animation
@@ -1051,7 +1098,8 @@
         // Close mobile menu on link click
         document.querySelectorAll('#mobile-menu a').forEach(link => {
             link.addEventListener('click', () => {
-                document.getElementById('mobile-menu')?.classList.add('hidden');
+                mobileMenuBtn?.classList.remove('open');
+                mobileMenu?.classList.remove('open');
             });
         });
     </script>

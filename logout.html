@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cerrando sesion...</title>
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <style>
+    body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:#020617; color:#e2e8f0; font-family:Inter,system-ui,sans-serif; }
+    .box { padding:16px 20px; border:1px solid #1e293b; border-radius:10px; background:#0b1220; font-weight:600; }
+  </style>
+</head>
+<body>
+  <div class="box">Cerrando sesion...</div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    (function () {
+      var SUPABASE_URL = "https://kpynymwghfwshvcvevxq.supabase.co";
+      var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW55bXdnaGZ3c2h2Y3ZldnhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDAwMTksImV4cCI6MjA5NDYxNjAxOX0.skNy5PKg0oFIqZD-2GyMZFTVA68OxrS1rBKkFiWAhwA";
+      function clearLocal() {
+        try {
+          localStorage.removeItem('token');
+          localStorage.removeItem('cx_user');
+          localStorage.removeItem('cx_session');
+          localStorage.removeItem('supabase.auth.token');
+          sessionStorage.clear();
+          if (window.indexedDB && indexedDB.databases) {
+            indexedDB.databases().then(function(dbs){
+              (dbs || []).forEach(function(db){ if (db && db.name) indexedDB.deleteDatabase(db.name); });
+            }).catch(function(){});
+          }
+        } catch (e) {}
+        var expires = 'expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Lax';
+        document.cookie = 'token=;' + expires;
+        document.cookie = 'cx_user=;' + expires;
+        document.cookie = 'sb-kpynymwghfwshvcvevxq-auth-token=;' + expires;
+        document.cookie = 'sb-wzqymuzpjbagnbgsiqig-auth-token=;' + expires;
+      }
+      function done() {
+        clearLocal();
+        window.location.replace('/login.html');
+      }
+      try {
+        var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // signOut revokes refresh token server-side; { scope: 'global' } kills all sessions for this user
+        client.auth.signOut({ scope: 'global' }).then(done).catch(done);
+        setTimeout(done, 2000); // hard fallback if signOut hangs
+      } catch (e) {
+        done();
+      }
+    })();
+  </script>
+</body>
+</html>

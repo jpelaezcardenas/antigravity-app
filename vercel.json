@@ -10,11 +10,77 @@
         },
         {
             "source": "/login",
-            "destination": "/app/overview",
-            "permanent": true
+            "destination": "/login.html",
+            "permanent": false
+        },
+        {
+            "source": "/app/login",
+            "destination": "/login.html",
+            "permanent": false
+        },
+        {
+            "source": "/app/login.html",
+            "destination": "/login.html",
+            "permanent": false
+        },
+        {
+            "source": "/wizard/login",
+            "destination": "/login.html",
+            "permanent": false
+        },
+        {
+            "source": "/wizard/login/",
+            "destination": "/login.html",
+            "permanent": false
+        },
+        {
+            "source": "/wizard/dashboard",
+            "destination": "/login.html",
+            "permanent": false
+        },
+        {
+            "source": "/wizard/dashboard/",
+            "destination": "/login.html",
+            "permanent": false
+        },
+        {
+            "source": "/wizard/",
+            "destination": "/wizard",
+            "permanent": false
+        },
+        {
+            "source": "/logout",
+            "destination": "/logout.html",
+            "permanent": false
+        }
+    ],
+    "headers": [
+        {
+            "source": "/app/:path*",
+            "headers": [
+                { "key": "Cache-Control", "value": "private, no-store, max-age=0, s-maxage=0, must-revalidate" },
+                { "key": "CDN-Cache-Control", "value": "no-store" },
+                { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+            ]
+        },
+        {
+            "source": "/app-admin/:path*",
+            "headers": [
+                { "key": "Cache-Control", "value": "private, no-store, max-age=0, s-maxage=0, must-revalidate" },
+                { "key": "CDN-Cache-Control", "value": "no-store" },
+                { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+            ]
         }
     ],
     "rewrites": [
+        {
+            "source": "/landing",
+            "destination": "/landing.html"
+        },
+        {
+            "source": "/api/v1/:path*",
+            "destination": "https://antigravity-app-production-175a.up.railway.app/api/v1/:path*"
+        },
         {
             "source": "/app",
             "destination": "/app-admin/index.html"
@@ -36,6 +102,10 @@
             "destination": "/app/patrimonio.html"
         },
         {
+            "source": "/app/config",
+            "destination": "/app/config.html"
+        },
+        {
             "source": "/flujo-detalle",
             "destination": "/app/flujo-detalle.html"
         },
@@ -45,7 +115,11 @@
         },
         {
             "source": "/app/bunker",
-            "destination": "/app/bunker.html"
+            "destination": "/app/bunker/index.html"
+        },
+        {
+            "source": "/app/bunker/:path*",
+            "destination": "/app/bunker/:path*"
         },
         {
             "source": "/app/dashboard-assets/:path*",
@@ -73,11 +147,7 @@
         },
         {
             "source": "/wizard/api/:path*",
-            "destination": "https://contexia-wizard.vercel.app/wizard/api/:path*/"
-        },
-        {
-            "source": "/wizard/",
-            "destination": "https://contexia-wizard.vercel.app/wizard"
+            "destination": "https://contexia-wizard.vercel.app/wizard/api/:path*"
         },
         {
             "source": "/wizard/:path*",

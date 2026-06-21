@@ -137,7 +137,7 @@ export const CampaignCreatorStep4: React.FC = () => {
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <p className="text-xs font-semibold text-gray-500 uppercase">{post.canal || 'Instagram'}</p>
+            <p className="text-xs font-semibold text-muted uppercase">{post.canal || 'Instagram'}</p>
             {post.titulo && <h3 className="text-sm font-bold text-gray-900 mt-1">{post.titulo}</h3>}
           </div>
           <span className="text-xl">{expandedPost === index ? '▲' : '▼'}</span>
@@ -168,27 +168,27 @@ export const CampaignCreatorStep4: React.FC = () => {
         {expandedPost === index && (
           <div className="space-y-3 border-t pt-3 mt-3">
             <div>
-              <p className="text-xs font-semibold text-gray-500 mb-1">Content</p>
+              <p className="text-xs font-semibold text-muted mb-1">Content</p>
               <p className="text-sm text-gray-700 whitespace-pre-wrap">{post.contenido}</p>
             </div>
 
             {post.hashtags && post.hashtags.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1">Hashtags</p>
+                <p className="text-xs font-semibold text-muted mb-1">Hashtags</p>
                 <p className="text-sm text-blue-600">{post.hashtags.join(' ')}</p>
               </div>
             )}
 
             {post.cta && (
               <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1">Call to Action</p>
+                <p className="text-xs font-semibold text-muted mb-1">Call to Action</p>
                 <p className="text-sm text-gray-700">{post.cta}</p>
               </div>
             )}
 
             {post.fecha && (
               <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1">Scheduled</p>
+                <p className="text-xs font-semibold text-muted mb-1">Scheduled</p>
                 <p className="text-sm text-gray-700">
                   {post.fecha} {post.hora || '09:00'}
                 </p>

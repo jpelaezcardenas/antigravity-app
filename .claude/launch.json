@@ -2,11 +2,22 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "contexia-dev",
+      "name": "Backend (FastAPI / uvicorn)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "uvicorn", "main:app", "--reload", "--app-dir", "apps/backend", "--port", "8080"],
+      "port": 8080
+    },
+    {
+      "name": "Contexia Wizard (Next.js)",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "contexia-app", "run", "dev"],
-      "port": 3000,
-      "autoPort": true
+      "runtimeArgs": ["--prefix", "contexia-wizard", "run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "Frontend Dashboard (Vite)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend/dashboard", "run", "dev"],
+      "port": 5173
     }
   ]
 }

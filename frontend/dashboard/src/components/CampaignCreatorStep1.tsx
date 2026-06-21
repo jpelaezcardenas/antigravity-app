@@ -103,7 +103,7 @@ export const CampaignCreatorStep1: React.FC = () => {
         disabled={isLoadingTaxDna}
         className={`w-full px-6 py-3 rounded-lg font-semibold ${
           isLoadingTaxDna
-            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            ? 'bg-gray-300 text-muted cursor-not-allowed'
             : 'bg-blue-600 text-white hover:bg-blue-700'
         }`}
       >

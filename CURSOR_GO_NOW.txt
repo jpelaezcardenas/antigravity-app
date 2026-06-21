@@ -1,0 +1,132 @@
+════════════════════════════════════════════════════════════════════════════════
+                    🚀 CODEX (OpenAI): EMPIEZA AHORA (copy-paste esto)
+════════════════════════════════════════════════════════════════════════════════
+
+CONTEXTO: Migración de 330 secretos de Keeper → Bitwarden Cloud (1 semana)
+
+ESTADO: T1 ✅ | Listo para T2 (20 minutos)
+
+════════════════════════════════════════════════════════════════════════════════
+PASTE THIS INTO OpenAI CODEX (VS Code / API)
+════════════════════════════════════════════════════════════════════════════════
+
+I need to continue a Keeper → Bitwarden Cloud migration.
+
+Current state:
+- T1 (Keeper export validation) is COMPLETE ✅ with 330 secrets validated
+- All OpenSpec artifacts written (spec, scenarios, tasks, reports)
+- Backend code written (secrets_provider.py, health endpoint)
+- 5 git commits ready
+
+Next step: Complete T2-T14 following the checklist.
+
+Your job:
+1. Read CURSOR_PROMPT.md (quick instructions)
+2. Follow T2 checklist (Juan: create Bitwarden Cloud account, 20 minutes)
+3. Follow T3 checklist (Dev: install bw CLI, 30 minutes)
+4. Continue with T4-T14 using openspec/changes/keeper-migration-2026-06-15/tasks.md
+
+Rules:
+- Update tasks.md BEFORE coding (spec-first)
+- Make a commit after each task
+- Pass the 3 decision gates (T6, T12, T14)
+- If stuck: check KEEPER_MIGRATION_HANDOFF.md → DEBUGGING CHECKLIST
+
+Reference files (in order):
+1. CURSOR_PROMPT.md (start here, super simple)
+2. KEEPER_MIGRATION_HANDOFF.md (full instructions)
+3. openspec/changes/keeper-migration-2026-06-15/tasks.md (task details)
+4. openspec/changes/keeper-migration-2026-06-15/MIGRATION_DASHBOARD.md (timeline)
+
+════════════════════════════════════════════════════════════════════════════════
+IMMEDIATE (T2 for Juan)
+════════════════════════════════════════════════════════════════════════════════
+
+1. Go to https://vault.bitwarden.com → Sign Up
+2. Email: jpelaezcardenas@gmail.com
+3. Master password: random 32+ characters
+4. Enable 2FA: Settings → Two-Step Login → Authenticator
+5. Create organization: "Contexia", Plan "Free"
+6. Get API credentials: Settings → Organization → API Key
+7. Save: BW_CLIENT_ID, BW_CLIENT_SECRET, BW_MASTER_PASSWORD
+8. Commit: git commit -m "docs: T2 bitwarden cloud account created"
+
+Time: 20 minutes | Then → T3 (bw CLI install)
+
+════════════════════════════════════════════════════════════════════════════════
+KEY FILES TO REFERENCE
+════════════════════════════════════════════════════════════════════════════════
+
+CURSOR_PROMPT.md                          ← Read this first (2 min)
+KEEPER_MIGRATION_HANDOFF.md               ← Full instructions (read T section)
+ESTADO_ACTUAL.md                          ← Status summary
+START_HERE_KEEPER_MIGRATION.txt           ← Another quick ref
+
+openspec/changes/keeper-migration-2026-06-15/
+├── spec.md                     (problem/solution)
+├── scenarios.md                (10 failure cases + fixes)
+├── tasks.md                    ⭐ USE THIS (each task details)
+├── README.md                   (quick start)
+├── MIGRATION_DASHBOARD.md      ⭐ UPDATE THIS (progress tracking)
+└── reports/T1-*.md             (validation evidence)
+
+════════════════════════════════════════════════════════════════════════════════
+COMMANDS YOU'LL USE
+════════════════════════════════════════════════════════════════════════════════
+
+# See current task details
+cat openspec/changes/keeper-migration-2026-06-15/tasks.md | grep "^### T2"
+
+# Commit after task
+git commit -m "feat/docs: T[#] [description]"
+
+# Track progress (update this file)
+vim openspec/changes/keeper-migration-2026-06-15/MIGRATION_DASHBOARD.md
+
+# See all commits
+git log --oneline -10
+
+════════════════════════════════════════════════════════════════════════════════
+DECISION GATES (must pass these)
+════════════════════════════════════════════════════════════════════════════════
+
+🛑 GATE 1 (after T6): All 6 API keys validated (Groq, OpenAI, Gemini, etc)
+   → If fails: check scenarios.md Scenario 2 (format invalid)
+
+🛑 GATE 2 (after T12): Production deploy verified (health check 200)
+   → If fails: check scenarios.md Scenario 5 (missing env vars)
+
+🛑 GATE 3 (before T14): T13 audits passed (irreversible step)
+   → If fails: DO NOT delete Keeper, wait for full audit pass
+
+════════════════════════════════════════════════════════════════════════════════
+IF YOU GET STUCK
+════════════════════════════════════════════════════════════════════════════════
+
+1. Open KEEPER_MIGRATION_HANDOFF.md → Find "DEBUGGING CHECKLIST"
+2. Find your issue in scenarios.md → Read the mitigation
+3. Contact: Juan (Infra) or Dev Team
+
+════════════════════════════════════════════════════════════════════════════════
+
+Timeline: 1 week (2026-06-15 to 2026-06-20)
+Total effort: ~20 hours
+Next step: Juan starts T2 NOW (20 minutes)
+
+════════════════════════════════════════════════════════════════════════════════
+WHEN DONE IN CURSOR
+════════════════════════════════════════════════════════════════════════════════
+
+Before returning to Claude (when you have credits):
+
+✅ Update MIGRATION_DASHBOARD.md with final status
+✅ Commit all work (with clear messages)
+✅ Leave notes in reports/ folder if there were issues
+✅ Git push
+
+Claude will just:
+- git log --oneline -10 (see your commits)
+- cat MIGRATION_DASHBOARD.md (see progress)
+- Continue from next pending task
+
+════════════════════════════════════════════════════════════════════════════════

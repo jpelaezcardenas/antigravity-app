@@ -37,17 +37,6 @@ DEMO_USERS = [
         "porcentaje_renta": 0.35,
         "porcentaje_iva": 0.19,
         "created_at": datetime.utcnow().isoformat()
-    },
-    {
-        "id": str(uuid.uuid4()),
-        "email": "carlos@importacionesmtz.co",
-        "nombre_empresa": "Importaciones Martinez",
-        "nit": "800.456.789-0",
-        "plan": "growth",
-        "password_hash": "$2b$12$placeholder.martinez.context",  # Placeholder that auth_service recognizes
-        "porcentaje_renta": 0.35,
-        "porcentaje_iva": 0.19,
-        "created_at": datetime.utcnow().isoformat()
     }
 ]
 

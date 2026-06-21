@@ -37,7 +37,11 @@ MANIFEST
 *.zip
 
 # Sensitive files
+.env.local
+.env
 cookies.json
+scripts/keeper-populate-vault.cmd
+load-env.ps1
 
 # VS Code
 .vscode/
@@ -58,3 +62,45 @@ apps/backend/.env
 lidr-specboot/
 
 **/.claude/settings.local.json
+
+# Next.js debug artifacts (dumps from build/runtime)
+__next.*
+__next._*.txt
+_not-found
+_not-found.txt
+_not-found/
+crear-empresa-wizard.txt
+crear-empresa-wizard/
+flujo-detalle.txt
+index.txt
+login.txt
+login_retry.txt
+
+# Ad-hoc scripts and dumps (not project code)
+all_commits.txt
+git-history.txt
+check_db.py
+check_vercel.py
+check_vercel2.py
+test_api.py
+test_login.py
+
+# Dev logs
+contexia-app/dev-server.log
+*.log
+
+# Retired local UI surfaces. Production login is root /login.html.
+contexia-app/
+contexia-wizard/app/login/
+contexia-wizard/app/dashboard/
+contexia-wizard/public/contexia-logo*.png
+
+# Social Media OPs (separate workspace)
+Social Media OPs Systems/
+
+
+# Local agent state & worktrees (not for deploy) — added 2026-06-15
+.claude/
+.cursor/
+.codex/
+venv_contexia/

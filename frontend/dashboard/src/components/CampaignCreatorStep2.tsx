@@ -52,7 +52,7 @@ export const CampaignCreatorStep2: React.FC = () => {
                   />
                   <div>
                     <p className="text-sm font-medium text-gray-700">Primary Color</p>
-                    <p className="text-xs text-gray-500">{dna.visual_identity.primary_color}</p>
+                    <p className="text-xs text-muted">{dna.visual_identity.primary_color}</p>
                   </div>
                 </div>
               )}
@@ -64,7 +64,7 @@ export const CampaignCreatorStep2: React.FC = () => {
                   />
                   <div>
                     <p className="text-sm font-medium text-gray-700">Secondary Color</p>
-                    <p className="text-xs text-gray-500">{dna.visual_identity.secondary_color}</p>
+                    <p className="text-xs text-muted">{dna.visual_identity.secondary_color}</p>
                   </div>
                 </div>
               )}
@@ -91,7 +91,7 @@ export const CampaignCreatorStep2: React.FC = () => {
               )}
             </div>
           ) : (
-            <p className="text-gray-500">No visual identity data extracted</p>
+            <p className="text-muted">No visual identity data extracted</p>
           )}
         </Section>
 
@@ -134,7 +134,7 @@ export const CampaignCreatorStep2: React.FC = () => {
               )}
             </div>
           ) : (
-            <p className="text-gray-500">No verbal identity data extracted</p>
+            <p className="text-muted">No verbal identity data extracted</p>
           )}
         </Section>
 
@@ -147,7 +147,7 @@ export const CampaignCreatorStep2: React.FC = () => {
                   <p className="font-medium text-gray-900">{service.name}</p>
                   {service.description && <p className="text-sm text-gray-600">{service.description}</p>}
                   {service.price_model && (
-                    <p className="text-xs text-gray-500 mt-1">Pricing: {service.price_model}</p>
+                    <p className="text-xs text-muted mt-1">Pricing: {service.price_model}</p>
                   )}
                 </div>
               ))}
@@ -194,7 +194,7 @@ export const CampaignCreatorStep2: React.FC = () => {
           rows={4}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted">
           {campaignObjective.length} characters • Be specific about what success looks like
         </p>
       </div>

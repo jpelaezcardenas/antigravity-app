@@ -18,7 +18,7 @@ async def get_cartera_vencida(
     
     Protected: User can only access their own overdue invoices (IDOR protection).
     """
-    verify_resource_ownership(current_user, usuario_id)
+    await verify_resource_ownership(current_user["id"], usuario_id)
 
     return await cobro_service.monitorear_cartera_vencida(usuario_id)
 
@@ -34,7 +34,7 @@ async def registrar_intento(
     
     Protected: User can only register collection attempts on their own invoices.
     """
-    verify_resource_ownership(current_user, usuario_id)
+    await verify_resource_ownership(current_user["id"], usuario_id)
 
     return await cobro_service.registrar_intento_cobro(usuario_id, request.model_dump())
 
@@ -50,7 +50,7 @@ async def generar_carta(
     
     Protected: User can only generate collection letters for their own invoices.
     """
-    verify_resource_ownership(current_user, usuario_id)
+    await verify_resource_ownership(current_user["id"], usuario_id)
 
     contenido = await cobro_service.generar_carta_cobro(
         usuario_id, request.factura_id, request.tipo

@@ -1,0 +1,46 @@
+# Backend (deploys to Railway, NOT Vercel) — 81 MB incl. .venv
+apps/
+venv_contexia/
+**/.venv/
+**/venv/
+**/__pycache__/
+**/.pytest_cache/
+
+# Frontend builds / dev
+_next/
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+build/
+dist/
+.vercel/
+
+# IDE & version control
+.claude/
+.cursor/
+.git/
+.github/
+.vscode/
+.idea/
+
+# Docs & specs (not needed in deployed app)
+specs/
+docs/
+ai-specs/
+openspec/
+.antigravity/
+
+# Monorepo projects not served by this Vercel deploy
+contexia-app/
+contexia-wizard/
+frontend/
+backend/
+copiloto-contratos-eafit/
+
+# Logs & temps
+*.log
+*.tmp
+.DS_Store
+.env.local
+.env.*.local
