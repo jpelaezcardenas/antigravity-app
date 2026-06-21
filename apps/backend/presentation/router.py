@@ -13,6 +13,7 @@ from presentation.social_ops_endpoints import router as social_ops_router
 from presentation.meta_endpoints import router as meta_router
 from presentation.tiktok_endpoints import router as tiktok_router
 from presentation.linkedin_endpoints import router as linkedin_router
+from presentation.financials_endpoints import router as financials_router
 
 api_router = APIRouter()
 
@@ -33,3 +34,4 @@ api_router.include_router(linkedin_router, prefix="/channels/linkedin", tags=["l
 api_router.include_router(kb_router, prefix="/kb", tags=["knowledge-base"])
 api_router.include_router(radar_router, prefix="/radar", tags=["radar"])
 api_router.include_router(wizard_router, prefix="/wizard", tags=["wizard"])
+api_router.include_router(financials_router, prefix="/financials", tags=["financials"])
