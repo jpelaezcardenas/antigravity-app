@@ -115,3 +115,62 @@ async def generate_draft(
 
     logger.info(f"Generated tax_correction draft {decision.id} for discrepancy {cufe}")
     return decision.id, decision
+
+
+async def generate_draft_with_retry(
+    tenant_id: str, cufe: str, max_retries: int = 2
+) -> Tuple[Optional[str], Optional[Any]]:
+    """
+    Generate a tax_correction draft with Agent Critic retry logic.
+    If Critic validation fails (unbalanced draft), retries up to `max_retries`
+    times to regenerate a balanced version.
+
+    Returns:
+        (decision_id, decision_object) if successful after retries;
+        (None, None) if all retries fail
+    """
+    supabase = get_supabase()
+
+    for attempt in range(max_retries + 1):
+        discrepancies = (
+            supabase.table("shadow_gl_discrepancies")
+            .select("*")
+            .eq("tenant_id", tenant_id)
+            .eq("cufe", cufe)
+            .execute()
+        )
+
+        if not discrepancies.data:
+            logger.warning(f"No discrepancy found for tenant {tenant_id}, cufe {cufe}")
+            return None, None
+
+        discrepancy = discrepancies.data[0]
+
+        # Generate correction lines
+        correction_lines = _generate_correction_lines_fixture(tenant_id, discrepancy)
+
+        if not correction_lines:
+            logger.error(f"Failed to generate correction lines for discrepancy {cufe}")
+            return None, None
+
+        # Try enqueue
+        success, decision, error = await ApprovalQueueService.enqueue_draft(
+            draft_id=f"tax_correction_{cufe}_attempt{attempt}",
+            draft_type="tax_correction",
+            journal_entry={"lines": correction_lines, "memo": f"Auto-generated from discrepancy {cufe} (attempt {attempt + 1})"},
+        )
+
+        if success:
+            logger.info(f"Generated tax_correction draft {decision.id} for {cufe} on attempt {attempt + 1}")
+            return decision.id, decision
+
+        # If error mentions Critic/balance, retry; else fail immediately
+        if error and ("Critic" in error or "balance" in error or "unbalanced" in error.lower()):
+            logger.warning(f"Attempt {attempt + 1} failed Critic validation for {cufe}: {error}. Retrying...")
+            continue
+        else:
+            logger.error(f"Attempt {attempt + 1} failed with non-Critic error for {cufe}: {error}")
+            return None, None
+
+    logger.error(f"All {max_retries + 1} attempts to generate draft for {cufe} failed Critic validation")
+    return None, None
