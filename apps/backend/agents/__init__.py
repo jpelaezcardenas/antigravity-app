@@ -1,12 +1,13 @@
 """Agents module - LLM orchestration, content ops, and rule engines."""
 
-from agents.base_agent import BaseAgent, AgentRole, AgentInput, AgentOutput
-from agents.planner_agent import PlannerAgent
-from agents.generator_agent import GeneratorAgent
-from agents.agent_4_editor import EditorAgent
-from agents.agent_5_repurposer import RepurposerAgent
-from agents.agent_6_analyst import AnalystAgent
-from agents.agent_7_distribution import DistributionAgent
+from .base_agent import BaseAgent, AgentRole, AgentInput, AgentOutput
+from .planner_agent import PlannerAgent
+from .generator_agent import GeneratorAgent
+from .agent_4_editor import EditorAgent
+from .agent_5_repurposer import RepurposerAgent
+from .agent_6_analyst import AnalystAgent
+from .agent_7_distribution import DistributionAgent
+from .agent_critic import validate_journal_entry
 
 __all__ = [
     "BaseAgent",

@@ -14,6 +14,8 @@ from presentation.meta_endpoints import router as meta_router
 from presentation.tiktok_endpoints import router as tiktok_router
 from presentation.linkedin_endpoints import router as linkedin_router
 from presentation.financials_endpoints import router as financials_router
+from presentation.critic_endpoints import router as critic_router
+from presentation.approval_queue_endpoints import router as approval_queue_router
 
 api_router = APIRouter()
 
@@ -35,3 +37,5 @@ api_router.include_router(kb_router, prefix="/kb", tags=["knowledge-base"])
 api_router.include_router(radar_router, prefix="/radar", tags=["radar"])
 api_router.include_router(wizard_router, prefix="/wizard", tags=["wizard"])
 api_router.include_router(financials_router, prefix="/financials", tags=["financials"])
+api_router.include_router(critic_router, prefix="/critic", tags=["critic"])
+api_router.include_router(approval_queue_router, prefix="/approval-queue", tags=["approval-queue"])
