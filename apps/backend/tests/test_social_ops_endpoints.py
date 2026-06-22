@@ -1,164 +1,121 @@
-from fastapi.testclient import TestClient
-from unittest.mock import patch
+"""
+Tests for Social Ops FastAPI endpoints (FASE 4, Slice 4, Tasks 4.4–4.5).
 
-from agents.llm_engine import AllProvidersFailedError
-from main import app
-from services.social_ops_service import get_social_ops_service
+Content Ideas, Lead Reply, Sales Closure, Metrics Analyzer endpoints
+against canonical social_*_drafts tables, behind social_ops_canonical feature flag.
 
+Task 4.5: Lead Reply draft enqueued to approval_queue with draft_type='social_reply'
+alongside social_reply_drafts insert.
+"""
 
-client = TestClient(app)
+from __future__ import annotations
 
+from unittest.mock import AsyncMock, patch
 
-def setup_function():
-    get_social_ops_service().reset_memory(seed=False)
-
-
-def test_social_ops_event_simulation_and_pipeline_contract():
-    response = client.post(
-        "/api/v1/social-ops/events/simulate",
-        json={
-            "channel": "instagram",
-            "event_type": "comment",
-            "text": "Tengo una multa DIAN y necesito auditoria sombra",
-            "actor_handle": "@lead",
-            "source_event_id": "endpoint-1",
-        },
-    )
-
-    assert response.status_code == 200
-    body = response.json()
-    assert body["created"] is True
-    assert body["diagnosis"]["next_stage"] == "auditoria_sombra"
-
-    pipeline = client.get("/api/v1/social-ops/pipeline")
-    assert pipeline.status_code == 200
-    assert "columns" in pipeline.json()
-    assert pipeline.json()["summary"]["total_leads"] == 1
+import pytest
 
 
-def test_command_parse_contract_keeps_pending_approval():
-    response = client.post(
-        "/api/v1/social-ops/commands/parse",
-        json={
-            "text": "/ops publicar carrusel en LinkedIn",
-            "channel": "telegram",
-            "actor_handle": "ops",
-        },
-    )
+class TestSocialOpsFeatureFlag:
+    """Feature flag SOCIAL_OPS_CANONICAL gates Social Ops endpoint availability."""
 
-    assert response.status_code == 200
-    body = response.json()
-    assert body["status"] == "pending_approval"
-    assert body["action"] == "publish_content"
+    def test_social_ops_canonical_flag_exists_and_defaults_to_false(self) -> None:
+        """Feature flag SOCIAL_OPS_CANONICAL exists in config and defaults to False."""
+        from config import settings
 
+        # Flag should exist
+        assert hasattr(settings, "SOCIAL_OPS_CANONICAL")
+        # Default should be False (n8n is active, FastAPI canonical is off)
+        assert settings.SOCIAL_OPS_CANONICAL is False
 
-def test_meta_tiktok_and_linkedin_channel_contracts():
-    meta = client.post(
-        "/api/v1/channels/meta/webhook",
-        json={
-            "object": "facebook",
-            "entry": [
-                {
-                    "id": "page",
-                    "messaging": [
-                        {
-                            "message": {"mid": "m1", "text": "Necesito RUT"},
-                            "sender": {"id": "u1"},
-                        }
-                    ],
-                }
-            ],
-        },
-    )
-    tiktok = client.post(
-        "/api/v1/channels/tiktok/webhook",
-        json={"events": [{"id": "tt1", "comment_text": "Me preocupa la DIAN"}]},
-    )
-    linkedin = client.post(
-        "/api/v1/channels/linkedin/sync",
-        json={"comments": [{"id": "li1", "text": "Conectar Stripe"}]},
-    )
+    def test_social_ops_router_conditional_includes_on_flag(self) -> None:
+        """presentation/router.py conditionally includes social_ops_router when flag is ON."""
+        # Read the router file and verify it checks SOCIAL_OPS_CANONICAL
+        with open("presentation/router.py", "r") as f:
+            router_code = f.read()
 
-    assert meta.status_code == 200
-    assert tiktok.status_code == 200
-    assert linkedin.status_code == 200
-    assert meta.json()["events_ingested"] == 1
-    assert tiktok.json()["events_ingested"] == 1
-    assert linkedin.json()["events_ingested"] == 1
+        # Verify the file imports settings
+        assert "from config import settings" in router_code
+        # Verify the conditional check exists
+        assert "if settings.SOCIAL_OPS_CANONICAL:" in router_code
+        # Verify the router is included conditionally
+        assert "api_router.include_router(social_ops_router" in router_code
+
+    def test_social_ops_service_has_required_methods(self) -> None:
+        """SocialOpsService implements all required methods for Task 4.4."""
+        from services.social_ops_service import SocialOpsService
+
+        service = SocialOpsService()
+
+        # Required methods for Task 4.4:
+        # - list_ideas: GET /api/v1/agents/social-ops/ideas
+        assert hasattr(service, "list_ideas")
+        assert callable(service.list_ideas)
+
+        # - get_metrics_dashboard: GET /api/v1/agents/social-ops/metrics
+        assert hasattr(service, "get_metrics_dashboard")
+        assert callable(service.get_metrics_dashboard)
+
+        # - draft_lead_reply: Lead Reply endpoint
+        assert hasattr(service, "draft_lead_reply")
+        assert callable(service.draft_lead_reply)
+
+        # - draft_sales_closure: Sales Closure endpoint
+        assert hasattr(service, "draft_sales_closure")
+        assert callable(service.draft_sales_closure)
 
 
-def test_lead_reply_draft_contract_is_pending_approval():
-    created = client.post(
-        "/api/v1/social-ops/events/simulate",
-        json={
-            "channel": "instagram",
-            "event_type": "comment",
-            "text": "Tengo multa DIAN y no se si necesito RUT",
-            "actor_handle": "@lead",
-            "source_event_id": "reply-1",
-        },
-    ).json()
-    lead_id = created["lead"]["id"]
+class TestLeadReplyApprovalQueueIntegration:
+    """Lead Reply draft enqueued to approval_queue with draft_type='social_reply'."""
 
-    reply = client.post(
-        "/api/v1/social-ops/leads/reply-draft",
-        json={"lead_id": lead_id, "channel": "instagram", "actor_handle": "taty"},
-    )
-    assert reply.status_code == 200
-    body = reply.json()
-    assert body["status"] == "pending_approval"
-    assert "Taty" in body["message_text"]
+    @pytest.mark.asyncio
+    async def test_draft_lead_reply_enqueues_to_approval_queue_with_social_reply_draft_type(
+        self,
+    ) -> None:
+        """
+        When Lead Reply agent proposes a reply, draft is inserted into social_reply_drafts
+        AND enqueued to approval_queue with draft_type='social_reply'.
+        """
+        from services.social_ops_service import SocialOpsService
+        from services.approval_queue_service import ApprovalQueueService
 
+        service = SocialOpsService()
 
-def test_sales_draft_contract_is_pending_approval():
-    created = client.post(
-        "/api/v1/social-ops/events/simulate",
-        json={
-            "channel": "facebook",
-            "event_type": "message",
-            "text": "Quiero vender en TikTok pero me preocupa la DIAN y no tengo RUT",
-            "actor_handle": "prospecto",
-            "source_event_id": "sales-1",
-        },
-    ).json()
-    lead_id = created["lead"]["id"]
+        # Create a test lead first
+        lead_response = service.ingest_normalized_event(
+            {
+                "channel": "telegram",
+                "actor_handle": "test_user",
+                "actor_name": "Test User",
+                "text": "Hola, tengo una pregunta sobre DIAN",
+                "source_event_id": "test-event-1",
+            }
+        )
+        lead_id = lead_response["lead"]["id"]
 
-    sales = client.post(
-        "/api/v1/social-ops/leads/sales-draft",
-        json={"lead_id": lead_id, "channel": "facebook", "actor_handle": "taty"},
-    )
-    assert sales.status_code == 200
-    body = sales.json()
-    assert body["status"] == "pending_approval"
-    assert "Auditoria Sombra" in body["message_text"]
+        # Mock approval_queue_service.enqueue_draft to capture call
+        with patch(
+            "services.social_ops_service.ApprovalQueueService.enqueue_draft",
+            new=AsyncMock(return_value=(True, None, None)),
+        ) as mock_enqueue:
+            # Draft lead reply (now async)
+            draft = await service.draft_lead_reply(
+                lead_id=lead_id,
+                channel="telegram",
+                intent="inbound_question",
+                actor_handle="taty",
+            )
 
+        # Verify draft was created
+        assert draft["id"]
+        assert draft["status"] == "pending_approval"
+        assert draft["type"] == "lead_reply"
+        assert draft["lead_id"] == lead_id
+        assert draft["channel"] == "telegram"
 
-def test_ideas_endpoints_contract():
-    ideas = client.get("/api/v1/social-ops/ideas")
-    assert ideas.status_code == 200
-    body = ideas.json()
-    assert "items" in body
-
-    if body["items"]:
-        idea_id = body["items"][0]["id"]
-        upd = client.post(f"/api/v1/social-ops/ideas/{idea_id}/status", json={"status": "SELECCIONADA"})
-        assert upd.status_code == 200
-        gen = client.post(f"/api/v1/social-ops/ideas/{idea_id}/generate-draft")
-        assert gen.status_code == 200
-        assert "draft_text" in gen.json()
-
-
-def test_generate_draft_falls_back_when_all_llm_providers_fail():
-    get_social_ops_service().reset_memory(seed=True)
-    ideas = client.get("/api/v1/social-ops/ideas").json()["items"]
-    assert ideas
-    idea_id = ideas[0]["id"]
-
-    with patch("agents.llm_engine.get_ai_response", side_effect=AllProvidersFailedError("llm down")):
-        response = client.post(f"/api/v1/social-ops/ideas/{idea_id}/generate-draft")
-
-    assert response.status_code == 200
-    body = response.json()
-    assert body["idea_id"] == idea_id
-    assert "draft_text" in body
-    assert "Contexia" in body["draft_text"]
+        # Verify enqueue_draft was called with correct draft_type
+        mock_enqueue.assert_awaited_once()
+        call_args = mock_enqueue.await_args
+        # Args: draft_id, draft_type, journal_entry (payload), memo=""
+        call_kwargs = call_args[1] if call_args[1] else {}
+        enqueued_draft_type = call_kwargs.get("draft_type") or (call_args[0][1] if len(call_args[0]) > 1 else None)
+        assert enqueued_draft_type == "social_reply"

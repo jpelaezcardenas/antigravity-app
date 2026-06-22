@@ -13,6 +13,7 @@ from uuid import uuid4
 
 from channels.telegram import normalize_telegram_update
 from core.supabase_client import get_supabase
+from services.approval_queue_service import ApprovalQueueService
 
 logger = logging.getLogger(__name__)
 
@@ -783,7 +784,7 @@ class SocialOpsService:
         self._mirror_supabase("social_command_drafts", self._command_row(draft))
         return deepcopy(draft)
 
-    def draft_lead_reply(
+    async def draft_lead_reply(
         self,
         lead_id: str,
         channel: str,
@@ -821,6 +822,15 @@ class SocialOpsService:
             output={"draft_id": draft["id"], "status": draft["status"], "channel": channel},
         )
         self._mirror_supabase("social_reply_drafts", draft)
+
+        # Task 4.5: Enqueue to approval_queue with draft_type='social_reply'
+        await ApprovalQueueService.enqueue_draft(
+            draft_id=draft["id"],
+            draft_type="social_reply",
+            journal_entry=draft,
+            memo=f"Lead reply from {lead.get('display_name', lead.get('actor_handle'))}",
+        )
+
         return deepcopy(draft)
 
     def draft_sales_closure(

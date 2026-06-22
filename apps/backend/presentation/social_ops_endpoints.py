@@ -190,9 +190,9 @@ class LeadReplyDraftRequest(BaseModel):
 
 
 @router.post("/leads/reply-draft")
-def create_lead_reply_draft(payload: LeadReplyDraftRequest):
+async def create_lead_reply_draft(payload: LeadReplyDraftRequest):
     try:
-        return get_social_ops_service().draft_lead_reply(
+        return await get_social_ops_service().draft_lead_reply(
             lead_id=payload.lead_id,
             channel=payload.channel,
             intent=payload.intent,
