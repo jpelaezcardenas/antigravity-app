@@ -55,7 +55,7 @@
 
 ## 5. Slice 5 — Maestro Orchestrator + KB integration
 
-- [ ] 5.1 Define typed `AgentProtocol` requiring `async def quick_status()`; add CI check rejecting sync registrations
+- [x] 5.1 Define typed `AgentProtocol` requiring `async def quick_status()`; add CI check rejecting sync registrations — `AgentProtocol` defined in `services/maestro_service.py` using `@runtime_checkable` Protocol with async `quick_status()` method signature; `register_agent()` function validates at registration time that `agent.quick_status` is async (via `asyncio.iscoroutinefunction()`), raising `ValueError` if sync; `services/maestro_service.py` includes global agent registry and `invoke_swarm_status()` fan-out orchestrator; `tests/test_maestro_agent_protocol.py` created with `TestAgentProtocol` class, RED (module did not exist) → GREEN (4/4: protocol exists, sync registration rejected, async registration accepted, agent registry tracks agents)
 - [ ] 5.2 Write failing test: `asyncio.gather` fan-out returns a per-agent status entry for every registered agent; implement orchestrator fan-out replacing the `orchestrator_service.py` stub
 - [ ] 5.3 Write failing test: one agent timing out is marked `status: "timeout"` without blocking the others; implement per-agent timeout
 - [ ] 5.4 Write failing test: one agent raising an exception is marked `status: "error"` without crashing the request; implement per-agent exception isolation
