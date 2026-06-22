@@ -98,6 +98,91 @@ class TestMaestroSwarmInvoke:
         assert result["timeouts"] == 0
         assert result["errors"] == 0
 
+    @pytest.mark.asyncio
+    async def test_one_agent_timeout_marked_timeout_other_agents_respond(self) -> None:
+        """
+        One agent timing out is marked "timeout".
+        Other agents still respond without being blocked.
+        """
+        import asyncio
+        from services.maestro_service import (
+            register_agent,
+            invoke_swarm_status,
+            get_registered_agents,
+        )
+
+        registry = get_registered_agents()
+        registry.clear()
+
+        class FastAgent:
+            async def quick_status(self) -> dict:
+                return {"status": "ok", "agent": "fast"}
+
+        class SlowAgent:
+            async def quick_status(self) -> dict:
+                # Sleep longer than timeout (default 0.4s)
+                await asyncio.sleep(1.0)
+                return {"status": "ok", "agent": "slow"}
+
+        # Register with different timeouts
+        register_agent("fast", FastAgent(), timeout_seconds=0.5)
+        register_agent("slow", SlowAgent(), timeout_seconds=0.1)  # Will timeout
+
+        result = await invoke_swarm_status()
+
+        # Fast agent should respond normally
+        assert result["agents"]["fast"]["status"] == "ok"
+
+        # Slow agent should be marked timeout
+        assert result["agents"]["slow"]["status"] == "timeout"
+
+        # Aggregated counts
+        assert result["total_agents"] == 2
+        assert result["healthy"] == 1
+        assert result["timeouts"] == 1
+        assert result["errors"] == 0
+
+    @pytest.mark.asyncio
+    async def test_one_agent_exception_marked_error_other_agents_respond(self) -> None:
+        """
+        One agent raising an exception is marked "error".
+        Other agents still respond without crashing the request.
+        """
+        from services.maestro_service import (
+            register_agent,
+            invoke_swarm_status,
+            get_registered_agents,
+        )
+
+        registry = get_registered_agents()
+        registry.clear()
+
+        class HealthyAgent:
+            async def quick_status(self) -> dict:
+                return {"status": "ok", "agent": "healthy"}
+
+        class BrokenAgent:
+            async def quick_status(self) -> dict:
+                raise RuntimeError("Agent database connection failed")
+
+        register_agent("healthy", HealthyAgent())
+        register_agent("broken", BrokenAgent())
+
+        result = await invoke_swarm_status()
+
+        # Healthy agent should respond normally
+        assert result["agents"]["healthy"]["status"] == "ok"
+
+        # Broken agent should be marked error with message
+        assert result["agents"]["broken"]["status"] == "error"
+        assert "Agent database connection failed" in result["agents"]["broken"]["error"]
+
+        # Aggregated counts
+        assert result["total_agents"] == 2
+        assert result["healthy"] == 1
+        assert result["timeouts"] == 0
+        assert result["errors"] == 1
+
 
 class TestAgentProtocol:
     """AgentProtocol requires async quick_status() method."""
