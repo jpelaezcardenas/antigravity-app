@@ -13,6 +13,92 @@ from typing import Protocol
 import pytest
 
 
+class TestMaestroSwarmInvoke:
+    """Maestro asyncio.gather fan-out orchestrator."""
+
+    @pytest.mark.asyncio
+    async def test_swarm_status_calls_all_agents_concurrently_and_returns_per_agent_entries(
+        self,
+    ) -> None:
+        """
+        invoke_swarm_status() calls quick_status() on ALL registered agents
+        in parallel via asyncio.gather, returns per-agent status entries.
+        """
+        from services.maestro_service import (
+            register_agent,
+            invoke_swarm_status,
+            get_registered_agents,
+        )
+
+        # Clear registry
+        registry = get_registered_agents()
+        registry.clear()
+
+        # Register 3 test agents
+        class Agent1:
+            async def quick_status(self) -> dict:
+                return {"status": "ok", "agent": "agent1", "health": 100}
+
+        class Agent2:
+            async def quick_status(self) -> dict:
+                return {"status": "ok", "agent": "agent2", "health": 95}
+
+        class Agent3:
+            async def quick_status(self) -> dict:
+                return {"status": "ok", "agent": "agent3", "health": 90}
+
+        register_agent("agent1", Agent1())
+        register_agent("agent2", Agent2())
+        register_agent("agent3", Agent3())
+
+        # Invoke swarm status
+        result = await invoke_swarm_status()
+
+        # Verify result structure
+        assert "agents" in result
+        assert "total_agents" in result
+        assert "healthy" in result
+        assert "timeouts" in result
+        assert "errors" in result
+
+        # Verify all agents present in result
+        agents = result["agents"]
+        assert len(agents) == 3
+        assert "agent1" in agents
+        assert "agent2" in agents
+        assert "agent3" in agents
+
+        # Verify per-agent status entries
+        assert agents["agent1"]["status"] == "ok"
+        assert agents["agent1"]["health"] == 100
+        assert agents["agent2"]["status"] == "ok"
+        assert agents["agent2"]["health"] == 95
+        assert agents["agent3"]["status"] == "ok"
+        assert agents["agent3"]["health"] == 90
+
+        # Verify aggregated counts
+        assert result["total_agents"] == 3
+        assert result["healthy"] == 3
+        assert result["timeouts"] == 0
+        assert result["errors"] == 0
+
+    @pytest.mark.asyncio
+    async def test_swarm_status_returns_empty_when_no_agents_registered(self) -> None:
+        """Empty registry returns empty swarm status."""
+        from services.maestro_service import invoke_swarm_status, get_registered_agents
+
+        registry = get_registered_agents()
+        registry.clear()
+
+        result = await invoke_swarm_status()
+
+        assert result["agents"] == {}
+        assert result["total_agents"] == 0
+        assert result["healthy"] == 0
+        assert result["timeouts"] == 0
+        assert result["errors"] == 0
+
+
 class TestAgentProtocol:
     """AgentProtocol requires async quick_status() method."""
 
