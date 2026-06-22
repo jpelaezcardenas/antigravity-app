@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = ""
     LLM_MODEL: str = "llama-3.3-70b-versatile"
 
+    # Feature Flags (Task 4.4: Social Ops canonical endpoints)
+    SOCIAL_OPS_CANONICAL: bool = False
+
     @property
     def origins_list(self) -> List[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]

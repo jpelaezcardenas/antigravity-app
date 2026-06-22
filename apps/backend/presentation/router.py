@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from config import settings
 from presentation.auth_endpoints import router as auth_router
 from presentation.pulso_endpoints import router as pulso_router
 from presentation.centinela_endpoints import router as centinela_router
@@ -32,7 +33,10 @@ api_router.include_router(agents_router, prefix="/agents", tags=["agents"])
 # /agents/social/..., etc.), so both can be mounted at the same prefix.
 api_router.include_router(taty_router, prefix="/agents", tags=["taty"])
 api_router.include_router(telegram_router, prefix="/channels", tags=["telegram"])
-api_router.include_router(social_ops_router, prefix="/social-ops", tags=["social-ops"])
+
+# Social Ops canonical endpoints — feature flag gated (default off, n8n still routes)
+if settings.SOCIAL_OPS_CANONICAL:
+    api_router.include_router(social_ops_router, prefix="/social-ops", tags=["social-ops"])
 api_router.include_router(meta_router, prefix="/channels/meta", tags=["meta"])
 api_router.include_router(tiktok_router, prefix="/channels/tiktok", tags=["tiktok"])
 api_router.include_router(linkedin_router, prefix="/channels/linkedin", tags=["linkedin"])
