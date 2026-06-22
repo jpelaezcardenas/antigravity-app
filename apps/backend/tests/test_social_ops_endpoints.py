@@ -1,11 +1,16 @@
 """
-Tests for Social Ops FastAPI endpoints (FASE 4, Slice 4, Task 4.4).
+Tests for Social Ops FastAPI endpoints (FASE 4, Slice 4, Tasks 4.4–4.5).
 
 Content Ideas, Lead Reply, Sales Closure, Metrics Analyzer endpoints
 against canonical social_*_drafts tables, behind social_ops_canonical feature flag.
+
+Task 4.5: Lead Reply draft enqueued to approval_queue with draft_type='social_reply'
+alongside social_reply_drafts insert.
 """
 
 from __future__ import annotations
+
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -57,3 +62,60 @@ class TestSocialOpsFeatureFlag:
         # - draft_sales_closure: Sales Closure endpoint
         assert hasattr(service, "draft_sales_closure")
         assert callable(service.draft_sales_closure)
+
+
+class TestLeadReplyApprovalQueueIntegration:
+    """Lead Reply draft enqueued to approval_queue with draft_type='social_reply'."""
+
+    @pytest.mark.asyncio
+    async def test_draft_lead_reply_enqueues_to_approval_queue_with_social_reply_draft_type(
+        self,
+    ) -> None:
+        """
+        When Lead Reply agent proposes a reply, draft is inserted into social_reply_drafts
+        AND enqueued to approval_queue with draft_type='social_reply'.
+        """
+        from services.social_ops_service import SocialOpsService
+        from services.approval_queue_service import ApprovalQueueService
+
+        service = SocialOpsService()
+
+        # Create a test lead first
+        lead_response = service.ingest_normalized_event(
+            {
+                "channel": "telegram",
+                "actor_handle": "test_user",
+                "actor_name": "Test User",
+                "text": "Hola, tengo una pregunta sobre DIAN",
+                "source_event_id": "test-event-1",
+            }
+        )
+        lead_id = lead_response["lead"]["id"]
+
+        # Mock approval_queue_service.enqueue_draft to capture call
+        with patch(
+            "services.social_ops_service.ApprovalQueueService.enqueue_draft",
+            new=AsyncMock(return_value=(True, None, None)),
+        ) as mock_enqueue:
+            # Draft lead reply (now async)
+            draft = await service.draft_lead_reply(
+                lead_id=lead_id,
+                channel="telegram",
+                intent="inbound_question",
+                actor_handle="taty",
+            )
+
+        # Verify draft was created
+        assert draft["id"]
+        assert draft["status"] == "pending_approval"
+        assert draft["type"] == "lead_reply"
+        assert draft["lead_id"] == lead_id
+        assert draft["channel"] == "telegram"
+
+        # Verify enqueue_draft was called with correct draft_type
+        mock_enqueue.assert_awaited_once()
+        call_args = mock_enqueue.await_args
+        # Args: draft_id, draft_type, journal_entry (payload), memo=""
+        call_kwargs = call_args[1] if call_args[1] else {}
+        enqueued_draft_type = call_kwargs.get("draft_type") or (call_args[0][1] if len(call_args[0]) > 1 else None)
+        assert enqueued_draft_type == "social_reply"
