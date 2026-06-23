@@ -3,9 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from presentation.router import api_router
 from presentation.health_endpoints import router as health_router
+from presentation.metrics_endpoints import router as metrics_router
 from core.middleware import SecurityHeadersMiddleware, RequestLoggingMiddleware
 from config import settings
 from middleware_config import apply_middleware
+from prometheus_metrics import add_prometheus_middleware
 import uvicorn
 import logging
 
@@ -66,10 +68,15 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
+# Add Prometheus middleware for request tracking (Task 3.4)
+add_prometheus_middleware(app)
+
 # Incluir routers
 print("[STARTUP] Loading routers...", flush=True)
 api_router.include_router(health_router)
+api_router.include_router(metrics_router, prefix="/monitoring")
 print("[STARTUP] Health router loaded", flush=True)
+print("[STARTUP] Metrics router loaded - /api/v1/monitoring/metrics", flush=True)
 
 # Secrets router — imported defensively so a failure never crashes app startup
 try:
