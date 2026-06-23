@@ -1,0 +1,59 @@
+# OpenSpec: Phase 6 Enhancement
+# Status: Proposal - Ready for Design Review
+
+change_id: phase6-enhancement
+title: "Phase 6: Enhancement — State Management, Error UI, Analytics"
+description: >
+  Enhance Contexia PWA with production-grade UX and observability.
+  Add Zustand state management with localStorage persistence,
+  error boundaries + toast notifications, Sentry error tracking,
+  and Prometheus metrics for production monitoring.
+
+created_at: 2026-06-23
+started_at: null
+completed_at: null
+deployed_at: null
+
+status: proposal  # proposal → design → spec → tasks → apply → deploy → archive
+
+# Stage tracking
+stages:
+  proposal: completed
+  design: completed
+  spec: pending
+  tasks: pending
+  apply: pending
+  deploy: pending
+  archive: pending
+
+# Artifacts
+artifacts:
+  proposal: proposal.md
+  design: design.md
+  tasks: tasks.md
+  spec: null  # TBD in next stage
+
+# Estimated metrics
+estimates:
+  duration_days: 5-7
+  story_points: 40
+  developers: 1
+  cost_estimate: "medium"
+
+# Dependencies
+dependencies:
+  - "phase5-complete: true"
+  - "zustand-available: true"
+  - "sentry-account: pending"
+  - "grafana-instance: pending"
+
+# Planned date
+planned_start_date: 2026-06-24
+planned_completion_date: 2026-07-02
+
+# Sign-off
+sign_off:
+  proposer: "Claude Code"
+  proposer_status: proposed
+  designer_status: pending
+  date: 2026-06-23
