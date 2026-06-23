@@ -82,6 +82,7 @@ export const useStoreRehydration = (options: RehydrationOptions = {}) => {
 /**
  * Internal: Fetch fresh data from backend in background
  * Merges with cached data intelligently (fresh data wins)
+ * Task 2.6: Error handling with logging (toast not available in background context)
  */
 const fetchFreshDataInBackground = async () => {
   try {
@@ -93,6 +94,8 @@ const fetchFreshDataInBackground = async () => {
         user: userData,
       });
       console.log('[Rehydration] Fetched fresh user data');
+    } else {
+      console.warn('[Rehydration] Failed to fetch user data:', userResponse.status);
     }
 
     // Fetch fresh agent data (all agents in parallel)
@@ -109,8 +112,17 @@ const fetchFreshDataInBackground = async () => {
 
     const agentRequests = agents.map((agent) =>
       fetch(`/api/v1/agents/${agent}/stream`)
-        .then((res) => (res.ok ? res.json() : null))
-        .catch(() => null)
+        .then((res) => {
+          if (!res.ok) {
+            console.warn(`[Rehydration] Failed to fetch ${agent}:`, res.status);
+            return null;
+          }
+          return res.json();
+        })
+        .catch((err) => {
+          console.error(`[Rehydration] Error fetching ${agent}:`, err);
+          return null;
+        })
     );
 
     const agentResults = await Promise.all(agentRequests);
@@ -136,6 +148,8 @@ const fetchFreshDataInBackground = async () => {
         },
       });
       console.log('[Rehydration] Merged fresh agent data');
+    } else {
+      console.warn('[Rehydration] No agent data fetched successfully');
     }
   } catch (error) {
     console.error('[Rehydration] Error fetching fresh data:', error);
