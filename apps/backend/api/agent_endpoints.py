@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import List, Optional
 
-router = APIRouter(prefix="/api/v1", tags=["agents"])
+router = APIRouter(tags=["agents"])
 
 
 # ============================================================================
