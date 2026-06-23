@@ -14,6 +14,12 @@ from fastapi.exceptions import WebSocketException
 import jwt
 
 from config import settings
+from services.agent_context import (
+    context_manager,
+    AgentContext,
+    build_agent_payload,
+    Permission,
+)
 
 logger = logging.getLogger("websocket-handler")
 
@@ -150,6 +156,7 @@ async def websocket_endpoint(
         user_id = payload.get("sub")
         workspace_id = payload.get("workspace_id")
         user_email = payload.get("email")
+        permissions = payload.get("permissions", [])
 
         if not user_id or not workspace_id:
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
@@ -157,6 +164,14 @@ async def websocket_endpoint(
     except WebSocketException:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
+
+    # Create agent context for this session
+    agent_context = context_manager.create_context(
+        user_id=user_id,
+        workspace_id=workspace_id,
+        user_email=user_email,
+        permissions=permissions,
+    )
 
     # Connect
     await manager.connect(websocket, workspace_id, user_id)
@@ -200,8 +215,7 @@ async def websocket_endpoint(
                     listener_task = asyncio.create_task(
                         agent_output_listener(
                             agent=agent,
-                            workspace_id=workspace_id,
-                            user_id=user_id,
+                            context=agent_context,
                             websocket=websocket,
                             manager=manager,
                         )
@@ -224,12 +238,23 @@ async def websocket_endpoint(
                 agent = data.get("agent")
                 params = data.get("params", {})
 
+                # Check permissions
+                if not agent_context.can_invoke_agent(agent):
+                    await manager.send_personal(
+                        websocket,
+                        {
+                            "type": "agent_error",
+                            "agent": agent,
+                            "error": f"Permission denied: cannot invoke {agent}",
+                            "timestamp": datetime.utcnow().isoformat(),
+                        },
+                    )
+                    continue
+
                 # Invoke agent with context
                 result = await invoke_agent(
                     agent=agent,
-                    workspace_id=workspace_id,
-                    user_id=user_id,
-                    user_email=user_email,
+                    context=agent_context,
                     params=params,
                 )
 
@@ -251,6 +276,9 @@ async def websocket_endpoint(
         # Cleanup
         await manager.disconnect(websocket, workspace_id, user_id)
 
+        # Invalidate context on disconnect
+        context_manager.invalidate_context(workspace_id, user_id)
+
         if heartbeat_task:
             heartbeat_task.cancel()
 
@@ -262,69 +290,89 @@ async def websocket_endpoint(
 
 async def agent_output_listener(
     agent: str,
-    workspace_id: str,
-    user_id: str,
+    context: AgentContext,
     websocket: WebSocket,
     manager: ConnectionManager,
 ) -> None:
     """
     Listen for agent output and stream to client.
-    This is a stub that polls or subscribes to agent output.
+    This is a stub that polls or subscribes to Hermes agent output.
 
     TODO: Replace with actual Hermes integration:
-    - Subscribe to Hermes event stream
-    - Filter by workspace_id
-    - Stream results via WebSocket
+    - Subscribe to Hermes event stream for this agent
+    - Filter by context.workspace_id to respect multi-tenancy
+    - Stream results via WebSocket to subscribed clients
+    - Use context for audit trail
+
+    Example:
+    ```python
+    async with Hermes.subscribe_agent(agent, context.workspace_id) as stream:
+        async for output in stream:
+            await manager.send_personal(websocket, {
+                "type": "agent_output",
+                "agent": agent,
+                "data": output,
+                "context": context.to_dict()
+            })
+    ```
     """
     try:
         # Placeholder: in production, subscribe to Hermes agent output
         # For now, we just keep the listener alive
+        logger.info(
+            f"Listening to agent: {agent}, workspace={context.workspace_id}, user={context.user_id}"
+        )
         while True:
             await asyncio.sleep(1)
     except asyncio.CancelledError:
-        pass
+        logger.info(f"Agent listener cancelled: {agent}")
     except Exception as e:
         logger.error(f"Agent listener error ({agent}): {e}")
 
 
 async def invoke_agent(
     agent: str,
-    workspace_id: str,
-    user_id: str,
-    user_email: str,
+    context: AgentContext,
     params: dict,
 ) -> dict:
     """
-    Invoke a Hermes agent with context.
+    Invoke a Hermes agent with user context.
 
     This function:
-    1. Builds agent context (workspace, user, permissions)
-    2. Calls Hermes via HTTP (or direct integration)
-    3. Returns result
+    1. Validates agent access via context permissions
+    2. Builds agent invocation payload with context
+    3. Calls Hermes via HTTP (or direct integration)
+    4. Returns result with proper error handling
 
-    TODO: Replace with actual Hermes integration.
-    For now, returns stub data.
+    TODO: Replace stub with actual Hermes HTTP call:
+    ```python
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"http://localhost:8000/api/v1/agents/{agent}/invoke",
+            json=build_agent_payload(context, params),
+            headers=build_agent_headers(context),
+            timeout=30
+        )
+        return response.json()
+    ```
     """
 
-    agent_context = {
-        "workspace_id": workspace_id,
-        "user_id": user_id,
-        "user_email": user_email,
-        "timestamp": datetime.utcnow().isoformat(),
-    }
-
     logger.info(
-        f"🤖 Invoking agent: agent={agent}, workspace={workspace_id}, user={user_id}"
+        f"🤖 Invoking agent: agent={agent}, workspace={context.workspace_id}, user={context.user_id}"
     )
 
-    # TODO: Call actual agent endpoints
-    # POST https://antigravity-app-production-175a.up.railway.app/api/v1/agents/{agent}/invoke
-    # with context + params
+    # Build payload with context
+    payload = build_agent_payload(context, params)
 
+    # TODO: Call actual Hermes endpoint
+    # For now, return stub with context included
     return {
         "agent": agent,
         "status": "success",
-        "context": agent_context,
+        "context": context.to_dict(),
         "params": params,
-        "result": {"placeholder": "Agent output will be populated here"},
+        "result": {
+            "placeholder": "Agent output will be populated here",
+            "message": f"Agent {agent} invoked with context from {context.user_email}",
+        },
     }
