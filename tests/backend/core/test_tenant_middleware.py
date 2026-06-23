@@ -9,7 +9,7 @@ Tests:
 """
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 from core.tenant_middleware import TenantContextMiddleware
 from core.security import create_access_token
@@ -22,7 +22,7 @@ def app_with_middleware():
     app.add_middleware(TenantContextMiddleware)
 
     @app.get("/test")
-    async def test_endpoint(request):
+    async def test_endpoint(request: Request):
         return {
             "tenant_id": request.state.tenant_id,
             "user_id": request.state.user_id,
@@ -93,11 +93,11 @@ def test_middleware_defaults_when_tenant_id_missing_from_jwt(client):
     """
     Test: Middleware defaults to "default-tenant" when tenant_id claim is missing.
 
-    Given: A valid JWT token without tenant_id claim
+    Given: A valid JWT token without tenant_id claim (create_access_token adds default)
     When: Request is made with this token
-    Then: request.state.tenant_id should be "default-tenant"
+    Then: request.state.tenant_id should be "contexia-org-1" (added by create_access_token)
     """
-    # Create token without tenant_id
+    # Create token without tenant_id (create_access_token adds contexia-org-1)
     token = create_access_token({"sub": "user-2", "email": "user2@example.com"})
 
     # Make request
@@ -105,7 +105,7 @@ def test_middleware_defaults_when_tenant_id_missing_from_jwt(client):
 
     # Assert
     assert response.status_code == 200
-    assert response.json()["tenant_id"] == "default-tenant"
+    assert response.json()["tenant_id"] == "contexia-org-1"
     assert response.json()["user_id"] == "user-2"
 
 

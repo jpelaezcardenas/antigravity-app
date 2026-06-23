@@ -6,13 +6,14 @@ Non-invasive: existing endpoints unaware of this middleware.
 """
 
 from fastapi import Request
+from starlette.middleware.base import BaseHTTPMiddleware
 from core.security import verify_token
 import logging
 
 logger = logging.getLogger("tenant-middleware")
 
 
-class TenantContextMiddleware:
+class TenantContextMiddleware(BaseHTTPMiddleware):
     """
     Middleware that extracts tenant_id from JWT and injects into request.state.
 
@@ -28,17 +29,8 @@ class TenantContextMiddleware:
     - If tenant_id missing from payload: uses default
     """
 
-    async def __call__(self, request: Request, call_next):
-        """
-        Process request: extract tenant context and pass to next middleware/endpoint.
-
-        Args:
-            request: FastAPI Request object
-            call_next: Next middleware/endpoint in stack
-
-        Returns:
-            Response from downstream
-        """
+    async def dispatch(self, request: Request, call_next):
+        """Extract tenant context and pass to next middleware/endpoint."""
         tenant_id: str = "default-tenant"
         user_id: str | None = None
 
