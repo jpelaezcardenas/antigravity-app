@@ -2,9 +2,11 @@
  * API Client Utility
  * Centralizes fetch calls with error handling and toast notifications
  * Task 2.6: Toast calls integrated into all API error handlers
+ * Task 3.3: Sentry error capture for network errors
  */
 
 import { useToast } from '../hooks/useToast'
+import * as Sentry from '@sentry/react'
 
 export interface ApiResponse<T = any> {
   ok: boolean
@@ -14,9 +16,8 @@ export interface ApiResponse<T = any> {
 }
 
 /**
- * Fetch wrapper with error handling
- * Call from components with useToast hook available
- * Or use fetchWithoutToast for hooks that can't use useToast
+ * Fetch wrapper with error handling and Sentry integration
+ * Task 3.3: Capture errors to Sentry for production monitoring
  */
 export async function apiFetch(
   url: string,
@@ -33,6 +34,20 @@ export async function apiFetch(
 
     if (!response.ok) {
       const errorText = await response.text()
+
+      // Capture HTTP errors to Sentry (4xx, 5xx)
+      if (response.status >= 500) {
+        Sentry.captureMessage(
+          `API Error: ${response.status} ${url}`,
+          'error'
+        )
+      } else if (response.status >= 400) {
+        Sentry.captureMessage(
+          `API Client Error: ${response.status} ${url}`,
+          'warning'
+        )
+      }
+
       return {
         ok: false,
         status: response.status,
@@ -48,6 +63,21 @@ export async function apiFetch(
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
+
+    // Capture network/parsing errors to Sentry
+    Sentry.captureException(error, {
+      tags: {
+        errorType: 'api_error',
+        url,
+      },
+      contexts: {
+        api: {
+          url,
+          method: options?.method || 'GET',
+        },
+      },
+    })
+
     return {
       ok: false,
       status: 0,
