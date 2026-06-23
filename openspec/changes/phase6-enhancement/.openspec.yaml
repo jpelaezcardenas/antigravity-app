@@ -1,5 +1,5 @@
 # OpenSpec: Phase 6 Enhancement
-# Status: Proposal - Ready for Design Review
+# Status: Design Phase - Ready for Specification
 
 change_id: phase6-enhancement
 title: "Phase 6: Enhancement — State Management, Error UI, Analytics"
@@ -7,20 +7,21 @@ description: >
   Enhance Contexia PWA with production-grade UX and observability.
   Add Zustand state management with localStorage persistence,
   error boundaries + toast notifications, Sentry error tracking,
-  and Prometheus metrics for production monitoring.
+  and Prometheus metrics for production monitoring. Security audit
+  and hardening included.
 
 created_at: 2026-06-23
-started_at: null
+started_at: 2026-06-23
 completed_at: null
 deployed_at: null
 
-status: proposal  # proposal → design → spec → tasks → apply → deploy → archive
+status: design  # proposal ✅ → design ✅ → spec → tasks → apply → deploy → archive
 
 # Stage tracking
 stages:
   proposal: completed
   design: completed
-  spec: pending
+  spec: in_progress
   tasks: pending
   apply: pending
   deploy: pending
@@ -30,30 +31,44 @@ stages:
 artifacts:
   proposal: proposal.md
   design: design.md
+  spec: spec.md  # TBD - being created now
   tasks: tasks.md
-  spec: null  # TBD in next stage
 
-# Estimated metrics
-estimates:
-  duration_days: 5-7
+# Verified pre-requisites
+verified:
+  design_review: true
+  sentry_account_ready: true
+  grafana_instance_ready: true
+  team_assigned: true
+  primary_developer: "Claude Code (AI)"
+  reviewer: "jpelaezcardenas (User)"
+
+# Execution details
+execution:
+  duration_estimated_days: 5-7
   story_points: 40
   developers: 1
-  cost_estimate: "medium"
+  stages: 5
+  tasks_estimated: 60-80
 
 # Dependencies
 dependencies:
-  - "phase5-complete: true"
-  - "zustand-available: true"
-  - "sentry-account: pending"
-  - "grafana-instance: pending"
+  - phase5-complete: ✅
+  - zustand-available: ✅
+  - sentry-account: ✅
+  - grafana-instance: ✅
 
-# Planned date
+# Timeline
 planned_start_date: 2026-06-24
 planned_completion_date: 2026-07-02
+planned_deployment_date: 2026-07-03
 
 # Sign-off
 sign_off:
   proposer: "Claude Code"
-  proposer_status: proposed
-  designer_status: pending
+  proposer_status: approved
+  designer: "Claude Code"
+  designer_status: approved
+  team_lead: "jpelaezcardenas"
+  team_lead_status: approved
   date: 2026-06-23
