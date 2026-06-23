@@ -12,20 +12,20 @@ description: >
 
 created_at: 2026-06-23
 started_at: 2026-06-23
-completed_at: null
-deployed_at: null
+completed_at: 2026-06-23
+deployed_at: 2026-06-23
 
-status: design  # proposal ✅ → design ✅ → spec → tasks → apply → deploy → archive
+status: archive  # proposal ✅ → design ✅ → spec ✅ → tasks ✅ → apply ✅ → deploy ✅ → archive
 
 # Stage tracking
 stages:
   proposal: completed
   design: completed
-  spec: in_progress
-  tasks: pending
-  apply: pending
-  deploy: pending
-  archive: pending
+  spec: completed
+  tasks: completed
+  apply: completed
+  deploy: completed
+  archive: completed
 
 # Artifacts
 artifacts:
