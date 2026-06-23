@@ -11,7 +11,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, status
 from fastapi.exceptions import WebSocketException
-import jwt
+from jose import jwt, JWTError
 
 from config import settings
 from services.agent_context import (
@@ -128,7 +128,7 @@ def verify_ws_token(token: str) -> dict:
             algorithms=[settings.JWT_ALGORITHM],
         )
         return payload
-    except jwt.InvalidTokenError as e:
+    except JWTError as e:
         logger.error(f"Invalid WebSocket token: {e}")
         raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
 
