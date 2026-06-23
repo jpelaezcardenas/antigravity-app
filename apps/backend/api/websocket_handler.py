@@ -23,6 +23,13 @@ from services.agent_context import (
     Permission,
 )
 from services.agent_transformers import AgentTransformers
+from services.agent_validation import (
+    PulsaOutput,
+    DraftOutput,
+    RiskScoreOutput,
+    SocialOpsOutput,
+    AuditOutput,
+)
 
 logger = logging.getLogger("websocket-handler")
 
@@ -391,20 +398,35 @@ async def invoke_agent(agent: str, context: AgentContext, params: dict) -> dict:
 
             raw_data = response.json()
 
-            # Apply transformations based on agent type
-            if agent == "pulso":
-                data = AgentTransformers.transform_pulso(raw_data)
-            elif agent == "centinela":
-                data = AgentTransformers.transform_centinela(raw_data)
-            elif agent == "radar":
-                data = AgentTransformers.transform_radar(raw_data)
-            elif agent == "social-ops":
-                data = AgentTransformers.transform_social_ops(raw_data)
-            elif agent == "audit":
-                data = AgentTransformers.transform_audit(raw_data)
-            else:
-                # No transformation for taty, approval, maestro
-                data = raw_data
+            # Apply transformations and validate based on agent type
+            try:
+                if agent == "pulso":
+                    data = AgentTransformers.transform_pulso(raw_data)
+                    validated = PulsaOutput(**data)
+                    data = validated.model_dump()
+                elif agent == "centinela":
+                    data = AgentTransformers.transform_centinela(raw_data)
+                elif agent == "radar":
+                    data = AgentTransformers.transform_radar(raw_data)
+                    validated = RiskScoreOutput(**data)
+                    data = validated.model_dump()
+                elif agent == "social-ops":
+                    data = AgentTransformers.transform_social_ops(raw_data)
+                    validated = SocialOpsOutput(**data)
+                    data = validated.model_dump()
+                elif agent == "audit":
+                    data = AgentTransformers.transform_audit(raw_data)
+                    validated = AuditOutput(**data)
+                    data = validated.model_dump()
+                else:
+                    # No transformation for taty, approval, maestro
+                    data = raw_data
+            except ValueError as e:
+                logger.error(f"Data validation failed ({agent}): {e}")
+                return {
+                    "status": "error",
+                    "message": f"Invalid agent response format: {str(e)}",
+                }
 
             return {
                 "status": "success",
