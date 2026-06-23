@@ -372,7 +372,7 @@ async def invoke_agent(agent: str, context: AgentContext, params: dict) -> dict:
         return {"status": "error", "message": f"Unknown agent: {agent}"}
 
     logger.info(
-        f"🤖 Invoking agent: agent={agent}, workspace={context.workspace_id}, user={context.user_id}"
+        f"Invoking agent: {agent}, workspace={context.workspace_id}, user={context.user_id}"
     )
 
     try:
@@ -380,11 +380,45 @@ async def invoke_agent(agent: str, context: AgentContext, params: dict) -> dict:
             headers = build_agent_headers(context)
             payload = build_agent_payload(context, params)
 
-            response = await client.post(
-                f"http://localhost:8000{endpoint}",
-                json=payload,
-                headers=headers,
-            )
+            # Add required parameters per agent
+            if agent == "radar":
+                # RADAR expects tenant_id as query param
+                response = await client.post(
+                    f"http://localhost:8000{endpoint}",
+                    params={"tenant_id": context.workspace_id},
+                    json=payload,
+                    headers=headers,
+                )
+            elif agent == "audit":
+                # AUDIT expects tenant_id and date_start in body
+                audit_payload = {
+                    **payload,
+                    "tenant_id": context.workspace_id,
+                    "date_start": params.get("date_start", "2026-01-01"),
+                }
+                response = await client.post(
+                    f"http://localhost:8000{endpoint}",
+                    json=audit_payload,
+                    headers=headers,
+                )
+            elif agent == "approval":
+                # APPROVAL expects draft_id and draft_type in body
+                approval_payload = {
+                    **payload,
+                    "draft_id": params.get("draft_id", ""),
+                    "draft_type": params.get("draft_type", "pending"),
+                }
+                response = await client.post(
+                    f"http://localhost:8000{endpoint}",
+                    json=approval_payload,
+                    headers=headers,
+                )
+            else:
+                response = await client.post(
+                    f"http://localhost:8000{endpoint}",
+                    json=payload,
+                    headers=headers,
+                )
 
             if response.status_code >= 400:
                 logger.error(
