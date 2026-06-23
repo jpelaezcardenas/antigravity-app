@@ -19,7 +19,8 @@
  * }
  */
 
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useAgentWebSocket } from '../hooks/useAgentWebSocket'
 
 export interface Alert {
   id: string
@@ -83,11 +84,35 @@ const getAlertColor = (urgency: string): { border: string; bg: string; text: str
 }
 
 export const CentinelaAlerts: React.FC<CentinelaAlertsProps> = ({
-  alerts = [],
-  isLoading,
-  error,
+  alerts: propsAlerts,
+  isLoading: propsLoading,
+  error: propsError,
   onAction,
 }) => {
+  const { agentData, subscribe, invoke } = useAgentWebSocket()
+
+  // Subscribe to centinela agent on mount
+  useEffect(() => {
+    subscribe('centinela')
+  }, [subscribe])
+
+  // Get data from hook or props (props take precedence for standalone mode)
+  const agentOutput = agentData.centinela
+  const isHookLoading = agentOutput?.status === 'pending'
+  const hookError = agentOutput?.status === 'error' ? agentOutput.error : null
+  const hookAlerts = Array.isArray(agentOutput?.data) ? agentOutput.data : []
+
+  // Use props if provided, otherwise use hook
+  const alerts = propsAlerts || hookAlerts
+  const isLoading = propsLoading ?? isHookLoading
+  const error = propsError ?? hookError
+
+  // Handle action: call Taty to resolve
+  const handleAction = async (alertId: string, action: string) => {
+    await invoke('taty', { alert_id: alertId, action })
+    onAction?.(alertId, action)
+  }
+
   // Placeholder alerts
   const defaultAlerts: Alert[] = [
     {
@@ -160,7 +185,7 @@ export const CentinelaAlerts: React.FC<CentinelaAlertsProps> = ({
                     {/* Action button */}
                     {alert.action_label && (
                       <button
-                        onClick={() => onAction?.(alert.id, 'resolve')}
+                        onClick={() => handleAction(alert.id, 'resolve')}
                         className={`text-sm font-medium ${colors.text} hover:underline flex items-center gap-1`}
                       >
                         <span>{alert.action_label}</span>

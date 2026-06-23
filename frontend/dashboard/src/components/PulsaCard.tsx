@@ -13,7 +13,8 @@
  * }
  */
 
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useAgentWebSocket } from '../hooks/useAgentWebSocket'
 
 interface PulsaData {
   caja_real: number
@@ -64,7 +65,24 @@ const getStatusColor = (estado: string): string => {
   }
 }
 
-export const PulsaCard: React.FC<PulsaCardProps> = ({ data, isLoading, error }) => {
+export const PulsaCard: React.FC<PulsaCardProps> = ({ data: propsData, isLoading: propsLoading, error: propsError }) => {
+  const { agentData, subscribe } = useAgentWebSocket()
+
+  // Subscribe to pulso agent on mount
+  useEffect(() => {
+    subscribe('pulso')
+  }, [subscribe])
+
+  // Get data from hook or props (props take precedence for standalone mode)
+  const agentOutput = agentData.pulso
+  const isHookLoading = agentOutput?.status === 'pending'
+  const hookError = agentOutput?.status === 'error' ? agentOutput.error : null
+
+  // Use props if provided (standalone mode), otherwise use hook (connected mode)
+  const data = propsData || agentOutput?.data
+  const isLoading = propsLoading ?? isHookLoading
+  const error = propsError ?? hookError
+
   // Placeholder data when no real data available
   const defaultData: PulsaData = {
     caja_real: 42850000,

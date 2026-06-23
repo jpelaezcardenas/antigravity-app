@@ -19,7 +19,8 @@
  * }
  */
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useAgentWebSocket } from '../hooks/useAgentWebSocket'
 
 export interface Draft {
   id: string
@@ -69,15 +70,32 @@ const getStatusBadge = (status: string): { color: string; label: string } => {
 }
 
 export const ApprovalQueue: React.FC<ApprovalQueueProps> = ({
-  drafts = [],
-  isLoading,
-  error,
+  drafts: propsDrafts,
+  isLoading: propsLoading,
+  error: propsError,
   onApprove,
   onReject,
 }) => {
+  const { agentData, subscribe, invoke } = useAgentWebSocket()
   const [expandedDraft, setExpandedDraft] = useState<string | null>(null)
   const [approving, setApproving] = useState<Set<string>>(new Set())
   const [rejecting, setRejecting] = useState<Set<string>>(new Set())
+
+  // Subscribe to approval queue agent on mount
+  useEffect(() => {
+    subscribe('approval')
+  }, [subscribe])
+
+  // Get data from hook or props (props take precedence for standalone mode)
+  const agentOutput = agentData.approval
+  const isHookLoading = agentOutput?.status === 'pending'
+  const hookError = agentOutput?.status === 'error' ? agentOutput.error : null
+  const hookDrafts = Array.isArray(agentOutput?.data) ? agentOutput.data : []
+
+  // Use props if provided, otherwise use hook
+  const drafts = propsDrafts || hookDrafts
+  const isLoading = propsLoading ?? isHookLoading
+  const error = propsError ?? hookError
 
   // Placeholder drafts
   const defaultDrafts: Draft[] = [
@@ -121,6 +139,7 @@ export const ApprovalQueue: React.FC<ApprovalQueueProps> = ({
   const handleApprove = async (draftId: string) => {
     setApproving((prev) => new Set([...prev, draftId]))
     try {
+      await invoke('approval', { draft_id: draftId, action: 'approve' })
       await onApprove?.(draftId)
     } finally {
       setApproving((prev) => {
@@ -134,6 +153,7 @@ export const ApprovalQueue: React.FC<ApprovalQueueProps> = ({
   const handleReject = async (draftId: string) => {
     setRejecting((prev) => new Set([...prev, draftId]))
     try {
+      await invoke('approval', { draft_id: draftId, action: 'reject', reason: 'Rechazado por el usuario' })
       await onReject?.(draftId, 'Rechazado por el usuario')
     } finally {
       setRejecting((prev) => {
