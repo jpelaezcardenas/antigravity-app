@@ -1,6 +1,7 @@
 # Dockerfile for Contexia Backend
 # Single-stage: all Python deps ship as prebuilt wheels (psycopg2-binary,
 # cryptography, bcrypt), so NO compiler/build-essential is needed.
+# Build timestamp: 2026-06-23T15:55:00Z - Force clean rebuild
 
 FROM python:3.11-slim
 
