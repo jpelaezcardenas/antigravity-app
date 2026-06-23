@@ -22,6 +22,7 @@ from services.agent_context import (
     build_agent_headers,
     Permission,
 )
+from services.agent_transformers import AgentTransformers
 
 logger = logging.getLogger("websocket-handler")
 
@@ -346,7 +347,7 @@ async def agent_output_listener(
 
 
 async def invoke_agent(agent: str, context: AgentContext, params: dict) -> dict:
-    """Invoke real Hermes agent endpoint."""
+    """Invoke real Hermes agent endpoint with data transformation."""
 
     AGENT_ENDPOINTS = {
         "pulso": "/api/v1/agents/pulso-diario/summary",
@@ -388,10 +389,27 @@ async def invoke_agent(agent: str, context: AgentContext, params: dict) -> dict:
                     "message": response.text,
                 }
 
+            raw_data = response.json()
+
+            # Apply transformations based on agent type
+            if agent == "pulso":
+                data = AgentTransformers.transform_pulso(raw_data)
+            elif agent == "centinela":
+                data = AgentTransformers.transform_centinela(raw_data)
+            elif agent == "radar":
+                data = AgentTransformers.transform_radar(raw_data)
+            elif agent == "social-ops":
+                data = AgentTransformers.transform_social_ops(raw_data)
+            elif agent == "audit":
+                data = AgentTransformers.transform_audit(raw_data)
+            else:
+                # No transformation for taty, approval, maestro
+                data = raw_data
+
             return {
                 "status": "success",
                 "agent": agent,
-                "data": response.json(),
+                "data": data,
             }
 
     except Exception as e:
