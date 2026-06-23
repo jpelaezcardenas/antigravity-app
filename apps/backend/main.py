@@ -77,6 +77,14 @@ try:
 except Exception as e:
     logger.error(f"Failed to include secrets_router: {e}")
 
+# WebSocket router — real-time agent data streaming
+try:
+    from api.websocket_handler import router as websocket_router
+    api_router.include_router(websocket_router)
+    logger.info("WebSocket router registered successfully")
+except Exception as e:
+    logger.error(f"Failed to include websocket_router: {e}")
+
 app.include_router(api_router, prefix="/api/v1")
 
 
