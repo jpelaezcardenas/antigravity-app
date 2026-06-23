@@ -9,6 +9,7 @@ import logging
 from typing import Dict, Set, Optional
 from datetime import datetime
 
+import httpx
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, status
 from fastapi.exceptions import WebSocketException
 from jose import jwt, JWTError
@@ -18,6 +19,7 @@ from services.agent_context import (
     context_manager,
     AgentContext,
     build_agent_payload,
+    build_agent_headers,
     Permission,
 )
 
@@ -294,85 +296,104 @@ async def agent_output_listener(
     websocket: WebSocket,
     manager: ConnectionManager,
 ) -> None:
-    """
-    Listen for agent output and stream to client.
-    This is a stub that polls or subscribes to Hermes agent output.
+    """Stream agent output via WebSocket."""
 
-    TODO: Replace with actual Hermes integration:
-    - Subscribe to Hermes event stream for this agent
-    - Filter by context.workspace_id to respect multi-tenancy
-    - Stream results via WebSocket to subscribed clients
-    - Use context for audit trail
+    AGENT_STREAMS = {
+        "pulso": "/api/v1/agents/pulso-diario/stream",
+        "centinela": "/api/v1/centinela/stream",
+        "radar": "/api/v1/agents/radar-predictivo/stream",
+        "taty": "/api/v1/agents/taty/stream",
+        "social-ops": "/api/v1/agents/social-ops/stream",
+        "audit": "/api/v1/agents/auditoria-sombra/stream",
+        "approval": "/api/v1/approval-queue/stream",
+        "maestro": "/api/v1/hermes/swarm/stream",
+    }
 
-    Example:
-    ```python
-    async with Hermes.subscribe_agent(agent, context.workspace_id) as stream:
-        async for output in stream:
-            await manager.send_personal(websocket, {
-                "type": "agent_output",
-                "agent": agent,
-                "data": output,
-                "context": context.to_dict()
-            })
-    ```
-    """
+    stream_endpoint = AGENT_STREAMS.get(agent)
+    if not stream_endpoint:
+        logger.warning(f"No stream endpoint for {agent}")
+        return
+
     try:
-        # Placeholder: in production, subscribe to Hermes agent output
-        # For now, we just keep the listener alive
-        logger.info(
-            f"Listening to agent: {agent}, workspace={context.workspace_id}, user={context.user_id}"
-        )
-        while True:
-            await asyncio.sleep(1)
+        async with httpx.AsyncClient(timeout=30) as client:
+            async with client.stream(
+                "GET",
+                f"http://localhost:8000{stream_endpoint}",
+                headers=build_agent_headers(context),
+            ) as response:
+                async for line in response.aiter_lines():
+                    if not line:
+                        continue
+
+                    try:
+                        data = json.loads(line)
+                        await manager.send_personal(
+                            websocket,
+                            {
+                                "type": "agent_output",
+                                "agent": agent,
+                                "data": data,
+                                "timestamp": datetime.utcnow().isoformat(),
+                            },
+                        )
+                    except json.JSONDecodeError:
+                        logger.debug(f"Non-JSON line from {agent}: {line}")
+
     except asyncio.CancelledError:
         logger.info(f"Agent listener cancelled: {agent}")
     except Exception as e:
-        logger.error(f"Agent listener error ({agent}): {e}")
+        logger.error(f"Stream error ({agent}): {e}")
 
 
-async def invoke_agent(
-    agent: str,
-    context: AgentContext,
-    params: dict,
-) -> dict:
-    """
-    Invoke a Hermes agent with user context.
+async def invoke_agent(agent: str, context: AgentContext, params: dict) -> dict:
+    """Invoke real Hermes agent endpoint."""
 
-    This function:
-    1. Validates agent access via context permissions
-    2. Builds agent invocation payload with context
-    3. Calls Hermes via HTTP (or direct integration)
-    4. Returns result with proper error handling
+    AGENT_ENDPOINTS = {
+        "pulso": "/api/v1/agents/pulso-diario/summary",
+        "centinela": "/api/v1/centinela/generate-draft",
+        "radar": "/api/v1/agents/radar-predictivo/risk-score",
+        "taty": "/api/v1/agents/taty/invoke",
+        "social-ops": "/api/v1/agents/social-ops/status",
+        "audit": "/api/v1/agents/auditoria-sombra/report",
+        "approval": "/api/v1/approval-queue/enqueue",
+        "maestro": "/api/v1/hermes/swarm/invoke",
+    }
 
-    TODO: Replace stub with actual Hermes HTTP call:
-    ```python
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"http://localhost:8000/api/v1/agents/{agent}/invoke",
-            json=build_agent_payload(context, params),
-            headers=build_agent_headers(context),
-            timeout=30
-        )
-        return response.json()
-    ```
-    """
+    endpoint = AGENT_ENDPOINTS.get(agent)
+    if not endpoint:
+        return {"status": "error", "message": f"Unknown agent: {agent}"}
 
     logger.info(
         f"🤖 Invoking agent: agent={agent}, workspace={context.workspace_id}, user={context.user_id}"
     )
 
-    # Build payload with context
-    payload = build_agent_payload(context, params)
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            headers = build_agent_headers(context)
+            payload = build_agent_payload(context, params)
 
-    # TODO: Call actual Hermes endpoint
-    # For now, return stub with context included
-    return {
-        "agent": agent,
-        "status": "success",
-        "context": context.to_dict(),
-        "params": params,
-        "result": {
-            "placeholder": "Agent output will be populated here",
-            "message": f"Agent {agent} invoked with context from {context.user_email}",
-        },
-    }
+            response = await client.post(
+                f"http://localhost:8000{endpoint}",
+                json=payload,
+                headers=headers,
+            )
+
+            if response.status_code >= 400:
+                logger.error(
+                    f"Agent error ({agent}): {response.status_code} {response.text}"
+                )
+                return {
+                    "status": "error",
+                    "code": response.status_code,
+                    "message": response.text,
+                }
+
+            return {
+                "status": "success",
+                "agent": agent,
+                "data": response.json(),
+            }
+
+    except Exception as e:
+        logger.error(f"Agent invocation failed ({agent}): {e}")
+        return {"status": "error", "message": str(e)}
