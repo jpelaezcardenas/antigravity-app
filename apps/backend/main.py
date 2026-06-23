@@ -5,6 +5,7 @@ from presentation.router import api_router
 from presentation.health_endpoints import router as health_router
 from presentation.metrics_endpoints import router as metrics_router
 from core.middleware import SecurityHeadersMiddleware, RequestLoggingMiddleware
+from core.tenant_middleware import TenantContextMiddleware
 from config import settings
 from middleware_config import apply_middleware
 from prometheus_metrics import add_prometheus_middleware
@@ -57,6 +58,9 @@ app.add_middleware(RequestLoggingMiddleware)
 
 # 4. DAY 6: Apply production middleware (rate limiting, enhanced logging, etc.)
 apply_middleware(app)
+
+# 5. Tenant Context — Extract tenant_id from JWT and inject into request.state
+app.add_middleware(TenantContextMiddleware)
 
 # Manejo de errores global — never expose internal details
 @app.exception_handler(Exception)

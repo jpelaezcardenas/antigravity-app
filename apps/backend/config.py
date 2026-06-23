@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     # Feature Flags (Task 4.4: Social Ops canonical endpoints)
     SOCIAL_OPS_CANONICAL: bool = False
 
+    # Multi-tenant feature gate (Phase 1: MVP)
+    MULTI_TENANT_ENABLED: bool = True  # Enable JWT tenant_id extraction
+    JWT_TENANT_CLAIM: str = "tenant_id"  # JWT claim name for tenant identifier
+    KNOWN_TENANTS: str = "contexia-org-1,client-xyz,client-abc"  # Comma-separated list
+
     @property
     def origins_list(self) -> List[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]
