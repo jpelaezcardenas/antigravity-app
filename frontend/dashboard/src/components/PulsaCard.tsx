@@ -15,6 +15,7 @@
 
 import React, { useEffect } from 'react'
 import { useAgentWebSocket } from '../hooks/useAgentWebSocket'
+import { useAgentData, useStoreActions, useIsLoading, useError } from '../hooks/useAgentStore'
 
 interface PulsaData {
   caja_real: number
@@ -68,18 +69,35 @@ const getStatusColor = (estado: string): string => {
 export const PulsaCard: React.FC<PulsaCardProps> = ({ data: propsData, isLoading: propsLoading, error: propsError }) => {
   const { agentData, subscribe } = useAgentWebSocket()
 
+  // Get data from Zustand store (Phase 6: persistence)
+  const storedPulsoData = useAgentData('pulso')
+  const storeLoading = useIsLoading()
+  const storeError = useError()
+  const { setAgentData } = useStoreActions()
+
   // Subscribe to pulso agent on mount
   useEffect(() => {
     subscribe('pulso')
   }, [subscribe])
 
-  // Get data from hook or props (props take precedence for standalone mode)
-  const agentOutput = agentData.pulso
-  const isHookLoading = agentOutput?.status === 'pending'
-  const hookError = agentOutput?.status === 'error' ? agentOutput.error : null
+  // Sync WebSocket data to store for persistence
+  useEffect(() => {
+    if (agentData.pulso?.data && agentData.pulso.status === 'success') {
+      setAgentData('pulso', {
+        data: agentData.pulso.data,
+        timestamp: Date.now(),
+        status: 'success',
+      })
+    }
+  }, [agentData.pulso, setAgentData])
 
-  // Use props if provided (standalone mode), otherwise use hook (connected mode)
-  const data = propsData || agentOutput?.data
+  // Get data from WebSocket (real-time), fallback to store (cached), then props (standalone)
+  const agentOutput = agentData.pulso
+  const isHookLoading = agentOutput?.status === 'pending' || storeLoading
+  const hookError = agentOutput?.status === 'error' ? agentOutput.error : (storeError?.message || null)
+
+  // Priority: props > WebSocket > store > default
+  const data = propsData || agentOutput?.data || storedPulsoData?.data
   const isLoading = propsLoading ?? isHookLoading
   const error = propsError ?? hookError
 
