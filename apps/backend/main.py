@@ -67,7 +67,9 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 # Incluir routers
+print("[STARTUP] Loading routers...", flush=True)
 api_router.include_router(health_router)
+print("[STARTUP] Health router loaded", flush=True)
 
 # Secrets router — imported defensively so a failure never crashes app startup
 try:
@@ -78,12 +80,15 @@ except Exception as e:
     logger.error(f"Failed to include secrets_router: {e}")
 
 # WebSocket router — real-time agent data streaming
+print("[STARTUP] Attempting WebSocket router...", flush=True)
 try:
     from api.websocket_handler import router as websocket_router
     api_router.include_router(websocket_router)
+    print("[STARTUP] WebSocket router SUCCESS", flush=True)
     logger.info("WebSocket router registered successfully")
 except Exception as e:
-    logger.error(f"Failed to include websocket_router: {e}")
+    print(f"[STARTUP] WebSocket router FAILED: {e}", flush=True)
+    logger.error(f"Failed to include websocket_router: {e}", exc_info=True)
 
 # Agent endpoints — Centinela, Taty, Social-Ops, Maestro
 try:
