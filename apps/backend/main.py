@@ -101,6 +101,14 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"Failed to include agent_router: {e}", exc_info=True)
 
+# Approval Queue endpoints — enqueue, approve, reject drafts
+try:
+    from presentation.approval_queue_endpoints import router as approval_router
+    api_router.include_router(approval_router, prefix="/approval-queue")
+    logger.info("Approval queue router registered successfully")
+except Exception as e:
+    logger.error(f"Failed to include approval_queue_router: {e}", exc_info=True)
+
 app.include_router(api_router, prefix="/api/v1")
 
 
