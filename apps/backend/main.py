@@ -88,10 +88,13 @@ except Exception as e:
 # Agent endpoints — Centinela, Taty, Social-Ops, Maestro
 try:
     from api.agent_endpoints import router as agent_router
+    logger.info(f"Agent router imported. Routes count: {len(agent_router.routes)}")
     api_router.include_router(agent_router)
-    logger.info("Agent endpoints router registered successfully")
+    logger.info(f"Agent endpoints router registered successfully. Total API router routes: {len(api_router.routes)}")
+except ImportError as e:
+    logger.error(f"Import error in agent_router: {e}", exc_info=True)
 except Exception as e:
-    logger.error(f"Failed to include agent_router: {e}")
+    logger.error(f"Failed to include agent_router: {e}", exc_info=True)
 
 app.include_router(api_router, prefix="/api/v1")
 
