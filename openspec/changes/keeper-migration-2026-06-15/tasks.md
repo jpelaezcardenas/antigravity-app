@@ -1,22 +1,35 @@
-﻿# Tasks: Keeper â†’ Bitwarden Migration Implementation
+# Tasks: Keeper → Bitwarden Migration Implementation
+
+> **Ground Truth Correction (2026-06-24):** Every task below still showed the template
+> placeholder `Status: ⏳ Ready`, even though `STATUS.md` (verified accurate against live
+> code/git/endpoint) shows T1-T13 actually done. Verified directly: 6 fix commits exist in
+> git history (`3432976`, `287f1ac`, `bdddd2e`, `bbc2e53`, `bdba87e`, `a433f3a`), both
+> `apps/backend/core/secrets_provider.py` and `apps/backend/api/endpoints/secrets_endpoints.py`
+> exist on disk, and `curl https://antigravity-app-production-dc78.up.railway.app/api/v1/secrets/health`
+> returns `{"status":"healthy","provider":"bitwarden-cloud",...}` live. Unlike the
+> `agentic-performance-management-phase4` and `hermes-multi-tenant-wrapper` changes resolved
+> earlier today, this one's substance checks out — only the per-task checkboxes below were
+> stale. Corrected to match reality. **This change stays OPEN (not archived)**: T14 (Keeper
+> deletion) is a genuine, intentional hold until 2026-07-04 per `STATUS.md` §8, and T15+ is
+> correctly deferred to the same date.
 
 ## Grouping
-- **T1â€“T3:** Migration setup (Keeper export, Bitwarden account, CLI install)
-- **T4â€“T6:** Data migration (import, organize, validate)
-- **T7â€“T9:** Backend integration (secrets_provider.py, health check, tests)
-- **T10â€“T12:** Production deployment (Railway env, staging test, production push)
-- **T13â€“T14:** Validation & cleanup (health check, Keeper delete)
+- **T1–T3:** Migration setup (Keeper export, Bitwarden account, CLI install)
+- **T4–T6:** Data migration (import, organize, validate)
+- **T7–T9:** Backend integration (secrets_provider.py, health check, tests)
+- **T10–T12:** Production deployment (Railway env, staging test, production push)
+- **T13–T14:** Validation & cleanup (health check, Keeper delete)
 
 ---
 
-## Phase 1: Bitwarden Cloud (T1â€“T14)
+## Phase 1: Bitwarden Cloud (T1–T14)
 
 ### T1: Export Keeper CSV (Phase 1 Blocker)
 
 **Objective:** Export all 300+ secrets from Keeper to JSON format, validate structure.
 
 **Steps:**
-1. Access https://my.keepersecurity.com â†’ Settings â†’ Export
+1. Access https://my.keepersecurity.com → Settings → Export
 2. Select "JSON (unencrypted)" format
 3. Export to file: `keeper-export-2026-06-15.json`
 4. Validate JSON structure:
@@ -24,7 +37,7 @@
    jq '.[]' keeper-export-2026-06-15.json | head -5
    # Should show login entries with password, url, username, etc.
    ```
-5. Count records: `jq '. | length' keeper-export-2026-06-15.json` â†’ Must be â‰¥ 300
+5. Count records: `jq '. | length' keeper-export-2026-06-15.json` → Must be ≥ 300
 6. Check for critical keys:
    ```bash
    jq -r '.[].title' keeper-export-2026-06-15.json | grep -E "(Groq|OpenAI|Gemini|Supabase|Railway|Vercel)"
@@ -36,7 +49,7 @@
 **Owner:** Juan (Infra)  
 **Effort:** 30 min  
 **Deadline:** 2026-06-15  
-**Status:** â³ Ready
+**Status:** ✅ Done (verified 2026-06-24)
 
 ---
 
@@ -45,14 +58,14 @@
 **Objective:** Set up Bitwarden Cloud account, enable 2FA, obtain API credentials.
 
 **Steps:**
-1. Go to https://vault.bitwarden.com â†’ Sign Up
+1. Go to https://vault.bitwarden.com → Sign Up
 2. Register account: email `growth@contexia.online`, master password (32+ chars, random)
 3. Enable 2FA: authenticator app or backup codes
 4. Log in to Web Vault
 5. Create Organization:
    - Name: `Contexia`
    - Plan: Free (sufficient for Phase 1)
-6. Navigate to Settings â†’ Organization â†’ API Key
+6. Navigate to Settings → Organization → API Key
 7. Generate client ID + secret; store securely:
    ```
    BW_CLIENT_ID=[id]
@@ -65,7 +78,7 @@
 **Owner:** Juan (Infra)  
 **Effort:** 20 min  
 **Deadline:** 2026-06-15  
-**Status:** â³ Ready
+**Status:** ✅ Done (verified 2026-06-24)
 
 ---
 
@@ -101,7 +114,7 @@
 **Owner:** Dev Team  
 **Effort:** 30 min  
 **Deadline:** 2026-06-15  
-**Status:** â³ Ready
+**Status:** ✅ Done (verified 2026-06-24)
 
 ---
 
@@ -136,14 +149,14 @@
    bw import keepersecurity keeper-export-bitwarden.json
    # or use bw create item [item-json] per entry
    ```
-3. Verify count: `bw list items | jq '. | length'` â†’ Must be 300+
+3. Verify count: `bw list items | jq '. | length'` → Must be 300+
 
 **Acceptance:** 300+ items imported, accessible via Web Vault.
 
 **Owner:** Dev Team  
 **Effort:** 1 hour  
 **Deadline:** 2026-06-16  
-**Status:** â³ Ready
+**Status:** ✅ Done (verified 2026-06-24)
 
 ---
 
@@ -175,7 +188,7 @@
 **Owner:** Juan (Infra)  
 **Effort:** 1 hour  
 **Deadline:** 2026-06-16  
-**Status:** â³ Ready
+**Status:** ✅ Done (verified 2026-06-24)
 
 ---
 
@@ -199,12 +212,12 @@
    ```
 2. Log results to validation report:
    ```
-   Groq: âœ… 200 OK
-   OpenAI: âœ… 200 OK
-   Gemini: âœ… 200 OK
-   Mistral: âœ… 200 OK
-   Cerebras: âœ… 200 OK
-   OpenRouter: âœ… 200 OK
+   Groq: ✅ 200 OK
+   OpenAI: ✅ 200 OK
+   Gemini: ✅ 200 OK
+   Mistral: ✅ 200 OK
+   Cerebras: ✅ 200 OK
+   OpenRouter: ✅ 200 OK
    ```
 3. For infrastructure keys, verify basic access:
    ```bash
@@ -223,7 +236,7 @@
 **Owner:** Dev Team + Infra  
 **Effort:** 2 hours  
 **Deadline:** 2026-06-16  
-**Status:** â³ Ready
+**Status:** ✅ Done (verified 2026-06-24)
 
 ---
 
@@ -259,7 +272,7 @@
 **Owner:** Dev Team (Backend)  
 **Effort:** 3 hours  
 **Deadline:** 2026-06-17  
-**Status:** â³ Ready
+**Status:** ✅ Done (verified 2026-06-24)
 
 ---
 
@@ -294,7 +307,7 @@
 5. Test locally:
    ```bash
    curl http://localhost:8000/api/v1/secrets/health
-   # â†’ {"status": "healthy", "latency_ms": ...}
+   # → {"status": "healthy", "latency_ms": ...}
    ```
 
 **Acceptance:** Endpoint deployed, returns 200 with correct schema, latency < 500ms.
@@ -302,7 +315,7 @@
 **Owner:** Dev Team (Backend)  
 **Effort:** 1 hour  
 **Deadline:** 2026-06-18  
-**Status:** â³ Ready
+**Status:** ✅ Done (verified 2026-06-24)
 
 ---
 
@@ -341,7 +354,7 @@
 **Owner:** Dev Team (QA)  
 **Effort:** 2 hours  
 **Deadline:** 2026-06-17  
-**Status:** â³ Ready
+**Status:** ✅ Done (verified 2026-06-24)
 
 ---
 
@@ -350,7 +363,7 @@
 **Objective:** Add SECRETS_BACKEND, BW_*, env vars to Railway project.
 
 **Steps:**
-1. Log into Railway: https://railway.app â†’ Contexia project â†’ antigravity-app
+1. Log into Railway: https://railway.app → Contexia project → antigravity-app
 2. Go to: Variables tab
 3. Add new variables:
    ```
@@ -371,7 +384,7 @@
 **Owner:** Infra  
 **Effort:** 20 min  
 **Deadline:** 2026-06-18  
-**Status:** â³ Ready
+**Status:** ✅ Done (verified 2026-06-24)
 
 ---
 
@@ -389,11 +402,11 @@
    ```bash
    git push origin feature/secrets-provider-bitwarden
    ```
-3. Wait for Railway deploy: 2â€“3 minutes
+3. Wait for Railway deploy: 2–3 minutes
 4. Test staging endpoint:
    ```bash
    curl https://staging-api.contexia.online/api/v1/secrets/health
-   # â†’ {"status": "healthy", "provider": "bitwarden-cloud", "latency_ms": 234}
+   # → {"status": "healthy", "provider": "bitwarden-cloud", "latency_ms": 234}
    ```
 5. Monitor logs for errors:
    ```bash
@@ -406,7 +419,7 @@
 **Owner:** Dev Team  
 **Effort:** 1 hour  
 **Deadline:** 2026-06-18  
-**Status:** â³ Ready
+**Status:** ✅ Done (verified 2026-06-24)
 
 ---
 
@@ -425,7 +438,7 @@
 3. **Stage 11: Verify Production URL**
    ```bash
    curl https://contexia.online/api/v1/secrets/health
-   # â†’ {"status": "healthy", ...}
+   # → {"status": "healthy", ...}
    ```
 4. **Stage 11: Test Endpoints**
    ```bash
@@ -445,7 +458,7 @@
 **Owner:** Dev Team + Infra  
 **Effort:** 1.5 hours  
 **Deadline:** 2026-06-18  
-**Status:** â³ Ready
+**Status:** ✅ Done (verified 2026-06-24)
 
 ---
 
@@ -476,7 +489,7 @@
 **Owner:** Infra + Dev Team  
 **Effort:** 1 hour  
 **Deadline:** 2026-06-19  
-**Status:** â³ Ready
+**Status:** ✅ Done (verified 2026-06-24)
 
 ---
 
@@ -488,10 +501,10 @@
 
 **Steps:**
 1. Log into Keeper: https://my.keepersecurity.com
-2. Go to: Settings â†’ Organization â†’ Delete Organization
+2. Go to: Settings → Organization → Delete Organization
 3. Confirm deletion (irreversible warning)
 4. Wait 24 hours for deletion to complete
-5. Verify deletion: try to log in with old org account â†’ should fail
+5. Verify deletion: try to log in with old org account → should fail
 6. Document:
    ```markdown
    ## Keeper Deletion Report
@@ -507,11 +520,11 @@
 **Owner:** Juan (Infra)  
 **Effort:** 30 min (plus 24-hour wait)  
 **Deadline:** 2026-06-20  
-**Status:** â³ Ready
+**Status:** ⏳ HOLD until 2026-07-04 (per STATUS.md §8)
 
 ---
 
-## Phase 2: Vaultwarden Self-Hosted (T15â€“T18, Deferred)
+## Phase 2: Vaultwarden Self-Hosted (T15–T18, Deferred)
 
 ### T15: 2-Week Stability Gate (Decision Point)
 
@@ -520,11 +533,11 @@
 **Timeline:** 2026-07-04 (2 weeks after Keeper deletion 2026-06-20)
 
 **Success Criteria:**
-- âœ… Zero secret retrieval failures
-- âœ… Health check latency <300ms consistently
-- âœ… All LLM provider calls working
-- âœ… No rate-limit errors from Bitwarden
-- âœ… Team consensus: proceed to self-hosted
+- ✅ Zero secret retrieval failures
+- ✅ Health check latency <300ms consistently
+- ✅ All LLM provider calls working
+- ✅ No rate-limit errors from Bitwarden
+- ✅ Team consensus: proceed to self-hosted
 
 **Decision Options:**
 1. **Proceed to T16:** Deploy Vaultwarden, migrate from Cloud
@@ -534,11 +547,11 @@
 **Owner:** Juan (Infra) + Tech Lead  
 **Effort:** Monitoring (auto), decision (30 min)  
 **Deadline:** 2026-07-04  
-**Status:** â³ Deferred
+**Status:** ⏳ Deferred
 
 ---
 
-### T16â€“T18: Vaultwarden Deploy, Migrate, Cleanup (T16â€“T18)
+### T16–T18: Vaultwarden Deploy, Migrate, Cleanup (T16–T18)
 *(Same as docker-compose + railway.toml in Section 4; not implemented yet)*
 
 ---
@@ -547,21 +560,21 @@
 
 | Task | Owner | Effort | Deadline | Status | Blocker |
 |------|-------|--------|----------|--------|---------|
-| T1: Export Keeper | Juan | 30m | 2026-06-15 | â³ | None |
-| T2: BW Cloud account | Juan | 20m | 2026-06-15 | â³ | T1 |
-| T3: bw CLI install | Dev | 30m | 2026-06-15 | â³ | T2 |
-| T4: Import to BW | Dev | 1h | 2026-06-16 | â³ | T3 |
-| T5: Organize folders | Juan | 1h | 2026-06-16 | â³ | T4 |
-| T6: Validate API keys | Dev+Infra | 2h | 2026-06-16 | â³ | T5 |
-| T7: SecretsProvider | Dev | 3h | 2026-06-17 | â³ | None |
-| T8: Health endpoint | Dev | 1h | 2026-06-18 | â³ | T7 |
-| T9: Unit tests | QA | 2h | 2026-06-17 | â³ | T7 |
-| T10: Railway env vars | Infra | 20m | 2026-06-18 | â³ | T6, T7 |
-| T11: Deploy staging | Dev | 1h | 2026-06-18 | â³ | T10 |
-| T12: Production deploy | Dev+Infra | 1.5h | 2026-06-18 | â³ | T11 |
-| T13: Health audits | Infra+Dev | 1h | 2026-06-19 | â³ | T12 |
-| T14: Delete Keeper | Juan | 30m | 2026-06-20 | â³ | T13 |
-| T15: 2w gate (decision) | Juan+TL | 30m | 2026-07-04 | â³ | T14 |
+| T1: Export Keeper | Juan | 30m | 2026-06-15 | ✅ | None |
+| T2: BW Cloud account | Juan | 20m | 2026-06-15 | ✅ | T1 |
+| T3: bw CLI install | Dev | 30m | 2026-06-15 | ✅ | T2 |
+| T4: Import to BW | Dev | 1h | 2026-06-16 | ✅ | T3 |
+| T5: Organize folders | Juan | 1h | 2026-06-16 | ✅ | T4 |
+| T6: Validate API keys | Dev+Infra | 2h | 2026-06-16 | ✅ | T5 |
+| T7: SecretsProvider | Dev | 3h | 2026-06-17 | ✅ | None |
+| T8: Health endpoint | Dev | 1h | 2026-06-18 | ✅ | T7 |
+| T9: Unit tests | QA | 2h | 2026-06-17 | ✅ | T7 |
+| T10: Railway env vars | Infra | 20m | 2026-06-18 | ✅ | T6, T7 |
+| T11: Deploy staging | Dev | 1h | 2026-06-18 | ✅ | T10 |
+| T12: Production deploy | Dev+Infra | 1.5h | 2026-06-18 | ✅ | T11 |
+| T13: Health audits | Infra+Dev | 1h | 2026-06-19 | ✅ | T12 |
+| T14: Delete Keeper | Juan | 30m | 2026-06-20 | ⏳ HOLD until 2026-07-04 | T13 |
+| T15: 2w gate (decision) | Juan+TL | 30m | 2026-07-04 | ⏳ Deferred | T14 |
 
 ---
 
@@ -572,27 +585,27 @@
 **Juan:** 2.5 hours (T1, T2, T5, T14)  
 **QA:** 2 hours (T9)
 
-**Total:** ~20 hours, concurrent execution â†’ **1 week calendar time**
+**Total:** ~20 hours, concurrent execution → **1 week calendar time**
 
 ---
 
 ## Dependencies & Critical Path
 
 ```
-T1 â†’ T3 â†’ T4 â†’ T5 â†’ T6 â†˜
-                        â†“
-T7 â†’ T8 â†’ T9 â†’ T10 â†’ T11 â†’ T12 â†’ T13 â†’ T14
+T1 → T3 → T4 → T5 → T6 ↘
+                        ↓
+T7 → T8 → T9 → T10 → T11 → T12 → T13 → T14
 ```
 
-**Critical path:** T1 â†’ T3 â†’ T4 â†’ T5 â†’ T6 â†’ T10 â†’ T11 â†’ T12 â†’ T13 â†’ T14 (â‰ˆ 1 week)
+**Critical path:** T1 → T3 → T4 → T5 → T6 → T10 → T11 → T12 → T13 → T14 (≈ 1 week)
 
 ---
 
 ## Mandatory OpenSpec Updates
 
 If any of these occur, STOP and update OpenSpec:
-- API key format changes â†’ update T6 validation
-- Bitwarden import fails due to new record type â†’ update T4, scenarios
-- Health check latency unexpectedly high â†’ update T8 schema, scenarios
-- Keeper deletion cannot happen as scheduled â†’ update timeline
+- API key format changes → update T6 validation
+- Bitwarden import fails due to new record type → update T4, scenarios
+- Health check latency unexpectedly high → update T8 schema, scenarios
+- Keeper deletion cannot happen as scheduled → update timeline
 
