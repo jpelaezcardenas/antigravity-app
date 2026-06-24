@@ -13,6 +13,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     if "tenant_id" not in to_encode:
         to_encode["tenant_id"] = "contexia-org-1"
 
+    # Ensure workspace_id matches tenant_id (WebSocket handler reads this claim).
+    if "workspace_id" not in to_encode:
+        to_encode["workspace_id"] = to_encode["tenant_id"]
+
     # Set expiration
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
