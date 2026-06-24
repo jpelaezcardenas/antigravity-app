@@ -291,6 +291,60 @@ CONTEXIA SWARM (Hermes Workspace)
 
 ---
 
+## 🔒 Governance Layer — Agent Operations Auditing (Phase 5+)
+
+### Multi-Tenant Security & Cost Tracking
+
+Starting **Phase 5+**, all agent invocations are governed by:
+
+#### 1. **Tenant Membership Verification**
+- Every `invoke_agent()` (WebSocket) and `stream_agent()` call gates on tenant membership
+- Mechanism: `AgentAccessControl` checks `user_tenants.is_active` via service-role client
+- Blocked invocations: logged with status=`blocked`, cost=`0`
+- Fail-closed: any DB error denies access (security-first)
+
+#### 2. **Audit Logging (`agent_operations` table)**
+- Every agent invocation recorded: `agent_name`, `user_id`, `tenant_id`, `operation_type`, `status`, `duration_ms`, `cost`, `input_data`, `output_data`, `error_message`
+- RLS-enabled: users see only operations from their own tenant
+- Privileged read: admin/finance roles (via `user_roles.role` enum) can audit across tenants
+- Best-effort logging: never blocks user-facing response (async, failures swallowed)
+
+#### 3. **Cost Tracking**
+- Deterministic cost matrix: `AGENT_OPERATION_COSTS` (agent:operation → Decimal USD)
+- Per-invocation cost recorded: enables per-tenant billing, chargeback, usage analytics
+- Cost resolution logic: `AgentCostTracker.resolve_cost_for_status(agent, operation, status)`
+  - `status=success`: normal cost (e.g., pulso:invoke = $0.005)
+  - `status=failed`: normal cost (operation attempted)
+  - `status=blocked`: zero cost (never executed)
+- Additive response fields: `cost` (operation cost), `session_cost` (cumulative per session)
+
+#### 4. **Chokepoint Instrumentation**
+- **WebSocket invoke_agent()**: Gate → Execute → Log+Cost → Return (backward-compatible)
+- **WebSocket agent_output_listener()**: Stream version; operation_type="stream", tracks line_count
+- **Direct HTTP calls to agents**: ⚠️ **BYPASS governance** (known limitation; future: middleware wrapper)
+
+#### 5. **Multi-Tenant Isolation**
+- Row-level security (RLS) on `agent_operations` table
+  - Tenant isolation policy: `user_tenants IS ACTIVE`
+  - Audit privilege policy: `user_roles IN ('admin', 'finance')`
+- Service-role client (governance reads/writes): parameterized via `SUPABASE_SERVICE_ROLE_KEY` env var
+- Separate from anon client (user data): two distinct Supabase clients, zero cross-contamination
+
+#### 6. **Deployment Dependency**
+- Requires **`SUPABASE_SERVICE_ROLE_KEY`** set in Railway environment
+- Must be done **BEFORE Stage 11 deploy** to production
+- Governance enabled automatically: no feature flags, no gradual rollout
+
+### References
+- **Schema:** `apps/backend/migrations/0014_agent_operations_with_rls.sql`
+- **Access Control:** `apps/backend/core/agent_access_control.py`
+- **Cost Tracker:** `apps/backend/services/agent_cost_tracker.py`
+- **Logging:** `apps/backend/services/agent_operations_logger.py`
+- **WebSocket Wiring:** `apps/backend/api/websocket_handler.py` (invoke_agent, agent_output_listener)
+- **Change Spec:** `openspec/changes/agent-operations-multitenant-security/`
+
+---
+
 ## 📍 Ubicación de Artefactos
 
 ```
