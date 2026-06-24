@@ -640,7 +640,12 @@ async def invoke_agent(agent: str, context: AgentContext, params: dict) -> dict:
         # Calculate duration and log the operation (async, non-blocking).
         if operation_result is not None:
             elapsed_ms = int((time.perf_counter() - start_time) * 1000)
-            operation_status = operation_result.get("status")
+            # Map the client-facing result status to the agent_operations taxonomy
+            # (success | failed | blocked). invoke_agent returns "error" to the
+            # client on failure, but the audit table CHECK only accepts "failed";
+            # logging "error" silently violates the constraint and writes no row.
+            raw_status = operation_result.get("status")
+            operation_status = "success" if raw_status == "success" else "failed"
 
             # Determine cost: if blocked or errored, zero; else use cost tracker.
             cost_tracker = AgentCostTracker()
