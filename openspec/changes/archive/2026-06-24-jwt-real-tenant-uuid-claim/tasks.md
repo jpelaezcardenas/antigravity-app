@@ -18,11 +18,11 @@
 
 ## 3. Stage 11. Deploy to Production (MANDATORY — CLAUDE.md §8)
 
-- [ ] 3.1 git commit + push to main
-- [ ] 3.2 Railway deploy active, build green
-- [ ] 3.3 Runtime verification: real login (`cliente@demo.co`) against production, decode the returned JWT, confirm `tenant_id` is a real UUID
-- [ ] 3.4 Confirm zero regressions: existing consumers of `sub`/`usuario_id` (frontend, other endpoints) unaffected
-- [ ] 3.5 Create report: `openspec/changes/jwt-real-tenant-uuid-claim/reports/YYYY-MM-DD-deployment.md`
+- [x] 3.1 git commit + push to main (`72d9de4`)
+- [x] 3.2 Railway deploy active, build green (deployment `1f9149c2`, SUCCESS, 2026-06-24T23:38:07Z)
+- [x] 3.3 Runtime verification: real login (`cliente@demo.co`) against production, decoded JWT → `tenant_id`/`workspace_id` = `e2d30d09-6b96-4ebe-a79a-c6aff7a5df34` (real UUID, not the literal default)
+- [x] 3.4 Confirmed zero regressions: `usuario_id`/`email`/`nombre_empresa` unchanged in login response; `sub` unchanged; invalid-password 401 path intact
+- [x] 3.5 Create report: `openspec/changes/jwt-real-tenant-uuid-claim/reports/2026-06-24-deployment.md`
 
 ## 4. Archive
-- [ ] 4.1 Move to `openspec/changes/archive/YYYY-MM-DD-jwt-real-tenant-uuid-claim/`
+- [x] 4.1 Move to `openspec/changes/archive/2026-06-24-jwt-real-tenant-uuid-claim/`
