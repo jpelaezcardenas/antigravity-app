@@ -1,18 +1,18 @@
 """
-Mission API Endpoints (T11.8)
+Mission API Endpoints (T11.8 + T12.3 RLS)
 
 RESTful endpoints for mission management:
-- GET    /api/v1/missions
-- POST   /api/v1/missions/{id}/start
-- GET    /api/v1/missions/{id}
-- GET    /api/v1/missions/{id}/checkpoints
-- GET    /api/v1/missions/{id}/cost
-- GET    /api/v1/missions/{id}/progress
+- GET    /api/v1/missions                      (with RLS filtering)
+- POST   /api/v1/missions/{id}/start           (with RLS checks)
+- GET    /api/v1/missions/{id}                 (with RLS enforcement)
+- GET    /api/v1/missions/{id}/checkpoints    (with role-based filtering)
+- GET    /api/v1/missions/{id}/cost            (finance/admin only)
+- GET    /api/v1/missions/{id}/progress        (with RLS checks)
 """
 
 import logging
-from uuid import uuid4
-from fastapi import APIRouter, HTTPException, WebSocket, Depends
+from uuid import uuid4, UUID
+from fastapi import APIRouter, HTTPException, WebSocket, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -87,34 +87,57 @@ class CostBreakdownResponse(BaseModel):
 
 @router.get("/missions", response_model=List[MissionResponse])
 async def list_missions(
+    request: Request,
     session: AsyncSession = Depends(),  # TODO: Inject session
     skip: int = 0,
     limit: int = 100,
 ) -> List[MissionResponse]:
     """
-    Get all missions.
+    Get all missions (with RLS filtering).
 
     Query params:
     - skip: Pagination offset (default: 0)
     - limit: Max results (default: 100, max: 1000)
 
     Returns:
-    - List of missions with full state
+    - List of missions with full state (RLS filtered to tenant)
     """
+    from apps.backend.core.mission_rbac import (
+        PERMISSION_MISSIONS_LIST,
+        filter_missions_by_role,
+    )
+    from apps.backend.core.rbac import enforce_permission
+
     logger.info(f"GET /missions (skip={skip}, limit={limit})")
 
     try:
-        # TODO: Query missions from database
+        # Check permission to list missions
+        await enforce_permission(request, "missions", "read", session)
+
+        # Get tenant_id from JWT (injected by middleware)
+        tenant_id = getattr(request.state, 'tenant_id', None)
+        if not tenant_id:
+            raise HTTPException(status_code=401, detail="No tenant in request")
+
+        # TODO: Query missions from database with tenant filter
+        # from apps.backend.models.mission import MissionModel
         # missions = await session.execute(
         #     select(MissionModel)
+        #     .where(MissionModel.tenant_id == tenant_id)
         #     .offset(skip)
         #     .limit(min(limit, 1000))
         # )
-        # return missions.scalars().all()
+        # mission_list = missions.scalars().all()
+        #
+        # # Apply role-based filtering
+        # filtered_missions = await filter_missions_by_role(mission_list, request, session)
+        # return filtered_missions
 
         # Mock response
         return []
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to list missions: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to list missions")
@@ -174,19 +197,30 @@ async def start_mission(
 
 @router.get("/missions/{mission_id}", response_model=MissionResponse)
 async def get_mission(
-    mission_id: str,
+    mission_id: UUID,
+    request: Request,
     session: AsyncSession = Depends(),  # TODO: Inject session
 ) -> MissionResponse:
     """
-    Get mission details.
+    Get mission details (with RLS enforcement).
 
     Returns:
     - Full mission state with all tasks and checkpoints
+
+    Raises:
+    - 404 if mission not found
+    - 403 if user lacks permission or mission is in different tenant
     """
+    from apps.backend.core.mission_rbac import enforce_mission_access
+
     logger.info(f"GET /missions/{mission_id}")
 
     try:
+        # Enforce RLS check: mission must belong to user's tenant
+        await enforce_mission_access(request, mission_id, "read", session)
+
         # TODO: Query mission from database
+        # from apps.backend.models.mission import MissionModel
         # mission = await session.get(MissionModel, mission_id)
         # if not mission:
         #     raise HTTPException(status_code=404, detail="Mission not found")
@@ -203,7 +237,8 @@ async def get_mission(
 
 @router.get("/missions/{mission_id}/checkpoints", response_model=List[CheckpointResponse])
 async def get_mission_checkpoints(
-    mission_id: str,
+    mission_id: UUID,
+    request: Request,
     session: AsyncSession = Depends(),  # TODO: Inject session
 ) -> List[CheckpointResponse]:
     """
@@ -211,20 +246,39 @@ async def get_mission_checkpoints(
 
     Returns:
     - Array of checkpoints with status, proof, cost, duration
+    - Filtered based on user role (viewers don't see proof details)
+
+    Raises:
+    - 403 if user lacks mission access
     """
+    from apps.backend.core.mission_rbac import (
+        enforce_mission_access,
+        filter_checkpoints_by_role,
+    )
+
     logger.info(f"GET /missions/{mission_id}/checkpoints")
 
     try:
+        # Enforce mission access first
+        await enforce_mission_access(request, mission_id, "read", session)
+
         # TODO: Query checkpoints from database
+        # from apps.backend.models.mission import CheckpointModel
         # checkpoints = await session.execute(
         #     select(CheckpointModel).where(
         #         CheckpointModel.mission_id == mission_id
         #     )
         # )
-        # return checkpoints.scalars().all()
+        # checkpoint_list = checkpoints.scalars().all()
+        #
+        # # Filter based on role (viewers don't see proof)
+        # filtered = await filter_checkpoints_by_role(checkpoint_list, request, session)
+        # return filtered
 
         return []
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to get checkpoints: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get checkpoints")
@@ -232,19 +286,36 @@ async def get_mission_checkpoints(
 
 @router.get("/missions/{mission_id}/cost", response_model=CostBreakdownResponse)
 async def get_mission_cost(
-    mission_id: str,
+    mission_id: UUID,
+    request: Request,
     session: AsyncSession = Depends(),  # TODO: Inject session
 ) -> CostBreakdownResponse:
     """
-    Get mission cost breakdown.
+    Get mission cost breakdown (finance/admin only).
 
     Returns:
     - Total cost and breakdown by operator
+
+    Raises:
+    - 403 if user is not finance or admin role
+    - 404 if mission not found
     """
+    from apps.backend.core.mission_rbac import (
+        enforce_mission_access,
+        enforce_cost_visibility,
+    )
+
     logger.info(f"GET /missions/{mission_id}/cost")
 
     try:
+        # First enforce general mission access
+        await enforce_mission_access(request, mission_id, "read", session)
+
+        # Then enforce cost visibility (finance/admin only)
+        await enforce_cost_visibility(request, mission_id, session)
+
         # TODO: Query cost from database
+        # from apps.backend.models.mission import MissionModel
         # mission = await session.get(MissionModel, mission_id)
         # if not mission:
         #     raise HTTPException(status_code=404, detail="Mission not found")
