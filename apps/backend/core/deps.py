@@ -5,10 +5,17 @@ from typing import Optional
 
 from config import settings
 from core.security import verify_token
+from core.identity_resolver import identity_resolver
 
 
 # Fallback identity used only when auth is NOT enforced (demo/staging back-compat).
-_STAGING_USER = {"id": "test-user-staging", "email": "staging@contexia.test"}
+# resolved_user_id/resolved_tenant_id are None here — there's no real JWT to resolve.
+_STAGING_USER = {
+    "id": "test-user-staging",
+    "email": "staging@contexia.test",
+    "resolved_user_id": None,
+    "resolved_tenant_id": None,
+}
 
 
 def _extract_bearer_token(authorization: Optional[str]) -> Optional[str]:
@@ -34,7 +41,16 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
     payload = verify_token(token) if token else None
 
     if payload and payload.get("sub"):
-        return {"id": payload["sub"], "email": payload.get("email")}
+        sub = payload["sub"]
+        email = payload.get("email")
+        workspace_id = payload.get("tenant_id") or payload.get("workspace_id")
+        resolved = identity_resolver.resolve(sub, email, workspace_id)
+        return {
+            "id": sub,
+            "email": email,
+            "resolved_user_id": resolved.user_uuid,
+            "resolved_tenant_id": resolved.tenant_uuid,
+        }
 
     if settings.AUTH_ENFORCED:
         raise HTTPException(
