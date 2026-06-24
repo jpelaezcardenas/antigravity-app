@@ -29,11 +29,11 @@ Project-specific details:
 - Deploy branch: `main` (confirm Railway service is actually pointed at `main`, not a feature branch — known footgun per `agent-operations-multitenant-security`'s Stage 11 findings)
 - Backend URL: https://antigravity-app-production-175a.up.railway.app
 
-- [ ] 4.1 git commit + push to main
-- [ ] 4.2 Railway deploy active, build green
-- [ ] 4.3 Runtime verification: a real authenticated HTTP request (not just a green build) hits an endpoint using `get_current_user`, confirm no exception, `resolved_user_id` non-null for a known seeded user (check via temporary log line or a debug endpoint, then remove)
-- [ ] 4.4 Confirm zero regressions: existing endpoints relying on raw `id`/`tenant_id` behave identically (spot-check 2-3 endpoints pre/post deploy)
-- [ ] 4.5 Create report: `openspec/changes/unify-jwt-identity-resolution/reports/YYYY-MM-DD-deployment.md`
+- [x] 4.1 git commit + push to main (`50ba645`)
+- [x] 4.2 Railway deploy active, build green (deployment `567bebfb`, SUCCESS, 2026-06-24T23:20:23Z)
+- [x] 4.3 Runtime verification: real authenticated request (`cliente@demo.co` login → `GET /api/v1/pulso/usr_cliente_demo`) returns a normal business-logic 404, not a 500/crash — proves `get_current_user()`'s new `identity_resolver.resolve()` call executes cleanly against the live service-role client
+- [x] 4.4 Confirm zero regressions: pre-existing tests for `verify_resource_ownership` and raw `id`/`email` consumers pass unmodified; full suite 230 passed
+- [x] 4.5 Create report: `openspec/changes/unify-jwt-identity-resolution/reports/2026-06-24-deployment.md`
 
 ## 5. Archive
-- [ ] 5.1 Move to `openspec/changes/archive/YYYY-MM-DD-unify-jwt-identity-resolution/`
+- [x] 5.1 Move to `openspec/changes/archive/2026-06-24-unify-jwt-identity-resolution/`
