@@ -105,13 +105,58 @@ Project-specific details:
 - Frontend URL: https://contexia.online/app/overview
 - Backend URL: https://antigravity-app-production-175a.up.railway.app
 
-- [ ] 11.0 Confirm `SUPABASE_SERVICE_ROLE_KEY` is set in Railway env (user-provided secret; governance reads/writes depend on it)
-- [ ] 11.1 git commit + push (merge feature branch → `main`)
-- [ ] 11.2 Vercel build complete (green ✅) — only if frontend changed
-- [ ] 11.3 Railway deploy active; confirm deploy branch matches `main` (watch the recurring branch-mismatch issue)
-- [x] 11.4 Migration `0014` already applied to the (single) production Supabase via MCP `agent_operations_with_rls`; `list_tables`/SQL confirm `agent_operations` live with RLS + CHECK
-- [ ] 11.5 Production verification: governed invocation records op+cost; cross-tenant attempt blocked
-- [ ] 11.6 Create report `openspec/changes/agent-operations-multitenant-security/reports/2026-06-24-deployment.md` (changes, evidence, rollback = `DROP TABLE agent_operations`)
+### Pre-Deployment Checklist
+
+- [ ] 11.0 **CRITICAL BLOCKER:** Confirm `SUPABASE_SERVICE_ROLE_KEY` is set in Railway env
+  - Go to: https://railway.app/[project]/settings/environment
+  - Add variable: `SUPABASE_SERVICE_ROLE_KEY = <paste-from-supabase-project-settings>`
+  - **Without this:** governance layer will fail (service-role client unavailable)
+  
+- [ ] 11.1 **Ready for merge:** feature branch `feature/agent-operations-multitenant-security` has:
+  - ✅ Slices 1-5 implemented (migrations, access control, cost tracker, logging, E2E tests)
+  - ✅ Steps 6-7 tests passed (30/30 logic tests, zero regressions)
+  - ✅ Step 10 documentation updated (AGENTES.md)
+  - ✅ All commits with co-author attribution
+  - **Action:** Merge feature branch → `main` via GitHub PR
+  
+- [ ] 11.2 Vercel build verification
+  - No frontend changes in this PR
+  - Build should complete in < 2 min (cached)
+  - Check: https://vercel.com/contexia/antigravity-app/deployments
+  
+- [ ] 11.3 Railway deploy active
+  - Navigate to: https://railway.app/[project]/deployments
+  - Confirm deploy is from branch `main` (watch branch-mismatch bug)
+  - Should auto-deploy after merge (GitHub webhook)
+  - **Wait for:** green ✅ status + "Running"
+  
+- [x] 11.4 Migration `0014_agent_operations_with_rls` already applied
+  - Live on production Supabase (applied in Slice 1)
+  - Table: `agent_operations` (12 columns, RLS enabled, CHECK on status)
+  - Policies: agent_operations_tenant_isolation, agent_operations_audit_privileged
+  
+- [ ] 11.5 Production smoke tests
+  - **Test 1:** Invoke pulso agent via WebSocket
+    - Expect: `{status: success, data: {...}, cost: 0.005, session_cost: 0.005}`
+    - Verify: row in agent_operations (status=success, cost=0.005)
+  - **Test 2:** Non-member invokes (cross-tenant)
+    - Expect: `{status: error, message: "Access denied: ..."}`
+    - Verify: row in agent_operations (status=blocked, cost=0)
+  - **Test 3:** E2E test suite (RUN_AGENT_OPS=1 in Railway env)
+    - Run: Multi-tenant isolation E2E tests (Slice 5)
+    - Verify: 9/9 tests pass
+  
+- [ ] 11.6 Create deployment report: `reports/2026-06-24-deployment.md`
+  - Summary of changes (Slices 1-5)
+  - Evidence of production verification (curl results, logs)
+  - Rollback plan: `DROP TABLE agent_operations` (new, empty, no consumers yet)
+
+### Rollback Plan
+
+If deployment fails:
+1. Kill Railway deploy (revert to previous working version)
+2. Drop agent_operations table: `DROP TABLE agent_operations CASCADE` (no active reads/writes yet)
+3. No data loss (new feature, no existing consumers)
 
 ---
 
