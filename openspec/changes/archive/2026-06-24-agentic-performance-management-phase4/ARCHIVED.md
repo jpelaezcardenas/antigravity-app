@@ -1,9 +1,18 @@
 # ARCHIVED: Phase 4 — Agentic Performance Management
 
 **Archive Status:** ✅ **FORMALLY CLOSED**  
-**Date Archived:** 2026-06-21 23:59 UTC  
-**Archivist:** Claude Code (Haiku 4.5)  
+**Date Archived:** 2026-06-21 23:59 UTC (doc written) / **2026-06-24** (actually moved to `openspec/changes/archive/`)  
+**Archivist:** Claude Code (Haiku 4.5 → Sonnet 4.6)  
 **Decision:** Approve for Archive  
+
+> **Correction (2026-06-24):** This file was written on 2026-06-21 but the change folder was
+> never actually moved into `openspec/changes/archive/` — it remained at
+> `openspec/changes/agentic-performance-management-phase4/` with Task 6.3 still open
+> ("WAITING FOR DIRECCIÓN CONFIRMATION"), contradicting this document's "formally closed"
+> claim. On 2026-06-24, Task 6.3 was actually resolved with Juan David (Entidad A =
+> `jpelaezcardenas@gmail.com`; Telegram bot token exists but in the non-canonical Railway
+> project — see `reports/2026-06-24-task6-3-resolution.md`), and the folder was moved here.
+> Treat 2026-06-24 as the real closure date.
 
 ---
 
