@@ -1,0 +1,355 @@
+/* Kanban Dashboard Styles (T11.7) */
+
+.kanban-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.kanban-dashboard.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+/* Metrics Panel */
+.metrics-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.metric-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: #7f8c8d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Kanban Board */
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 1400px) {
+  .kanban-board {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .kanban-board {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Kanban Column */
+.kanban-column {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 300px);
+}
+
+.column-header {
+  padding: 1rem;
+  font-weight: 600;
+  font-size: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #ecf0f1;
+}
+
+.kanban-column.pending .column-header {
+  background: #fff3cd;
+  border-bottom-color: #ffc107;
+  color: #856404;
+}
+
+.kanban-column.executing .column-header {
+  background: #cfe2ff;
+  border-bottom-color: #0d6efd;
+  color: #052c65;
+}
+
+.kanban-column.checkpoints .column-header {
+  background: #d1e7dd;
+  border-bottom-color: #198754;
+  color: #0f5132;
+}
+
+.kanban-column.completed .column-header {
+  background: #d1e7dd;
+  border-bottom-color: #198754;
+  color: #0f5132;
+}
+
+.column-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.count {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.column-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Mission Card */
+.mission-card {
+  background: white;
+  border: 1px solid #ecf0f1;
+  border-radius: 6px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.mission-card:hover {
+  border-color: #bdc3c7;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.card-header h4 {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #2c3e50;
+  font-family: monospace;
+}
+
+.status {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.status-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-executing {
+  background: #cfe2ff;
+  color: #052c65;
+}
+
+.status-completed {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.status-failed {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.status-blocked {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.card-body {
+  font-size: 0.875rem;
+}
+
+.objective {
+  margin: 0 0 0.5rem 0;
+  color: #555;
+  line-height: 1.4;
+}
+
+.task-count {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.cost {
+  font-weight: 600;
+  color: #27ae60;
+  margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+  background: #ecf0f1;
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3498db, #2980b9);
+  transition: width 0.3s ease;
+}
+
+/* Task Card */
+.subtasks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid #ecf0f1;
+}
+
+.task-card {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.8rem;
+}
+
+.task-card:hover {
+  background: #f0f0f0;
+  border-color: #dee2e6;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.task-header h5 {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.status-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.task-body {
+  color: #7f8c8d;
+  margin: 0;
+}
+
+.operator {
+  font-size: 0.75rem;
+  color: #95a5a6;
+  margin: 0;
+  font-family: monospace;
+}
+
+/* Checkpoint Card */
+.checkpoint-card {
+  background: white;
+  border: 1px solid #ecf0f1;
+  border-radius: 6px;
+  padding: 0.75rem;
+  transition: all 0.2s;
+  border-left: 3px solid #27ae60;
+}
+
+.checkpoint-card:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.checkpoint-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.checkpoint-body {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #7f8c8d;
+}
+
+.checkpoint-body p {
+  margin: 0;
+}
+
+.duration {
+  font-weight: 600;
+  color: #3498db;
+}
+
+/* Scrollbar Styling */
+.column-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.column-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.column-content::-webkit-scrollbar-thumb {
+  background: #bdc3c7;
+  border-radius: 3px;
+}
+
+.column-content::-webkit-scrollbar-thumb:hover {
+  background: #95a5a6;
+}
