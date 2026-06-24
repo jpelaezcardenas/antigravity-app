@@ -1,5 +1,20 @@
 # OpenSpec Change: contexia-pwa-data-layer-mvp
 
+> **Closure Decision (2026-06-24): SUPERSEDED, not pursued further.** Verified against
+> production: `GET /api/v1/financials` on `antigravity-app-production-175a` returns
+> `Could not find the table 'public.company_financials' in the schema cache` — the deployed
+> backend's Supabase client points to a different project than `wzqymuzpjbagnbgsiqig` (where
+> the seed data actually lives), so this endpoint has never worked in production despite the
+> 2026-06-21 report claiming "✅ PRODUCTION READY". Separately, the query also filters
+> `date = today`, so even with the right DB it would 404 on any day after the seed date
+> (2026-06-21) — a real logic bug, not just a config issue. Slice 3 (PWA frontend
+> integration) was never executed (`tasks.md` marked it "BLOCKED - ARCHITECTURE TBD").
+> Meanwhile `pwa-hermes-integration` (2026-06-23, verified live: `apps/backend/api/websocket_handler.py`
+> exists, registered in `main.py`, frontend hook + 3 components exist) already delivers
+> real-time financial/agent data to the PWA via WebSocket — a better mechanism for the same
+> user need. Decision: archive this change as superseded rather than fix the two bugs; any
+> future live-financials work should extend the WebSocket path, not resurrect this REST layer.
+
 ## Executive Summary
 
 **What:** Connect Contexia PWA (currently showing mocked financial data) to real data from Supabase via Railway API endpoints.
