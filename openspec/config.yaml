@@ -23,6 +23,24 @@ context: |
   - CLAUDE.md: Engineering standards (baby steps, TDD, English only, OpenSpec mandatory)
   - DEPLOYMENT_STAGE/: Stage 11 workflow (docs → design → spec → tasks → apply → deploy → archive)
 
+  HERMES WORKSPACE INTEGRATION:
+  - Source of Truth: /home/contexia/hermes-workspace/ (WSL)
+  - GitHub Backup: https://github.com/jpelaezcardenas/hermes-workspace
+  - Documentation:
+    * AGENTS.md (English): Operational contracts, semantic worker roles, deployment rules
+    * HERMES_WORKSPACE_CONTEXT.md (Spanish): Architecture overview, features, local setup guide
+  - Integration Points:
+    * swarm.yaml: Semantic worker roles (orchestrator, builder, reviewer, qa, etc.)
+    * GBrain: Automatic indexing of both docs for agent discovery
+    * Stage 11: Deployment verification required before closing changes
+  - Primary Agents Orchestrated:
+    * Taty: Conversational operator (fiscal, Telegram, onboarding)
+    * Centinela Fiscal: DIAN alerts and tax compliance monitoring
+    * Pulso Diario: Daily operational state aggregation
+    * Social Ops: Pipeline, inbox, ideas, metrics, HITL approvals
+    * Radar Predictivo: Risk analysis and forecasting
+    * Auditoría Sombra: Automated technical auditing
+
   STANDARDS:
   - All code: fully typed, clear naming, deterministic (no hallucinations)
   - Spec-driven: Documentation is source of truth
