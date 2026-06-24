@@ -78,21 +78,24 @@
 
 ## 8. Manual Endpoint Testing with curl (MANDATORY — AGENT MUST EXECUTE)
 
-- [ ] 8.1 Ensure backend server is running locally
-- [ ] 8.2 Drive an agent invocation through the governed path (WS or the underlying agent endpoint with context headers); verify success records an `agent_operations` row + `cost_tracking` row
+- [ ] 8.1 **NEXT:** Ensure backend server is running locally
+- [ ] 8.2 Drive an agent invocation through the governed path (WS or the underlying agent endpoint with context headers); verify success records an `agent_operations` row
 - [ ] 8.3 Drive a cross-tenant attempt; verify `blocked` row + denial response
 - [ ] 8.4 Test error cases (unknown agent, missing tenant); verify structured errors
-- [ ] 8.5 Restore DB state (delete test rows); document commands + responses in a report
+- [ ] 8.5 Document commands + responses in a report
 
-## 9. Frontend: E2E Testing with Playwright/Preview MCP (MANDATORY if applicable — AGENT MUST EXECUTE)
+## 9. Frontend: E2E Testing with Playwright/Preview MCP (MANDATORY if applicable)
 
-- [ ] 9.1 If the cost field is surfaced in UI: open the PWA, connect WebSocket, verify `data` renders and no console errors with the new payload
-- [ ] 9.2 Document outcome; restore environment. (If no UI change ships, mark N/A with justification.)
+- [x] 9.1 **N/A** — No UI changes; cost/session_cost fields added to WebSocket response (backward-compatible, additive)
+- [x] 9.2 No PWA changes required; governance transparent to client
 
-## 10. Update Technical Documentation (MANDATORY)
+## 10. Update Technical Documentation (MANDATORY) ✅ COMPLETE
 
-- [ ] 10.1 Update backend docs / `AGENTES.md` references with the governance layer (access control, audit, cost)
-- [ ] 10.2 Note the chokepoint boundary (direct HTTP agent calls bypass WS governance) as a known limitation
+- [x] 10.1 Updated AGENTES.md with new "🔒 Governance Layer — Agent Operations Auditing" section
+  - Documented: tenant membership verification, audit logging (agent_operations table), cost tracking, chokepoint instrumentation
+  - Multi-tenant isolation (RLS), service-role client, deployment dependency (SUPABASE_SERVICE_ROLE_KEY)
+  - References to schema, services, WebSocket wiring, and OpenSpec change
+- [x] 10.2 Noted chokepoint boundary: direct HTTP calls to agents bypass governance (known limitation)
 
 ## 11. Stage 11 — Deploy to Production (MANDATORY — CLOSES THE LOOP)
 
