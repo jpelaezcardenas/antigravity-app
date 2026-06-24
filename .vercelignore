@@ -7,7 +7,7 @@ venv_contexia/
 **/.pytest_cache/
 
 # Frontend builds / dev
-_next/
+# _next/
 node_modules/
 **/node_modules/
 .next/
