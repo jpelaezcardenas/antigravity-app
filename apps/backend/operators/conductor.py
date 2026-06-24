@@ -401,15 +401,16 @@ async def create_conductor(session: AsyncSession) -> OnboardingConductor:
 
     Registers all available swarm operators.
     """
+    from .swarm import AuthOperator, DBOperator, RolesOperator, CommsOperator, WorkflowTrackerOperator
+
     conductor = OnboardingConductor(session)
 
-    # Register operators (will be imported from swarm module)
-    # TODO: Import and register actual operators when built
-    # await conductor.register_operator("auth_operator", AuthOperator)
-    # await conductor.register_operator("db_operator", DBOperator)
-    # await conductor.register_operator("roles_operator", RolesOperator)
-    # await conductor.register_operator("comms_operator", CommsOperator)
-    # await conductor.register_operator("workflow_operator", WorkflowTrackerOperator)
+    # Register swarm operators
+    await conductor.register_operator("auth_operator", AuthOperator)
+    await conductor.register_operator("db_operator", DBOperator)
+    await conductor.register_operator("roles_operator", RolesOperator)
+    await conductor.register_operator("comms_operator", CommsOperator)
+    await conductor.register_operator("workflow_operator", WorkflowTrackerOperator)
 
-    logger.info("Conductor initialized")
+    logger.info("Conductor initialized with 5 swarm operators")
     return conductor
