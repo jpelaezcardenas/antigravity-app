@@ -42,11 +42,11 @@
 - [x] 4.4 Wired into `agent_output_listener()` (subscribe path, Slice 4.4): same gate + timing + logging as invoke_agent; tracks lines streamed (line_count); operation_type="stream" (distinct from invoke); logs success/failed/cancelled status + total duration; cost resolved for operation_type="stream"
 - [x] 4.5 Regression: Phase 4 WebSocket behavior unchanged (subscribe/heartbeat/permission/`data` shape) — `tests/test_websocket_phase4_regression.py` GREEN (7/7), zero regressions; response now includes additive cost/session_cost fields (backward-compatible)
 
-## 5. Slice 5 — Multi-tenant isolation E2E
+## 5. Slice 5 — Multi-tenant isolation E2E ✅ COMPLETE
 
-- [ ] 5.1 E2E test: user of tenant A cannot read/produce tenant B `agent_operations`; cost rows isolated by tenant — `tests/test_agent_multi_tenant_isolation.py`
-- [ ] 5.2 E2E test: cost aggregation per tenant sums individual operations correctly — `tests/test_agent_cost_tracking_e2e.py`
-- [ ] 5.3 E2E test: non-privileged role denied full-audit read
+- [x] 5.1 E2E test: user of tenant A cannot read/produce tenant B `agent_operations`; cost rows isolated by tenant — `tests/test_agent_multi_tenant_isolation.py` (3 tests: isolation, cost isolation, blocked ops zero-cost)
+- [x] 5.2 E2E test: cost aggregation per tenant sums individual operations correctly — `tests/test_agent_cost_tracking_e2e.py` (3 tests: aggregation, cost matrix, failed ops cost)
+- [x] 5.3 E2E test: non-privileged role denied full-audit read — `tests/test_agent_audit_privileges.py` (3 tests: non-member denied, member restricted, admin logic)
 
 ## 6. Review and Update Existing Unit Tests (MANDATORY)
 
