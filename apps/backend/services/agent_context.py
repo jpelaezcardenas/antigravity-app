@@ -47,6 +47,16 @@ class AgentContext:
     timestamp: datetime
     permissions: List[Permission]
     metadata: Optional[Dict[str, Any]] = None
+    # Per-session membership cache: None = not yet checked, True/False = result.
+    # Set once by the WebSocket chokepoint so access control runs one query per
+    # session (workspace_id is fixed per context). See change
+    # agent-operations-multitenant-security, design D2/D6.
+    tenant_membership_verified: Optional[bool] = None
+
+    @property
+    def tenant_id(self) -> str:
+        """Explicit alias: in this system workspace_id IS the tenant id."""
+        return self.workspace_id
 
     def to_dict(self) -> dict:
         """Convert context to JSON-serializable dict."""

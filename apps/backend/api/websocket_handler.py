@@ -304,7 +304,48 @@ async def agent_output_listener(
     websocket: WebSocket,
     manager: ConnectionManager,
 ) -> None:
-    """Stream agent output via WebSocket."""
+    """Stream agent output via WebSocket.
+
+    Governed by tenant membership verification and audit logging
+    (change agent-operations-multitenant-security, Slice 4.4).
+    """
+    import asyncio
+    import time
+    from typing import Optional
+    from core.agent_access_control import agent_access_control
+    from services.agent_cost_tracker import AgentCostTracker
+    from services.agent_operations_logger import agent_operations_logger
+
+    # ===== GOVERNANCE LAYER (Slice 4.4) =====
+    # Step 1: Tenant membership verification (same gate as invoke_agent)
+    access_decision = agent_access_control.check_access(
+        context.user_id, context.tenant_id, agent
+    )
+    if not access_decision.allowed:
+        logger.warning(
+            f"Stream access denied: user={context.user_id} agent={agent} tenant={context.tenant_id} reason={access_decision.reason}"
+        )
+        # Log the blocked attempt (async, best-effort, no await).
+        asyncio.create_task(
+            agent_operations_logger.record(
+                tenant_id=context.tenant_id,
+                agent_name=agent,
+                user_id=context.user_id,
+                operation_type="stream",
+                status="blocked",
+                duration_ms=0,
+                cost=0,
+                input_data={},
+                error_message=access_decision.reason,
+            )
+        )
+        return
+
+    # Step 2: Start timing the stream operation
+    start_time = time.perf_counter()
+    operation_result = None
+    operation_error: Optional[str] = None
+    line_count = 0
 
     AGENT_STREAMS = {
         "pulso": "/api/v1/agents/pulso-diario/stream",
@@ -320,6 +361,8 @@ async def agent_output_listener(
     stream_endpoint = AGENT_STREAMS.get(agent)
     if not stream_endpoint:
         logger.warning(f"No stream endpoint for {agent}")
+        operation_error = "no_stream_endpoint"
+        operation_result = {"status": "failed"}
         return
 
     try:
@@ -333,6 +376,7 @@ async def agent_output_listener(
                     if not line:
                         continue
 
+                    line_count += 1
                     try:
                         data = json.loads(line)
                         await manager.send_personal(
@@ -347,14 +391,58 @@ async def agent_output_listener(
                     except json.JSONDecodeError:
                         logger.debug(f"Non-JSON line from {agent}: {line}")
 
+        operation_result = {"status": "success", "line_count": line_count}
+
     except asyncio.CancelledError:
         logger.info(f"Agent listener cancelled: {agent}")
+        operation_error = "cancelled"
+        operation_result = {"status": "failed", "line_count": line_count}
     except Exception as e:
         logger.error(f"Stream error ({agent}): {e}")
+        operation_error = str(e)
+        operation_result = {"status": "failed", "line_count": line_count}
+
+    finally:
+        # ===== AUDIT LOGGING (Slice 4.4, best-effort) =====
+        if operation_result is not None:
+            elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+            operation_status = operation_result.get("status")
+
+            # Determine cost (same logic as invoke_agent).
+            cost_tracker = AgentCostTracker()
+            final_cost = cost_tracker.resolve_cost_for_status(
+                agent, "stream", status=operation_status
+            )
+
+            # Log operation asynchronously (best-effort; never blocks WebSocket).
+            asyncio.create_task(
+                agent_operations_logger.record(
+                    tenant_id=context.tenant_id,
+                    agent_name=agent,
+                    user_id=context.user_id,
+                    operation_type="stream",
+                    status=operation_status,
+                    duration_ms=elapsed_ms,
+                    cost=final_cost,
+                    input_data={},
+                    output_data={"line_count": line_count},
+                    error_message=operation_error,
+                )
+            )
 
 
 async def invoke_agent(agent: str, context: AgentContext, params: dict) -> dict:
-    """Invoke real Hermes agent endpoint with data transformation."""
+    """Invoke real Hermes agent endpoint with data transformation.
+
+    Governed by tenant membership verification, cost tracking, and audit logging
+    (change agent-operations-multitenant-security, Slice 4).
+    """
+    import asyncio
+    import time
+    from typing import Optional
+    from core.agent_access_control import agent_access_control
+    from services.agent_cost_tracker import AgentCostTracker
+    from services.agent_operations_logger import agent_operations_logger
 
     AGENT_ENDPOINTS = {
         "pulso": "/api/v1/agents/pulso-diario/summary",
@@ -374,6 +462,39 @@ async def invoke_agent(agent: str, context: AgentContext, params: dict) -> dict:
     logger.info(
         f"Invoking agent: {agent}, workspace={context.workspace_id}, user={context.user_id}"
     )
+
+    # ===== GOVERNANCE LAYER (Slice 4) =====
+    # Step 1: Tenant membership verification
+    access_decision = agent_access_control.check_access(
+        context.user_id, context.tenant_id, agent
+    )
+    if not access_decision.allowed:
+        logger.warning(
+            f"Access denied: user={context.user_id} agent={agent} tenant={context.tenant_id} reason={access_decision.reason}"
+        )
+        # Log the blocked attempt (async, best-effort, no await).
+        asyncio.create_task(
+            agent_operations_logger.record(
+                tenant_id=context.tenant_id,
+                agent_name=agent,
+                user_id=context.user_id,
+                operation_type="invoke",
+                status="blocked",
+                duration_ms=0,
+                cost=0,
+                input_data={"params": params},
+                error_message=access_decision.reason,
+            )
+        )
+        return {
+            "status": "error",
+            "message": f"Access denied: {access_decision.reason}",
+        }
+
+    # Step 2: Start timing the operation
+    start_time = time.perf_counter()
+    operation_result = None
+    operation_error: Optional[str] = None
 
     try:
         async with httpx.AsyncClient(timeout=30) as client:
@@ -424,11 +545,13 @@ async def invoke_agent(agent: str, context: AgentContext, params: dict) -> dict:
                 logger.error(
                     f"Agent error ({agent}): {response.status_code} {response.text}"
                 )
-                return {
+                operation_error = response.text
+                operation_result = {
                     "status": "error",
                     "code": response.status_code,
                     "message": response.text,
                 }
+                return operation_result
 
             raw_data = response.json()
 
@@ -457,17 +580,62 @@ async def invoke_agent(agent: str, context: AgentContext, params: dict) -> dict:
                     data = raw_data
             except ValueError as e:
                 logger.error(f"Data validation failed ({agent}): {e}")
-                return {
+                operation_error = str(e)
+                operation_result = {
                     "status": "error",
                     "message": f"Invalid agent response format: {str(e)}",
                 }
+                return operation_result
 
-            return {
+            # Compute cost and accumulate to session (Slice 4: cost tracking).
+            cost_tracker = AgentCostTracker()
+            cost = cost_tracker.resolve_cost_for_status(agent, "invoke", status="success")
+            if not hasattr(context, "_session_cost"):
+                context._session_cost = 0
+            context._session_cost += float(cost)
+
+            operation_result = {
                 "status": "success",
                 "agent": agent,
                 "data": data,
+                "cost": float(cost),
+                "session_cost": context._session_cost,
             }
+            return operation_result
 
     except Exception as e:
         logger.error(f"Agent invocation failed ({agent}): {e}")
-        return {"status": "error", "message": str(e)}
+        operation_error = str(e)
+        operation_result = {"status": "error", "message": str(e)}
+        return operation_result
+
+    finally:
+        # ===== AUDIT LOGGING (Slice 4, best-effort) =====
+        # Calculate duration and log the operation (async, non-blocking).
+        if operation_result is not None:
+            elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+            operation_status = operation_result.get("status")
+
+            # Determine cost: if blocked or errored, zero; else use cost tracker.
+            cost_tracker = AgentCostTracker()
+            final_cost = cost_tracker.resolve_cost_for_status(
+                agent, "invoke", status=operation_status
+            )
+
+            # Log operation asynchronously (best-effort; never blocks the response).
+            asyncio.create_task(
+                agent_operations_logger.record(
+                    tenant_id=context.tenant_id,
+                    agent_name=agent,
+                    user_id=context.user_id,
+                    operation_type="invoke",
+                    status=operation_status,
+                    duration_ms=elapsed_ms,
+                    cost=final_cost,
+                    input_data={"params": params},
+                    output_data=(
+                        operation_result.get("data") if operation_status == "success" else None
+                    ),
+                    error_message=operation_error,
+                )
+            )

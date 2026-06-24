@@ -9,6 +9,11 @@ logger = logging.getLogger(__name__)
 class Settings(BaseSettings):
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
+    # Service-role key for governance operations that must bypass RLS in a
+    # controlled way (agent access-control reads of user_tenants/user_roles and
+    # agent_operations audit writes). Never exposed to request input. See
+    # change agent-operations-multitenant-security, design D6.
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
     DATABASE_URL: str = ""
     JWT_SECRET: str = ""
     JWT_ALGORITHM: str = "HS256"
