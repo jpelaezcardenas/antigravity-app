@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Onboarding Complete! ✅{% endblock %}
+
+{% block content %}
+<h1>Your Onboarding is Complete! ✅</h1>
+
+<p>Hi {{ customer_name }},</p>
+
+<p>Great news! Your onboarding to Contexia has been completed successfully. Your account is now fully set up and ready to use.</p>
+
+<div class="success-box">
+    <strong>Setup Complete</strong><br>
+    All systems are configured and your team can start using Contexia immediately.
+</div>
+
+<h2>What Was Set Up</h2>
+
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Status</th>
+    </tr>
+    <tr>
+        <td>Authentication System</td>
+        <td>✅ Configured</td>
+    </tr>
+    <tr>
+        <td>Team Account</td>
+        <td>✅ Created</td>
+    </tr>
+    <tr>
+        <td>Admin Role</td>
+        <td>✅ Assigned</td>
+    </tr>
+    <tr>
+        <td>Welcome Package</td>
+        <td>✅ Sent</td>
+    </tr>
+</table>
+
+<h2>Next Steps</h2>
+
+<ol>
+    <li><strong>Invite your team</strong> – Add team members and assign roles</li>
+    <li><strong>Connect integrations</strong> – Link your accounting and business systems</li>
+    <li><strong>Create workflows</strong> – Automate your financial processes</li>
+    <li><strong>Review settings</strong> – Customize preferences and security settings</li>
+</ol>
+
+<h2>Your Plan: {{ plan|title }}</h2>
+
+<p>You're on the <strong>{{ plan|title }}</strong> plan with the following features:</p>
+
+<ul>
+    <li>{{ team_size }} team members</li>
+    <li>{{ operations }} operations per month</li>
+    <li>{{ integrations }} available integrations</li>
+    <li>{{ support }} support</li>
+</ul>
+
+<div class="text-center mt-20">
+    <a href="{{ dashboard_url }}" class="button">Go to Dashboard</a>
+    <a href="https://docs.contexia.online/getting-started" class="button button-secondary">Getting Started Guide</a>
+</div>
+
+{% if admin_contact %}
+<h2>Questions?</h2>
+
+<p>Your account administrator is <strong>{{ admin_name }}</strong> ({{ admin_email }}). They can help you with:</p>
+<ul>
+    <li>Adding team members</li>
+    <li>Configuring workflows</li>
+    <li>Setting up integrations</li>
+</ul>
+{% endif %}
+
+<div class="info-box">
+    <strong>🚀 Quick Tips:</strong>
+    <ul style="margin-top: 10px;">
+        <li>Start with one simple automation to get familiar with the platform</li>
+        <li>Use our templates to speed up workflow creation</li>
+        <li>Enable notifications to stay updated on operation status</li>
+        <li>Review our best practices guide regularly</li>
+    </ul>
+</div>
+
+<h2>Cost Breakdown</h2>
+
+<p>Here's what your onboarding cost today:</p>
+
+<table>
+    <tr>
+        <th>Operation</th>
+        <th>Cost</th>
+    </tr>
+    <tr>
+        <td>Authentication Setup</td>
+        <td>${{ auth_cost }}</td>
+    </tr>
+    <tr>
+        <td>Account Creation</td>
+        <td>${{ account_cost }}</td>
+    </tr>
+    <tr>
+        <td>Role Configuration</td>
+        <td>${{ role_cost }}</td>
+    </tr>
+    <tr>
+        <th>Total</th>
+        <th>${{ total_cost }}</th>
+    </tr>
+</table>
+
+<p style="color: #7f8c8d; font-size: 12px;">
+    This is a one-time setup cost. Your regular usage will be billed according to your {{ plan|title }} plan.
+</p>
+
+<p style="margin-top: 30px;">
+    <strong>Account Details:</strong><br>
+    Customer: {{ customer_name }}<br>
+    Email: {{ customer_email }}<br>
+    Plan: {{ plan|title }}<br>
+    Setup Completed: {{ completed_at }}
+</p>
+
+<p style="margin-top: 20px; text-align: center;">
+    <strong>Welcome aboard! 🎉</strong><br>
+    We're excited to have you on Contexia.
+</p>
+
+<p style="text-align: center; margin-top: 20px;">
+    <a href="{{ dashboard_url }}" class="button">Start Using Contexia</a>
+</p>
+{% endblock %}

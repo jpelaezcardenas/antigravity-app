@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}You've Been Added to Contexia{% endblock %}
+
+{% block content %}
+<h1>Welcome to {{ team_name }}! 👋</h1>
+
+<p>Hi {{ user_name }},</p>
+
+<p>You've been invited to join <strong>{{ team_name }}</strong> on Contexia by {{ invited_by }}.</p>
+
+<div class="success-box">
+    <strong>Your Role: {{ role|title }}</strong><br>
+    Your access and permissions have been configured for your role.
+</div>
+
+<h2>Your Permissions</h2>
+
+<p>As a <strong>{{ role|title }}</strong>, you have access to:</p>
+
+<ul>
+    {% for permission in permissions %}
+    <li>{{ permission }}</li>
+    {% endfor %}
+</ul>
+
+<h2>Team Members</h2>
+
+<p>You're now part of this team. Here are your teammates:</p>
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Role</th>
+        <th>Email</th>
+    </tr>
+    {% for member in team_members %}
+    <tr>
+        <td>{{ member.name }}</td>
+        <td>{{ member.role|title }}</td>
+        <td>{{ member.email }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2>What You Can Do Now</h2>
+
+<p>Based on your {{ role|title }} role, you can:</p>
+
+{% if role == 'admin' %}
+<ul>
+    <li>Manage team members and permissions</li>
+    <li>View all operations and workflows</li>
+    <li>Edit and delete operations</li>
+    <li>Access billing and usage reports</li>
+</ul>
+{% elif role == 'editor' %}
+<ul>
+    <li>View and edit operations</li>
+    <li>Monitor workflow execution</li>
+    <li>View cost breakdowns</li>
+    <li>Create new workflows</li>
+</ul>
+{% elif role == 'finance' %}
+<ul>
+    <li>View financial reports</li>
+    <li>Analyze costs and budgets</li>
+    <li>Export financial data</li>
+    <li>View operational costs</li>
+</ul>
+{% elif role == 'viewer' %}
+<ul>
+    <li>View completed operations</li>
+    <li>Read-only access to workflows</li>
+    <li>Monitor progress and status</li>
+</ul>
+{% endif %}
+
+<h2>Get Started</h2>
+
+<div class="text-center mt-20">
+    <a href="{{ dashboard_url }}" class="button">Access Dashboard</a>
+</div>
+
+<p>If you have any questions about your role or permissions, please reach out to {{ invited_by }} or contact our support team.</p>
+
+<div class="info-box">
+    <strong>Need Help?</strong><br>
+    Check out our <a href="https://docs.contexia.online/roles">Roles & Permissions Guide</a> to learn more about what you can do.
+</div>
+
+<p style="margin-top: 30px;">
+    <strong>Team:</strong> {{ team_name }}<br>
+    <strong>Role:</strong> {{ role|title }}<br>
+    <strong>Invited By:</strong> {{ invited_by }}<br>
+    <strong>Date Joined:</strong> {{ joined_at }}
+</p>
+{% endblock %}

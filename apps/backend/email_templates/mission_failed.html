@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Onboarding Needs Attention{% endblock %}
+
+{% block content %}
+<h1>Onboarding Encountered an Issue ⚠️</h1>
+
+<p>Hi {{ customer_name }},</p>
+
+<p>We encountered an issue during your onboarding process. Our team is investigating and working to resolve it.</p>
+
+<div class="error-box">
+    <strong>Failed Component:</strong> {{ failed_component|title }}<br>
+    <strong>Error:</strong> {{ error_message }}<br>
+    <strong>Time:</strong> {{ failed_at }}
+</div>
+
+<h2>What Went Wrong?</h2>
+
+<p>{{ detailed_error }}</p>
+
+<h2>What Happens Now?</h2>
+
+<p>We have a few options to get you set up:</p>
+
+<ol>
+    <li><strong>Automatic Retry</strong> – We can attempt the setup again</li>
+    <li><strong>Manual Setup</strong> – Our team can manually complete this step</li>
+    <li><strong>Alternative Approach</strong> – We can use a different method to achieve the same result</li>
+</ol>
+
+<div class="text-center mt-20">
+    <a href="{{ retry_url }}" class="button">Retry Setup</a>
+    <a href="https://support.contexia.online/ticket/new" class="button button-secondary">Contact Support</a>
+</div>
+
+<h2>Your Account Status</h2>
+
+<p>Don't worry! Here's what's still working:</p>
+
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Status</th>
+    </tr>
+    {% for item in status_items %}
+    <tr>
+        <td>{{ item.name }}</td>
+        <td>{% if item.status == 'completed' %}✅ Completed{% elif item.status == 'pending' %}⏳ Pending{% else %}❌ Failed{% endif %}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2>How to Get Help</h2>
+
+<div class="info-box">
+    <strong>Our support team is standing by!</strong>
+    <ul style="margin-top: 10px;">
+        <li><strong>Email:</strong> <a href="mailto:support@contexia.online">support@contexia.online</a></li>
+        <li><strong>Phone:</strong> {{ support_phone }}</li>
+        <li><strong>Chat:</strong> Available in your dashboard (if accessible)</li>
+        <li><strong>Ticket:</strong> <a href="https://support.contexia.online">Create a support ticket</a></li>
+    </ul>
+</div>
+
+<h2>Recommended Actions</h2>
+
+<p>Here's what you can do right now:</p>
+
+<ol>
+    <li>
+        <strong>Try Retry Button</strong> – Sometimes issues are temporary
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 5px;">
+            <a href="{{ retry_url }}" class="button" style="display: inline-block; width: auto;">Retry Now</a>
+        </div>
+    </li>
+    <li>
+        <strong>Contact Our Team</strong> – We can prioritize your setup
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 5px;">
+            <a href="https://support.contexia.online/ticket/new?customer={{ customer_email }}" class="button button-secondary" style="display: inline-block; width: auto;">Create Ticket</a>
+        </div>
+    </li>
+    <li>
+        <strong>Check System Status</strong> – See if there are known issues
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 5px;">
+            <a href="https://status.contexia.online" class="button button-secondary" style="display: inline-block; width: auto;">System Status</a>
+        </div>
+    </li>
+</ol>
+
+<div class="warning-box">
+    <strong>⏱️ Time Sensitive:</strong><br>
+    We're prioritizing your setup. Our team will reach out within the next 2 hours.
+</div>
+
+<h2>Partial Access</h2>
+
+{% if partial_access %}
+<p>While we work on the failed component, you can access:</p>
+<ul>
+    {% for access_item in partial_access %}
+    <li>{{ access_item }}</li>
+    {% endfor %}
+</ul>
+
+<div class="text-center mt-20">
+    <a href="{{ dashboard_url }}" class="button">Go to Dashboard</a>
+</div>
+{% else %}
+<p>Your account is temporarily unavailable while we resolve this issue. We'll notify you as soon as it's fixed.</p>
+{% endif %}
+
+<h2>Error Details (for reference)</h2>
+
+<div style="background: #f8f9fa; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 12px; overflow-x: auto;">
+    <strong>Error ID:</strong> {{ error_id }}<br>
+    <strong>Component:</strong> {{ failed_component }}<br>
+    <strong>Timestamp:</strong> {{ failed_at }}<br>
+    <strong>Message:</strong> {{ error_message }}
+</div>
+
+<p style="margin-top: 30px;">
+    <strong>Account Details:</strong><br>
+    Customer: {{ customer_name }}<br>
+    Email: {{ customer_email }}<br>
+    Error ID: {{ error_id }}
+</p>
+
+<p style="margin-top: 20px;">
+    We apologize for this inconvenience. Our team is working around the clock to get you set up as quickly as possible.
+</p>
+
+<p style="text-align: center; margin-top: 20px;">
+    <strong>Need immediate help?</strong><br>
+    <a href="https://support.contexia.online/urgent">Create Urgent Ticket</a> or call {{ support_phone }}
+</p>
+{% endblock %}

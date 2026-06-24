@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to Contexia{% endblock %}
+
+{% block content %}
+<h1>Welcome to Contexia! 🎉</h1>
+
+<p>Hi {{ customer_name }},</p>
+
+<p>Thank you for choosing Contexia! We're excited to help you streamline your finance and operations.</p>
+
+<div class="success-box">
+    <strong>Account Created Successfully</strong><br>
+    Your {{ plan|title }} plan is now active and ready to use.
+</div>
+
+<h2>What's Next?</h2>
+
+<ol>
+    <li><strong>Log in to your dashboard</strong> – Set up your team and configure permissions</li>
+    <li><strong>Connect your systems</strong> – Integrate with your accounting software</li>
+    <li><strong>Create your first workflow</strong> – Automate routine tasks</li>
+    <li><strong>Invite team members</strong> – Collaborate with your team</li>
+</ol>
+
+<div class="text-center mt-20">
+    <a href="{{ dashboard_url }}" class="button">Go to Dashboard</a>
+</div>
+
+<h2>Plan Details</h2>
+
+<table>
+    <tr>
+        <th>Feature</th>
+        <th>{{ plan|title }} Plan</th>
+    </tr>
+    <tr>
+        <td>Team Members</td>
+        <td>{{ team_members }}</td>
+    </tr>
+    <tr>
+        <td>Monthly Operations</td>
+        <td>{{ monthly_operations }}</td>
+    </tr>
+    <tr>
+        <td>Priority Support</td>
+        <td>{{ support }}</td>
+    </tr>
+    <tr>
+        <td>Integrations</td>
+        <td>{{ integrations }}</td>
+    </tr>
+</table>
+
+<h2>Getting Started</h2>
+
+<p>Check out our <a href="https://docs.contexia.online/quickstart">Quick Start Guide</a> to:</p>
+<ul>
+    <li>Understand core concepts</li>
+    <li>Set up your first automation</li>
+    <li>Best practices and tips</li>
+    <li>Troubleshooting common issues</li>
+</ul>
+
+<div class="info-box">
+    <strong>💡 Pro Tip:</strong> Start with a simple workflow to get familiar with the platform, then gradually add more complex automations.
+</div>
+
+<h2>Questions?</h2>
+
+<p>Our support team is here to help! You can:</p>
+<ul>
+    <li>Visit our <a href="https://docs.contexia.online">Documentation</a></li>
+    <li>Email us at <a href="mailto:support@contexia.online">support@contexia.online</a></li>
+    <li>Chat with us in-app (available {{ support_hours }})</li>
+</ul>
+
+<p style="margin-top: 30px;">
+    <strong>{{ company_name }}</strong><br>
+    Email: {{ customer_email }}<br>
+    Account Created: {{ created_at }}
+</p>
+
+<p style="margin-top: 20px; text-align: center;">
+    <a href="{{ dashboard_url }}" class="button">Start Using Contexia Now</a>
+</p>
+{% endblock %}
