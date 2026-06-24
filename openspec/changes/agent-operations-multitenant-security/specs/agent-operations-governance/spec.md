@@ -2,6 +2,22 @@
 
 ## ADDED Requirements
 
+### Requirement: JWT identity resolution to canonical tenant/user identifiers
+The system SHALL resolve the caller's JWT identifiers to the canonical UUIDs used by the governance tables (`usuarios.id`, `tenants.id`) before performing the tenant-membership check, the cost recording, or the audit write. User identity SHALL be resolved by `usuarios.email`, falling back to the JWT `sub` when it is already a UUID. Tenant identity SHALL be resolved from the JWT `workspace_id` as a UUID, else as `tenants.company_id`, else from the caller's single active `user_tenants` membership. If either identity cannot be resolved unambiguously, the system SHALL treat the invocation as `blocked` (reason `identity_unresolved`) and SHALL NOT execute the agent.
+
+#### Scenario: String JWT identities are resolved to UUIDs
+- **WHEN** a user authenticates with a JWT whose `sub` is a non-UUID string (e.g. a demo id) and whose `email` matches a `usuarios` row, and whose `workspace_id` matches a `tenants.company_id`
+- **THEN** the system resolves the user to `usuarios.id` and the tenant to `tenants.id`
+- **AND** the membership check, cost recording, and audit row all use those resolved UUIDs
+
+#### Scenario: Unresolvable identity is blocked
+- **WHEN** the caller's user or tenant identity cannot be resolved to a canonical UUID
+- **THEN** the agent does NOT execute and the result is `blocked` with reason `identity_unresolved`
+
+#### Scenario: Tenant derived from membership when workspace claim is unusable
+- **WHEN** the JWT `workspace_id` is neither a valid tenant UUID nor a known `company_id`, but the resolved user has exactly one active `user_tenants` membership
+- **THEN** the system uses that membership's `tenant_id` as the canonical tenant
+
 ### Requirement: Tenant membership enforcement on agent invocation
 The system SHALL verify, before executing any agent, that the calling `user_id` is a member of the requested `tenant_id` (i.e. exists in `user_tenants` with that `tenant_id`). If membership cannot be confirmed, the system SHALL NOT execute the agent and SHALL return a `blocked` result.
 
