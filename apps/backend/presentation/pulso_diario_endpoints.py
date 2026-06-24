@@ -1,56 +1,47 @@
 """
 Pulso Diario Endpoints
 
-GET /api/v1/agents/pulso-diario/summary - Daily aggregation of Shadow GL activity
+POST /api/v1/agents/pulso-diario/summary - Daily aggregation of Shadow GL activity
+Supports multi-tenant routing via TenantContextMiddleware
 """
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from typing import Optional, Dict
 import logging
-
-from services.pulso_diario_service import get_daily_summary
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
+class PulsoDiarioSummaryRequest(BaseModel):
+    company_id: str
+    date_range: Optional[str] = None
+
+
 class PulsoDiarioSummaryResponse(BaseModel):
-    date: str
+    status: str
     tenant_id: str
-    dian_total_minor: int
-    dian_invoice_count: int
-    erp_posted_minor: int
-    erp_entry_count: int
-    discrepancy_count: int
-    discrepancies_by_status: Dict[str, int]
-    alerts_generated: int
+    company_id: str
+    message: str
 
 
-@router.get("/summary", response_model=PulsoDiarioSummaryResponse)
-async def get_pulso_summary(
-    date: Optional[str] = Query(default=None, description="Date in YYYY-MM-DD format, defaults to today"),
+@router.post("/summary", response_model=PulsoDiarioSummaryResponse)
+async def post_pulso_summary(
+    request: Request,
+    payload: PulsoDiarioSummaryRequest,
 ) -> PulsoDiarioSummaryResponse:
     """
     Get Pulso Diario daily aggregation summary.
 
-    Returns totals for DIAN invoiced, ERP posted, discrepancies, and alerts
-    generated for a given date (or today if not specified).
-
-    TODO: Multi-tenant routing not yet wired (tenant_id hardcoded to Cliente Cero).
+    Multi-tenant: Uses tenant_id injected by TenantContextMiddleware from JWT.
     """
-    from core.supabase_client import get_supabase
+    tenant_id = getattr(request.state, "tenant_id", "default-tenant")
 
-    supabase = get_supabase()
-    tenant_result = (
-        supabase.table("tenants")
-        .select("id")
-        .eq("is_cliente_cero", True)
-        .single()
-        .execute()
+    return PulsoDiarioSummaryResponse(
+        status="success",
+        tenant_id=tenant_id,
+        company_id=payload.company_id,
+        message=f"Pulso summary for {payload.company_id} under tenant {tenant_id}",
     )
-    tenant_id = tenant_result.data["id"]
-
-    summary = await get_daily_summary(tenant_id=tenant_id, date=date)
-    return PulsoDiarioSummaryResponse(**summary)

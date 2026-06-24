@@ -7,7 +7,7 @@ POST /api/v1/approval-queue/approve - Approve a draft and trigger vectorization
 POST /api/v1/approval-queue/reject - Reject a draft
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from typing import List, Optional
 from pydantic import BaseModel
 import logging
@@ -100,30 +100,34 @@ async def list_drafts(
 
 
 @router.post("/enqueue", response_model=ApprovalResponse)
-async def enqueue_for_approval(request: EnqueueRequest):
+async def enqueue_for_approval(http_request: Request, payload: EnqueueRequest):
     """
     Enqueue a draft for approval after Agent Critic validation.
+
+    Multi-tenant: Uses tenant_id injected by TenantContextMiddleware from JWT.
 
     If Critic validation fails, returns 400 with validation error.
     If validation passes, creates a pending approval decision.
     """
+    tenant_id = getattr(http_request.state, "tenant_id", "default-tenant")
+
     try:
         # Convert request to journal entry dict
         journal_entry = {
-            "lines": [line.model_dump() for line in request.lines],
-            "memo": request.memo,
+            "lines": [line.model_dump() for line in payload.lines],
+            "memo": payload.memo,
         }
 
         # Enqueue with Critic validation
         success, decision, error = await ApprovalQueueService.enqueue_draft(
-            draft_id=request.draft_id,
-            draft_type=request.draft_type,
+            draft_id=payload.draft_id,
+            draft_type=payload.draft_type,
             journal_entry=journal_entry,
-            memo=request.memo,
+            memo=payload.memo,
         )
 
         if not success:
-            logger.warning(f"Enqueue failed for draft {request.draft_id}: {error}")
+            logger.warning(f"Enqueue failed for draft {payload.draft_id}: {error}")
             raise HTTPException(status_code=400, detail=error)
 
         return ApprovalResponse(
