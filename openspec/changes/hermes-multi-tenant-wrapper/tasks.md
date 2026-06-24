@@ -6,6 +6,60 @@
 
 ---
 
+## ⚠️ Ground Truth Correction (2026-06-24)
+
+All 28 tasks below are templated as `Status: ⏳ Ready` (never started), and were left that way
+in this file. But `EXECUTION_STATUS.md` (same folder) separately claims **"Phase 1 complete,
+23/23 tests passing, all 4 stakeholders approved, live in production"** — a direct contradiction.
+Neither claim was correct as written. Verified directly against the running code and Supabase
+(`kpynymwghfwshvcvevxq`) on 2026-06-24:
+
+- **T1-T4 (middleware): Actually done.** `apps/backend/core/tenant_middleware.py` exists,
+  registered in `main.py` (commit `b939d14`, 2026-06-23 — confirms `EXECUTION_STATUS.md`'s date,
+  not its claim of "23/23 tests").
+- **T5, T7 (tenant_id columns + RLS): Half-real.** Migrations `0001`/`0003` target 5 tables
+  (`pulso_results`, `centinela_alerts`, `approval_queue`, `radar_insights`, `auditoria_reports`).
+  Only **2 of those 5 tables actually exist** in this Supabase project — `centinela_alerts` and
+  `approval_queue`. The other 3 (`pulso_results`, `radar_insights`, `auditoria_reports`) don't
+  exist as tables at all; Pulso/Radar/Auditoría compute their data on the fly rather than
+  persisting to dedicated tables. The migration's table list was template/aspirational, not
+  matched against the real schema.
+- **T6 (backfill): Did not actually run.** Both real tables (`centinela_alerts`,
+  `approval_queue`) have rows with `tenant_id = NULL` right now — the backfill script's default
+  was never applied to existing data. RLS is currently fail-closed (or matching nothing) for
+  those rows, not isolating by tenant as intended.
+- **T10 (JWT includes tenant_id): Done, but the value is broken for RLS.** `core/security.py`
+  sets `tenant_id = "contexia-org-1"` (a string) in the JWT, but the RLS policies in `0003` cast
+  `auth.jwt()->>'tenant_id'` **to `::uuid`** — a non-UUID string there causes a cast error, not a
+  silent filter. This is the same string-vs-UUID identity mismatch already tracked separately in
+  `agent-operations-multitenant-security/tasks.md` §11.7 — not a new bug, but it means this
+  change's RLS isolation does not actually work end-to-end yet.
+- **T11-T15 (Hermes JWT config, E2E test, docs, sign-off gate): Not done.** No evidence of Hermes
+  Workspace `.env` configuration, no E2E test file, no real stakeholder sign-off (the "23/23
+  tests, 4 stakeholders approved" claim in `EXECUTION_STATUS.md` is unverified/likely
+  confabulated by whichever agent wrote it).
+- **T16-T28 (Phase 2 SyncManager, Phase 3 hardening, Phase 6 deploy): Not started.** Purely
+  planning artifacts (templates, unsent email drafts in `DISTRIBUTION_EMAILS.md` /
+  `EMAIL_*_READY_TO_SEND.txt`). No SyncManager call was ever confirmed scheduled.
+
+**Decision (Juan David, 2026-06-24): Defer Phase 2 (SyncManager) and Phase 3 (WSL hardening)
+indefinitely — the commercial negotiation with SyncManager has not been closed.** Instead,
+explore a different technical path for data ingestion: **daily local/manual upload by the
+Contexia admin (Contexia as cliente cero)**, independent of SyncManager's API. This needs its
+own scoping (file format, upload mechanism, validation, where it lands in Shadow GL) before
+becoming tasks — tracked as a follow-up, not detailed here yet.
+
+**Status going forward:**
+- Phase 1 (T1-T15): reopened as **in-progress, not complete** — real remaining work is fixing
+  the tenant_id type mismatch (T10) and either dropping or correcting the 3 non-existent-table
+  references in T5/T7, then re-running backfill (T6) correctly.
+- Phase 2 (T16-T20): **DEFERRED** — blocked on commercial negotiation, not an engineering task.
+- Phase 3 (T21-T25): **DEFERRED** — same reason, and lower priority than fixing Phase 1's actual
+  bugs.
+- Phase 6 (T26-T28): blocked on Phase 1 actually being correct first.
+
+---
+
 ## Grouping & Dependencies
 
 ```
