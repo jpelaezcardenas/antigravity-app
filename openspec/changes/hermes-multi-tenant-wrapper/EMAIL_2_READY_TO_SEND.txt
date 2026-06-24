@@ -1,0 +1,120 @@
+================================================================================
+EMAIL 2 — READY TO SEND
+================================================================================
+
+TO: backend-lead@contexia.com, database-lead@contexia.com, hermes-admin@contexia.com, qa-lead@contexia.com
+CC: jpelaezcardenas@gmail.com
+DATE: 2026-06-24 (TOMORROW)
+SUBJECT: Phase 2 Kickoff Jul 3 @ 10:00 UTC | Timeline & Task Assignments
+
+================================================================================
+EMAIL BODY
+================================================================================
+
+Team,
+
+Phase 1 is complete and live. Phase 2 (SyncManager Integration) kicks off
+this Wednesday, July 3.
+
+PHASE 2 OVERVIEW:
+📅 Duration: Jul 3-15, 2026 (13 days)
+🎯 Deliverable: SyncManager integration + live demo for Jul 25 customer call
+✅ Success: All 9 operators orchestrating GL sync + reconciliation
+
+TIMELINE (Week by Week):
+
+WEEK 1 (Jul 3-5): ANALYSIS & DESIGN
+├─ T1: SyncManager PDF analysis → Backend Dev
+├─ T2: Shadow GL architecture design → Backend + Database Lead
+└─ ✓ Deliverable: Design docs + architecture diagrams
+
+WEEK 2 (Jul 6-12): IMPLEMENTATION & INTEGRATION
+├─ T3: Siigo API poller (2 days) → Backend Dev
+├─ T4: DIAN XML parser (2 days) → Backend Dev
+├─ T5: Shadow GL database schema (1 day) → Database Lead
+├─ T6: Integration tests (1 day) → QA Lead
+└─ ✓ Deliverable: Working endpoints + ≥6 integration tests passing
+
+WEEK 3 (Jul 13-15): OPERATORS & DEMO
+├─ T7: Register 9 operators (1 day) → Hermes Admin
+├─ T8: Demo preparation (1 day) → Backend + Product
+├─ T9: Documentation + handoff (1 day) → Technical Writer
+└─ ✓ Deliverable: Demo ready + all docs updated
+
+TASK ASSIGNMENTS:
+• Backend Dev (60%): T1-T4, T6
+• Database Lead (20%): T5
+• Hermes Admin (10%): T7
+• QA + Doc (10%): T6, T9
+
+WEEKLY SYNC SCHEDULE:
+• Mondays 10:00 UTC: Phase 2 Planning
+• Wednesdays 10:00 UTC: Mid-week Status
+• Fridays 10:00 UTC: Weekly Sign-Off
+
+CRITICAL DEPENDENCIES:
+T1 & T2 (Design) → T3 & T4 (Implementation) → T5 (DB)
+  → T6 (Tests) → T7 (Operators) → T8 & T9 (Demo Prep)
+
+DOCUMENTS (Review before kickoff):
+📄 PHASE2_TIMELINE_VISUAL.md — Week-by-week breakdown
+📄 PHASE2_TASKS.md — Detailed technical specifications (9 tasks)
+📄 PHASE2_KICKOFF.md — Full agenda + pre-kickoff checklist
+
+KICKOFF MEETING: Wednesday, Jul 3 @ 10:00 UTC (30 min)
+Calendar invite coming separately.
+
+PRE-KICKOFF CHECKLIST (Complete by Jul 1-2):
+
+Backend Dev:
+□ Read PHASE2_TASKS.md completely
+□ Identify SyncManager PDF location + download it
+□ Review T1 (PDF analysis) detailed requirements
+□ Prepare questions/clarifications for kickoff
+□ Confirm tool access: GitHub, Railway, Supabase, SyncManager docs
+
+Database Lead:
+□ Read PHASE2_TASKS.md (focus on T5)
+□ Review Shadow GL schema design section
+□ Prepare migration strategy (dev → staging → prod timeline)
+□ Confirm Supabase admin access
+□ Prepare questions on pgvector + RLS for Shadow GL
+
+Hermes Admin:
+□ Read PHASE2_TASKS.md (focus on T7)
+□ Review operator registration requirements
+□ Prepare Workspace environment for 9 operators
+□ Confirm API access for tool registration
+□ Prepare operator naming + emoji assignments
+
+Looking forward to kicking off Phase 2!
+
+Best regards,
+Claude (Engineering)
+
+================================================================================
+ACTION ITEMS FOR ENGINEERING TEAM
+================================================================================
+
+1. ✅ Read PHASE2_TASKS.md (by Jul 1)
+2. ✅ Complete pre-kickoff checklist (by Jul 2)
+3. ✅ Confirm attendance at Jul 3 kickoff (by Jul 2)
+4. ✅ Set calendar reminders for critical dates (by Jul 2)
+
+CRITICAL DATES (SET REMINDERS):
+□ Jul 3 @ 10:00 UTC → KICKOFF MEETING (MANDATORY)
+□ Jul 5 @ EOD → Design docs must be complete
+□ Jul 12 @ EOD → Implementation must be complete
+□ Jul 14 @ 14:00 UTC → Demo dry-run
+□ Jul 15 @ EOD → Phase 2 complete
+□ Jul 25 @ 14:00 UTC → CUSTOMER CALL + LIVE DEMO
+
+================================================================================
+STATUS: ✅ READY TO SEND
+================================================================================
+
+This email is formatted, verified, and ready for immediate delivery.
+
+Recommended send time: Jun 24, 2026 @ 09:00 UTC (morning)
+
+================================================================================

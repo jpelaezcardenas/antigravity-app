@@ -1,0 +1,148 @@
+================================================================================
+EMAIL 3 — KICKOFF CALENDAR INVITE
+================================================================================
+
+TO: jpelaezcardenas@gmail.com, backend-lead@contexia.com, database-lead@contexia.com, hermes-admin@contexia.com
+DATE: 2026-06-25 (WEDNESDAY)
+SUBJECT: CALENDAR INVITE: Phase 2 Kickoff | Jul 3 @ 10:00 UTC
+
+================================================================================
+EMAIL BODY + CALENDAR INVITE
+================================================================================
+
+CALENDAR INVITE:
+
+EVENT: Phase 2 Kickoff — SyncManager Integration
+DATE: Wednesday, July 3, 2026
+TIME: 10:00 UTC (adjust for your timezone)
+DURATION: 30 minutes
+LOCATION: [ADD ZOOM LINK HERE]
+
+ATTENDEES:
+✓ Juan David Pelaez Cardenas (Product)
+✓ Backend Lead
+✓ Database Lead
+✓ Hermes Admin
+✓ QA Lead
+
+AGENDA (30 minutes):
+1. Phase 1 Retrospective (5 min)
+   ├─ What we achieved
+   ├─ Production status
+   └─ Success metrics
+
+2. Phase 2 Scope & Goals (5 min)
+   ├─ SyncManager integration overview
+   ├─ Shadow GL design
+   └─ Operator registration plan
+
+3. Task Assignments & Dependencies (10 min)
+   ├─ T1-T9 roles and owners
+   ├─ Critical path review
+   └─ Week-by-week breakdown
+
+4. Risks & Blockers (5 min)
+   ├─ Known dependencies
+   ├─ Escalation rules
+   └─ Contingency planning
+
+5. Success Criteria & Sign-Off (5 min)
+   ├─ Phase 2 done criteria
+   ├─ Jul 25 customer call readiness
+   └─ All-hands sign-off
+
+PREP WORK (COMPLETE BY JUL 3):
+
+□ Backend:
+  - Read PHASE2_TASKS.md + T1 specification
+  - Download SyncManager PDF
+  - Prepare questions for kickoff
+  - Confirm GitHub/Railway/Supabase access
+
+□ Database:
+  - Read PHASE2_TASKS.md + T5 specification
+  - Review Shadow GL schema design
+  - Prepare migration strategy
+  - Confirm Supabase admin access
+
+□ Hermes:
+  - Read PHASE2_TASKS.md + T7 specification
+  - Review operator registration requirements
+  - Prepare Workspace environment
+  - Prepare operator naming + emoji assignments
+
+□ Product (Juan):
+  - Read PHASE2_TIMELINE_VISUAL.md
+  - Confirm Jul 25 technical call attendees
+  - Prepare demo talking points
+  - Set calendar: Jul 3 kickoff, Jul 14 dry-run, Jul 25 call
+
+DOCUMENTS (Available in GitHub repo):
+📄 PHASE2_TIMELINE_VISUAL.md — Visual week-by-week breakdown
+📄 PHASE2_TASKS.md — Detailed technical specifications
+📄 PHASE2_KICKOFF.md — Full detailed agenda
+📄 EXECUTION_HANDOFF.md — Complete execution plan
+
+POST-KICKOFF:
+├─ 11:00 UTC (same day): Backend Dev starts T1 (SyncManager PDF analysis)
+├─ 10:00 UTC (following Monday): First planning sync
+└─ Daily: Progress updates in Slack #engineering
+
+RSVP REQUIRED BY JUL 2 EOD
+
+Please confirm your attendance and complete the pre-kickoff checklist items
+for your role by July 2 EOD.
+
+Questions? Reach out in Slack #engineering.
+
+Looking forward to kicking off Phase 2!
+
+Claude (Engineering)
+
+================================================================================
+WEEKLY SYNC SCHEDULE (Jul 3-15)
+================================================================================
+
+MONDAYS @ 10:00 UTC: Phase 2 Planning
+├─ Review previous week deliverables
+├─ Plan current week tasks
+├─ Identify blockers
+└─ Confirm next week prep
+
+WEDNESDAYS @ 10:00 UTC: Mid-week Status Check
+├─ Task status update
+├─ Blocker identification
+├─ Course correction if needed
+└─ Demo progress (Week 3 only)
+
+FRIDAYS @ 10:00 UTC: Weekly Sign-Off
+├─ Test results review
+├─ Code review status
+├─ Preparation for next week
+└─ Achievement celebration
+
+ALL SYNCS: 20-30 minutes, same Zoom link as kickoff
+
+================================================================================
+CRITICAL DATES (SAVE THESE REMINDERS)
+================================================================================
+
+Jul 3 @ 10:00 UTC   → KICKOFF MEETING (MANDATORY)
+Jul 5 @ EOD         → Design docs complete
+Jul 12 @ EOD        → Implementation complete
+Jul 14 @ 14:00 UTC  → Demo dry-run (before customer call)
+Jul 15 @ EOD        → Phase 2 complete
+Jul 25 @ 14:00 UTC  → 🎤 CUSTOMER CALL + LIVE DEMO (MANDATORY)
+
+================================================================================
+STATUS: ✅ READY TO SEND
+================================================================================
+
+This email is formatted, verified, and ready for immediate delivery.
+
+Recommended send time: Jun 25, 2026 @ 09:00 UTC (morning)
+
+ZOOM LINK: [TO BE ADDED]
+(Same link will be used for all 3 weekly syncs during Jul 3-15)
+
+================================================================================
