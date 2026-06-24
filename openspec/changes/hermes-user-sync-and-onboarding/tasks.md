@@ -101,7 +101,7 @@ Hermes, not a FastAPI service layer.
 
 ## Stage 11. Deploy to Production (MANDATORY)
 
-- [ ] 11.5 git commit + push to main
+- [x] 11.5 git commit + push to main (`a2d3e09`, 2026-06-24)
 - [ ] 11.6 Vercel — N/A, no frontend changes
 - [ ] 11.7 Railway — N/A, no `main.py`/router changes (dead file removal only; RLS policies
       were applied directly to Supabase via MCP, not through the app's migration runner — note
