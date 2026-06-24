@@ -2,7 +2,7 @@
 
 **Change:** `agent-operations-multitenant-security`
 **Date:** 2026-06-24
-**Status:** 🔄 IN PROGRESS
+**Status:** ⚠️ DEPLOYED BUT RUNTIME-UNVERIFIED — identity-model blocker found (see 11.7)
 **Convention:** TDD (failing test first → GREEN), baby steps (≤2h each), fully typed, English only.
 
 ---
@@ -47,6 +47,17 @@
 - [x] 5.1 E2E test: user of tenant A cannot read/produce tenant B `agent_operations`; cost rows isolated by tenant — `tests/test_agent_multi_tenant_isolation.py` (3 tests: isolation, cost isolation, blocked ops zero-cost)
 - [x] 5.2 E2E test: cost aggregation per tenant sums individual operations correctly — `tests/test_agent_cost_tracking_e2e.py` (3 tests: aggregation, cost matrix, failed ops cost)
 - [x] 5.3 E2E test: non-privileged role denied full-audit read — `tests/test_agent_audit_privileges.py` (3 tests: non-member denied, member restricted, admin logic)
+
+## 5.6 Slice 6 — JWT identity resolution (sub/workspace → canonical UUID) — design D7/D8
+
+Root cause of the runtime block (see §11.7): JWT carries string identities; governance tables key on UUID. Fix resolves identity server-side at context creation. TDD.
+
+- [ ] 5.6.1 Write failing tests `tests/test_identity_resolver.py` with an injected fake client: email→`usuarios.id`; uuid `sub` passthrough when email lookup misses; `workspace_id` uuid passthrough; `company_id`→`tenants.id`; single-membership fallback; ambiguous/zero membership → None; error → None (fail-closed)
+- [ ] 5.6.2 Implement `core/identity_resolver.py` (`IdentityResolver.resolve_user_uuid`, `resolve_tenant_uuid`, `resolve`) on the service-role client; pure, injectable
+- [ ] 5.6.3 Wire into `api/websocket_handler.py` connect flow: resolve (sub, email, workspace_id) → (user_uuid, tenant_uuid) before `create_context`; on success build context with UUIDs; on failure keep raw values so the chokepoint fail-closes per-invoke with reason `identity_unresolved`
+- [ ] 5.6.4 Ensure audit logging writes the resolved UUID to `agent_operations.user_id` (D8); column stays VARCHAR
+- [ ] 5.6.5 Regression: Phase 4 WS behavior + existing governance tests still green
+- [ ] 5.6.6 Reconcile Antigravity's two undeployed commits (workspace_id JWT default, WS permissions): keep the permissions fix; the `create_access_token` `"contexia-org-1"` default is superseded by D7 resolution (document, do not rely on it)
 
 ## 6. Review and Update Existing Unit Tests (MANDATORY) ✅ COMPLETE
 
@@ -110,24 +121,24 @@ Project-specific details:
 
 ### Pre-Deployment Checklist
 
-- [ ] 11.0 **CRITICAL BLOCKER:** Confirm `SUPABASE_SERVICE_ROLE_KEY` is set in Railway env
+- [x] 11.0 **CRITICAL BLOCKER:** ✅ COMPLETE Confirm `SUPABASE_SERVICE_ROLE_KEY` is set in Railway env
   - Go to: https://railway.app/[project]/settings/environment
   - Add variable: `SUPABASE_SERVICE_ROLE_KEY = <paste-from-supabase-project-settings>`
   - **Without this:** governance layer will fail (service-role client unavailable)
   
-- [ ] 11.1 **Ready for merge:** feature branch `feature/agent-operations-multitenant-security` has:
+- [x] 11.1 **Ready for merge:** ✅ COMPLETE (PR #5 merged) feature branch `feature/agent-operations-multitenant-security` has:
   - ✅ Slices 1-5 implemented (migrations, access control, cost tracker, logging, E2E tests)
   - ✅ Steps 6-7 tests passed (30/30 logic tests, zero regressions)
   - ✅ Step 10 documentation updated (AGENTES.md)
   - ✅ All commits with co-author attribution
   - **Action:** Merge feature branch → `main` via GitHub PR
   
-- [ ] 11.2 Vercel build verification
+- [x] 11.2 Vercel build verification ✅ COMPLETE
   - No frontend changes in this PR
   - Build should complete in < 2 min (cached)
   - Check: https://vercel.com/contexia/antigravity-app/deployments
   
-- [ ] 11.3 Railway deploy active
+- [x] 11.3 Railway deploy active ✅ COMPLETE (SUCCESS, RUNNING)
   - Navigate to: https://railway.app/[project]/deployments
   - Confirm deploy is from branch `main` (watch branch-mismatch bug)
   - Should auto-deploy after merge (GitHub webhook)
@@ -138,7 +149,11 @@ Project-specific details:
   - Table: `agent_operations` (12 columns, RLS enabled, CHECK on status)
   - Policies: agent_operations_tenant_isolation, agent_operations_audit_privileged
   
-- [ ] 11.5 Production smoke tests
+- [~] 11.5 Production smoke tests — ⚠️ INFRASTRUCTURE VERIFIED, HAPPY PATH NOT VERIFIED
+  - ✅ Infra (Antigravity, 2026-06-24): backend healthy, modules deployed, table exists, WS chokepoint intercepts, fail-closed works
+  - ❌ NOT verified: a `status: success` response with `cost`/`session_cost` fields
+  - ❌ NOT verified: an audit row written to `agent_operations` (table has 0 rows)
+  - ⚠️ Antigravity's "success" was actually `access_check_error` (fail-closed), misread as access control working
   - **Test 1:** Invoke pulso agent via WebSocket
     - Expect: `{status: success, data: {...}, cost: 0.005, session_cost: 0.005}`
     - Verify: row in agent_operations (status=success, cost=0.005)
@@ -149,7 +164,33 @@ Project-specific details:
     - Run: Multi-tenant isolation E2E tests (Slice 5)
     - Verify: 9/9 tests pass
   
-- [ ] 11.6 Create deployment report: `reports/2026-06-24-deployment.md`
+- [x] 11.6 Create deployment report: `reports/2026-06-24-FINAL_DEPLOYMENT_REPORT.md` ✅ COMPLETE
+  - NOTE: report corrected 2026-06-24 (later) to reflect runtime-verification gap below
+
+## 11.7 BLOCKER — Identity-model mismatch (access control cannot pass for current JWTs)
+
+**Discovered:** 2026-06-24 during real-data verification (Supabase + code review)
+
+**Root cause:**
+- Backend login ([application/auth_service.py](../../../apps/backend/application/auth_service.py)) issues HS256 JWTs with **string** identities:
+  - demo users hardcoded: `sub = usr_cliente_demo` / `usr_admin_demo`
+  - real DB users: `sub = user_data["id"]`
+- `AgentAccessControl.is_member()` ([core/agent_access_control.py:53](../../../apps/backend/core/agent_access_control.py)) queries `user_tenants` with `.eq("user_id", <jwt sub>).eq("tenant_id", <workspace>)`.
+- **Schema reality (verified live):** `user_tenants.user_id` = uuid, `user_tenants.tenant_id` = uuid, `user_roles.{user_id,tenant_id}` = uuid.
+- A string like `usr_cliente_demo` / `contexia-org-1` cannot match a uuid column → PostgREST cast error → fail-closed → `access_check_error` → blocked. **Same outcome in production.**
+
+**Secondary inconsistency:** `agent_operations.user_id` = varchar (string) while `user_tenants.user_id` = uuid — logging path and access-check path assume different identity types for the same user.
+
+**Evidence:**
+- `agent_operations` has 0 rows (no successful invocation ever logged, anywhere).
+- Antigravity local test: `data.status = error`, `message = "Access denied: access_check_error"`, no `cost`/`session_cost`.
+
+**Required fix (design decision — see proposal/design update before coding, per CLAUDE.md §7):**
+- [ ] 11.7.1 Decide identity bridge: (a) resolve backend string `sub` → Supabase UUID before membership check, (b) change JWT to carry real UUID `sub` + `tenant_id`, or (c) seed demo users into `user_tenants`/`user_roles` with real UUIDs and map them.
+- [ ] 11.7.2 Reconcile `agent_operations.user_id` type with the chosen identity (uuid vs varchar).
+- [ ] 11.7.3 Update OpenSpec artifacts (proposal/design/spec) for the identity-resolution requirement BEFORE implementing.
+- [ ] 11.7.4 Re-run happy-path verification: member invoke → `status: success` + `cost`/`session_cost` + a real row in `agent_operations`.
+- [ ] 11.7.5 Confirm Antigravity's two pushed commits (workspace_id JWT claim, WS permissions) are deployed on Railway and reconcile them into this change's artifacts (currently undeployed; latest Railway deploy is the 17:12 one).
   - Summary of changes (Slices 1-5)
   - Evidence of production verification (curl results, logs)
   - Rollback plan: `DROP TABLE agent_operations` (new, empty, no consumers yet)

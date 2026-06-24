@@ -166,7 +166,7 @@ async def websocket_endpoint(
         user_id = payload.get("sub")
         workspace_id = payload.get("workspace_id")
         user_email = payload.get("email")
-        permissions = payload.get("permissions", [])
+        permissions = payload.get("permissions") or None
 
         if not user_id or not workspace_id:
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
@@ -174,6 +174,32 @@ async def websocket_endpoint(
     except WebSocketException:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
+
+    # Resolve JWT string identities to canonical governance UUIDs (design D7).
+    # On success the context — and therefore access control, audit logging, and the
+    # RADAR/AUDIT tenant params — all use the real usuarios.id / tenants.id. On
+    # failure we keep the raw values so the per-invoke chokepoint fail-closes with a
+    # clear reason instead of crashing the socket.
+    try:
+        from core.identity_resolver import identity_resolver
+
+        resolved = identity_resolver.resolve(user_id, user_email, workspace_id)
+        if resolved.user_uuid:
+            user_id = resolved.user_uuid
+        if resolved.tenant_uuid:
+            workspace_id = resolved.tenant_uuid
+        if not resolved.is_complete:
+            logger.warning(
+                "Identity not fully resolved: sub=%s email=%s workspace=%s "
+                "(user_uuid=%s tenant_uuid=%s) — invocations will fail-closed",
+                payload.get("sub"),
+                user_email,
+                payload.get("workspace_id"),
+                resolved.user_uuid,
+                resolved.tenant_uuid,
+            )
+    except Exception as exc:  # never break the socket on a resolution error
+        logger.error(f"Identity resolution error: {exc}")
 
     # Create agent context for this session
     agent_context = context_manager.create_context(
