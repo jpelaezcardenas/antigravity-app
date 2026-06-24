@@ -1,10 +1,27 @@
 from infrastructure.repositories.usuario_repo import UsuarioRepository
 from core.security import verify_password, create_access_token
+from core.identity_resolver import identity_resolver
 from config import settings
 from fastapi import HTTPException, status
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_tenant_uuid(sub: str, email: str) -> str | None:
+    """Resolve the caller's real tenant UUID for signing into the JWT.
+
+    Fail-open: returns None on any unresolved identity/membership, leaving
+    create_access_token's existing string default untouched (see design
+    jwt-real-tenant-uuid-claim D3). There is no workspace_id at login time
+    (that's what we're creating), so this always falls through to the
+    membership-based lookup in IdentityResolver.resolve_tenant_uuid.
+    """
+    user_uuid = identity_resolver.resolve_user_uuid(sub, email)
+    if not user_uuid:
+        return None
+    return identity_resolver.resolve_tenant_uuid(None, user_uuid)
+
 
 class AuthService:
     def __init__(self):
@@ -32,7 +49,11 @@ class AuthService:
         if settings.DEMO_AUTH_ENABLED and email in DEMO_USERS:
             demo_user = DEMO_USERS[email]
             if password == demo_user["password"]:
-                token = create_access_token(data={"sub": demo_user["id"], "email": email})
+                token_data = {"sub": demo_user["id"], "email": email}
+                tenant_uuid = _resolve_tenant_uuid(demo_user["id"], email)
+                if tenant_uuid:
+                    token_data["tenant_id"] = tenant_uuid
+                token = create_access_token(data=token_data)
                 logger.info(f"Demo login successful for {email}")
                 return {
                     "token": token,
@@ -72,7 +93,11 @@ class AuthService:
                 detail="Credenciales inválidas"
             )
 
-        token = create_access_token(data={"sub": user_data["id"], "email": user_data["email"]})
+        token_data = {"sub": user_data["id"], "email": user_data["email"]}
+        tenant_uuid = _resolve_tenant_uuid(user_data["id"], user_data["email"])
+        if tenant_uuid:
+            token_data["tenant_id"] = tenant_uuid
+        token = create_access_token(data=token_data)
 
         return {
             "token": token,
