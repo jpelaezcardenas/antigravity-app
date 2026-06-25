@@ -17,6 +17,10 @@ ALTER TABLE erp_journal_entries
   ADD CONSTRAINT unique_siigo_document_per_day UNIQUE (tenant_id, external_reference_id, entry_date)
   WHERE external_reference_id IS NOT NULL;
 
+-- Add memo column to erp_journal_lines for transaction descriptions
+ALTER TABLE erp_journal_lines
+  ADD COLUMN IF NOT EXISTS memo TEXT;
+
 -- Add CHECK constraint to erp_journal_lines: amounts must be non-negative
 -- (Negative amounts are allowed via offset/reversal entries, but individual lines cannot be negative)
 ALTER TABLE erp_journal_lines
