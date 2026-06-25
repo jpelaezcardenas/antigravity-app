@@ -295,7 +295,7 @@ async def ingest_siigo_csv(
                 "entry_date": txn_date,
                 "memo": f"Siigo import: {ref_id}",
                 "source": "siigo_csv",
-                "uploaded_at": datetime.now(tz=None),  # Supabase will use server time
+                "uploaded_at": datetime.now(tz=None).isoformat(),
             }
             inserted_entry = supabase.table("erp_journal_entries").insert(entry_data).execute()
             entry_id = inserted_entry.data[0]["id"]
