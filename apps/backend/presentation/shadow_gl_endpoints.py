@@ -2,6 +2,7 @@
 Shadow GL Endpoints
 
 POST /api/v1/shadow-gl/dian-xml/ingest - Manually ingest a DIAN UBL 2.1 XML document
+POST /api/v1/shadow-gl/siigo-csv/ingest - Manually ingest a Siigo journal CSV export
 """
 
 import logging
@@ -9,7 +10,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from services.shadow_gl_service import ingest_dian_xml
+from services.shadow_gl_service import ingest_dian_xml, ingest_siigo_csv
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,13 @@ class DianXmlIngestResponse(BaseModel):
     success: bool
     cufe: str = ""
     document_type: str = ""
+    error: str = ""
+
+
+class SiigoCSVIngestResponse(BaseModel):
+    success: bool
+    row_count: int = 0
+    date_range: str = ""
     error: str = ""
 
 
@@ -69,5 +77,37 @@ async def ingest_dian_xml_endpoint(request: Request):
         success=True,
         cufe=document["cufe"],
         document_type=document["document_type"],
+        error="",
+    )
+
+
+@router.post("/siigo-csv/ingest", response_model=SiigoCSVIngestResponse)
+async def ingest_siigo_csv_endpoint(request: Request):
+    """
+    Manually ingest a Siigo journal CSV export (debit/credit double-entry format).
+    Accepts the raw CSV as the request body.
+
+    Idempotent on (tenant_id, external_reference_id, entry_date): re-ingesting
+    the same batch does not duplicate entries.
+
+    Returns 200 with row_count and date_range on success, or 400 with error message
+    if CSV is malformed or accounting entries are imbalanced.
+    """
+    csv_text = (await request.body()).decode("utf-8")
+
+    if not csv_text.strip():
+        raise HTTPException(status_code=400, detail="Request body must contain CSV")
+
+    tenant_id = await _resolve_tenant_id()
+
+    success, summary, error = await ingest_siigo_csv(tenant_id, csv_text)
+
+    if not success:
+        raise HTTPException(status_code=400, detail=error)
+
+    return SiigoCSVIngestResponse(
+        success=True,
+        row_count=summary["row_count"],
+        date_range=summary["date_range"],
         error="",
     )

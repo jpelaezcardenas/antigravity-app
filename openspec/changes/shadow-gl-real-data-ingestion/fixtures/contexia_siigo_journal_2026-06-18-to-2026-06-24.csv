@@ -1,0 +1,43 @@
+transaction_date,account_code,account_name,debit_amount,credit_amount,memo,external_reference_id,currency_code
+2026-06-18,1105,Caja General,850000.00,,Payment Plan Professional Client A,DOC-20260618-001,COP
+2026-06-18,4105,Revenue Services,,850000.00,Professional plan monthly,DOC-20260618-001,COP
+2026-06-18,1205,Bank Davivienda,1200000.00,,Transfer Client B Enterprise,TRF-20260618-001,COP
+2026-06-18,4105,Revenue Services,,1200000.00,Enterprise plan monthly,TRF-20260618-001,COP
+2026-06-18,5105,Personnel Expense,2500000.00,,Payroll dev team,NOM-20260618-001,COP
+2026-06-18,1105,Caja General,,2500000.00,Payroll payment,NOM-20260618-001,COP
+2026-06-19,1105,Caja General,500000.00,,Payment Plan Starter Client C,DOC-20260619-001,COP
+2026-06-19,4105,Revenue Services,,500000.00,Starter plan monthly,DOC-20260619-001,COP
+2026-06-19,6105,Infrastructure Railway,125000.00,,Railway invoice,INV-RAILWAY-JUN,COP
+2026-06-19,1105,Caja General,,125000.00,Pay Railway,INV-RAILWAY-JUN,COP
+2026-06-19,6110,Infrastructure Supabase,75000.00,,Supabase invoice,INV-SUPABASE-JUN,COP
+2026-06-19,1105,Caja General,,75000.00,Pay Supabase,INV-SUPABASE-JUN,COP
+2026-06-20,1205,Bank Davivienda,350000.00,,Delayed payment Client D,TRF-20260620-001,COP
+2026-06-20,4105,Revenue Services,,350000.00,Professional plan,TRF-20260620-001,COP
+2026-06-20,2105,VAT Payable,210000.00,,Monthly VAT calculation,IVA-JUN-01,COP
+2026-06-20,1105,Caja General,,210000.00,VAT reserve,IVA-JUN-01,COP
+2026-06-20,5110,Professional Services,400000.00,,Freelance designer,FAC-DESIGNER-JUN,COP
+2026-06-20,1105,Caja General,,400000.00,Pay freelancer,FAC-DESIGNER-JUN,COP
+2026-06-21,1105,Caja General,1050000.00,,Enterprise annual plan payment,DOC-20260621-001,COP
+2026-06-21,4105,Revenue Services,,1050000.00,Enterprise annual,DOC-20260621-001,COP
+2026-06-21,1205,Bank Davivienda,600000.00,,Audit service transfer,TRF-20260621-001,COP
+2026-06-21,4210,Audit Revenue,,600000.00,Shadow audit PDF report,TRF-20260621-001,COP
+2026-06-21,6120,Office Admin,150000.00,,Rent coworking Medellin,ARR-JUN-01,COP
+2026-06-21,1105,Caja General,,150000.00,Pay rent,ARR-JUN-01,COP
+2026-06-22,1105,Caja General,750000.00,,Payment 3 clients,DOC-20260622-001,COP
+2026-06-22,4105,Revenue Services,,750000.00,Professional plans batch,DOC-20260622-001,COP
+2026-06-22,1205,Bank Davivienda,250000.00,,Consulting OpenSpec,TRF-20260622-001,COP
+2026-06-22,4310,Other Services Revenue,,250000.00,OpenSpec consulting,TRF-20260622-001,COP
+2026-06-22,2108,Withholding Tax,47500.00,,VAT withholding,RET-JUN-01,COP
+2026-06-22,1105,Caja General,,47500.00,Withholding reserve,RET-JUN-01,COP
+2026-06-23,1105,Caja General,600000.00,,Migration + onboarding,DOC-20260623-001,COP
+2026-06-23,4105,Revenue Services,,600000.00,Setup + plan,DOC-20260623-001,COP
+2026-06-23,6115,Development Tech,300000.00,,JetBrains licenses,LIC-JETBRAINS-JUN,COP
+2026-06-23,1105,Caja General,,300000.00,Pay licenses,LIC-JETBRAINS-JUN,COP
+2026-06-23,2105,VAT Payable,57000.00,,Additional VAT,IVA-JUN-02,COP
+2026-06-23,1105,Caja General,,57000.00,VAT reserve,IVA-JUN-02,COP
+2026-06-24,1205,Bank Davivienda,1800000.00,,Batch payment clients,TRF-20260624-001,COP
+2026-06-24,4105,Revenue Services,,1800000.00,Mixed plans,TRF-20260624-001,COP
+2026-06-24,1105,Caja General,200000.00,,Refund adjustment,DOC-20260624-001,COP
+2026-06-24,4105,Revenue Services,,200000.00,Return,DOC-20260624-001,COP
+2026-06-24,6130,Marketing,200000.00,,LinkedIn ads,MKT-JUN-01,COP
+2026-06-24,1105,Caja General,,200000.00,Pay ads,MKT-JUN-01,COP
