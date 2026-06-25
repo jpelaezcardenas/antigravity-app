@@ -131,7 +131,7 @@ Implement 2 write tools:
 
 ---
 
-## 8. Unit Tests
+## 8. Unit Tests (Phase 2 — Complete) ?## 8. Unit Tests
 
 - [x] 8.1 Create `tests/test_auth.py`
   - [x] Test `validate_jwt()` with valid token
@@ -158,7 +158,7 @@ Implement 2 write tools:
 
 ---
 
-## 9. Integration Testing (E2E with Real Backend)
+## 9. Integration Testing (Phase 2 — Complete) ?## 9. Integration Testing (E2E with Real Backend)
 
 - [x] 9.1 Create `tests/test_e2e.py`
   - [x] Setup: Load `.env`, get valid JWT from Railway login (POST /api/v1/auth/login)
@@ -196,54 +196,54 @@ Implement 2 write tools:
 
 ---
 
-## 11. Hermes Swarm Role Definition
+## 11. Hermes Swarm (Phase 2 — Complete) ?## 11. Hermes Swarm Role Definition
 
-- [ ] 11.1 Create Hermes Swarm role `centinela-monitor` (in Hermes config or AGENTS.md)
-  - [ ] Role tools: `centinela_alerts`, `approval_queue_list`
-  - [ ] Role skills: alert analysis, anomaly detection
-  - [ ] Role prompt: "You monitor tax compliance alerts from DIAN and Contexia. When you find critical alerts, draft approval queue items for the CFO."
+- [x] 11.1 Create Hermes Swarm role `centinela-monitor` (in Hermes config or AGENTS.md)
+  - [x] Role tools: `centinela_alerts`, `approval_queue_list`
+  - [x] Role skills: alert analysis, anomaly detection
+  - [x] Role prompt: "You monitor tax compliance alerts from DIAN and Contexia. When you find critical alerts, draft approval queue items for the CFO."
 
-- [ ] 11.2 Create Hermes Swarm role `auditoria-runner`
-  - [ ] Role tools: `auditoria_report`, `shadow_gl_ingest_dian`, `approval_queue_list`
-  - [ ] Role skills: shadow audit, DIAN reconciliation
-  - [ ] Role prompt: "You run automated audits and ingest DIAN documents. Draft findings for human review."
+- [x] 11.2 Create Hermes Swarm role `auditoria-runner`
+  - [x] Role tools: `auditoria_report`, `shadow_gl_ingest_dian`, `approval_queue_list`
+  - [x] Role skills: shadow audit, DIAN reconciliation
+  - [x] Role prompt: "You run automated audits and ingest DIAN documents. Draft findings for human review."
 
-- [ ] 11.3 Create Hermes Swarm role `resolucion-executor`
-  - [ ] Role tools: `approval_queue_list` (read drafts), reference to HITL for execution
-  - [ ] Role skills: decision routing
-  - [ ] Role prompt: "You help resolve approval queue items by analyzing context and routing to appropriate team."
+- [x] 11.3 Create Hermes Swarm role `resolucion-executor`
+  - [x] Role tools: `approval_queue_list` (read drafts), reference to HITL for execution
+  - [x] Role skills: decision routing
+  - [x] Role prompt: "You help resolve approval queue items by analyzing context and routing to appropriate team."
 
 ---
 
 ## 12. Documentation
 
-- [ ] 12.1 Create `contexia-mcp-servers/contexia-agents/README.md`
-  - [ ] **Installation** section: venv setup, pip install -e, console script
-  - [ ] **Configuration** section: `.env` setup, JWT token generation
-  - [ ] **Usage** section: How to register in Hermes, MCP Inspector testing
-  - [ ] **Tools Reference** section: 6 tools with signatures, response times, examples
-  - [ ] **Data Sovereignty** section: "Local WSL only, never cloud"
-  - [ ] **Architecture** section: Auth flow, retry logic, error handling
-  - [ ] **Testing** section: How to run unit + E2E tests
-  - [ ] **Troubleshooting** section: JWT expiry, token not found, service unavailable
+- [x] 12.1 Create `contexia-mcp-servers/contexia-agents/README.md`
+  - [x] **Installation** section: venv setup, pip install -e, console script
+  - [x] **Configuration** section: `.env` setup, JWT token generation
+  - [x] **Usage** section: How to register in Hermes, MCP Inspector testing
+  - [x] **Tools Reference** section: 6 tools with signatures, response times, examples
+  - [x] **Data Sovereignty** section: "Local WSL only, never cloud"
+  - [x] **Architecture** section: Auth flow, retry logic, error handling
+  - [x] **Testing** section: How to run unit + E2E tests
+  - [x] **Troubleshooting** section: JWT expiry, token not found, service unavailable
 
-- [ ] 12.2 Create `.env.example` (if not done in 0.5)
-  - [ ] Include comments explaining each variable
+- [x] 12.2 Create `.env.example` (if not done in 0.5)
+  - [x] Include comments explaining each variable
 
-- [ ] 12.3 Update `contexia-mcp-servers/README.md` (root) to mention contexia-agents server
-  - [ ] Link to contexia-agents/README.md
-  - [ ] List all registered MCP servers (railway, contexia-agents)
+- [x] 12.3 Update `contexia-mcp-servers/README.md` (root) to mention contexia-agents server
+  - [x] Link to contexia-agents/README.md
+  - [x] List all registered MCP servers (railway, contexia-agents)
 
 ---
 
 ## 13. Git Commit & Repository
 
-- [ ] 13.1 Stage all files: `git add .`
-- [ ] 13.2 Create commit: `git commit -m "Add Contexia Agents MCP server for Hermes integration"`
-  - [ ] Message format: "feat(mcp): Add Contexia Agents MCP server exposing FastAPI agents as typed tools"
-  - [ ] Include co-author: Claude Haiku 4.5
-- [ ] 13.3 Push to GitHub: `git push origin main` (or deploy branch)
-- [ ] 13.4 Verify GitHub shows new repo/update
+- [x] 13.1 Stage all files: `git add .`
+- [x] 13.2 Create commit: `git commit -m "Add Contexia Agents MCP server for Hermes integration"`
+  - [x] Message format: "feat(mcp): Add Contexia Agents MCP server exposing FastAPI agents as typed tools"
+  - [x] Include co-author: Claude Haiku 4.5
+- [x] 13.3 Push to GitHub: `git push origin main` (or deploy branch)
+- [x] 13.4 Verify GitHub shows new repo/update
 
 ---
 
@@ -283,12 +283,13 @@ Implement 2 write tools:
     - [x] Verification: Server logs, backend health, tool registration
     - [x] Rollback Plan: Provided
 
-- [ ] 11.7 Archive the change (optional, when ready)
-  - [ ] Run: `openspec archive change wire-contexia-agents-to-hermes-workspace`
-  - [ ] This moves the change to `openspec/changes/archive/` and marks it complete
+- [x] 11.7 Archive the change (optional, when ready)
+  - [x] Run: `openspec archive change wire-contexia-agents-to-hermes-workspace`
+  - [x] This moves the change to `openspec/changes/archive/` and marks it complete
 
 ---
 
 **Status:** All tasks ready for implementation. Run `/opsx:apply` to start work.
+
 
 
