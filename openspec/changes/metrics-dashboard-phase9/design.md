@@ -1,8 +1,9 @@
 # Phase 9: Metrics Dashboard — Design
 
-**Status:** DESIGNED  
+**Status:** DESIGNED (POST-MVP)  
 **Date:** 2026-06-26  
-**Change ID:** metrics-dashboard-phase9
+**Change ID:** metrics-dashboard-phase9  
+**Architecture:** Two dashboards (Admin + Client)
 
 ---
 

@@ -1,14 +1,33 @@
 # Phase 9: Metrics Dashboard — Proposal
 
-**Status:** PROPOSED  
+**Status:** PROPOSED (POST-MVP)  
 **Date:** 2026-06-26  
-**Change ID:** metrics-dashboard-phase9
+**Change ID:** metrics-dashboard-phase9  
+**Timeline:** After MVP completion + Client Zero stabilization
+
+---
+
+## Context: This is POST-MVP Work
+
+Phase 9 is **deferred until after MVP launch**. The MVP (Phases 1-8) focuses on Shadow GL core functionality for Cliente Cero (Contexia). Phase 9 adds operational visibility but is not critical for MVP launch.
 
 ---
 
 ## Problem Statement
 
-Phase 7 (Automated Approval Rules) and Phase 8 (CSV Ingestion) are now live in production, but **we have no visibility into their effectiveness**. Key questions unanswered:
+When Phase 7 (Automated Approval Rules) and Phase 8 (CSV Ingestion) scale to multiple clients, **we need visibility into system health and per-client metrics**. Key questions:
+
+**For Contexia (Admin):**
+- How many entries are auto-approved per rule across all clients?
+- What's the false positive rate?
+- Which clients are ingesting the most?
+- System performance + errors?
+
+**For Clients (Self-Service):**
+- How many of MY transactions were auto-approved?
+- What's MY approval cycle time improvement?
+- Which of MY vendors appear most frequently?
+- Are there errors in MY uploads?
 
 - How many entries are auto-approved per rule (recurring, vendor, micro)?
 - What's the false positive rate per rule?
@@ -21,59 +40,72 @@ Phase 7 (Automated Approval Rules) and Phase 8 (CSV Ingestion) are now live in p
 
 ---
 
-## Solution Overview
+## Solution Overview: Two Dashboards
 
-Build a **Metrics Dashboard** (admin view in PWA) that displays:
+### **1. Admin Dashboard** (Contexia internal only)
+**Path:** `/admin/dashboard/metrics` (separate admin app)  
+**Audience:** Contexia operations team  
+**Data:** Cross-tenant system metrics
 
-1. **Auto-Approval Metrics** (Phase 7)
-   - Total auto-approved entries (last 7 days)
-   - Breakdown by rule (recurring, vendor, micro)
-   - Confidence score distribution
-   - False positive rate (human reviews of auto-approved entries)
+Displays:
+- Total auto-approved entries (all clients)
+- Breakdown by rule + client
+- System health (errors, queue length)
+- Top clients by volume
+- Confidence score distribution across all data
+- CSV ingestion health (success rates, error types)
 
-2. **CSV Ingestion Metrics** (Phase 8)
-   - Batches uploaded (last 7 days)
-   - Success rate (% completed vs. error)
-   - Error summary (top error types)
-   - Row count distribution
+### **2. Client Dashboard** (Per-tenant self-service)
+**Path:** `/app/dashboard/metrics` (in main PWA)  
+**Audience:** Each client's finance team  
+**Data:** Tenant-isolated metrics only
 
-3. **Approval Queue Health**
-   - Queue length (pending reviews)
-   - Average review time
-   - Approval vs. rejection rate
-
-4. **Account-Level Insights**
-   - Most frequent vendors (top 10)
-   - Most frequent account codes (top 10)
-   - Trend: auto-approval rate over time
+Displays:
+- YOUR auto-approved entries (last 7 days)
+- YOUR approval cycle time improvement
+- YOUR CSV upload success rate
+- YOUR top 10 vendors
+- YOUR pending approvals
+- YOUR error history (if any)
 
 ---
 
 ## Success Criteria
 
-- ✅ Dashboard loads in < 2 seconds
-- ✅ Metrics update every 5 minutes (refreshable manually)
-- ✅ Charts render correctly for empty data (zero entries)
-- ✅ RLS enforced: each tenant sees only their metrics
-- ✅ All metrics backed by database queries (no hardcoding)
-- ✅ Mobile-responsive (PWA)
+**Both dashboards:**
+- ✅ Load in < 2 seconds
+- ✅ Metrics update every 5 minutes (+ manual refresh)
+- ✅ Charts render correctly for empty data
+- ✅ RLS enforced: each tenant sees ONLY their data
+- ✅ Mobile-responsive
+- ✅ All data from queries (no hardcoding)
+
+**Admin Dashboard additionally:**
+- ✅ Accessible by Contexia admins only (firewall/auth gate)
+- ✅ Shows ALL tenants + aggregates
+
+**Client Dashboard additionally:**
+- ✅ Accessible by each tenant's users (via RLS)
+- ✅ Shows only that tenant's data
 
 ---
 
 ## Scope & Timeline
 
-**Estimated effort:** 5 stages × 1-2 days = 5-7 days  
-**Target completion:** 2026-07-03
+**Estimated effort:** 6 stages × 1-2 days = 6-8 days  
+**Target completion:** 2-3 weeks after MVP launch  
+**Prerequisite:** MVP (Phases 1-8) must be stable with 2+ paying clients
 
 ### Stage Breakdown
 
 | Stage | Task | Days |
 |-------|------|------|
-| 1 | Design schema: metrics_snapshots table + queries | 1 |
-| 2 | Implement backend: GET endpoints for each metric group | 1 |
-| 3 | Frontend: Dashboard page layout + chart library | 1 |
-| 4 | Frontend: Render charts with real data | 1 |
-| 5 | Testing + Production deployment | 1-2 |
+| 1 | Database: metrics_snapshots schema + RLS policies | 1 |
+| 2 | Backend: Admin API endpoints (cross-tenant aggregates) | 1 |
+| 3 | Backend: Client API endpoints (tenant-isolated queries) | 1 |
+| 4 | Frontend: Admin Dashboard (`/admin/dashboard/metrics`) | 1.5 |
+| 5 | Frontend: Client Dashboard (`/app/dashboard/metrics`) | 1.5 |
+| 6 | Testing + Production deployment | 1-2 |
 
 ---
 
