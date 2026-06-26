@@ -43,6 +43,10 @@ class SiigoCsvParseError(ValueError):
     """Raised when a Siigo CSV export is malformed or missing required fields."""
 
 
+class ApprovalQueueError(Exception):
+    """Raised when approval_queue operation fails."""
+
+
 def _to_minor_units(amount_text: Optional[str]) -> int:
     if not amount_text:
         return 0
@@ -240,6 +244,75 @@ def parse_siigo_csv(csv_text: str) -> List[Dict[str, Any]]:
         raise SiigoCsvParseError(f"Unexpected error parsing CSV: {exc}") from exc
 
 
+async def _create_approval_queue(
+    tenant_id: str,
+    action_type: str,
+    error: str,
+    raw_input: str,
+) -> str:
+    """
+    Create an approval_queue record for a parsing error.
+
+    Args:
+        tenant_id: Tenant UUID
+        action_type: Action type (e.g., "review_accounting_entry")
+        error: Error message
+        raw_input: Raw CSV or XML that failed parsing
+
+    Returns:
+        approval_queue.id (UUID as string)
+
+    Raises:
+        ApprovalQueueError: if insertion fails
+    """
+    import uuid as uuid_lib
+
+    supabase = get_supabase()
+
+    queue_data = {
+        "tenant_id": tenant_id,
+        "draft_id": f"approval-{uuid_lib.uuid4().hex[:8]}",  # Unique draft_id
+        "draft_type": action_type,  # e.g., "review_accounting_entry"
+        "status": "pending",
+        "reason": error,  # Store error message as reason
+        "approved_by": "",  # Empty until approval (NOT NULL constraint)
+        "payload": {
+            "error": error,
+            "raw_input": raw_input,
+            "timestamp": datetime.now(tz=None).isoformat(),
+        },
+        "vectorization_status": "pending",  # NOT NULL constraint
+    }
+
+    try:
+        result = supabase.table("approval_queue").insert(queue_data).execute()
+        queue_id = result.data[0]["id"]
+        logger.info(f"Created approval_queue {queue_id} for tenant {tenant_id}")
+        return queue_id
+    except Exception as exc:
+        logger.error(f"Failed to create approval_queue: {exc}")
+        raise ApprovalQueueError(f"Failed to create approval_queue: {exc}") from exc
+
+
+async def _get_approval_queue(queue_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Fetch approval_queue row by ID.
+
+    Args:
+        queue_id: approval_queue.id
+
+    Returns:
+        Approval queue row dict, or None if not found
+    """
+    supabase = get_supabase()
+    try:
+        result = supabase.table("approval_queue").select("*").eq("id", queue_id).execute()
+        return result.data[0] if result.data else None
+    except Exception as exc:
+        logger.error(f"Failed to get approval_queue {queue_id}: {exc}")
+        return None
+
+
 async def ingest_siigo_csv(
     tenant_id: str, csv_text: str
 ) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
@@ -257,7 +330,20 @@ async def ingest_siigo_csv(
         entries = parse_siigo_csv(csv_text)
     except SiigoCsvParseError as exc:
         logger.warning(f"Siigo CSV parse failed: {exc}")
-        return False, None, str(exc)
+        # Phase 6: Create approval_queue instead of returning error 400
+        try:
+            queue_id = await _create_approval_queue(
+                tenant_id=tenant_id,
+                action_type="review_accounting_entry",
+                error=str(exc),
+                raw_input=csv_text,
+            )
+            logger.info(f"Created approval_queue {queue_id} for parsing error")
+            return False, {"queue_id": queue_id}, str(exc)
+        except ApprovalQueueError as queue_exc:
+            # Fallback: if approval_queue creation fails, return error
+            logger.error(f"Failed to create approval_queue: {queue_exc}")
+            return False, None, str(exc)
 
     if not entries:
         return True, {"row_count": 0, "date_range": ""}, None
