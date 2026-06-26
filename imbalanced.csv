@@ -1,0 +1,5 @@
+Fecha,Referencia Externa,Código de Cuenta,Descripción,Débito,Crédito
+2026-06-25,TX-001,1100,Sales Receivable,100.00,
+2026-06-25,TX-001,4100,Sales Revenue,,75.00
+2026-06-25,TX-002,1100,Sales Receivable,150.00,
+2026-06-25,TX-002,4100,Sales Revenue,,100.00
