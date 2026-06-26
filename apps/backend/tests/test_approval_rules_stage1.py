@@ -5,6 +5,7 @@ Validates rule taxonomy, configuration, and validation logic.
 """
 
 import pytest
+from enum import Enum
 from services.approval_rules import (
     RuleType,
     ApprovalDecision,
