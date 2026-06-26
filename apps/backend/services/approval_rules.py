@@ -98,13 +98,18 @@ def validate_confidence_score(score: float) -> bool:
 # ============================================================================
 # Placeholder functions - implemented in subsequent stages
 
-async def _check_recurring_rule(
+def _check_recurring_rule(
     tenant_id: str,
     entry: "JournalEntry",  # noqa: F821
     history: List["JournalEntry"]  # noqa: F821
 ) -> Optional[ApprovalDecision]:
     """
     Stage 2: Detect recurring transactions.
+
+    Args:
+        tenant_id: Tenant context
+        entry: Current entry to evaluate
+        history: Previous entries for comparison
 
     Returns:
         ApprovalDecision if entry matches last N entries (within tolerance)
