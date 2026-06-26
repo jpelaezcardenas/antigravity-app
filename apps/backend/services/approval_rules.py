@@ -107,11 +107,56 @@ async def _check_recurring_rule(
     Stage 2: Detect recurring transactions.
 
     Returns:
-        ApprovalDecision if entry matches last 3 entries (within tolerance)
+        ApprovalDecision if entry matches last N entries (within tolerance)
         None if insufficient history or no match
     """
-    # Implemented in Stage 2
-    pass
+    config = get_rule_config(RuleType.RECURRING_TRANSACTION)
+
+    # Check if rule is enabled
+    if not config.get("enabled", False):
+        return None
+
+    # Need minimum history
+    min_history = config.get("min_history", 3)
+    if len(history) < min_history:
+        return None  # Not enough data to detect pattern
+
+    # Get last N entries
+    last_entries = history[-min_history:]
+
+    # Compare amounts
+    amounts = [e.amount_cents for e in last_entries]
+    min_amt = min(amounts)
+    max_amt = max(amounts)
+
+    # Calculate variance
+    if min_amt == 0:
+        variance = float('inf')
+    else:
+        variance = (max_amt - min_amt) / min_amt
+
+    variance_tolerance = config.get("variance_tolerance", 0.02)
+
+    # Check if current entry matches pattern
+    if abs(entry.amount_cents - amounts[0]) / amounts[0] < variance_tolerance:
+        # Match found!
+        min_confidence = config.get("min_confidence", 0.95)
+
+        return ApprovalDecision(
+            approved=True,
+            rule_id=RuleType.RECURRING_TRANSACTION.value,
+            rule_name="Recurring Transaction Match",
+            confidence=min_confidence,
+            reason=f"Matched last {min_history} entries (variance={variance:.2%})",
+            rule_data={
+                "matched_entries": [e.id for e in last_entries],
+                "variance": variance,
+                "min_amount": min_amt,
+                "max_amount": max_amt,
+            }
+        )
+
+    return None  # No match
 
 
 async def _check_vendor_rule(
