@@ -8,11 +8,14 @@ POST /api/v1/shadow-gl/siigo-csv/ingest - Manually ingest a Siigo journal CSV ex
 import json
 import logging
 from typing import Any, Dict
+from datetime import datetime
+import uuid
 
-from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect, UploadFile, File
 from pydantic import BaseModel
 
 from core.hermes_client import HermesClient, HermesClientError
+from core.supabase_client import get_supabase
 from services.shadow_gl_service import (
     ingest_dian_xml,
     ingest_siigo_csv,
@@ -117,6 +120,85 @@ async def ingest_siigo_csv_endpoint(request: Request):
         success=True,
         row_count=summary["row_count"],
         date_range=summary["date_range"],
+        error="",
+    )
+
+
+@router.post("/siigo-csv/upload", response_model=SiigoCSVIngestResponse)
+async def upload_siigo_csv_endpoint(request: Request, file: UploadFile = File(...)):
+    """
+    Upload a Siigo journal CSV export via multipart form data (PWA file uploader).
+
+    Creates a batch record in ingestion_batches, validates the CSV, and injects into
+    erp_journal_entries.
+
+    Idempotent on (tenant_id, external_reference_id, entry_date): duplicate rows
+    are skipped.
+
+    Returns 200 with row_count and date_range on success, or 400 with error message
+    if file upload, parsing, or DB insertion fails.
+    """
+    tenant_id = await _resolve_tenant_id()
+    supabase = get_supabase()
+
+    # Create batch record
+    batch_id = str(uuid.uuid4())
+    file_content = await file.read()
+    csv_text = file_content.decode("utf-8")
+    file_size = len(file_content)
+
+    batch_data = {
+        "id": batch_id,
+        "tenant_id": tenant_id,
+        "data_source": "siigo_csv",
+        "file_name": file.filename or "upload.csv",
+        "file_size_bytes": file_size,
+        "row_count": 0,
+        "status": "pending",
+        "error_count": 0,
+        "error_summary": None,
+        "uploaded_at": datetime.now(tz=None).isoformat(),
+    }
+
+    try:
+        supabase.table("ingestion_batches").insert(batch_data).execute()
+        logger.info(f"Created ingestion_batch {batch_id}")
+    except Exception as exc:
+        logger.error(f"Failed to create ingestion_batch: {exc}")
+        raise HTTPException(status_code=500, detail="Failed to create batch record")
+
+    # Parse and ingest CSV
+    success, summary, error = await ingest_siigo_csv(tenant_id, csv_text)
+
+    # Update batch record
+    try:
+        if success:
+            update_data = {
+                "status": "completed",
+                "row_count": summary.get("row_count", 0),
+                "processed_at": datetime.now(tz=None).isoformat(),
+                "completed_at": datetime.now(tz=None).isoformat(),
+            }
+        else:
+            update_data = {
+                "status": "error",
+                "error_count": 1,
+                "error_summary": {"parsing_error": error},
+                "processed_at": datetime.now(tz=None).isoformat(),
+            }
+
+        supabase.table("ingestion_batches").update(update_data).eq("id", batch_id).execute()
+        logger.info(f"Updated ingestion_batch {batch_id} to {update_data['status']}")
+    except Exception as exc:
+        logger.error(f"Failed to update ingestion_batch {batch_id}: {exc}")
+
+    if not success:
+        raise HTTPException(status_code=400, detail=error)
+
+    return SiigoCSVIngestResponse(
+        success=True,
+        row_count=summary.get("row_count", 0),
+        date_range=summary.get("date_range", ""),
         error="",
     )
 

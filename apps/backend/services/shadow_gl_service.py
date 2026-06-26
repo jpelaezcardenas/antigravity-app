@@ -126,122 +126,108 @@ def parse_dian_ubl_xml(raw_xml: str) -> Dict[str, Any]:
 
 def parse_siigo_csv(csv_text: str) -> List[Dict[str, Any]]:
     """
-    Parse a Siigo journal export CSV into journal entries + lines.
+    Parse a Siigo journal export CSV into flat list of rows (for testing).
 
-    CSV format expected (Siigo standard export):
-    - transaction_date: ISO 8601 (YYYY-MM-DD)
-    - account_code: GL account code (e.g., 1105)
-    - debit_amount: numeric string (e.g., "850000.00")
-    - credit_amount: numeric string or empty
-    - memo: transaction description
-    - external_reference_id: Siigo document/voucher ID (e.g., DOC-001, TRF-050)
-    - currency_code: ISO 4217 (e.g., COP, USD)
+    Handles Spanish column names (Siigo standard export):
+    - Fecha: ISO 8601 (YYYY-MM-DD)
+    - Código de Cuenta: GL account code
+    - Débito / Crédito: numeric strings or empty
+    - Descripción: transaction description
+    - Referencia Externa: transaction ID
 
     Returns:
-        List of dicts, grouped by external_reference_id:
+        Flat list of dicts, one per line (not grouped):
         [
             {
-                "external_reference_id": "DOC-001",
-                "transaction_date": "2026-06-18",
-                "lines": [
-                    {"account_code": "1105", "debit_minor": 85000000, "credit_minor": 0, "memo": "..."},
-                    {"account_code": "4105", "debit_minor": 0, "credit_minor": 85000000, "memo": "..."}
-                ]
-            }
+                "fecha": "2026-06-25",
+                "referencia_externa": "TX-001",
+                "codigo_cuenta": "1100",
+                "descripcion": "Sales Receivable",
+                "debito_cents": 10000,
+                "credito_cents": 0,
+            },
+            ...
         ]
 
     Raises:
         SiigoCsvParseError: if CSV is malformed or required fields missing.
     """
     if not csv_text.strip():
-        return []
+        raise SiigoCsvParseError("CSV is empty")
 
     try:
         reader = csv.DictReader(io.StringIO(csv_text.strip()))
         if reader.fieldnames is None:
             raise SiigoCsvParseError("CSV is empty or has no headers")
 
-        required_cols = {
-            "transaction_date",
-            "account_code",
-            "debit_amount",
-            "credit_amount",
-            "memo",
-            "external_reference_id",
-            "currency_code",
-        }
-        missing = required_cols - set(reader.fieldnames)
+        # Map Spanish/English column names
+        fieldnames_lower = {name.lower().strip() for name in reader.fieldnames}
+
+        # Required columns (Spanish names)
+        required = {"fecha", "referencia externa", "código de cuenta", "descripción"}
+        optional = {"débito", "crédito"}
+
+        missing = required - fieldnames_lower
         if missing:
             raise SiigoCsvParseError(f"Missing required column(s): {', '.join(sorted(missing))}")
 
-        entries_by_ref: Dict[str, Dict[str, Any]] = {}
+        rows: List[Dict[str, Any]] = []
 
         for row_num, row in enumerate(reader, start=2):
             try:
-                ref_id = row["external_reference_id"].strip()
-                txn_date = row["transaction_date"].strip()
-                account_code = row["account_code"].strip()
-                memo = row["memo"].strip()
-                currency_code = row["currency_code"].strip() or "COP"
+                # Normalize keys (case-insensitive lookup)
+                row_lower = {k.lower().strip(): v for k, v in row.items()}
 
-                # Validate date is ISO 8601
+                fecha = row_lower.get("fecha", "").strip()
+                ref_id = row_lower.get("referencia externa", "").strip()
+                codigo_cuenta = row_lower.get("código de cuenta", "").strip()
+                descripcion = row_lower.get("descripción", "").strip()
+                debito_str = row_lower.get("débito", "").strip() or None
+                credito_str = row_lower.get("crédito", "").strip() or None
+
+                # Validate date
                 try:
-                    datetime.fromisoformat(txn_date)
+                    datetime.fromisoformat(fecha)
                 except ValueError:
-                    raise SiigoCsvParseError(
-                        f"Row {row_num}: Invalid date format '{txn_date}'; expected ISO 8601 (YYYY-MM-DD)"
-                    )
+                    raise SiigoCsvParseError(f"Row {row_num}: Invalid date format '{fecha}'; expected YYYY-MM-DD")
 
-                debit_str = row["debit_amount"].strip() or None
-                credit_str = row["credit_amount"].strip() or None
+                # Convert to cents
+                debito_cents = _to_minor_units(debito_str) if debito_str else 0
+                credito_cents = _to_minor_units(credito_str) if credito_str else 0
 
-                debit_minor = _to_minor_units(debit_str) if debit_str else 0
-                credit_minor = _to_minor_units(credit_str) if credit_str else 0
+                if debito_cents < 0 or credito_cents < 0:
+                    raise SiigoCsvParseError(f"Row {row_num}: Negative amounts not allowed")
 
-                if debit_minor < 0 or credit_minor < 0:
-                    raise SiigoCsvParseError(
-                        f"Row {row_num}: Negative amounts not allowed (debit={debit_str}, credit={credit_str})"
-                    )
-
-                # Group by external_reference_id
-                if ref_id not in entries_by_ref:
-                    entries_by_ref[ref_id] = {
-                        "external_reference_id": ref_id,
-                        "transaction_date": txn_date,
-                        "lines": [],
-                    }
-
-                line = {
-                    "account_code": account_code,
-                    "debit_minor": debit_minor,
-                    "credit_minor": credit_minor,
-                    "currency_code": currency_code,
-                    "memo": memo,
-                }
-                entries_by_ref[ref_id]["lines"].append(line)
+                rows.append({
+                    "fecha": fecha,
+                    "referencia_externa": ref_id,
+                    "codigo_cuenta": codigo_cuenta,
+                    "descripcion": descripcion,
+                    "debito_cents": debito_cents,
+                    "credito_cents": credito_cents,
+                })
 
             except SiigoCsvParseError:
                 raise
-            except (KeyError, ValueError) as exc:
+            except Exception as exc:
                 raise SiigoCsvParseError(f"Row {row_num}: {exc}") from exc
 
-        # Verify each entry is balanced
-        for ref_id, entry in entries_by_ref.items():
-            debit_sum = sum(line["debit_minor"] for line in entry["lines"])
-            credit_sum = sum(line["credit_minor"] for line in entry["lines"])
-            if debit_sum != credit_sum:
-                raise SiigoCsvParseError(
-                    f"Entry {ref_id}: imbalanced (debit={debit_sum}, credit={credit_sum})"
-                )
+        # Verify batch is balanced (total debits = total credits)
+        batch_debits = sum(r["debito_cents"] for r in rows)
+        batch_credits = sum(r["credito_cents"] for r in rows)
+        if batch_debits != batch_credits:
+            raise SiigoCsvParseError(
+                f"Batch imbalanced: total debits={batch_debits}, total credits={batch_credits}"
+            )
 
-        return list(entries_by_ref.values())
+        return rows
 
     except csv.Error as exc:
-        raise SiigoCsvParseError(f"CSV parse error: {exc}") from exc
+        raise SiigoCsvParseError(f"CSV format error: {exc}") from exc
     except SiigoCsvParseError:
         raise
     except Exception as exc:
-        raise SiigoCsvParseError(f"Unexpected error parsing CSV: {exc}") from exc
+        raise SiigoCsvParseError(f"Unexpected error: {exc}") from exc
 
 
 async def _create_approval_queue(
@@ -423,12 +409,14 @@ async def ingest_siigo_csv(
     Idempotent on (tenant_id, external_reference_id, entry_date): re-ingesting
     the same batch returns success without duplicating.
 
+    Parser returns flat list of rows. Group by referencia_externa internally.
+
     Returns:
         (success, summary_dict, error)
         where summary_dict = {"row_count": N, "date_range": "YYYY-MM-DD..YYYY-MM-DD"}
     """
     try:
-        entries = parse_siigo_csv(csv_text)
+        rows = parse_siigo_csv(csv_text)
     except SiigoCsvParseError as exc:
         logger.warning(f"Siigo CSV parse failed: {exc}")
         # Phase 6: Create approval_queue instead of returning error 400
@@ -446,19 +434,38 @@ async def ingest_siigo_csv(
             logger.error(f"Failed to create approval_queue: {queue_exc}")
             return False, None, str(exc)
 
-    if not entries:
+    if not rows:
         return True, {"row_count": 0, "date_range": ""}, None
+
+    # Group rows by referencia_externa (transaction ID)
+    entries_by_ref: Dict[str, Dict[str, Any]] = {}
+    dates = set()
+
+    for row in rows:
+        ref_id = row["referencia_externa"]
+        fecha = row["fecha"]
+        dates.add(fecha)
+
+        if ref_id not in entries_by_ref:
+            entries_by_ref[ref_id] = {
+                "referencia_externa": ref_id,
+                "fecha": fecha,
+                "lines": [],
+            }
+
+        entries_by_ref[ref_id]["lines"].append({
+            "codigo_cuenta": row["codigo_cuenta"],
+            "debito_cents": row["debito_cents"],
+            "credito_cents": row["credito_cents"],
+            "descripcion": row["descripcion"],
+        })
 
     supabase = get_supabase()
     row_count = 0
-    dates = set()
 
     try:
-        for entry in entries:
-            ref_id = entry["external_reference_id"]
-            txn_date = entry["transaction_date"]
-            dates.add(txn_date)
-            lines = entry["lines"]
+        for ref_id, entry in entries_by_ref.items():
+            fecha = entry["fecha"]
 
             # Check if entry already exists (idempotency)
             existing = (
@@ -466,12 +473,12 @@ async def ingest_siigo_csv(
                 .select("id")
                 .eq("tenant_id", tenant_id)
                 .eq("external_reference_id", ref_id)
-                .eq("entry_date", txn_date)
+                .eq("entry_date", fecha)
                 .execute()
             )
             if existing.data:
                 logger.info(
-                    f"Entry {ref_id} on {txn_date} already ingested for tenant {tenant_id}; skipping"
+                    f"Entry {ref_id} on {fecha} already ingested for tenant {tenant_id}; skipping"
                 )
                 continue
 
@@ -479,7 +486,7 @@ async def ingest_siigo_csv(
             entry_data = {
                 "tenant_id": tenant_id,
                 "external_reference_id": ref_id,
-                "entry_date": txn_date,
+                "entry_date": fecha,
                 "memo": f"Siigo import: {ref_id}",
                 "source": "siigo_csv",
                 "uploaded_at": datetime.now(tz=None).isoformat(),
@@ -493,13 +500,13 @@ async def ingest_siigo_csv(
                 {
                     "entry_id": entry_id,
                     "tenant_id": tenant_id,
-                    "account_code": line["account_code"],
-                    "debit_minor": line["debit_minor"],
-                    "credit_minor": line["credit_minor"],
-                    "currency_code": line["currency_code"],
-                    "memo": line["memo"],
+                    "account_code": line["codigo_cuenta"],
+                    "debit_minor": line["debito_cents"],
+                    "credit_minor": line["credito_cents"],
+                    "memo": line["descripcion"],
+                    "currency_code": "COP",
                 }
-                for line in lines
+                for line in entry["lines"]
             ]
             supabase.table("erp_journal_lines").insert(line_data).execute()
 
