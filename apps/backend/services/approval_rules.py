@@ -143,7 +143,7 @@ def _check_recurring_rule(
     variance_tolerance = config.get("variance_tolerance", 0.02)
 
     # Check if current entry matches pattern
-    if abs(entry.amount_cents - amounts[0]) / amounts[0] < variance_tolerance:
+    if abs(entry.amount_cents - amounts[0]) / amounts[0] <= variance_tolerance:
         # Match found!
         min_confidence = config.get("min_confidence", 0.95)
 
