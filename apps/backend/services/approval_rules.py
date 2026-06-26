@@ -290,14 +290,170 @@ async def evaluate_auto_approval_rules(
     supabase_client
 ) -> Optional[ApprovalDecision]:
     """
-    Stage 5: Evaluate all rules in order.
+    Stage 5: Evaluate all rules in order (first match wins).
+
+    Args:
+        tenant_id: Tenant context
+        entry: Current entry to evaluate
+        history: Previous entries for comparison
+        supabase_client: Supabase client for DB lookups
 
     Returns:
-        ApprovalDecision if any rule approves (first match wins)
-        None if no rule matches or all return None
+        ApprovalDecision if any rule approves
+        None if no rule matches
     """
-    # Implemented in Stage 5
-    pass
+    # Evaluate rules in order (Stage 5)
+    for rule_type in RULE_EVALUATION_ORDER:
+        logger.debug(f"Evaluating rule: {rule_type.value}")
+
+        # Rule 1: Recurring Transaction (sync, in-memory)
+        if rule_type == RuleType.RECURRING_TRANSACTION:
+            if is_rule_enabled(rule_type):
+                decision = _check_recurring_rule(tenant_id, entry, history)
+                if decision:
+                    logger.info(
+                        f"Rule matched: {decision.rule_id} "
+                        f"(confidence={decision.confidence})"
+                    )
+                    return decision
+
+        # Rule 2: Known Vendor (async, DB lookup)
+        elif rule_type == RuleType.KNOWN_VENDOR:
+            if is_rule_enabled(rule_type):
+                decision = await _check_vendor_rule(
+                    tenant_id, entry, supabase_client
+                )
+                if decision:
+                    logger.info(
+                        f"Rule matched: {decision.rule_id} "
+                        f"(confidence={decision.confidence})"
+                    )
+                    return decision
+
+        # Rule 3: Micro Transaction (sync, threshold check)
+        elif rule_type == RuleType.MICRO_TRANSACTION:
+            if is_rule_enabled(rule_type):
+                decision = _check_micro_rule(entry)
+                if decision:
+                    logger.info(
+                        f"Rule matched: {decision.rule_id} "
+                        f"(confidence={decision.confidence})"
+                    )
+                    return decision
+
+    # No rule matched
+    logger.debug(f"No approval rule matched for entry {entry.id}")
+    return None
+
+
+# ============================================================================
+# Logging & Audit Trail (Stages 6-7)
+# ============================================================================
+
+async def log_auto_approval(
+    tenant_id: str,
+    entry: "JournalEntry",  # noqa: F821
+    decision: ApprovalDecision,
+    supabase_client
+) -> bool:
+    """
+    Stage 6-7: Log auto-approval decision to approval_queue for audit trail.
+
+    Args:
+        tenant_id: Tenant context
+        entry: Entry that was auto-approved
+        decision: ApprovalDecision with rule details
+        supabase_client: Supabase client
+
+    Returns:
+        True if logged successfully, False otherwise
+    """
+    try:
+        # Create approval_queue entry
+        queue_entry = {
+            "tenant_id": tenant_id,
+            "status": "approved",
+            "auto_approved": True,
+            "rule_applied": decision.rule_id,
+            "confidence_score": decision.confidence,
+            "rule_data": decision.rule_data,
+            "reason": decision.reason,
+            "payload": {
+                "entry_id": getattr(entry, "id", None),
+                "amount_cents": getattr(entry, "amount_cents", None),
+                "vendor_code": getattr(entry, "vendor_code", None),
+            },
+        }
+
+        result = (
+            supabase_client.table("approval_queue")
+            .insert(queue_entry)
+            .execute()
+        )
+
+        if result.data:
+            logger.info(
+                f"Logged auto-approval: entry={entry.id}, "
+                f"rule={decision.rule_id}, confidence={decision.confidence}"
+            )
+            return True
+        else:
+            logger.error(f"Failed to log auto-approval for entry {entry.id}")
+            return False
+
+    except Exception as exc:
+        logger.error(f"Error logging auto-approval: {exc}")
+        return False
+
+
+async def log_approval_rejection(
+    tenant_id: str,
+    entry: "JournalEntry",  # noqa: F821
+    reason: str,
+    supabase_client
+) -> bool:
+    """
+    Log rejection (no rule matched) to approval_queue.
+
+    Args:
+        tenant_id: Tenant context
+        entry: Entry that needs manual review
+        reason: Why no rule matched
+        supabase_client: Supabase client
+
+    Returns:
+        True if logged successfully
+    """
+    try:
+        queue_entry = {
+            "tenant_id": tenant_id,
+            "status": "pending",
+            "auto_approved": False,
+            "reason": reason,
+            "payload": {
+                "entry_id": getattr(entry, "id", None),
+                "amount_cents": getattr(entry, "amount_cents", None),
+            },
+        }
+
+        result = (
+            supabase_client.table("approval_queue")
+            .insert(queue_entry)
+            .execute()
+        )
+
+        if result.data:
+            logger.info(
+                f"Logged rejection (routing to Hermes): entry={entry.id}"
+            )
+            return True
+        else:
+            logger.error(f"Failed to log rejection for entry {entry.id}")
+            return False
+
+    except Exception as exc:
+        logger.error(f"Error logging rejection: {exc}")
+        return False
 
 
 __all__ = [
