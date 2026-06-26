@@ -5,12 +5,19 @@ POST /api/v1/shadow-gl/dian-xml/ingest - Manually ingest a DIAN UBL 2.1 XML docu
 POST /api/v1/shadow-gl/siigo-csv/ingest - Manually ingest a Siigo journal CSV export
 """
 
+import json
 import logging
+from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
-from services.shadow_gl_service import ingest_dian_xml, ingest_siigo_csv
+from core.hermes_client import HermesClient, HermesClientError
+from services.shadow_gl_service import (
+    ingest_dian_xml,
+    ingest_siigo_csv,
+    _update_approval_queue,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -111,3 +118,77 @@ async def ingest_siigo_csv_endpoint(request: Request):
         date_range=summary["date_range"],
         error="",
     )
+
+
+@router.websocket("/approval-callback")
+async def approval_callback_endpoint(websocket: WebSocket) -> None:
+    """
+    Receive approval decisions from Hermes Workspace (Phase 6).
+
+    Hermes sends approval_decision messages with:
+    - approval_queue_id: which entry was approved/rejected
+    - status: "approved" | "rejected"
+    - reviewer_id: who made the decision
+    - reason: why
+    - decided_at: timestamp
+
+    This endpoint updates approval_queue.status and triggers persistence if approved.
+    """
+    await websocket.accept()
+    logger.info(f"Approval callback connected: {websocket.client}")
+
+    try:
+        while True:
+            message_text = await websocket.receive_text()
+            try:
+                message = json.loads(message_text)
+            except json.JSONDecodeError as exc:
+                logger.error(f"Invalid JSON from Hermes: {exc}")
+                continue
+
+            if message.get("type") != "approval_decision":
+                logger.debug(f"Ignoring message type: {message.get('type')}")
+                continue
+
+            # Extract decision
+            queue_id = message.get("approval_queue_id")
+            status = message.get("status")  # "approved" | "rejected"
+            reviewer_id = message.get("reviewer_id")
+            reason = message.get("reason", "")
+            decided_at = message.get("decided_at")
+
+            if not all([queue_id, status]):
+                logger.warning(f"Incomplete approval_decision: {message}")
+                continue
+
+            logger.info(f"Approval decision: {queue_id} → {status}")
+
+            # Update approval_queue status
+            updated = await _update_approval_queue(
+                queue_id=queue_id,
+                status=status,
+                reviewer_id=reviewer_id,
+                reason=reason,
+                reviewed_at=decided_at,
+            )
+
+            if not updated:
+                logger.error(f"Failed to update approval_queue {queue_id}")
+
+            # Send ACK back to Hermes
+            ack = {
+                "type": "ack",
+                "approval_queue_id": queue_id,
+                "status": "processed",
+            }
+            try:
+                await websocket.send_text(json.dumps(ack))
+                logger.debug(f"Sent ACK for {queue_id}")
+            except Exception as exc:
+                logger.warning(f"Failed to send ACK: {exc}")
+
+    except WebSocketDisconnect:
+        logger.info(f"Approval callback disconnected: {websocket.client}")
+    except Exception as exc:
+        logger.error(f"Approval callback error: {exc}")
+        await websocket.close(code=1011)

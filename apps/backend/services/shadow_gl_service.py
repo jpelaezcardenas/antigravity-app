@@ -313,6 +313,48 @@ async def _get_approval_queue(queue_id: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+async def _update_approval_queue(
+    queue_id: str,
+    status: str,
+    reviewer_id: Optional[str] = None,
+    reason: str = "",
+    reviewed_at: Optional[str] = None,
+) -> bool:
+    """
+    Update approval_queue after approval decision from Hermes.
+
+    Args:
+        queue_id: approval_queue.id
+        status: "approved" or "rejected"
+        reviewer_id: User ID who made the decision
+        reason: Why approved/rejected
+        reviewed_at: ISO timestamp of decision
+
+    Returns:
+        True if updated successfully, False otherwise
+    """
+    supabase = get_supabase()
+
+    update_data = {
+        "status": status,
+        "reason": reason,
+    }
+    if reviewer_id:
+        update_data["approved_by"] = reviewer_id
+    if reviewed_at:
+        update_data["updated_at"] = reviewed_at
+
+    try:
+        result = supabase.table("approval_queue").update(update_data).eq("id", queue_id).execute()
+        success = len(result.data) > 0
+        if success:
+            logger.info(f"Updated approval_queue {queue_id} to {status}")
+        return success
+    except Exception as exc:
+        logger.error(f"Failed to update approval_queue {queue_id}: {exc}")
+        return False
+
+
 async def ingest_siigo_csv(
     tenant_id: str, csv_text: str
 ) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
