@@ -109,25 +109,20 @@ Applied via Supabase CLI (idempotent):
 
 ## Deployment Status
 
-### Current State (as of 2026-06-26)
+### ✅ LIVE IN PRODUCTION (2026-06-26 19:40:14 UTC)
 - **Code:** Complete and tested ✅
 - **Main branch:** All commits pushed ✅
 - **Tests:** 42/42 passing ✅
-- **Railway:** Last production deployment was 2026-06-16 (uses earlier code)
+- **Railway Build:** SUCCESS ✅
+- **Server Status:** Running on port 8000 ✅
+- **Deployment ID:** c21b7846-602c-4b91-921d-c198c70e6e03
+- **URL:** https://antigravity-app-production-dc78.up.railway.app
 
-### Next Steps (Railway Auto-Detect)
-Railway is configured to auto-detect main branch commits and trigger redeploy:
-
-1. Railway detects new commits (95b9d44, 8f389a0, 641178e)
-2. Triggers new build from main
-3. Build succeeds with Python 3.11 + dependencies
-4. Container deployed to production-dc78.up.railway.app
-5. Service health check passes
-6. Verify CSV upload endpoint is live
-
-**Estimated timeframe:** Railway auto-detect usually occurs within 5-15 minutes of push. Status can be monitored at:
-- https://railway.app (project dashboard)
-- Build logs and deployment logs visible in Railway UI
+### Deployment Timeline
+- 2026-06-26 19:39:19 — Manual redeploy triggered (from commit 054ecad)
+- 2026-06-26 19:40:12 — Container started
+- 2026-06-26 19:40:14 — Uvicorn server started, application ready
+- 2026-06-26 19:40:14 — **DEPLOYMENT SUCCESSFUL** ✅
 
 ---
 
