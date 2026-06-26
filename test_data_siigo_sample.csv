@@ -1,0 +1,29 @@
+Fecha,Referencia Externa,Código de Cuenta,Descripción,Débito,Crédito
+2026-06-25,FAC-2026-001,1105,Cuentas por cobrar - Ventas locales,500000.00,
+2026-06-25,FAC-2026-001,4105,Ingresos por ventas,,500000.00
+2026-06-24,FAC-2026-002,1105,Cuentas por cobrar - Cliente ABC,750000.00,
+2026-06-24,FAC-2026-002,4105,Ingresos por ventas,,750000.00
+2026-06-24,TRF-2026-001,1110,Banco Principal,1250000.00,
+2026-06-24,TRF-2026-001,1105,Cuentas por cobrar,,1250000.00
+2026-06-23,FAC-2026-003,1105,Cuentas por cobrar - Ventas,500000.00,
+2026-06-23,FAC-2026-003,4105,Ingresos por ventas,,500000.00
+2026-06-23,GAS-2026-001,5100,Gastos de operación,75000.00,
+2026-06-23,GAS-2026-001,1110,Banco Principal,,75000.00
+2026-06-22,FAC-2026-004,1105,Cuentas por cobrar - Ventas,500000.00,
+2026-06-22,FAC-2026-004,4105,Ingresos por ventas,,500000.00
+2026-06-22,DEV-2026-001,4105,Devolución de ventas,50000.00,
+2026-06-22,DEV-2026-001,1105,Cuentas por cobrar,,50000.00
+2026-06-21,TRF-2026-002,1110,Banco Principal,1250000.00,
+2026-06-21,TRF-2026-002,1105,Cuentas por cobrar,,1250000.00
+2026-06-21,FAC-2026-005,1105,Cuentas por cobrar - Ventas,500000.00,
+2026-06-21,FAC-2026-005,4105,Ingresos por ventas,,500000.00
+2026-06-20,GAS-2026-002,5100,Gastos de operación,75000.00,
+2026-06-20,GAS-2026-002,1110,Banco Principal,,75000.00
+2026-06-20,FAC-2026-006,1105,Cuentas por cobrar - Ventas,500000.00,
+2026-06-20,FAC-2026-006,4105,Ingresos por ventas,,500000.00
+2026-06-19,FAC-2026-007,1105,Cuentas por cobrar - Ventas,500000.00,
+2026-06-19,FAC-2026-007,4105,Ingresos por ventas,,500000.00
+2026-06-19,TRF-2026-003,1110,Banco Principal,1250000.00,
+2026-06-19,TRF-2026-003,1105,Cuentas por cobrar,,1250000.00
+2026-06-18,FAC-2026-008,1105,Cuentas por cobrar - Ventas,500000.00,
+2026-06-18,FAC-2026-008,4105,Ingresos por ventas,,500000.00
