@@ -821,58 +821,112 @@ async def test_concurrent_approval_decisions():
 
 ### 10.1 Start Hermes locally
 
-```bash
-cd ~/hermes-workspace
-pnpm dev  # Workspace on :3000
-hermes gateway run  # Gateway on :8642
-```
-
-### 10.2 Upload imbalanced CSV via curl
+**Prerequisites:** Hermes Workspace must be running in WSL/Docker:
 
 ```bash
-curl -X POST \
-  -H "Content-Type: text/csv" \
-  https://antigravity-app-production-175a.up.railway.app/api/v1/shadow-gl/siigo-csv/ingest \
-  --data-binary @bad_csv.csv
+# In WSL (as contexia user):
+cd /home/contexia/hermes-workspace
+docker-compose up
+# Or your custom startup command
 ```
 
-**Expected response:**
-```json
-{
-  "success": false,
-  "queue_id": "uuid-here",
-  "error": "Entry INV-001: imbalanced",
-  "hermes_sent": true
-}
-```
+**Verify services:**
+- ✅ Workspace: http://localhost:3000
+- ✅ Gateway: http://localhost:8642
+- ✅ Dashboard: http://localhost:9119
 
-### 10.3 Check Hermes UI for approval request
+### 10.2 Start antigravity-app backend
 
-- Navigate to `http://localhost:3000`
-- Look for approval request for INV-001
-- Click "Approve" or "Reject"
-
-### 10.4 Verify persistence
-
-**If approved:**
 ```bash
-curl https://antigravity-app-production-175a.up.railway.app/api/v1/erp/entries | grep INV-001
-# → Entry should exist
+cd ~/Projects/antigravity-app
+poetry run uvicorn apps.backend.main:app --reload --port 8000
 ```
 
-**If rejected:**
+### 10.3 Create and upload imbalanced CSV
+
+**Helper script:**
 ```bash
-curl https://antigravity-app-production-175a.up.railway.app/api/v1/approval-queue?status=rejected
-# → Queue row shows rejection reason
+cd openspec/changes/shadow-gl-hitl-workflows
+powershell -File test-e2e.ps1 create-csv
+powershell -File test-e2e.ps1 upload-csv
 ```
 
-### 10.5 Acceptance Criteria
+**Or manually:**
+```bash
+curl -X POST http://localhost:8000/api/v1/shadow-gl/siigo-csv/ingest \
+  -H "Content-Type: text/plain" \
+  --data-binary @imbalanced.csv
+```
 
-- [x] Hermes receives approval request in real-time
+**Expected response (400):**
+```
+Accounting entries imbalanced: total_debits=25000 total_credits=17500
+```
+
+### 10.4 Verify approval_queue was created
+
+Query Supabase (via Web UI or CLI):
+
+```sql
+SELECT id, status, created_at, payload->>'raw_input' as has_csv
+FROM approval_queue
+WHERE status = 'pending'
+ORDER BY created_at DESC
+LIMIT 1;
+```
+
+**Expected:** One row with `status='pending'`, payload contains CSV data
+
+### 10.5 Approve in Hermes UI
+
+1. Open http://localhost:3000 (Hermes Workspace)
+2. Navigate to Approval Queue / Inbox
+3. Find the pending approval (transaction TX-001, TX-002)
+4. Click **APPROVE**
+
+**Backend receives:** approval_decision message via WebSocket callback
+
+### 10.6 Verify persistence to erp_journal_entries
+
+**After approval, check:**
+
+```sql
+SELECT id, external_reference_id, status
+FROM erp_journal_entries
+WHERE external_reference_id IN ('TX-001', 'TX-002')
+ORDER BY created_at DESC;
+```
+
+**Expected:** 2 rows (entries were persisted)
+
+```sql
+SELECT entry_id, account_code, line_seq
+FROM erp_journal_lines
+WHERE entry_id IN (SELECT id FROM erp_journal_entries WHERE external_reference_id IN ('TX-001', 'TX-002'))
+ORDER BY entry_id, line_seq;
+```
+
+**Expected:** 4 rows (2 lines per transaction)
+
+### 10.7 Test rejection path
+
+Repeat 10.2-10.5 but click **REJECT** instead:
+
+1. Backend receives `approval_decision` with `status='rejected'`
+2. Verify approval_queue.status = 'rejected', reason = [Hermes reason]
+3. Verify NO new entries in erp_journal_entries
+
+### 10.8 Acceptance Criteria
+
+- [x] Hermes receives approval_request via WebSocket
 - [x] User can approve/reject in Hermes UI
-- [x] Approved entry appears in erp_journal_entries
-- [x] Rejected entry logged in approval_queue
+- [x] Approved entry persists to erp_journal_entries
+- [x] Rejected entry has status='rejected' in approval_queue
+- [x] Full audit trail: reviewer_id, reason, timestamps
 - [x] No errors in backend logs
+- [x] CSV can be re-uploaded after rejection
+
+**Reference:** `e2e-test-scenario.md` for detailed test cases
 
 ---
 
