@@ -17,6 +17,7 @@ from services.shadow_gl_service import (
     ingest_dian_xml,
     ingest_siigo_csv,
     _update_approval_queue,
+    _persist_approved_entry,
 )
 
 logger = logging.getLogger(__name__)
@@ -174,6 +175,25 @@ async def approval_callback_endpoint(websocket: WebSocket) -> None:
 
             if not updated:
                 logger.error(f"Failed to update approval_queue {queue_id}")
+
+            # If approved, persist the entry (Phase 6 Stage 7-9)
+            if status == "approved":
+                from core.supabase_client import get_supabase
+
+                supabase = get_supabase()
+                queue = (
+                    supabase.table("approval_queue")
+                    .select("*")
+                    .eq("id", queue_id)
+                    .single()
+                    .execute()
+                )
+                tenant_id = queue.data.get("tenant_id")
+                success, error = await _persist_approved_entry(queue_id, tenant_id)
+                if success:
+                    logger.info(f"Successfully persisted entry from approval_queue {queue_id}")
+                else:
+                    logger.error(f"Failed to persist entry from approval_queue {queue_id}: {error}")
 
             # Send ACK back to Hermes
             ack = {

@@ -355,6 +355,65 @@ async def _update_approval_queue(
         return False
 
 
+async def _persist_approved_entry(
+    queue_id: str, tenant_id: str
+) -> Tuple[bool, Optional[str]]:
+    """
+    Re-parse and persist entry from approval_queue after approval (Phase 6 Stage 7).
+
+    Args:
+        queue_id: approval_queue.id
+        tenant_id: Tenant UUID
+
+    Returns:
+        (success, error_message)
+    """
+    queue = await _get_approval_queue(queue_id)
+    if not queue:
+        error = f"Approval queue {queue_id} not found"
+        logger.error(error)
+        return False, error
+
+    if queue.get("status") != "approved":
+        error = f"Approval queue {queue_id} not approved (status={queue.get('status')})"
+        logger.warning(error)
+        return False, error
+
+    raw_input = queue.get("payload", {}).get("raw_input")
+    if not raw_input:
+        error = f"No raw_input in approval_queue {queue_id}"
+        logger.error(error)
+        return False, error
+
+    # Detect type: CSV or XML
+    if raw_input.strip().startswith("<"):
+        # XML
+        try:
+            success, document, error = await ingest_dian_xml(tenant_id, raw_input)
+            if success:
+                logger.info(f"Persisted XML from approval_queue {queue_id}: CUFE={document.get('cufe')}")
+                return True, None
+            else:
+                logger.error(f"XML persist failed: {error}")
+                return False, error
+        except Exception as exc:
+            logger.error(f"Failed to persist XML: {exc}")
+            return False, str(exc)
+    else:
+        # CSV
+        try:
+            success, summary, error = await ingest_siigo_csv(tenant_id, raw_input)
+            if success:
+                logger.info(f"Persisted CSV from approval_queue {queue_id}: {summary}")
+                return True, None
+            else:
+                logger.error(f"CSV persist failed: {error}")
+                return False, error
+        except Exception as exc:
+            logger.error(f"Failed to persist CSV: {exc}")
+            return False, str(exc)
+
+
 async def ingest_siigo_csv(
     tenant_id: str, csv_text: str
 ) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
