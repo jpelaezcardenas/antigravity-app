@@ -172,26 +172,111 @@ async def _check_vendor_rule(
     """
     Stage 3: Check if vendor is whitelisted.
 
+    Args:
+        tenant_id: Tenant context
+        entry: Current entry with vendor_code
+        supabase_client: Supabase client for DB lookup
+
     Returns:
         ApprovalDecision if vendor found + amount within tolerance
         None if vendor not in whitelist or amount out of range
     """
-    # Implemented in Stage 3
-    pass
+    config = get_rule_config(RuleType.KNOWN_VENDOR)
+
+    # Check if rule is enabled
+    if not config.get("enabled", False):
+        return None
+
+    # Lookup vendor in whitelist
+    try:
+        result = (
+            supabase_client.table("vendor_whitelist")
+            .select("*")
+            .eq("tenant_id", tenant_id)
+            .eq("vendor_code", entry.vendor_code)
+            .eq("enabled", True)
+            .single()
+            .execute()
+        )
+
+        if not result.data:
+            return None  # Vendor not found or not enabled
+
+        vendor = result.data
+
+    except Exception as exc:
+        logger.error(f"Error looking up vendor {entry.vendor_code}: {exc}")
+        return None  # Fallback: not found
+
+    # Check amount tolerance
+    avg_amt = vendor.get("avg_amount_cents", 0)
+    if avg_amt == 0:
+        return None  # Invalid vendor data
+
+    tolerance = vendor.get("tolerance_percent", 0.10)
+    variance = abs(entry.amount_cents - avg_amt) / avg_amt
+
+    if variance <= tolerance:
+        # Match found!
+        min_confidence = config.get("min_confidence", 0.90)
+
+        return ApprovalDecision(
+            approved=True,
+            rule_id=RuleType.KNOWN_VENDOR.value,
+            rule_name="Known Vendor Match",
+            confidence=min_confidence,
+            reason=f"Vendor {entry.vendor_code} ({vendor.get('vendor_name', '')}) "
+                   f"whitelisted (amount within ±{tolerance:.0%})",
+            rule_data={
+                "vendor_name": vendor.get("vendor_name"),
+                "avg_amount": avg_amt,
+                "tolerance": tolerance,
+                "variance": variance,
+            }
+        )
+
+    return None  # Amount out of tolerance
 
 
-async def _check_micro_rule(
+def _check_micro_rule(
     entry: "JournalEntry"  # noqa: F821
 ) -> Optional[ApprovalDecision]:
     """
     Stage 4: Auto-approve micro transactions.
 
+    Args:
+        entry: Current entry with amount_cents
+
     Returns:
         ApprovalDecision if amount < threshold
         None otherwise
     """
-    # Implemented in Stage 4
-    pass
+    config = get_rule_config(RuleType.MICRO_TRANSACTION)
+
+    # Check if rule is enabled
+    if not config.get("enabled", False):
+        return None
+
+    threshold = config.get("threshold_cents", 1_000_000)
+
+    if entry.amount_cents < threshold:
+        min_confidence = config.get("min_confidence", 0.85)
+
+        return ApprovalDecision(
+            approved=True,
+            rule_id=RuleType.MICRO_TRANSACTION.value,
+            rule_name="Micro Transaction",
+            confidence=min_confidence,
+            reason=f"Transaction below threshold ({threshold} cents, "
+                   f"amount={entry.amount_cents} cents)",
+            rule_data={
+                "threshold": threshold,
+                "amount": entry.amount_cents,
+                "savings": threshold - entry.amount_cents,
+            }
+        )
+
+    return None  # Amount at or above threshold
 
 
 # ============================================================================
