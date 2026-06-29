@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 import secrets
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -73,10 +74,21 @@ class Settings(BaseSettings):
                 raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in production.")
 
     model_config = SettingsConfigDict(
-        env_file=".env", 
+        env_file=".env",
         extra="ignore",
         case_sensitive=False,
     )
+
+    def __init__(self, **data):
+        # Ensure environment variables always take precedence.
+        # In Railway/production, .env may not exist or be outdated.
+        # Explicitly check os.environ for critical values like GLM_API_KEY.
+        if not data.get('GLM_API_KEY'):
+            env_glm_key = os.environ.get('GLM_API_KEY')
+            if env_glm_key:
+                data['GLM_API_KEY'] = env_glm_key
+                logger.info("✓ GLM_API_KEY loaded from environment variable")
+        super().__init__(**data)
 
 
 settings = Settings()
