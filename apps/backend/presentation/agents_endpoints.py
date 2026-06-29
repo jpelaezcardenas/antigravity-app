@@ -49,48 +49,34 @@ class AgentResponse(BaseModel):
 @router.post("/taty/ask")
 async def taty_ask(request: AskRequest):
     """
-    Taty FAQ: Answer user questions about taxes, processes, etc.
+    Taty Contadora: Answer user fiscal questions with RAG, LLM failover, and profile-based routing.
 
-    The prompt and context are anonymized (SOSP) before being routed to the
-    cloud LLM failover chain, and the response is rehydrated.
+    DEPRECATED: Use POST /api/v1/agents/ask with request body instead.
+    This endpoint is kept for backward compatibility and redirects to the new TatyAgentService.
     """
     try:
-        model = choose_model_for_task("taty_faq")
+        from services.taty_service import get_taty_service
 
-        system_prompt = f"""You are Taty, a helpful assistant for Contexia.
-Your role is to answer questions about:
-- Tax basics (Renta, IVA, retenciones)
-- Invoicing and receipts
-- Financial processes
-- General accounting concepts
+        taty = get_taty_service()
 
-Company context: {request.context if request.context else "General knowledge"}
-
-Be clear, concise, and in Spanish."""
-
-        response = get_anonymized_ai_response(
-            prompt=request.question,
-            system_prompt=system_prompt,
-            response_format="text",
-            max_tokens=1000,
-            temperature=0.7
+        # Call the new profile-aware service (profile defaults to "taty-v1")
+        response = taty.ask(
+            company_id=request.company_id,
+            question=request.question,
+            channel="api"  # Legacy endpoint channel identifier
         )
 
-        task_desc = get_task_description("taty_faq")
-
+        # Return in the AgentResponse format for backward compatibility
         return AgentResponse(
-            result=response,
-            model_used=model.value,
+            result=response.get("answer", response.get("result", "")),
+            model_used="glm-5.2",  # Taty profile uses GLM as primary
             task_type="taty_faq",
-            tier=task_desc["tier"],
+            tier="tier-1",
             success=True
         )
 
-    except AllProvidersFailedError as e:
-        logger.error(f"Taty Ask failed: {str(e)}")
-        raise HTTPException(status_code=503, detail="All LLM providers failed")
     except Exception as e:
-        logger.error(f"Unexpected error in Taty Ask: {str(e)}")
+        logger.error(f"Taty Ask failed: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
