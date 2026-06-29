@@ -1,0 +1,34 @@
+change_id: hermes-profile-based-llm-routing
+title: Hermes Profile-Based LLM Routing
+status: ready_for_deployment
+created_date: 2026-06-28
+owner: Juan David Peláez
+team: Contexia
+phase: Phase 6 (Agent Integration + Cost Optimization)
+
+description: |
+  Implement Hermes profile-based LLM provider routing for cost optimization.
+  Reduce cloud LLM costs from $337/month to $120/month via intelligent
+  fallback chains (local Phi/Gemma → Groq → OpenRouter).
+
+impact:
+  cost_reduction_percent: 64
+  cost_before_monthly: 337
+  cost_after_monthly: 120
+  cost_currency: USD
+  breaking_changes: false
+  backward_compatible: true
+
+components:
+  - llm_engine.py: +200 lines (PROFILE_CONFIGS, get_ai_response_with_profile)
+  - taty_service.py: +2 lines (profile routing)
+  - social_ops_service.py: +2 lines (profile routing)
+  - test_profile_support.py: 150 lines (unit tests)
+  - proposal.md: OpenSpec proposal
+  - design.md: Technical design
+  - tasks.md: Stage 11 deployment tasks
+
+deployed: false
+deployed_date: null
+deployment_verified: false
+deployment_report_path: null

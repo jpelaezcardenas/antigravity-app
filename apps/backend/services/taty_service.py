@@ -20,7 +20,7 @@ import logging
 import time
 import json
 
-from agents.llm_engine import get_ai_response
+from agents.llm_engine import get_llm_engine
 from agents.anonymizer import Anonymizer
 from services.kb_seeding_service import retrieve_similar, ensure_dian_loaded
 
@@ -179,10 +179,12 @@ class TatyAgentService:
             # 4. Anonymize prompt (SOSP rule)
             masked_prompt, mask_map = Anonymizer.mask(prompt)
 
-            # 5. Call LLM with failover
+            # 5. Call LLM with failover (using profile-based routing)
             logger.debug(f"Calling LLM for Taty question (masked)")
-            response = get_ai_response(
+            llm_engine = get_llm_engine()
+            response = llm_engine.get_ai_response_with_profile(
                 prompt=masked_prompt,
+                profile_name="taty-v1",
                 system_prompt=self._build_system_prompt(profile),
                 response_format="text",
                 max_tokens=2000,

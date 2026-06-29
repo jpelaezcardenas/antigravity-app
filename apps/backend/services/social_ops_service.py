@@ -1560,7 +1560,7 @@ class SocialOpsService:
 
         # Use the existing social content agent prompt via llm_engine, but keep a
         # deterministic fallback so the endpoint stays usable when all providers fail.
-        from agents.llm_engine import AllProvidersFailedError, get_ai_response
+        from agents.llm_engine import AllProvidersFailedError, get_llm_engine
 
         prompt = f"Idea: {idea.get('tema_raw')}\nFormato: {idea.get('formato_sugerido')}\nPilar: {idea.get('pilar')}"
         system_prompt = (
@@ -1568,8 +1568,10 @@ class SocialOpsService:
             "en redes (LinkedIn/Instagram/Facebook). Responde en espanol, claro, directo, con CTA."
         )
         try:
-            draft_text = get_ai_response(
+            llm_engine = get_llm_engine()
+            draft_text = llm_engine.get_ai_response_with_profile(
                 prompt=prompt,
+                profile_name="social-ops-v1",
                 system_prompt=system_prompt,
                 response_format="text",
                 max_tokens=650,

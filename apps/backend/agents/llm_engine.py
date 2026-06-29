@@ -43,6 +43,52 @@ class LLMProvider(Enum):
     MISTRAL = "mistral"
     GEMINI = "gemini"
     OPENROUTER = "openrouter"
+    OLLAMA = "ollama"
+
+
+# Profile Configurations: Maps profile_name → [primary_provider, fallback_chain]
+PROFILE_CONFIGS = {
+    "taty-v1": {
+        "primary": LLMProvider.GROQ,
+        "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER, LLMProvider.CEREBRAS],
+        "description": "Fiscal advisor — uses GLM 5.2 equivalent (Groq) for interactive <2s responses"
+    },
+    "centinela-v1": {
+        "primary": LLMProvider.GROQ,
+        "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER_FREE],
+        "description": "Financial monitoring agent — batch processing, ~25s acceptable"
+    },
+    "pulso-v1": {
+        "primary": LLMProvider.GROQ,
+        "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER_FREE],
+        "description": "Daily cash flow — nightly batch, ~85s acceptable"
+    },
+    "radar-v1": {
+        "primary": LLMProvider.GROQ,
+        "fallback_chain": [LLMProvider.GROQ, LLMProvider.CEREBRAS, LLMProvider.OPENROUTER],
+        "description": "Predictive analytics — accuracy critical"
+    },
+    "auditoria-v1": {
+        "primary": LLMProvider.GROQ,
+        "fallback_chain": [LLMProvider.GROQ, LLMProvider.CEREBRAS],
+        "description": "Compliance auditing — regulatory, never risk quality"
+    },
+    "social-ops-v1": {
+        "primary": LLMProvider.GROQ,
+        "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER_FREE],
+        "description": "Social content generation — batch mode"
+    },
+    "kb-v1": {
+        "primary": LLMProvider.GROQ,
+        "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER_FREE],
+        "description": "Knowledge base RAG — simple formatting"
+    },
+    "maestro-v1": {
+        "primary": LLMProvider.GROQ,
+        "fallback_chain": [LLMProvider.GROQ, LLMProvider.CEREBRAS, LLMProvider.OPENROUTER],
+        "description": "Orchestrator agent — complex coordination"
+    },
+}
 
 
 class AllProvidersFailedError(Exception):
@@ -162,6 +208,90 @@ class LLMEngine:
             prompt, system_prompt, max_tokens, temperature, timeout
         )
 
+    def get_ai_response_with_profile(
+        self,
+        prompt: str,
+        profile_name: str = None,
+        system_prompt: str = "",
+        response_format: str = "text",
+        max_tokens: int = 4000,
+        temperature: float = 0.7,
+        timeout: int = 30,
+        synonyms: Optional[Dict[str, str]] = None,
+        list_keys: Optional[set] = None,
+        required_keys: Optional[set] = None,
+        max_json_retries: int = 1,
+    ) -> Union[Dict, str]:
+        """
+        Get AI response using a Hermes-managed profile for provider selection.
+        Falls back to task-tier routing if profile_name is None.
+
+        Args:
+            prompt: User message/query
+            profile_name: Agent profile name (e.g., "taty-v1", "centinela-v1")
+                         If None, uses default task-tier routing
+            system_prompt: System message for model context
+            response_format: "json" or "text"
+            max_tokens: Maximum tokens in response
+            temperature: Sampling temperature (0-1)
+            timeout: Request timeout in seconds
+            synonyms: Optional alias map for JSON parsing
+            list_keys: Optional set of keys whose values must be lists
+            required_keys: Optional set of required keys
+            max_json_retries: JSON retry count
+
+        Returns:
+            Dict if response_format="json", str if response_format="text"
+
+        Raises:
+            AllProvidersFailedError: If all providers in fallback chain fail
+        """
+
+        if profile_name and profile_name in PROFILE_CONFIGS:
+            # Use profile-based fallback chain
+            profile = PROFILE_CONFIGS[profile_name]
+            fallback_chain = profile.get("fallback_chain", self.provider_order)
+            logger.info(f"Using profile '{profile_name}' with fallback chain: {[p.value for p in fallback_chain]}")
+
+            if response_format == "json":
+                return self._get_json_with_retry_custom_order(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    timeout=timeout,
+                    provider_order=fallback_chain,
+                    synonyms=synonyms or {},
+                    list_keys=list_keys or set(),
+                    required_keys=required_keys or set(),
+                    max_retries=max_json_retries,
+                )
+            else:
+                return self._call_with_failover_custom_order(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    timeout=timeout,
+                    provider_order=fallback_chain,
+                )
+        else:
+            # Fall back to default task-tier routing (backward compatibility)
+            if profile_name:
+                logger.warning(f"Profile '{profile_name}' not found. Using default routing.")
+            return self.get_ai_response(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                response_format=response_format,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                timeout=timeout,
+                synonyms=synonyms,
+                list_keys=list_keys,
+                required_keys=required_keys,
+                max_json_retries=max_json_retries,
+            )
+
     def _get_json_with_retry(
         self,
         prompt: str,
@@ -209,6 +339,104 @@ class LLMEngine:
                 )
 
         return parsed  # Return last (possibly fallback) parsed result
+
+    def _call_with_failover_custom_order(
+        self,
+        prompt: str,
+        system_prompt: str,
+        max_tokens: int,
+        temperature: float,
+        timeout: int,
+        provider_order: list,
+    ) -> str:
+        """Run the provider failover loop with a custom provider order."""
+        errors_log = []
+
+        for provider in provider_order:
+            try:
+                logger.info(f"Attempting LLM request via {provider.value}")
+
+                if provider == LLMProvider.OPENROUTER_FREE:
+                    response = self._call_openrouter_free(
+                        prompt, system_prompt, max_tokens, temperature
+                    )
+                elif provider == LLMProvider.GROQ:
+                    response = self._call_groq(
+                        prompt, system_prompt, max_tokens, temperature
+                    )
+                elif provider == LLMProvider.CEREBRAS:
+                    response = self._call_cerebras(
+                        prompt, system_prompt, max_tokens, temperature
+                    )
+                elif provider == LLMProvider.MISTRAL:
+                    response = self._call_mistral(
+                        prompt, system_prompt, max_tokens, temperature
+                    )
+                elif provider == LLMProvider.GEMINI:
+                    response = self._call_gemini(
+                        prompt, system_prompt, max_tokens, temperature, timeout
+                    )
+                elif provider == LLMProvider.OPENROUTER:
+                    response = self._call_openrouter(
+                        prompt, system_prompt, max_tokens, temperature
+                    )
+                else:
+                    continue
+
+                logger.info(f"[OK] Success with {provider.value}")
+                return response
+
+            except (RateLimitError, APIError, APIConnectionError, requests.RequestException, TimeoutError) as e:
+                error_msg = f"{provider.value}: {str(e)}"
+                errors_log.append(error_msg)
+                logger.warning(f"Provider {provider.value} failed: {str(e)}, trying next...")
+                continue
+            except Exception as e:
+                error_msg = f"{provider.value}: {str(e)}"
+                errors_log.append(error_msg)
+                logger.warning(f"Unexpected error with {provider.value}: {str(e)}")
+                continue
+
+        # All providers exhausted
+        error_summary = "\n".join(errors_log)
+        logger.error(f"All LLM providers failed:\n{error_summary}")
+        raise AllProvidersFailedError(f"All LLM providers exhausted. Errors:\n{error_summary}")
+
+    def _get_json_with_retry_custom_order(
+        self,
+        prompt: str,
+        system_prompt: str,
+        max_tokens: int,
+        temperature: float,
+        timeout: int,
+        provider_order: list,
+        synonyms: Dict[str, str],
+        list_keys: set,
+        required_keys: set,
+        max_retries: int,
+    ) -> Dict:
+        """Get JSON response with custom provider order, retrying on parse failure."""
+        for attempt in range(max_retries + 1):
+            raw_response = self._call_with_failover_custom_order(
+                prompt, system_prompt, max_tokens, temperature, timeout, provider_order
+            )
+            parsed, is_valid = self._parse_llm_response(
+                raw_response, synonyms, list_keys, required_keys
+            )
+
+            if is_valid:
+                return parsed
+
+            if attempt < max_retries:
+                error_context = f"Previous parse error. Raw: {raw_response[:200]}"
+                prompt = f"{prompt}\n\n[PARSE ERROR - Retry {attempt + 1}]: {error_context}\nPlease fix format."
+                logger.warning(f"JSON parse failed (attempt {attempt + 1}), retrying...")
+            else:
+                logger.error(f"JSON parse failed after {max_retries + 1} attempts")
+                parsed["parsing_error"] = True
+                return parsed
+
+        return parsed
 
     @staticmethod
     def _validate_required(parsed: Dict, required_keys: set) -> tuple:
