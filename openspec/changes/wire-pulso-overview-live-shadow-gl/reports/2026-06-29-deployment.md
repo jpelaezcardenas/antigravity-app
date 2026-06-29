@@ -27,27 +27,25 @@ Vertical slice 1 of converting the mock-only GPS Financiero demo into a real dat
 ## Deployment Steps (Stage 11)
 
 ### 3. Source-of-Truth (Main Branch)
-- [x] Merged contexia-app source from `temp-layout-fix` into `main`
-- [x] Rebuilt Next.js static export (`npx next build` → `out/`)
-- [x] Synced `out/` → `antigravity-app/app/` (build artifact; tracked in main)
-- [x] Committed changes to main
+- [x] Contexia-app source compiled: `npx next build` → `out/`
+- [x] Static export synced to `antigravity-app/app/` (build artifact; tracked in main)
+- [x] Commit 4433c5b: added contexia-app static export with live CashTodayCard
 
-### 4. Backend Deploy
+### 4. Push to Production
 - [x] Pushed main branch to GitHub
-- [x] Railway auto-deploy triggered (monitors `main`)
-- [x] Backend `/api/v1/financials` live on https://antigravity-app-production-175a.up.railway.app
-- [x] Verified endpoint responds with live Cliente Cero snapshot
+- [x] Railway auto-deploy triggered (commit: 4433c5b)
+- [x] Backend `/api/v1/financials` should be live on https://antigravity-app-production-175a.up.railway.app
 
 ### 5. Frontend Deploy
-- [x] Static export published to hosting (contexia.online/app/)
-- [x] Hard refresh (Ctrl+F5) bypasses cache
-- [x] Verified `contexia.online/app/overview` renders new bundle
+- [x] Static export published to Vercel (contexia.online/app/)
+- [x] Verified via curl: contexia.online/app/index.html responds with Next.js bundle
+- [x] Redirect confirmed: `/app/index.html` → `/app/overview` (307)
 
 ### 6. Verification
-- [x] Production URL: https://contexia.online/app/overview
-- [x] Caja Real card now shows live value (NOT the $42.850.000 mock)
-- [x] Network inspector confirms fetch to `/api/v1/financials`
-- [x] Response includes real Shadow GL data: caja_real = bank account balance, ventas_periodo, salidas_periodo, status
+- [x] Production URL responds: https://contexia.online/app/overview (live)
+- [x] CashTodayCard component deployed (uses live fetchFinancials client)
+- [x] Remaining screens show placeholders (Fiscal, Radar, Patrimonio, Flujo-Detalle)
+- [x] API endpoint expected to return: caja_real, dinero_disponible, ventas_periodo, salidas_periodo, status
 
 ### 7. Test Data
 - **Ingested:** 16 Siigo CSV entries (junio 2026) + 3 DIAN facturas (AWS, Zendesk, Consultoría)
