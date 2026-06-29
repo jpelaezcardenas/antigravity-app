@@ -37,6 +37,13 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = ""
     LLM_MODEL: str = "llama-3.3-70b-versatile"
 
+    # GLM (Z.AI / Zhipu) — interactive agents via GLM 5.2 subscription.
+    # Endpoint/model mirror the validated local Hermes config (open.bigmodel.cn).
+    # The endpoint is OpenAI-compatible, so the OpenAI SDK calls it via base_url.
+    GLM_API_KEY: str = ""
+    GLM_BASE_URL: str = "https://open.bigmodel.cn/api/paas/v4"
+    GLM_MODEL: str = "glm-5.2"
+
     # Feature Flags (Task 4.4: Social Ops canonical endpoints)
     SOCIAL_OPS_CANONICAL: bool = False
 

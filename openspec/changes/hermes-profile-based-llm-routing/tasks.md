@@ -57,9 +57,43 @@ pytest apps/backend/tests/test_profile_support.py -v
 # Expected: All tests pass ✓
 ```
 
+### 1.4 Real GLM 5.2 Provider — Mitad A (✅ COMPLETE 2026-06-29)
+
+Corrects the mock (all profiles were Groq). See proposal "Reality Correction".
+
+- [x] Add `LLMProvider.GLM` enum member
+- [x] Add `GLM_API_KEY` / `GLM_BASE_URL` / `GLM_MODEL=glm-5.2` to `config.py`
+- [x] Init GLM client (OpenAI SDK → `open.bigmodel.cn`, OpenAI-compatible)
+- [x] Implement `_call_glm()`
+- [x] Wire GLM into both failover loops (default + custom-order)
+- [x] Interactive profiles (taty/radar/auditoria/maestro) → primary GLM, Groq fallback
+- [x] Batch profiles (centinela/pulso/social-ops/kb) → stay on Groq (Ollama lands in Mitad B)
+- [x] Tests: `TestGLMRouting` (taty dispatches `_call_glm`; interactive=GLM; batch=Groq)
+
+**Files Modified:**
+- `apps/backend/config.py`
+- `apps/backend/agents/llm_engine.py`
+- `apps/backend/tests/test_profile_support.py`
+
+**Verification:**
+```bash
+pytest apps/backend/tests/test_profile_support.py -v
+# 11 passed (incl. 4 GLM tests)
+```
+
+**Known pre-existing failure (not introduced here):**
+`test_model_selector_cloud_only::test_no_ollama_in_provider_enum` asserts `OLLAMA`
+must not exist. `OLLAMA` predates this change and is intentionally retained for Mitad B.
+
 ---
 
-## Stage 2. Hermes Configuration (⏳ MANUAL)
+## Stage 2. Hermes Configuration (❌ SUPERSEDED — see Reality Correction)
+
+> Original plan put Hermes Gateway in front of antigravity-app injecting `X-Hermes-Profile`.
+> This is impossible: Railway (cloud) cannot reach local-only Hermes. Profiles are now
+> selected in-process; GLM is reached directly via its cloud API. This stage is dropped.
+
+## Stage 2 (legacy). Hermes Configuration (⏳ MANUAL — moved to Mitad B)
 
 ### 2.1 Create Profiles in Hermes
 - [ ] Open Hermes Dashboard: http://localhost:9119
@@ -146,13 +180,17 @@ curl -X POST http://localhost:8642/api/v1/agents/ask \
 ## Stage 11. Deploy to Production (MANDATORY - CLOSES THE LOOP)
 
 **Reference:** `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
+**Railway:** project `elegant-success` / service `antigravity-app` / env `production`. Deploys from `main` (verified via deployment meta). Root dir `/apps/backend`, Dockerfile build.
+
+### 11.0 Railway Env Var (✅ DONE 2026-06-29 via Railway MCP)
+- [x] Set `GLM_API_KEY` (Z.AI subscription key) on the production service (`skip_deploys=true`)
+- Defaults for `GLM_BASE_URL` (`open.bigmodel.cn/api/paas/v4`) and `GLM_MODEL` (`glm-5.2`) come from `config.py`; override in Railway only if Z.AI rotates them.
 
 ### 11.1 Git Commit & Push
 - [ ] Stage changes:
   ```bash
+  git add apps/backend/config.py
   git add apps/backend/agents/llm_engine.py
-  git add apps/backend/services/taty_service.py
-  git add apps/backend/services/social_ops_service.py
   git add apps/backend/tests/test_profile_support.py
   git add openspec/changes/hermes-profile-based-llm-routing/
   ```

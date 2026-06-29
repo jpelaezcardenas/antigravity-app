@@ -44,49 +44,55 @@ class LLMProvider(Enum):
     GEMINI = "gemini"
     OPENROUTER = "openrouter"
     OLLAMA = "ollama"
+    GLM = "glm"  # Z.AI / Zhipu GLM 5.2 (subscription) — interactive agents
 
 
 # Profile Configurations: Maps profile_name → [primary_provider, fallback_chain]
+# Hybrid routing (Mitad A — Railway/cloud):
+#   Interactive agents (taty/radar/auditoria/maestro) → GLM 5.2 primary (subscription),
+#   Groq as first fallback. Batch agents (centinela/pulso/social-ops/kb) stay on Groq;
+#   they move to local Ollama on the on-prem worker in Mitad B.
+# Every chain keeps Groq as a reachable fallback so a GLM outage never drops a request.
 PROFILE_CONFIGS = {
     "taty-v1": {
-        "primary": LLMProvider.GROQ,
-        "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER, LLMProvider.CEREBRAS],
-        "description": "Fiscal advisor — uses GLM 5.2 equivalent (Groq) for interactive <2s responses"
+        "primary": LLMProvider.GLM,
+        "fallback_chain": [LLMProvider.GLM, LLMProvider.GROQ, LLMProvider.OPENROUTER],
+        "description": "Fiscal advisor — GLM 5.2 (subscription) for interactive <2s; Groq fallback"
     },
     "centinela-v1": {
         "primary": LLMProvider.GROQ,
         "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER_FREE],
-        "description": "Financial monitoring agent — batch processing, ~25s acceptable"
+        "description": "Financial monitoring agent — batch processing, ~25s acceptable (local Ollama in Mitad B)"
     },
     "pulso-v1": {
         "primary": LLMProvider.GROQ,
         "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER_FREE],
-        "description": "Daily cash flow — nightly batch, ~85s acceptable"
+        "description": "Daily cash flow — nightly batch, ~85s acceptable (local Ollama in Mitad B)"
     },
     "radar-v1": {
-        "primary": LLMProvider.GROQ,
-        "fallback_chain": [LLMProvider.GROQ, LLMProvider.CEREBRAS, LLMProvider.OPENROUTER],
-        "description": "Predictive analytics — accuracy critical"
+        "primary": LLMProvider.GLM,
+        "fallback_chain": [LLMProvider.GLM, LLMProvider.GROQ, LLMProvider.CEREBRAS],
+        "description": "Predictive analytics — accuracy critical; GLM 5.2 primary, Groq fallback"
     },
     "auditoria-v1": {
-        "primary": LLMProvider.GROQ,
-        "fallback_chain": [LLMProvider.GROQ, LLMProvider.CEREBRAS],
-        "description": "Compliance auditing — regulatory, never risk quality"
+        "primary": LLMProvider.GLM,
+        "fallback_chain": [LLMProvider.GLM, LLMProvider.GROQ, LLMProvider.CEREBRAS],
+        "description": "Compliance auditing — regulatory, never risk quality; GLM 5.2 primary"
     },
     "social-ops-v1": {
         "primary": LLMProvider.GROQ,
         "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER_FREE],
-        "description": "Social content generation — batch mode"
+        "description": "Social content generation — batch mode (local Ollama in Mitad B)"
     },
     "kb-v1": {
         "primary": LLMProvider.GROQ,
         "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER_FREE],
-        "description": "Knowledge base RAG — simple formatting"
+        "description": "Knowledge base RAG — simple formatting (local Ollama in Mitad B)"
     },
     "maestro-v1": {
-        "primary": LLMProvider.GROQ,
-        "fallback_chain": [LLMProvider.GROQ, LLMProvider.CEREBRAS, LLMProvider.OPENROUTER],
-        "description": "Orchestrator agent — complex coordination"
+        "primary": LLMProvider.GLM,
+        "fallback_chain": [LLMProvider.GLM, LLMProvider.GROQ, LLMProvider.CEREBRAS],
+        "description": "Orchestrator agent — complex coordination; GLM 5.2 primary, Groq fallback"
     },
 }
 
@@ -109,6 +115,7 @@ class LLMEngine:
         self.groq_client = None
         self.openai_client = None
         self.mistral_client = None
+        self.glm_client = None
         self.gemini_api_key = None
         self.openrouter_api_key = None
         self.openrouter_free_api_key = None
@@ -149,6 +156,16 @@ class LLMEngine:
             )
         else:
             self.mistral_client = None
+
+        # GLM (Z.AI / Zhipu) — OpenAI-compatible endpoint, GLM 5.2 subscription.
+        glm_key = settings.GLM_API_KEY
+        if glm_key and OpenAI:
+            self.glm_client = OpenAI(
+                api_key=glm_key,
+                base_url=settings.GLM_BASE_URL,
+            )
+        else:
+            self.glm_client = None
 
         self.gemini_api_key = settings.GEMINI_API_KEY
         self.openrouter_api_key = settings.OPENROUTER_API_KEY
@@ -360,6 +377,10 @@ class LLMEngine:
                     response = self._call_openrouter_free(
                         prompt, system_prompt, max_tokens, temperature
                     )
+                elif provider == LLMProvider.GLM:
+                    response = self._call_glm(
+                        prompt, system_prompt, max_tokens, temperature
+                    )
                 elif provider == LLMProvider.GROQ:
                     response = self._call_groq(
                         prompt, system_prompt, max_tokens, temperature
@@ -465,6 +486,10 @@ class LLMEngine:
                     response = self._call_openrouter_free(
                         prompt, system_prompt, max_tokens, temperature
                     )
+                elif provider == LLMProvider.GLM:
+                    response = self._call_glm(
+                        prompt, system_prompt, max_tokens, temperature
+                    )
                 elif provider == LLMProvider.GROQ:
                     response = self._call_groq(
                         prompt, system_prompt, max_tokens, temperature
@@ -536,6 +561,22 @@ class LLMEngine:
 
         response = self.groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": system_prompt or "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=max_tokens,
+            temperature=temp,
+        )
+        return response.choices[0].message.content
+
+    def _call_glm(self, prompt: str, system_prompt: str, max_tokens: int, temp: float) -> str:
+        """Call GLM (Z.AI / Zhipu) — OpenAI-compatible endpoint, GLM 5.2 subscription."""
+        if not self.glm_client:
+            raise ValueError("GLM client not initialized (GLM_API_KEY not configured)")
+
+        response = self.glm_client.chat.completions.create(
+            model=settings.GLM_MODEL,
             messages=[
                 {"role": "system", "content": system_prompt or "You are a helpful assistant."},
                 {"role": "user", "content": prompt}

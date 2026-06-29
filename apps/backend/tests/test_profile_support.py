@@ -93,5 +93,48 @@ class TestGetAiResponseWithProfile:
             assert LLMProvider.GROQ in fallback, f"Profile {profile_name} missing Groq in fallback chain"
 
 
+class TestGLMRouting:
+    """Test that GLM 5.2 (subscription) is the primary for interactive agents."""
+
+    INTERACTIVE_PROFILES = {"taty-v1", "radar-v1", "auditoria-v1", "maestro-v1"}
+    BATCH_PROFILES = {"centinela-v1", "pulso-v1", "social-ops-v1", "kb-v1"}
+
+    @pytest.fixture
+    def engine(self):
+        return LLMEngine()
+
+    def test_interactive_profiles_use_glm_primary(self):
+        """Interactive agents must route to GLM 5.2 first, not Groq."""
+        for profile_name in self.INTERACTIVE_PROFILES:
+            primary = PROFILE_CONFIGS[profile_name]["primary"]
+            assert primary == LLMProvider.GLM, (
+                f"Interactive profile {profile_name} should use GLM primary, got {primary}"
+            )
+
+    def test_interactive_profiles_fallback_to_groq(self):
+        """GLM-primary profiles must keep Groq reachable so a GLM outage never drops a request."""
+        for profile_name in self.INTERACTIVE_PROFILES:
+            chain = PROFILE_CONFIGS[profile_name]["fallback_chain"]
+            assert chain[0] == LLMProvider.GLM, f"{profile_name} should try GLM first"
+            assert LLMProvider.GROQ in chain, f"{profile_name} must keep Groq as fallback"
+
+    def test_batch_profiles_stay_on_groq(self):
+        """Batch agents stay on Groq until local Ollama lands in Mitad B."""
+        for profile_name in self.BATCH_PROFILES:
+            assert PROFILE_CONFIGS[profile_name]["primary"] == LLMProvider.GROQ
+
+    def test_taty_invokes_glm_call(self, engine):
+        """taty-v1 must dispatch to _call_glm, exercising the GLM subscription."""
+        with patch.object(engine, "_call_glm", return_value="glm answer") as mock_glm:
+            engine.glm_client = MagicMock()  # pretend GLM is configured
+            result = engine.get_ai_response_with_profile(
+                prompt="¿Cuál es el UVT 2026?",
+                profile_name="taty-v1",
+                response_format="text",
+            )
+            mock_glm.assert_called_once()
+            assert result == "glm answer"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

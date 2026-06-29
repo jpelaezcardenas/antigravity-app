@@ -136,3 +136,40 @@ By implementing Hermes profile-based routing:
 - **antigravity-app Repo:** `https://github.com/jpelaezcardenas/antigravity-app`
 - **Ground Truth:** Base-de-conocimientos-Contexia-v2.docx.md
 - **Nominal APM Analysis:** Contexia APM architecture reference
+
+---
+
+## ⚠️ Reality Correction (2026-06-29) — supersedes the architecture above
+
+Deep debugging of the deployed code revealed the original design was **not implemented as documented**, and parts of it are **architecturally impossible** for the current deployment topology. This section is now the source of truth.
+
+### What was actually deployed (the mock)
+
+- `PROFILE_CONFIGS` defined 8 profiles but **all 8 used `LLMProvider.GROQ` as primary**. The `X-Hermes-Profile` header only selected between cosmetically-different orderings of the **same** cloud providers.
+- **GLM 5.2 was never wired**: no `GLM` enum member, no `_call_glm()`, no `GLM_API_KEY`. The code comment literally said `"GLM 5.2 equivalent (Groq)"`. The paid Z.AI subscription was touched by zero code paths.
+- **Local models were never wired**: `LLMProvider.OLLAMA` existed but had no `_call_ollama()` and no profile referenced it.
+
+### Why "Hermes Gateway in front" (original Stage 2/3) is impossible here
+
+- antigravity-app runs on **Railway (cloud)**; Hermes is **local-only** (data-sovereignty rule). A cloud container cannot reach `localhost:8642`. Routing the cloud LLM calls **through** Hermes would require a public tunnel that breaks data sovereignty and adds a single point of failure (laptop off = prod down).
+- The only real Hermes integration (`core/hermes_client.py`) is the **approval-queue WebSocket (HITL)**, unrelated to LLM routing, and also points at `127.0.0.1:8642`.
+
+### Corrected architecture — Hybrid (user decision, 2026-06-29)
+
+**Mitad A — Railway / cloud (this change, now real):**
+- Real `GLM` provider cabled into `llm_engine.py` (`_call_glm` → `open.bigmodel.cn`, OpenAI-compatible, model `glm-5.2`).
+- `GLM_API_KEY` / `GLM_BASE_URL` / `GLM_MODEL` added to `config.py`; `GLM_API_KEY` set in Railway via MCP.
+- Interactive profiles (`taty-v1`, `radar-v1`, `auditoria-v1`, `maestro-v1`) → **primary GLM 5.2**, Groq as first fallback.
+- Batch profiles (`centinela-v1`, `pulso-v1`, `social-ops-v1`, `kb-v1`) → stay on Groq for now.
+- **No Hermes in the cloud LLM path.** Profiles are selected in-process; GLM is reached directly via its cloud API.
+
+**Mitad B — on-prem worker (future change):**
+- Batch agents move to a local/on-prem worker that *can* use Ollama (free) + Hermes. This is where local models and Hermes-as-router actually become viable.
+
+### Corrected cost expectation
+
+The "$337 → $120 (64%) via free local models" figure is **only achievable in Mitad B** (local worker). On Railway today, the real, compatible saving is GLM 5.2 subscription replacing per-token cloud spend for interactive agents — a smaller but real reduction.
+
+### Corrected scope of THIS change
+
+This change now delivers **Mitad A only**: real GLM 5.2 routing for interactive agents on Railway, with Groq fallback. The original Stage 2 (Hermes profile tabs) and Stage 3 (Hermes Gateway → antigravity-app header injection) are **superseded** and removed from scope.
