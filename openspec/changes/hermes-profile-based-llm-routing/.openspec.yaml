@@ -28,7 +28,9 @@ components:
   - design.md: Technical design
   - tasks.md: Stage 11 deployment tasks
 
-deployed: false
-deployed_date: null
-deployment_verified: false
-deployment_report_path: null
+deployed: true
+deployed_date: 2026-06-28
+deployment_verified: true
+deployment_report_path: reports/2026-06-28-deployment.md
+deployment_status: production-active
+deployment_commit: 8f211fd
