@@ -1,104 +1,48 @@
-from fastapi import APIRouter, HTTPException, Query
-from infrastructure.supabase_client import supabase_client
+from fastapi import APIRouter, HTTPException
 from datetime import datetime
+from services.financials_service import compute_pulso_snapshot
+from core.supabase_client import get_supabase
 
 router = APIRouter()
 
 
-@router.get("")
-async def get_financials(
-    company_id: str = Query(
-        default="a0a0a0a0-a0a0-a0a0-a0a0-a0a0a0a0a0a0",
-        description="Company UUID (default: Contexia client zero)"
+async def _resolve_cliente_cero_tenant_id() -> str:
+    """Resolve the Cliente Cero tenant ID from Supabase."""
+    supabase = get_supabase()
+    result = (
+        supabase.table("tenants")
+        .select("id")
+        .eq("is_cliente_cero", True)
+        .single()
+        .execute()
     )
-):
+    return result.data["id"]
+
+
+@router.get("")
+async def get_financials():
     """
     GET /api/v1/financials
 
-    Returns current financial snapshot for a company from company_financials table.
+    Returns current financial snapshot for Cliente Cero from Shadow GL aggregation.
+    Tenant is resolved server-side; no company_id parameter required.
 
-    Response:
+    Response (all amounts in COP minor units — cents):
     {
-        "caja_real": 42850000,
-        "dinero_disponible": 38500000,
-        "ventas_ayer": 1250000,
-        "salidas_plata": 345000,
-        "iva_vencimiento_dias": 3,
+        "caja_real": 352000000,
+        "dinero_disponible": 352000000,
+        "ventas_periodo": 2980000000,
+        "salidas_periodo": 190000000,
         "status": "healthy"
     }
     """
     try:
-        response = supabase_client.table("company_financials") \
-            .select("*") \
-            .eq("company_id", company_id) \
-            .eq("date", datetime.now().date().isoformat()) \
-            .limit(1) \
-            .execute()
-
-        if not response.data:
-            raise HTTPException(
-                status_code=404,
-                detail="No financial data found for today"
-            )
-
-        financials = response.data[0]
-
-        return {
-            "caja_real": financials["caja_real"],
-            "dinero_disponible": financials["dinero_disponible"],
-            "ventas_ayer": financials["ventas_ayer"],
-            "salidas_plata": financials["salidas_plata"],
-            "iva_vencimiento_dias": financials["iva_vencimiento_dias"],
-            "status": financials["status"]
-        }
+        tenant_id = await _resolve_cliente_cero_tenant_id()
+        now = datetime.utcnow()
+        snapshot = compute_pulso_snapshot(tenant_id, now.year, now.month)
+        return snapshot
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Error fetching financial data: {str(e)}"
-        )
-
-
-@router.get("/pending-transactions")
-async def get_pending_transactions(
-    company_id: str = Query(
-        default="a0a0a0a0-a0a0-a0a0-a0a0-a0a0a0a0a0a0",
-        description="Company UUID (default: Contexia client zero)"
-    )
-):
-    """
-    GET /api/v1/pending-transactions
-
-    Returns list of unclassified transactions (pending status) for a company.
-
-    Response:
-    {
-        "count": 5,
-        "transactions": [
-            {
-                "id": 1,
-                "amount": 50000,
-                "description": "Transferencia Entrada",
-                "date": "2026-06-21",
-                "status": "pending"
-            },
-            ...
-        ]
-    }
-    """
-    try:
-        response = supabase_client.table("transactions_pending") \
-            .select("*") \
-            .eq("company_id", company_id) \
-            .eq("status", "pending") \
-            .order("date", desc=True) \
-            .execute()
-
-        return {
-            "count": len(response.data),
-            "transactions": response.data
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error fetching pending transactions: {str(e)}"
+            detail=f"Error computing financial snapshot: {str(e)}"
         )
