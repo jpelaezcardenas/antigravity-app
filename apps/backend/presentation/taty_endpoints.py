@@ -7,7 +7,7 @@ Exposes Taty fiscal advisor service to:
 - Future: WhatsApp, email, etc.
 """
 
-from fastapi import APIRouter, Query, HTTPException, status, Header
+from fastapi import APIRouter, Query, HTTPException, status, Header, Body
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import logging
@@ -102,7 +102,7 @@ class TatyAskResponse(BaseModel):
     description="Get fiscal advice from Taty contadora with RAG, failover LLM, and client-specific config."
 )
 async def ask_taty(
-    request: TatyAskRequest,
+    request: TatyAskRequest = Body(...),
     x_hermes_profile: Optional[str] = Header(None)
 ) -> TatyAskResponse:
     """
