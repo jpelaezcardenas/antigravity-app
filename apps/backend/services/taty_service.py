@@ -140,6 +140,7 @@ class TatyAgentService:
         channel: str = "dashboard",
         conversation_id: Optional[str] = None,
         user_id: Optional[str] = None,
+        hermes_profile: Optional[str] = None,
     ) -> Dict:
         """
         Answer a fiscal question with RAG, LLM, and client-specific config.
@@ -180,11 +181,13 @@ class TatyAgentService:
             masked_prompt, mask_map = Anonymizer.mask(prompt)
 
             # 5. Call LLM with failover (using profile-based routing)
-            logger.debug(f"Calling LLM for Taty question (masked)")
+            # Use Hermes profile if provided, otherwise default to taty-v1
+            profile_name = hermes_profile or "taty-v1"
+            logger.debug(f"Calling LLM for Taty question (masked) with profile={profile_name}")
             llm_engine = get_llm_engine()
             response = llm_engine.get_ai_response_with_profile(
                 prompt=masked_prompt,
-                profile_name="taty-v1",
+                profile_name=profile_name,
                 system_prompt=self._build_system_prompt(profile),
                 response_format="text",
                 max_tokens=2000,

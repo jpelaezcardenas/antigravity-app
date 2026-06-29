@@ -7,7 +7,7 @@ Exposes Taty fiscal advisor service to:
 - Future: WhatsApp, email, etc.
 """
 
-from fastapi import APIRouter, Query, HTTPException, status
+from fastapi import APIRouter, Query, HTTPException, status, Header
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import logging
@@ -101,7 +101,10 @@ class TatyAskResponse(BaseModel):
     summary="Ask Taty a fiscal question",
     description="Get fiscal advice from Taty contadora with RAG, failover LLM, and client-specific config."
 )
-async def ask_taty(request: TatyAskRequest) -> TatyAskResponse:
+async def ask_taty(
+    request: TatyAskRequest,
+    x_hermes_profile: Optional[str] = Header(None)
+) -> TatyAskResponse:
     """
     Ask Taty Contadora a fiscal question.
 
@@ -109,6 +112,9 @@ async def ask_taty(request: TatyAskRequest) -> TatyAskResponse:
     ```
     GET /api/v1/agents/taty/ask?company_id=ctx-001&question=¿Cuál es el UVT?
     ```
+
+    **Headers:**
+    - X-Hermes-Profile: Profile name (e.g., "taty-v1") for Hermes-based LLM routing
 
     **Behavior:**
     - Anonymizes PII before sending to LLM (SOSP rule)
@@ -129,18 +135,19 @@ async def ask_taty(request: TatyAskRequest) -> TatyAskResponse:
     Returns: TatyAskResponse with answer, citations, latency, confidence, escalation flag.
     """
     try:
-        logger.info(f"Taty.ask() from {request.channel}: company_id={request.company_id}")
+        logger.info(f"Taty.ask() from {request.channel}: company_id={request.company_id}, profile={x_hermes_profile}")
 
         # Get Taty service
         taty = get_taty_service()
 
-        # Call service
+        # Call service with optional profile from Hermes
         response = taty.ask(
             company_id=request.company_id,
             question=request.question,
             channel=request.channel,
             conversation_id=request.conversation_id,
             user_id=request.user_id,
+            hermes_profile=x_hermes_profile,
         )
 
         # Log successful call
