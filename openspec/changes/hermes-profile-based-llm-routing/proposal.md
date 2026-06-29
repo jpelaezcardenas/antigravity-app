@@ -141,7 +141,7 @@ By implementing Hermes profile-based routing:
 
 ## ⚠️ Reality Correction (2026-06-29) — supersedes the architecture above
 
-Deep debugging of the deployed code revealed the original design was **not implemented as documented**, and parts of it are **architecturally impossible** for the current deployment topology. This section is now the source of truth. (Updated 2026-06-29 after Railway redeploy with GLM_API_KEY.)
+Deep debugging of the deployed code revealed the original design was **not implemented as documented**, and parts of it are **architecturally impossible** for the current deployment topology. This section is now the source of truth.
 
 ### What was actually deployed (the mock)
 
