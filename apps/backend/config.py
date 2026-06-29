@@ -81,11 +81,6 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Diagnostic logging for LLM provider configuration (helps debug missing env vars)
-logger.info(f"[LLM Config] GLM_API_KEY loaded: {'✓ configured' if settings.GLM_API_KEY else '✗ empty (will use fallback)'}")
-logger.info(f"[LLM Config] GLM_BASE_URL: {settings.GLM_BASE_URL}")
-logger.info(f"[LLM Config] GLM_MODEL: {settings.GLM_MODEL}")
-
 # Generate a random JWT_SECRET for development if not set
 if settings.DEBUG and not settings.JWT_SECRET:
     settings.JWT_SECRET = secrets.token_urlsafe(32)

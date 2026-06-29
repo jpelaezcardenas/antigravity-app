@@ -160,18 +160,11 @@ class LLMEngine:
         # GLM (Z.AI / Zhipu) — OpenAI-compatible endpoint, GLM 5.2 subscription.
         glm_key = settings.GLM_API_KEY
         if glm_key and OpenAI:
-            try:
-                self.glm_client = OpenAI(
-                    api_key=glm_key,
-                    base_url=settings.GLM_BASE_URL,
-                )
-                logger.info("[LLMEngine] GLM client initialized successfully")
-            except Exception as e:
-                logger.error(f"[LLMEngine] Failed to initialize GLM client: {e}")
-                self.glm_client = None
+            self.glm_client = OpenAI(
+                api_key=glm_key,
+                base_url=settings.GLM_BASE_URL,
+            )
         else:
-            reason = "GLM_API_KEY empty" if not glm_key else "OpenAI module unavailable"
-            logger.warning(f"[LLMEngine] GLM client not initialized ({reason})")
             self.glm_client = None
 
         self.gemini_api_key = settings.GEMINI_API_KEY
