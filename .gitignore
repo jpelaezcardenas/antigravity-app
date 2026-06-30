@@ -89,8 +89,16 @@ test_login.py
 contexia-app/dev-server.log
 *.log
 
+# contexia-app: CANONICAL end-user PWA source is TRACKED. Ignore only build artifacts & deps.
+# (Do NOT re-add a broad `contexia-app/` ignore — that fragile rule caused the source to
+#  disappear from checkouts, which led to fabricated stub files. See CLAUDE.md.)
+contexia-app/node_modules/
+contexia-app/.next/
+contexia-app/out/
+contexia-app/*.tsbuildinfo
+contexia-app/next-env.d.ts
+
 # Retired local UI surfaces. Production login is root /login.html.
-contexia-app/
 contexia-wizard/app/login/
 contexia-wizard/app/dashboard/
 contexia-wizard/public/contexia-logo*.png
