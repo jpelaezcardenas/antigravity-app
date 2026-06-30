@@ -100,14 +100,20 @@ Las reglas para derivar `status`/mensajes/colores viven en cada componente o en 
 - Tipos del dominio: en [lib/types/contexia.ts](lib/types/contexia.ts).
 - Mocks: `pulsoMock`, `radarMock`, `fiscalMock`, etc. (camelCase, sufijo Mock).
 
-## PWA (fase 2, no iniciada)
+## PWA (activa)
 
-Slots reservados pero inertes:
-- `public/icons/` para iconos PWA
-- `app/manifest.ts` (Next 16 metadata route) para el manifest
-- Registro de service worker en `app/layout.tsx`
+El registro de service worker es código activo, no un slot inerte:
+- `public/sw.js` → copiado al export como `sw.js` (servido en `/sw.js`, scope raíz).
+- `app/layout.tsx` renderiza `<RegisterSW />` (`app/register-sw.tsx`) incondicionalmente, que llama
+  `registerServiceWorker()` (`lib/sw-register.ts`) en mount: `navigator.serviceWorker.register("/sw.js", { scope: "/" })`.
+- `app/manifest.ts` (Next 16 metadata route) genera el manifest.
+- `public/icons/` para iconos PWA.
 
-No tocar hasta que se active la fase PWA.
+**Regla dura — versionado obligatorio**: `public/sw.js` cachea bajo `CACHE_NAME = contexia-${CACHE_VERSION}`.
+**`CACHE_VERSION` debe bumpearse en cada build que cambie assets cacheados** (HTML shell o `/_next/static/`
+patterns). Un `CACHE_VERSION` fijo entre deploys causa que el SW sirva HTML/chunks viejos indefinidamente — esto
+ya causó un incidente de producción (ver `antigravity-app/CLAUDE.md` sección 9). El SW usa network-first para
+navegación/HTML y cache-first para assets estáticos, lo cual mitiga pero no reemplaza el bump de versión.
 
 ## No hacer
 
