@@ -4,12 +4,36 @@ Demo mock visual de la app Contexia. Stack: Next.js 16 App Router + React 19 + T
 
 ## Reglas duras
 
-- **Sin backend, sin fetch, sin auth, sin DB.** Todo es mock local tipado en `lib/mock/`.
+- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (hoy, solo Pulso/Overview → Caja Real) PUEDEN hacer fetch read-only de snapshots del backend Contexia (`/api/v1/*`). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
 - **Fuente de verdad visual**: el export de Stitch y los screenshots `screen.png` del ZIP `stitch_contexia_evolution_cfo_as_a_service`. No rediseñar pantallas que Stitch ya definió.
 - **Sin CDN**: nada de React/Tailwind/Babel por unpkg. Las únicas URLs externas son Google Fonts (Inter, JetBrains Mono, Material Symbols) cargadas desde [app/layout.tsx](app/layout.tsx).
 - **Sin librerías nuevas** salvo que sea estrictamente necesario. Stack mínimo.
 - **Tokens**: usar las clases generadas por `@theme` en [app/globals.css](app/globals.css) (`bg-surface-elevated`, `text-primary-container`, `px-container-margin-mobile`, etc.). No introducir colores ad-hoc.
 - **UTF-8 limpio**: sin mojibake ("operación" no "operaciÃ³n").
+
+## Pantallas data-bound
+
+`CashTodayCard` (Pulso/Overview) es la primera y única pantalla data-bound hoy.
+Es un `"use client"` componente que se autoabastece (no recibe props de datos):
+`useEffect` + `fetchFinancials()` (`lib/api-client.ts`) en mount, con estados
+`loading` / `error` / `empty` / `ready` explícitos en el render — nunca queda en
+blanco ni revienta si el backend no responde.
+
+- **API config**: `lib/config.ts` expone `API_BASE_URL` (default: Railway prod)
+  y `API_ENDPOINTS`.
+- **Cliente tipado**: `lib/api-client.ts` (`fetchFinancials()` + `FinancialsSnapshot`).
+- **Granularidad diaria — promesa de venta**: el backend (`GET /api/v1/financials`)
+  devuelve `caja_real` (balance acumulado a hoy), `ventas_ayer`/`gastos_ayer`
+  (exclusivamente el día anterior, NO un agregado mensual). No relabelees datos
+  mensuales como "de ayer" — si el backend no tiene la granularidad que el
+  componente promete, hay que arreglar el backend, no el texto.
+- **Unidades**: el backend devuelve COP en centavos (minor units); `formatCop`
+  espera COP completos — dividir entre 100 al mapear la respuesta.
+- **Mocks**: el resto de cards de Pulso (Health, Alerts, Note) y todas las demás
+  pantallas (Fiscal, Radar, Patrimonio, Flujo-detalle) siguen en mocks.
+
+Esto es una excepción escoped al charter "sin backend" — pantallas data-bound son
+un puente hacia el MVP data-driven; mocks aplican para todo lo demás.
 
 ## Reglas de interactividad (mock-first, pero viva)
 

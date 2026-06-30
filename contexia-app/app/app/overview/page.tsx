@@ -11,7 +11,7 @@ export default function OverviewPage() {
     <>
       <div className="px-container-margin-mobile md:px-container-margin-desktop flex flex-col gap-6 max-w-4xl mx-auto w-full mt-2">
         <NoteOfDayCard note={pulsoMock.note} />
-        <CashTodayCard cash={pulsoMock.cash} />
+        <CashTodayCard />
         <HealthQuadrant kpis={pulsoMock.health} />
         <StructuralBreakdownCTA />
         <ActiveAlerts alerts={pulsoMock.alerts} />
