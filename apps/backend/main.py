@@ -32,6 +32,7 @@ app = FastAPI(
 
 # 1. CORS — hardcoded to ensure all local dev ports are allowed
 cors_origins = [
+    "http://localhost:3001",  # contexia-app dev server (end-user PWA)
     "http://localhost:3002",  # Frontend dev server (Vite)
     "http://localhost:3000",  # Alternative frontend port
     "http://localhost:5173",  # Vite default port
