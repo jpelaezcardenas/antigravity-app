@@ -59,6 +59,8 @@ flowchart TB
 
 **Fuente canónica vs artefacto de build:** `contexia-app/` es la fuente de la PWA; la carpeta `app/` (raíz) es un **artefacto generado** (`npm run build` → sync `out/` → `app/`). **Nunca editar `app/` a mano.** (Ver CLAUDE.md §9.)
 
+> **EXCEPCIÓN VIGENTE (2026-06-30/07-01):** el cableado en vivo de Caja Real es un `<script>` insertado a mano en `app/overview.html` (commit `f91d9da`) y está EN PRODUCCIÓN. La UI completa del cliente solo existe como este export pre-construido — `contexia-app/` renderiza placeholders y NO puede reproducirla. **No regenerar `app/` desde `contexia-app/` ni revertir ese script** hasta reconciliar el source (follow-up durable); un rebuild+sync ciego borra la Caja Real en vivo. Detalle en CLAUDE.md §9.
+
 ## Flujo estrella — Caja Real diaria (la promesa de venta)
 
 ```
@@ -104,7 +106,7 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
 2. **Stage 11 (deploy a producción) es obligatorio** antes de archivar cualquier cambio OpenSpec.
 3. **Supabase + RLS** es la capa de datos; el sharding se difiere hasta que el volumen de Cliente Cero lo justifique (Supabase = Postgres, no hay migración pendiente).
 4. **Railway = FastAPI backend · Vercel = PWA.**
-5. **`contexia-app/` es la fuente canónica de la PWA; `app/` es artefacto de build** — nunca editar a mano.
+5. **`contexia-app/` es la fuente canónica de la PWA; `app/` es artefacto de build** — nunca editar a mano. **Excepción vigente:** el cableado en vivo de Caja Real vive como `<script>` hecho a mano en `app/overview.html` (en producción); no regenerar `app/` ni revertirlo hasta reconciliar el source (ver arriba + CLAUDE.md §9).
 6. **Reglas del incidente 2026-06-29**: nunca desactivar type-checking, nunca fabricar stubs/placeholders para pasar un build, versionar el service worker por deploy (network-first en navegación).
 7. **Routing LLM híbrido** GLM 5.2 interactivo + Groq fallback (los "8 perfiles Hermes" originales eran mock).
 8. **CORS**: env var = `ALLOWED_ORIGINS` (fix 2026-06-30).
