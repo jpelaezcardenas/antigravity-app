@@ -3,6 +3,22 @@ description: This document contains all development rules and guidelines for thi
 alwaysApply: true
 ---
 
+## 0. Canonical docs map (read first)
+
+This repo's living memory. These load every session — read them, and **correct them on sight** when reality drifts.
+
+@ARCHITECTURE.md
+@HARNESS.md
+
+- **Identity / legal / semantics** → `.antigravity/GROUND_TRUTH.md` (overrides everything on identity).
+- **Product architecture** → `ARCHITECTURE.md` (containers, data flow, Caja Real, settled decisions).
+- **How agents work here (harness + subagents)** → `HARNESS.md` (leader → implementer → reviewer; precedence over OpenSpec).
+- **Agent roster (9 agents)** → `AGENTES.md`.
+- **What we build now (deltas)** → `openspec/changes/<active>/` (the ONLY source of "what to do now").
+- **Ecosystem map (all repos)** → `../ARCHITECTURE.md`.
+
+**Living-doc rule:** if you add/remove/change a container or an external dependency, update `ARCHITECTURE.md` in the SAME OpenSpec change (see §7). Keep this map lean — it is always loaded.
+
 ## 1. Core Principles
 
 - **Small tasks, one at a time**: Always work in baby steps, one at a time. Never go forward more than one step.
@@ -23,14 +39,16 @@ alwaysApply: true
     - Git commit messages
     - Test names and descriptions
 
+  **Carve-out (2026-06-30):** founder-facing SUMMARIES (e.g. the top section of `ARCHITECTURE.md` / `HARNESS.md` written for Juan David) MAY be bilingual (ES/EN). Everything else — code, config, agent definitions, technical doc bodies — stays English-only. Do not "correct" an intentional bilingual founder summary back to English.
+
 ## 3. Specific standards
 
 For detailed standards and guidelines specific to different areas of the project, refer to:
 
-- [Backend Standards](./backend-standards.md) - API development, database patterns, testing, security and backend best practices
-- [Frontend Standards](./frontend-standards.md) - React components, UI/UX guidelines, and frontend architecture
-- [Documentation Standards](./documentation-standards.md) - Technical documentation structure, formatting, and maintenance guidelines, including AI standards like this document
-- [OpenSpec Tasks Mandatory Steps](./openspec-tasks-mandatory-steps.md) - Required checklist and execution rules when creating or updating OpenSpec `tasks.md` files
+- [Backend Standards](./docs/backend-standards.md) - API development, database patterns, testing, security and backend best practices
+- [Frontend Standards](./docs/frontend-standards.md) - React components, UI/UX guidelines, and frontend architecture
+- [Documentation Standards](./docs/documentation-standards.md) - Technical documentation structure, formatting, and maintenance guidelines, including AI standards like this document
+- [OpenSpec Tasks Mandatory Steps](./docs/openspec-tasks-mandatory-steps.md) - Required checklist and execution rules when creating or updating OpenSpec `tasks.md` files
 
 ## 4. Project Skills
 

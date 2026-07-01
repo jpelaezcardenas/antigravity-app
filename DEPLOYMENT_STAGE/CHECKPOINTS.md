@@ -67,6 +67,7 @@ Cada checkpoint es una regla binaria (✅ sí / ❌ no). Sin grises.
 - [ ] README actualizado si hay cambios de instalación
 - [ ] Comentarios en código para lógica no-trivial
 - [ ] Ningún TODO sin asignar o fecha
+- [ ] **Docs-sync (canon vivo):** si el cambio agregó/quitó/modificó un contenedor o dependencia externa → `ARCHITECTURE.md` actualizado en ESTE cambio; si hubo una decisión arquitectónica significativa → nueva línea en "Decisiones asentadas" de `ARCHITECTURE.md` (ver `HARNESS.md`)
 
 ### Database
 - [ ] Migrations están en `migrations/` o equivalente

@@ -19,6 +19,8 @@ context: |
   - Cliente Cero: Contexia is first production customer before externals
 
   KEY DOCUMENTS:
+  - ARCHITECTURE.md: Canonical product architecture (containers, data flow, Caja Real, settled decisions)
+  - HARNESS.md: How agents work here (leader → implementer → reviewer; harness precedence over OpenSpec execution)
   - AGENTES.md: Catalog of 9 agents (specs, endpoints, HITL rules)
   - CLAUDE.md: Engineering standards (baby steps, TDD, English only, OpenSpec mandatory)
   - DEPLOYMENT_STAGE/: Stage 11 workflow (docs → design → spec → tasks → apply → deploy → archive)
