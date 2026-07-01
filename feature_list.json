@@ -6,6 +6,12 @@
     "scope_source": "openspec/changes/<id>/tasks.md",
     "valid_status": ["pending", "in_progress", "done", "blocked"]
   },
-  "active": null,
-  "features": []
+  "active": "reconcile-contexia-app-source-live-pwa",
+  "features": [
+    {
+      "id": "reconcile-contexia-app-source-live-pwa",
+      "status": "pending",
+      "summary": "Reconcile contexia-app/ source so a rebuild reproduces the full client PWA WITH live Caja Real baked in; retire the hand-edited app/ script. Scope: openspec/changes/reconcile-contexia-app-source-live-pwa/tasks.md"
+    }
+  ]
 }
