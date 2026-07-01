@@ -1,5 +1,11 @@
 # Phase 7: Automated Approval Rules — Tasks & Implementation
 
+> **RECONCILIATION (2026-07-01):** Deployed to production (see `reports/2026-06-25-deployment.md`).
+> The 6 unchecked items are the Stage-11 DoD checklist (code reviewed, tests pass, migration
+> tested, Prometheus, rollback plan, monitoring dashboard). **Kept in active/ on purpose**:
+> verify + check off that DoD checklist, then archive. Not stale, not contradictory — just an
+> open definition-of-done.
+
 **Status:** Implementation Ready  
 **Total Stages:** 11 (Stages 1-10 + Stage 11 Deploy)  
 **Effort:** ~7 days  

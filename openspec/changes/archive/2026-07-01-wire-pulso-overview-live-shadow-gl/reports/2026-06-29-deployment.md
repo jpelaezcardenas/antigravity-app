@@ -2,7 +2,28 @@
 
 **Date:** 2026-06-29  
 **Change:** Wire Pulso Overview Caja Real to live Shadow GL financials  
-**Status:** DEPLOYED ✅
+**Status:** DEPLOYED ✅ (backend) — frontend delivery reconciled 2026-07-01, see note below
+
+> ## RECONCILIATION (2026-07-01)
+>
+> This report's **frontend** section below (commits `4433c5b`, and the "Frontend Deploy"
+> steps) is STALE and partly wrong. Commit `4433c5b` was the Haiku static export that
+> **degraded** the client PWA and was **reverted** (see `CLAUDE.md` §9 incident). The
+> actual outcome, verified live on 2026-07-01:
+> - **Backend capability `pulso-financials-api` — LIVE & CORRECT.** `GET /api/v1/financials`
+>   aggregates Shadow GL journal lines for Cliente Cero and returns real data
+>   (e.g. `caja_real: 352000000`, `gastos_ayer: 90000000`). This part shipped as designed.
+> - **Frontend capability `pulso-overview-live-data` — LIVE, but via a different path.** The
+>   full client PWA was restored (commit `b6fcb81`) and the live Caja Real fetch was
+>   re-applied as a client-side script in `app/overview.html` (commit `f91d9da`) after the
+>   `4433c5b` regression. The Caja Real card on `contexia.online/app/overview` shows live
+>   `/api/v1/financials` data today.
+> - **Durability follow-up** (make `app/` regenerable from `contexia-app/` WITH the wiring
+>   baked in, retiring the hand-edit) is tracked by the active change
+>   **`reconcile-contexia-app-source-live-pwa`**.
+>
+> Both capabilities are satisfied in production, so this change is archived; the task
+> checkboxes were never updated (tracking drift), not a sign the work is undone.
 
 ## Summary
 

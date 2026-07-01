@@ -1,5 +1,11 @@
 # Tasks: Hermes Multi-Tenant Wrapper (MVP → Production)
 
+> **RECONCILIATION (2026-07-01):** Legitimately still IN-PROGRESS — planned window Jun 23 → Jul 25
+> and today is Jul 1. Phase 1 shipped (see `reports/`, incl. production-deployment), but the
+> per-task checkboxes were never updated (tracking drift), so it shows 0/20. **Kept in active/
+> on purpose** — this is a real multi-phase, security-sensitive change still within its window.
+> Update the checkboxes as phases land; do NOT archive until Phase 6 (deploy) is truly closed.
+
 **Timeline:** 32 days (Jun 23 → Jul 25, 2026)  
 **Scope:** Non-invasive multi-tenant isolation (JWT middleware + RLS policies + Hermes integration)  
 **Phases:** 1A (middleware) → 1B (schema) → 1C (Hermes JWT) → 1D (E2E) → 2 (SyncManager prep) → 3 (hardening) → 6 (deploy)
