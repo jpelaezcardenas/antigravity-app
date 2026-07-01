@@ -1,0 +1,24 @@
+{
+  "_README": "OPT-IN harness hooks for antigravity-app. NOT active by default (it would widen permissions and add a Stop hook). To enable: merge the 'hooks' and 'permissions' blocks below into .claude/settings.json (or .claude/settings.local.json) yourself, so you consciously approve the permission widening. See HARNESS.md § 'Activar los hooks (opcional)'.",
+  "_design_note": "On a large polyglot repo, the Stop hook runs only the FAST structural gate (init.sh), non-blocking/informative — NOT the full test suite. Full backend tests run via RUN_TESTS=1 or the reviewer/CI per OpenSpec change.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash init.sh > /tmp/harness_init.log 2>&1 && echo '[harness] init.sh OK' || (echo '[harness] init.sh reported issues — see /tmp/harness_init.log' && tail -20 /tmp/harness_init.log)",
+            "description": "Before ending a session, run the harness structural gate (non-blocking, informative)."
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(bash init.sh)",
+      "Bash(./init.sh)",
+      "Bash(RUN_TESTS=1 bash init.sh)"
+    ]
+  }
+}

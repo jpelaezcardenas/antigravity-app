@@ -108,7 +108,11 @@ Social Media OPs Systems/
 
 
 # Local agent state & worktrees (not for deploy) — added 2026-06-15
-.claude/
+# Use .claude/* (not .claude/) so specific children can be re-included below.
+.claude/*
+# Exception: the subagent harness IS part of the system and must be versioned/shared (2026-06-30)
+!.claude/agents/
+!.claude/agents/**
 .cursor/
 .codex/
 venv_contexia/

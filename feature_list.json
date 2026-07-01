@@ -1,0 +1,11 @@
+{
+  "project": "antigravity-app",
+  "description": "Thin execution pointer to the ACTIVE OpenSpec change. This file does NOT define scope — openspec/changes/<active>/tasks.md is the authoritative task list. It only enforces the one-change-at-a-time invariant for the harness (init.sh rejects >1 in_progress).",
+  "rules": {
+    "one_change_at_a_time": true,
+    "scope_source": "openspec/changes/<id>/tasks.md",
+    "valid_status": ["pending", "in_progress", "done", "blocked"]
+  },
+  "active": null,
+  "features": []
+}
