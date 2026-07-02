@@ -16,25 +16,25 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#2DD4BF",
     icons: [
       {
-        src: "/icons/icon-192x192.png",
+        src: "/icons/icon-192x192.png?v=2026070204",
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icons/icon-192x192-maskable.png",
+        src: "/icons/icon-192x192-maskable.png?v=2026070204",
         sizes: "192x192",
         type: "image/png",
         purpose: "maskable",
       },
       {
-        src: "/icons/icon-512x512.png",
+        src: "/icons/icon-512x512.png?v=2026070204",
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icons/icon-512x512-maskable.png",
+        src: "/icons/icon-512x512-maskable.png?v=2026070204",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
@@ -63,7 +63,7 @@ export default function manifest(): MetadataRoute.Manifest {
         url: "/app/overview",
         icons: [
           {
-            src: "/icons/icon-192x192.png",
+            src: "/icons/icon-192x192.png?v=2026070204",
             sizes: "192x192",
             type: "image/png",
           },
@@ -76,7 +76,7 @@ export default function manifest(): MetadataRoute.Manifest {
         url: "/app/fiscal",
         icons: [
           {
-            src: "/icons/icon-192x192.png",
+            src: "/icons/icon-192x192.png?v=2026070204",
             sizes: "192x192",
             type: "image/png",
           },
@@ -89,7 +89,7 @@ export default function manifest(): MetadataRoute.Manifest {
         url: "/app/radar",
         icons: [
           {
-            src: "/icons/icon-192x192.png",
+            src: "/icons/icon-192x192.png?v=2026070204",
             sizes: "192x192",
             type: "image/png",
           },

@@ -94,6 +94,30 @@
                 { "key": "CDN-Cache-Control", "value": "no-store" },
                 { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
             ]
+        },
+        {
+            "source": "/icons/:path*",
+            "headers": [
+                { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" },
+                { "key": "CDN-Cache-Control", "value": "max-age=300, must-revalidate" },
+                { "key": "Vercel-CDN-Cache-Control", "value": "max-age=300, must-revalidate" }
+            ]
+        },
+        {
+            "source": "/assets/img/:path*",
+            "headers": [
+                { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" },
+                { "key": "CDN-Cache-Control", "value": "max-age=300, must-revalidate" },
+                { "key": "Vercel-CDN-Cache-Control", "value": "max-age=300, must-revalidate" }
+            ]
+        },
+        {
+            "source": "/manifest.webmanifest",
+            "headers": [
+                { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+                { "key": "CDN-Cache-Control", "value": "no-store" },
+                { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+            ]
         }
     ],
     "rewrites": [
