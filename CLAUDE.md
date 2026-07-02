@@ -187,7 +187,7 @@ A change is truly done when:
 | GitHub | https://github.com/jpelaezcardenas/antigravity-app |
 | Vercel | https://vercel.com/contexia/antigravity-app/deployments |
 | Railway | https://railway.app/[project]/deployments |
-| Production | https://contexia.online/app/bunker |
+| Production | https://contexia.online/app/overview |
 
 ### Troubleshooting
 

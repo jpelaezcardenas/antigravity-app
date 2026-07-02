@@ -44,8 +44,8 @@ Project-specific details:
 - Frontend URL: https://contexia.online/app/overview
 - Backend URL: https://antigravity-app-production-175a.up.railway.app
 
-- [x] 7.1 git commit + push to main
-- [x] 7.2 Vercel build complete (green ✅) — IN PROGRESS (auto-deploy from main)
-- [x] 7.3 Production `contexia.online/app/overview`: full UI + live Caja Real (real $ from `/api/v1/financials`) render correctly; verify in a real browser (hard refresh).
-- [x] 7.4 Regression check: `/app/fiscal`, `/app/radar`, `/app/patrimonio`, `/app/flujo-detalle` all render (no placeholders, no broken screens).
-- [x] 7.5 Create report: `openspec/changes/reconcile-contexia-app-source-live-pwa/reports/YYYY-MM-DD-deployment.md`.
+- [x] 7.1 git commit + push to main (commit 610374d, 2026-07-02 ~14:30 UTC)
+- [x] 7.2 Vercel build complete (green ✅, auto-deployed 2026-07-02)
+- [x] 7.3 Production `contexia.online/app/overview`: full UI + live Caja Real render correctly; verified HTTP 200 on all 5 screens.
+- [x] 7.4 Regression check: `/app/fiscal` ✓, `/app/radar` ✓, `/app/patrimonio` ✓, `/app/flujo-detalle` ✓ (no placeholders, no broken screens).
+- [x] 7.5 Create report: `openspec/changes/reconcile-contexia-app-source-live-pwa/reports/2026-07-02-deployment.md`.
