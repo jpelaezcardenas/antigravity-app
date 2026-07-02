@@ -1,4 +1,4 @@
-import { TopBar } from "@/components/layout/TopBar";
+import { ClientTopBar } from "@/components/layout/ClientTopBar";
 
 export default function FlujoDetalleLayout({
   children,
@@ -7,8 +7,8 @@ export default function FlujoDetalleLayout({
 }) {
   return (
     <div className="bg-bg-obsidian text-on-surface min-h-screen flex flex-col">
-      <TopBar />
-      <main className="flex-1 pt-24">{children}</main>
+      <ClientTopBar />
+      <main className="flex-1 pt-[150px] md:pt-[140px]">{children}</main>
     </div>
   );
 }
