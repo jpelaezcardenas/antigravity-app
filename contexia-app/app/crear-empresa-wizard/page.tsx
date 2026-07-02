@@ -152,7 +152,7 @@ export default function CrearEmpresaWizardPage() {
           <Link href="/" className="flex items-center group" aria-label="Volver a Contexia">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/assets/img/logo_official.png"
+              src="/assets/img/logo_official.png?v=2026070205"
               alt="Contexia"
               className="h-14 md:h-16 w-auto object-contain scale-110 transition-transform group-hover:scale-115"
             />

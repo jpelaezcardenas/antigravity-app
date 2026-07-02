@@ -19,7 +19,7 @@ export function ClientTopBar() {
               <div className="h-16 w-auto flex items-center justify-center flex-shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/assets/img/logo_official.png"
+                  src="/assets/img/logo_official.png?v=2026070205"
                   alt="Contexia"
                   className="h-full w-auto object-contain transition-transform group-hover:scale-105 scale-110"
                 />
@@ -55,7 +55,7 @@ export function ClientTopBar() {
             <div className="h-24 w-auto flex items-center justify-center flex-shrink-0 bg-transparent">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/assets/img/logo_official.png"
+                src="/assets/img/logo_official.png?v=2026070205"
                 alt="Contexia — GPS for cash flow & tax risk"
                 className="h-full w-auto object-contain transition-transform group-hover:scale-105 scale-110"
               />
