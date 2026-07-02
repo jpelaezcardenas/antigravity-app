@@ -78,6 +78,22 @@
                 { "key": "CDN-Cache-Control", "value": "no-store" },
                 { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
             ]
+        },
+        {
+            "source": "/flujo-detalle",
+            "headers": [
+                { "key": "Cache-Control", "value": "private, no-store, max-age=0, s-maxage=0, must-revalidate" },
+                { "key": "CDN-Cache-Control", "value": "no-store" },
+                { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+            ]
+        },
+        {
+            "source": "/flujo-detalle.html",
+            "headers": [
+                { "key": "Cache-Control", "value": "private, no-store, max-age=0, s-maxage=0, must-revalidate" },
+                { "key": "CDN-Cache-Control", "value": "no-store" },
+                { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+            ]
         }
     ],
     "rewrites": [
@@ -115,11 +131,11 @@
         },
         {
             "source": "/flujo-detalle",
-            "destination": "/app/flujo-detalle.html"
+            "destination": "/flujo-detalle.html"
         },
         {
             "source": "/app/flujo-detalle",
-            "destination": "/app/flujo-detalle.html"
+            "destination": "/flujo-detalle.html"
         },
         {
             "source": "/app/bunker",

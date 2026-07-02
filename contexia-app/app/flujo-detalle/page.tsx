@@ -3,13 +3,12 @@ import { StructuralInsightCard } from "@/components/flujo-detalle/StructuralInsi
 import { FlowCompositionCard } from "@/components/flujo-detalle/FlowCompositionCard";
 import { MonthlyLiquidityBridgeCard } from "@/components/flujo-detalle/MonthlyLiquidityBridgeCard";
 import { FinancialHealthStatusGrid } from "@/components/flujo-detalle/FinancialHealthStatusGrid";
-import { TatyActionBar } from "@/components/flujo-detalle/TatyActionBar";
 
 export default function FlujoDetallePage() {
   const data = flujoDetalleMock;
 
   return (
-    <div className="px-container-margin-mobile md:px-container-margin-desktop max-w-3xl mx-auto flex flex-col gap-6 w-full pb-32">
+    <div className="px-container-margin-mobile md:px-container-margin-desktop max-w-3xl mx-auto flex flex-col gap-6 w-full pb-12">
       {/* Header Context */}
       <div className="flex flex-col gap-2 mt-6">
         <h2 className="font-title-md text-title-md text-primary-container">
@@ -31,9 +30,6 @@ export default function FlujoDetallePage() {
 
       {/* Health Quadrant Details */}
       <FinancialHealthStatusGrid metrics={data.healthMetrics} />
-
-      {/* Sticky CTA + Drawer */}
-      <TatyActionBar />
     </div>
   );
 }

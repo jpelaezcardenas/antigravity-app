@@ -1,22 +1,22 @@
 import Link from "next/link";
 
 /**
- * Branded header for the client app shell (/app/*).
+ * Branded header for the client app shell (/app/*) and detail screens.
  * Server Component (no hooks) so SSR markup and client markup always match —
  * this is what prevents hydration mismatches (React error #418).
- * Markup mirrors the production export 1:1: Contexia logo, nav
- * (Pulso/Fiscal/Radar/Patrimonio), AUDITORÍA SOMBRA CTA, Taty card
- * (desktop + mobile), and the "Cerrar Sesión" action.
+ * Desktop layout: nav links (left) · official logo with slogan (center) ·
+ * Taty card + "Cerrar Sesión" (right). Mobile: logo (left) · Taty card
+ * (center) · menu button (right).
  */
 export function ClientTopBar() {
   return (
     <nav className="w-full border-b border-slate-800 bg-[#020617]/90 backdrop-blur-xl fixed top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative flex items-center justify-between py-3 min-h-[120px] md:min-h-[100px]">
-          {/* Logo */}
-          <div className="flex items-center gap-2">
+          {/* Logo (mobile, left) */}
+          <div className="flex items-center gap-2 md:hidden">
             <Link className="flex items-center group" title="Contexia" href="/app/overview">
-              <div className="h-16 md:h-24 w-auto flex items-center justify-center flex-shrink-0">
+              <div className="h-16 w-auto flex items-center justify-center flex-shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/assets/img/logo_official.png"
@@ -27,84 +27,86 @@ export function ClientTopBar() {
             </Link>
           </div>
 
-          {/* Desktop navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            <div
-              className="flex items-center gap-6 text-sm font-bold uppercase tracking-widest"
-              style={{ fontFamily: "Rajdhani, sans-serif" }}
-            >
-              <Link className="text-slate-400 hover:text-white transition-colors" href="/app/overview">
-                Pulso
-              </Link>
-              <Link className="text-slate-400 hover:text-white transition-colors" href="/app/fiscal">
-                Fiscal
-              </Link>
-              <Link className="text-slate-400 hover:text-white transition-colors" href="/app/radar">
-                Radar
-              </Link>
-              <Link className="text-slate-400 hover:text-[#2DD4BF] transition-colors" href="/app/patrimonio">
-                Patrimonio
-              </Link>
-              <Link
-                className="px-8 py-3 bg-[#8B5CF6]/10 text-white border-2 border-[#8B5CF6] rounded-full hover:bg-[#8B5CF6]/20 hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.6)] transition-all text-base font-bold tracking-wide shadow-[0_0_15px_-5px_rgba(139,92,246,0.4)] text-center inline-flex flex-col items-center leading-tight"
-                title="Auditoría tributaria gratuita y 100% anónima"
-                href="/wizard"
-              >
-                <span>🔍 AUDITORÍA SOMBRA</span>
-                <span className="text-[#8B5CF6] text-xs font-semibold">
-                  (SIMULACIÓN CON LA DIAN)
-                </span>
-              </Link>
+          {/* Desktop nav links (left) */}
+          <div
+            className="hidden md:flex items-center gap-6 text-sm font-bold uppercase tracking-widest"
+            style={{ fontFamily: "Rajdhani, sans-serif" }}
+          >
+            <Link className="text-slate-400 hover:text-white transition-colors" href="/app/overview">
+              Pulso
+            </Link>
+            <Link className="text-slate-400 hover:text-white transition-colors" href="/app/fiscal">
+              Fiscal
+            </Link>
+            <Link className="text-slate-400 hover:text-white transition-colors" href="/app/radar">
+              Radar
+            </Link>
+            <Link className="text-slate-400 hover:text-[#2DD4BF] transition-colors" href="/app/patrimonio">
+              Patrimonio
+            </Link>
+          </div>
+
+          {/* Official logo with slogan (desktop, centered) */}
+          <Link
+            className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center group"
+            title="Contexia"
+            href="/app/overview"
+          >
+            <div className="h-24 w-auto flex items-center justify-center flex-shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/img/logo_official.png"
+                alt="Contexia — GPS for cash flow & tax risk"
+                className="h-full w-auto object-contain transition-transform group-hover:scale-105 scale-110 mix-blend-screen"
+              />
             </div>
+          </Link>
 
-            <div className="h-8 w-[1px] bg-slate-800 mx-2"></div>
-
-            <div className="flex items-center gap-6">
-              {/* Taty card (desktop) */}
-              <a
-                href="https://wa.me/573018948151"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 pr-6 hover:bg-white/10 hover:border-[#2DD4BF]/50 transition-all duration-500 overflow-hidden"
-                style={{ boxShadow: "0 0 20px rgba(20, 184, 166, 0.1)" }}
-              >
-                <div className="relative w-12 h-16 rounded-xl overflow-hidden border border-white/20 shadow-xl flex-shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/assets/img/profiles/tatiana_full.png"
-                    alt="Taty"
-                    className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#020617]/80 via-transparent to-transparent"></div>
-                </div>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2DD4BF] opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2DD4BF]"></span>
-                    </span>
-                    <span
-                      className="text-[10px] text-[#2DD4BF] font-black uppercase tracking-widest leading-none"
-                      style={{ fontFamily: "Rajdhani, sans-serif" }}
-                    >
-                      Online
-                    </span>
-                  </div>
-                  <span className="text-sm text-white font-bold leading-tight">
-                    Tu Amiga Contadora
-                    <br />
-                    <span className="text-[#2DD4BF]">Taty</span>
+          {/* Desktop right: Taty card + logout */}
+          <div className="hidden md:flex items-center gap-6">
+            <a
+              href="https://wa.me/573018948151"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 pr-6 hover:bg-white/10 hover:border-[#2DD4BF]/50 transition-all duration-500 overflow-hidden"
+              style={{ boxShadow: "0 0 20px rgba(20, 184, 166, 0.1)" }}
+            >
+              <div className="relative w-12 h-16 rounded-xl overflow-hidden border border-white/20 shadow-xl flex-shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/assets/img/profiles/tatiana_full.png"
+                  alt="Taty"
+                  className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#020617]/80 via-transparent to-transparent"></div>
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2DD4BF] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2DD4BF]"></span>
+                  </span>
+                  <span
+                    className="text-[10px] text-[#2DD4BF] font-black uppercase tracking-widest leading-none"
+                    style={{ fontFamily: "Rajdhani, sans-serif" }}
+                  >
+                    Online
                   </span>
                 </div>
-              </a>
+                <span className="text-sm text-white font-bold leading-tight">
+                  Tu Amiga Contadora
+                  <br />
+                  <span className="text-[#2DD4BF]">Taty</span>
+                </span>
+              </div>
+            </a>
 
-              <Link
-                className="inline-flex items-center justify-center px-6 py-2 border border-transparent text-sm font-medium rounded-full text-[#020617] bg-[#2DD4BF] hover:bg-[#14B8A6] shadow-[0_0_15px_rgba(20,184,166,0.3)] transition-all"
-                href="/logout"
-              >
-                Cerrar Sesión
-              </Link>
-            </div>
+            <Link
+              className="inline-flex items-center justify-center px-6 py-2 border border-transparent text-sm font-medium rounded-full text-[#020617] bg-[#2DD4BF] hover:bg-[#14B8A6] shadow-[0_0_15px_rgba(20,184,166,0.3)] transition-all"
+              href="/logout"
+            >
+              Cerrar Sesión
+            </Link>
           </div>
 
           {/* Taty card (mobile, centered) */}
