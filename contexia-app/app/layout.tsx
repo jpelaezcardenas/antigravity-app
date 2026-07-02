@@ -69,7 +69,7 @@ export default function RootLayout({
           content="black-translucent"
         />
       </head>
-      <body className="bg-background text-on-surface font-body-md antialiased selection:bg-primary-container/30">
+      <body className="bg-bg-obsidian text-on-surface font-body-md antialiased selection:bg-primary-container/30">
         {children}
         <RegisterSW />
       </body>
