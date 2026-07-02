@@ -1,12 +1,10 @@
-"use client";
-
 import Link from "next/link";
 
 /**
  * Full-featured branded header for the client app shell (/app/app/*).
+ * Server Component (no "use client") to avoid hydration mismatches.
  * Renders: Contexia logo, nav (Pulso/Fiscal/Radar/Patrimonio),
  * AUDITORÍA SOMBRA CTA, Taty card, Cerrar Sesión button.
- * Simplified version optimized for stability (no complex animations).
  */
 export function ClientTopBar() {
   return (
