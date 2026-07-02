@@ -13,8 +13,11 @@ const STATIC_ASSETS = [
   "/app/radar",
   "/app/patrimonio",
   "/app/flujo-detalle",
+  "/manifest.webmanifest",
   "/icons/icon-192x192.png",
+  "/icons/icon-192x192-maskable.png",
   "/icons/icon-512x512.png",
+  "/icons/icon-512x512-maskable.png",
 ];
 
 // Extensiones de archivo que cacheamos agresivamente
