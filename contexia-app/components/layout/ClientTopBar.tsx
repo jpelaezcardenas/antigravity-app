@@ -10,7 +10,7 @@ import Link from "next/link";
  */
 export function ClientTopBar() {
   return (
-    <nav className="w-full border-b border-slate-800 bg-[#020617]/90 backdrop-blur-xl fixed top-0 z-50">
+    <nav className="w-full border-b border-slate-800 bg-bg-obsidian/90 backdrop-blur-xl fixed top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative flex items-center justify-between py-3 min-h-[120px] md:min-h-[100px]">
           {/* Logo (mobile, left) */}
