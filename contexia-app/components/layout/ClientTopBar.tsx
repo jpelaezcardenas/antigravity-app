@@ -48,11 +48,11 @@ export function ClientTopBar() {
 
           {/* Official logo with slogan (desktop, centered) */}
           <Link
-            className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center group"
+            className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center group bg-transparent"
             title="Contexia"
             href="/app/overview"
           >
-            <div className="h-24 w-auto flex items-center justify-center flex-shrink-0">
+            <div className="h-24 w-auto flex items-center justify-center flex-shrink-0 bg-transparent">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/assets/img/logo_official.png"
