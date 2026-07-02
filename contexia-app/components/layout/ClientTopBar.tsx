@@ -21,7 +21,7 @@ export function ClientTopBar() {
                 <img
                   src="/assets/img/logo_official.png"
                   alt="Contexia"
-                  className="h-full w-auto object-contain transition-transform group-hover:scale-105 scale-110 mix-blend-screen"
+                  className="h-full w-auto object-contain transition-transform group-hover:scale-105 scale-110"
                 />
               </div>
             </Link>
@@ -57,7 +57,7 @@ export function ClientTopBar() {
               <img
                 src="/assets/img/logo_official.png"
                 alt="Contexia — GPS for cash flow & tax risk"
-                className="h-full w-auto object-contain transition-transform group-hover:scale-105 scale-110 mix-blend-screen"
+                className="h-full w-auto object-contain transition-transform group-hover:scale-105 scale-110"
               />
             </div>
           </Link>

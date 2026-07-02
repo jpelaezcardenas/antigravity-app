@@ -154,7 +154,7 @@ export default function CrearEmpresaWizardPage() {
             <img
               src="/assets/img/logo_official.png"
               alt="Contexia"
-              className="h-14 md:h-16 w-auto object-contain mix-blend-screen scale-110 transition-transform group-hover:scale-115"
+              className="h-14 md:h-16 w-auto object-contain scale-110 transition-transform group-hover:scale-115"
             />
           </Link>
 
