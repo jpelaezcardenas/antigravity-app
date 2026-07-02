@@ -24,6 +24,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "frontend/dashboard", "run", "dev"],
       "port": 5173
+    },
+    {
+      "name": "Static Export Preview (contexia-app/out)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "serve", "contexia-app/out", "-l", "4173"],
+      "port": 4173
     }
   ]
 }
