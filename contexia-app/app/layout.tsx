@@ -15,19 +15,19 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/favicon-v2.png?v=2026070202",
+        url: "/icons/icon-192x192.png?v=2026070203",
         sizes: "192x192",
         type: "image/png",
       },
       {
-        url: "/favicon-v2.png?v=2026070202",
+        url: "/icons/icon-512x512.png?v=2026070203",
         sizes: "512x512",
         type: "image/png",
       },
     ],
-    shortcut: "/favicon-v2.png?v=2026070202",
+    shortcut: "/icons/icon-192x192.png?v=2026070203",
     apple: {
-      url: "/favicon-v2.png?v=2026070202",
+      url: "/icons/icon-192x192.png?v=2026070203",
       sizes: "192x192",
       type: "image/png",
     },
