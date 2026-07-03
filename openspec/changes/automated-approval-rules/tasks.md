@@ -550,13 +550,26 @@ WHERE rule_name = 'RECURRING_TRANSACTION';
 
 ### 10.2 Deployment Checklist
 
+> **VERIFIED (2026-07-02):** Checked each item against the actual codebase and
+> `reports/2026-06-25-deployment.md`, not just re-reading the report's own claims.
+
 ```
-- [ ] Code reviewed
-- [ ] All tests pass (18 unit + 4 E2E)
-- [ ] Migration tested (0018_vendor_whitelist.sql)
-- [ ] Prometheus metrics verified
-- [ ] Rollback plan documented
-- [ ] Monitoring dashboard created
+- [ ] Code reviewed — NOT DONE. Deployment report's Sign-Off table shows
+      "Reviewer: [Pending]". No human review ever recorded.
+- [x] All tests pass — 93 unit tests passing (exceeds the "18" baseline),
+      Phase 6 E2E regression suite still 100% passing. No dedicated E2E suite
+      exists specifically for approval-rules scenarios, so "4 E2E" as literally
+      stated is unverified, but overall test coverage is real and green.
+- [x] Migration tested (0018_vendor_whitelist.sql) — applied to Supabase,
+      RLS enforced, indexes live, in production use since 2026-06-25.
+- [ ] Prometheus metrics verified — NOT DONE. General Prometheus infra exists
+      (apps/backend/prometheus_metrics.py) but has zero approval-rules-specific
+      metrics defined (no auto-approval counters/histograms).
+- [x] Rollback plan documented — full 3-step plan in the deployment report
+      (disable via config / revert commit / data preserved in approval_queue).
+- [ ] Monitoring dashboard created — NOT DONE. Deployment report itself defers
+      this to "Phase 9" — see openspec/changes/metrics-dashboard-phase9/
+      (0/97 tasks, not started).
 ```
 
 ### 10.3 Acceptance
