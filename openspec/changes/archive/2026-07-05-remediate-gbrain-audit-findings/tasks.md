@@ -34,8 +34,8 @@ These were executed directly with founder approval before this change's artifact
 See `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`.
 
 - [x] 5.1 Founder decision: leave `DEMO_ADMIN_PASSWORD` unset and `DEMO_AUTH_ENABLED=false` in production for now — demo login stays disabled until explicitly reactivated with a new password later. No value set.
-- [ ] 5.2 `git commit` + push to `main`.
-- [ ] 5.3 Railway deploy active (backend change) — confirm green.
-- [ ] 5.4 Verify in production: demo-admin login attempt (any password) is rejected while `DEMO_AUTH_ENABLED=false`.
-- [ ] 5.5 Verify in production: the old leaked password (`Lindafea0712`) is rejected.
-- [ ] 5.6 Create report: `openspec/changes/remediate-gbrain-audit-findings/reports/YYYY-MM-DD-deployment.md`.
+- [x] 5.2 `git commit` (`af6a769`) + push to `main`.
+- [x] 5.3 Railway deploy `86309c58` (commit `af6a769`) — SUCCESS.
+- [x] 5.4 Verify in production: demo-admin login attempt (any password) is rejected while `DEMO_AUTH_ENABLED=false`.
+- [x] 5.5 Verify in production: the old leaked password (`Lindafea0712`) is rejected — confirmed post-deploy: `{"detail":"Credenciales inválidas"}`.
+- [x] 5.6 Create report: `openspec/changes/remediate-gbrain-audit-findings/reports/2026-07-05-deployment.md`.
