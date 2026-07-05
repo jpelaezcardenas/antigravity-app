@@ -94,8 +94,8 @@ Project-specific details:
 - `contexia-brain` repo: no deploy pipeline by design (see design.md Decision 10) — nothing to deploy there
 
 Tasks:
-- [ ] 11.1 git commit + push `antigravity-app` changes to main (CLAUDE.md/AGENTS.md librarian sections, harvest script, docs/gbrain-adoption.md); separately commit `contexia-brain`'s initial content to its own repo (task 1.9)
-- [ ] 11.2 Vercel build complete (green ✅) — only relevant if this change touches PWA-facing docs/config
-- [ ] 11.3 Railway deploy active — only relevant if this change touches backend config (GBrain sidecar itself is local-only and not deployed to Railway)
-- [ ] 11.4 Production verification: canon doc changes visible in deployed `antigravity-app` repo state; GBrain local sidecar running with the maintenance cycle scheduled and periodic sync active, reachable from Claude Code, Codex, and Hermes on the machine(s) where installed; confirm no Vercel/Railway deploy was ever triggered by a `contexia-brain` commit
-- [ ] 11.5 Create report: `openspec/changes/adopt-gbrain-second-brain/reports/YYYY-MM-DD-deployment.md`
+- [x] 11.1 Committed (`8731ce7`) + pushed to `main` (14 files: CLAUDE.md/AGENTS.md librarian sections, ARCHITECTURE.md container+decision updates, harvest + skill-generator scripts, docs/gbrain-adoption.md, full OpenSpec change). `contexia-brain`'s content already committed/pushed to its own repo earlier (task 1.9).
+- [x] 11.2 N/A — this change touches no PWA-facing code; Vercel unaffected.
+- [x] 11.3 Railway auto-deployed `-175a` anyway (rebuilds on every `main` push per this repo's own documented behavior, even for docs/scripts-only changes) — confirmed healthy post-deploy, not broken by this change.
+- [x] 11.4 Canon doc changes (ARCHITECTURE.md, CLAUDE.md, AGENTS.md) confirmed pushed and live in the repo. GBrain's local sidecar confirmed running (`gbrain-autopilot.service`, systemd, 1h51m+ uptime at last check) with the maintenance cycle proven working (task 4.3) and periodic sync via its own internal cycle (task 5.1). Reachable from Claude Code (`.mcp.json`, config-verified), Codex (`config.toml`, config-verified), and Hermes (`hermes mcp test gbrain` — live-verified, 41 tools). No `contexia-brain` commit ever touched Vercel/Railway (confirmed by design — separate repo, no deploy pipeline attached).
+- [x] 11.5 Created report: `openspec/changes/adopt-gbrain-second-brain/reports/2026-07-05-deployment.md`
