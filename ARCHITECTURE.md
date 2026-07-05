@@ -110,6 +110,7 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
 6. **Reglas del incidente 2026-06-29**: nunca desactivar type-checking, nunca fabricar stubs/placeholders para pasar un build, versionar el service worker por deploy (network-first en navegación).
 7. **Routing LLM híbrido** GLM 5.2 interactivo + Groq fallback (los "8 perfiles Hermes" originales eran mock).
 8. **CORS**: env var = `ALLOWED_ORIGINS` (fix 2026-06-30).
+9. **`antigravity-app-production-175a` (proyecto Railway `elegant-success`) es el ÚNICO backend canónico**, confirmado por el rewrite `/api/v1/*` de `vercel.json`. Existe un segundo proyecto Railway (`enthusiastic-youthfulness`, URL `antigravity-app-production-dc78`) corriendo el mismo servicio contra la misma base de datos — **no está documentado como producción, no debe tratarse como tal, y no recibe tráfico real de Vercel.** Sigue activo (no decomisionado) en espera de una decisión explícita del fundador; ver `openspec/changes/reconcile-railway-antigravity-projects/`. No agregar features nuevas ni asumir paridad de configuración en `-dc78` sin verificar primero contra este documento.
 
 ## Enlaces canónicos
 

@@ -4,12 +4,20 @@
 > su detalle — eso va a `progress/impl_<id>.md` y `progress/review_<id>.md`.
 > Al cerrar sesión: mover el resumen a `history.md` y dejar esta plantilla limpia.
 
-**Change OpenSpec activo:** `reconcile-contexia-app-source-live-pwa`
-**Tarea en curso:** — (sin empezar; primera tarea = 1.1 en `tasks.md`)
-**Estado:** ready-to-implement (artefactos proposal/design/specs/tasks completos y válidos)
+**Change OpenSpec activo:** `reconcile-railway-antigravity-projects` (nuevo, en creación)
+**Change previo (pausado, NO abandonado):** `adopt-gbrain-second-brain` — 30/60 tareas reales
+completadas (ver `progress/impl_adopt-gbrain-phase0.md`). Founder pivoteó explícitamente vía
+`/goal "complete this plan"` hacia la reconciliación de los dos proyectos Railway duplicados
+(`elegant-success`/-175a vs `enthusiastic-youthfulness`/-dc78) — este era el `task_983c64b0`
+flaggeado durante el trabajo de GBrain (mientras se verificaba qué dependía de la contraseña
+de la DB antes de rotarla). Retomar GBrain después de cerrar esto.
+
+**Tarea en curso:** Investigación real antes de escribir proposal.md — determinar tráfico real
+(Telegram webhook, Vercel rewrites), diff de env vars entre ambos servicios Railway.
+**Estado:** en progreso
 **Plan:**
-- MVP Contexia Cliente Cero — primer incremento: reconciliar `contexia-app/` source para que un `npm run build` reproduzca la UI real del cliente CON la Caja Real en vivo horneada, retirando el `<script>` a mano de `app/overview.html`.
-- Fuente autoritativa de tareas: `openspec/changes/reconcile-contexia-app-source-live-pwa/tasks.md` (7 grupos, incluye Stage 11).
-- Contexto crítico: la UI real solo existe hoy como export en `app/`; `contexia-app/` renderiza placeholders (CLAUDE.md §9 EXCEPCIÓN). NO regenerar `app/` a ciegas hasta lograr paridad verificada.
+- Este es un cambio spec-first obligatorio (toca infra de producción + funcionalidad de Taty/Telegram).
+- NO decomisionar ningún proyecto hasta verificar el plan de reconciliación funcionando end-to-end.
+- Fuente autoritativa de tareas: `openspec/changes/reconcile-railway-antigravity-projects/tasks.md` (una vez creado).
 
 **Bloqueos:** —

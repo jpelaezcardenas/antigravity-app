@@ -19,6 +19,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger("contexia-api")
 
+# Fail fast on misconfigured production settings (e.g. empty JWT_SECRET) rather
+# than starting silently with a forgeable auth secret. Previously defined but
+# never called — see openspec/changes/reconcile-railway-antigravity-projects.
+settings.validate_production_config()
+
 app = FastAPI(
     title="Contexia API",
     description="Backend para la plataforma de Inteligencia Financiera Contexia",

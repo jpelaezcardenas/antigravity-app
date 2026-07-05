@@ -6,12 +6,17 @@
     "scope_source": "openspec/changes/<id>/tasks.md",
     "valid_status": ["pending", "in_progress", "done", "blocked"]
   },
-  "active": "reconcile-contexia-app-source-live-pwa",
+  "active": "reconcile-railway-antigravity-projects",
   "features": [
     {
-      "id": "reconcile-contexia-app-source-live-pwa",
+      "id": "reconcile-railway-antigravity-projects",
+      "status": "in_progress",
+      "summary": "Reconcile two duplicate Railway antigravity-app deployments (elegant-success/-175a vs enthusiastic-youthfulness/-dc78) pointing at the same DB. Founder-directed pivot via /goal. Scope: openspec/changes/reconcile-railway-antigravity-projects/tasks.md"
+    },
+    {
+      "id": "adopt-gbrain-second-brain",
       "status": "pending",
-      "summary": "Reconcile contexia-app/ source so a rebuild reproduces the full client PWA WITH live Caja Real baked in; retire the hand-edited app/ script. Scope: openspec/changes/reconcile-contexia-app-source-live-pwa/tasks.md"
+      "summary": "PAUSED mid-flight (30/60 tasks done), not abandoned — resume after this change closes. Scope: openspec/changes/adopt-gbrain-second-brain/tasks.md"
     }
   ]
 }
