@@ -271,3 +271,43 @@ of that. Both were reverted; the real source was restored from git history
    derive it from the build hash) and prefer network-first for navigation, so a
    bad deploy can't get permanently stuck behind a stale cache.
 
+## 10. Second brain (raw → wiki loop) — librarian instructions
+
+Contexia runs a second brain (OpenSpec change `adopt-gbrain-second-brain`), stored in a
+**separate sibling repo: `contexia-brain`** — NOT inside `antigravity-app`. This is deliberate,
+not an oversight: `antigravity-app`'s `main` auto-deploys to Vercel/Railway on every push, and
+GBrain's autonomous Dream Cycle auto-commits to the brain repo on a schedule. Keeping brain
+content here would make every autonomous brain-maintenance run trigger a production deploy. See
+`../contexia-brain/README.md` for the full rationale and `../contexia-brain/RESOLVER.md` for
+where content actually lands (`people/`, `companies/`, `deals/`, `meetings/`, `concepts/`,
+`ideas/`, `media/`, `sources/`, `archive/`).
+
+- **`../contexia-brain/raw/`** — unstructured capture inbox (voice notes, meeting summaries,
+  quick decisions, harvested Stage 11 learnings via `scripts/harvest_stage11_reports.py`). No
+  required structure. Nothing here is ever deleted.
+- **MECE compiled directories** in `contexia-brain/` — compiled-truth + timeline pages (see
+  `contexia-brain/templates/compiled-page.md`). GBrain indexes this repo plus the canon docs
+  living here in `antigravity-app` (GLOSARIO-MAESTRO, `AGENTES.md`, `.antigravity/GROUND_TRUTH.md`);
+  it never indexes `antigravity-app` itself.
+
+**Enrichment ownership (avoid competing authority):**
+
+- **Primary path (once GBrain is live):** GBrain's autonomous **Dream Cycle** (`gbrain dream`)
+  consolidates `contexia-brain/raw/` into compiled pages and enriches them. Do not hand-duplicate
+  this.
+- **Interim / fallback path (this librarian loop):** when asked to run the loop, or before
+  GBrain is installed, read `contexia-brain/raw/`, then **propose** updates to the relevant
+  target in `contexia-brain/` (per its `RESOLVER.md`), or to a canon doc here in
+  `antigravity-app` (GLOSARIO-MAESTRO / `AGENTES.md` / `.antigravity/GROUND_TRUTH.md`) if the
+  content is genuinely about product/architecture identity rather than world knowledge.
+  Rules: read the target first; never delete or blindly overwrite; when you cannot confidently
+  place a note, **log the uncertainty** rather than guessing.
+
+**Do NOT create parallel folders in this repo:** reusable prompts already live in
+`ai-specs/skills/`; active work already lives in `openspec/changes/`. Never add `raw/`,
+`brain/`, `prompts/`, or `projects/` folders here — brain content belongs exclusively in
+`contexia-brain/`.
+
+**Legacy canon docs are indexed as-is** — do not retrofit GLOSARIO-MAESTRO / `AGENTES.md` /
+ground-truth into the two-section page model. Only `contexia-brain/` pages use it.
+

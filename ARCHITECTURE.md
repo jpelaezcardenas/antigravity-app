@@ -56,6 +56,7 @@ flowchart TB
 | **Backend API** | Shadow GL + endpoints `/api/v1/*` (financials, agents, approval queue, websocket, metrics, health) | FastAPI / Python 3.11 | Railway (`antigravity-app-production-175a`) |
 | **Datos** | Auth + Postgres + pgvector; tablas Shadow GL | Supabase (`kpynymwghfwshvcvevxq`) | Supabase cloud |
 | **Hermes** | Orquestador/scheduler de agentes + memoria aplicada | Nous Research native | **Local / WSL** (soberanía de datos) |
+| **GBrain** | Segundo cerebro: hybrid search (vector+keyword+expansión) + grafo de conocimiento auto-wired sobre `contexia-brain`; MCP server para Claude Code/Codex/Hermes | TypeScript/Bun (github.com/jpelaezcardenas/garrytan-gbrain), `gbrain-autopilot.service` (systemd) | **Local / WSL** (mismo host que Hermes) — proceso local, almacenamiento en esquema dedicado `gbrain` en el mismo proyecto Supabase (`kpynymwghfwshvcvevxq`) |
 
 **Fuente canónica vs artefacto de build:** `contexia-app/` es la fuente de la PWA; la carpeta `app/` (raíz) es un **artefacto generado** (`npm run build` → sync `out/` → `app/`). **Nunca editar `app/` a mano.** (Ver CLAUDE.md §9.)
 
@@ -110,7 +111,8 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
 6. **Reglas del incidente 2026-06-29**: nunca desactivar type-checking, nunca fabricar stubs/placeholders para pasar un build, versionar el service worker por deploy (network-first en navegación).
 7. **Routing LLM híbrido** GLM 5.2 interactivo + Groq fallback (los "8 perfiles Hermes" originales eran mock).
 8. **CORS**: env var = `ALLOWED_ORIGINS` (fix 2026-06-30).
-9. **`antigravity-app-production-175a` (proyecto Railway `elegant-success`) es el ÚNICO backend canónico**, confirmado por el rewrite `/api/v1/*` de `vercel.json`. Existe un segundo proyecto Railway (`enthusiastic-youthfulness`, URL `antigravity-app-production-dc78`) corriendo el mismo servicio contra la misma base de datos — **no está documentado como producción, no debe tratarse como tal, y no recibe tráfico real de Vercel.** Sigue activo (no decomisionado) en espera de una decisión explícita del fundador; ver `openspec/changes/reconcile-railway-antigravity-projects/`. No agregar features nuevas ni asumir paridad de configuración en `-dc78` sin verificar primero contra este documento.
+9. **`antigravity-app-production-175a` (proyecto Railway `elegant-success`) es el ÚNICO backend canónico**, confirmado por el rewrite `/api/v1/*` de `vercel.json`. Existe un segundo proyecto Railway (`enthusiastic-youthfulness`, URL `antigravity-app-production-dc78`) corriendo el mismo servicio contra la misma base de datos — **no está documentado como producción, no debe tratarse como tal, y no recibe tráfico real de Vercel.** Sigue activo (no decomisionado) en espera de una decisión explícita del fundador; ver `openspec/changes/archive/2026-07-05-reconcile-railway-antigravity-projects/`. No agregar features nuevas ni asumir paridad de configuración en `-dc78` sin verificar primero contra este documento.
+10. **GBrain corre local/on-prem (WSL, junto a Hermes), nunca en Railway/cloud compute** — mismo principio que la decisión #1 para Hermes. Solo su almacenamiento (esquema `gbrain` dedicado en el Supabase existente) vive en la nube; el cómputo se queda soberano. Aislado por diseño de `public.knowledge_chunks`/`decision-vectorization` (esquema separado, nunca las mismas tablas) — ver `openspec/changes/archive/2026-07-XX-adopt-gbrain-second-brain/` una vez archivado.
 
 ## Enlaces canónicos
 

@@ -1,6 +1,7 @@
 {
   "version": "1",
   "project_id": "contexia-clean",
+  "model": "claude-opus-4-8",
   "exclude_patterns": [
     "node_modules/**",
     ".next/**",

@@ -70,3 +70,29 @@ Required order:
 
 Do not apply direct code-only fixes in this window without updating OpenSpec artifacts.
 
+## Second brain (raw → wiki loop) — librarian instructions
+
+Contexia runs a second brain (OpenSpec change `adopt-gbrain-second-brain`), stored in a
+**separate sibling repo: `contexia-brain`** — NOT inside this repo. `antigravity-app`'s `main`
+auto-deploys to Vercel/Railway on every push, and GBrain's autonomous Dream Cycle auto-commits
+to the brain repo on a schedule; keeping brain content out of this repo means those commits can
+never trigger a deploy. See `../contexia-brain/README.md` and `../contexia-brain/RESOLVER.md`.
+
+- **`../contexia-brain/raw/`** — unstructured capture inbox. No required structure. Nothing here
+  is ever deleted.
+- **MECE compiled directories** in `contexia-brain/` (`people/`, `companies/`, `deals/`,
+  `meetings/`, `concepts/`, `ideas/`, `media/`, `sources/`, `archive/`) — compiled-truth +
+  timeline pages (see `contexia-brain/templates/compiled-page.md`). GBrain indexes that repo plus
+  this repo's canon docs; it never indexes `antigravity-app` itself.
+
+**Enrichment ownership:** once GBrain is live, its autonomous **Dream Cycle** consolidates
+`contexia-brain/raw/` into compiled pages — do not hand-duplicate it. The manual **librarian
+loop** here is the interim/fallback path: read `contexia-brain/raw/`, then propose updates to the
+relevant target in `contexia-brain/` (per its `RESOLVER.md`) or a canon doc here. Read the target
+first; never delete or blindly overwrite; log uncertainty rather than guessing.
+
+**Do NOT create `raw/`, `brain/`, `prompts/`, or `projects/` folders in this repo:** reusable
+prompts live in `ai-specs/skills/`; active work lives in `openspec/changes/`; all brain content
+belongs exclusively in `contexia-brain/`. Legacy canon docs (GLOSARIO-MAESTRO, `AGENTES.md`,
+ground-truth) are indexed as-is, not retrofitted.
+
