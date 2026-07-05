@@ -41,14 +41,14 @@ class AuthService:
             "contexia.marketing@gmail.com": {
                 "id": "usr_admin_demo",
                 "nombre_empresa": "Contexia Admin",
-                "password": "Lindafea0712"
+                "password": settings.DEMO_ADMIN_PASSWORD
             }
         }
 
         # Check demo users first (for MVP testing), gated by DEMO_AUTH_ENABLED.
         if settings.DEMO_AUTH_ENABLED and email in DEMO_USERS:
             demo_user = DEMO_USERS[email]
-            if password == demo_user["password"]:
+            if demo_user["password"] and password == demo_user["password"]:
                 token_data = {"sub": demo_user["id"], "email": email}
                 tenant_uuid = _resolve_tenant_uuid(demo_user["id"], email)
                 if tenant_uuid:

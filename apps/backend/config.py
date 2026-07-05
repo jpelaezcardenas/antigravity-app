@@ -23,9 +23,13 @@ class Settings(BaseSettings):
     # AUTH_ENFORCED=False keeps the current permissive behavior so the live demo
     # is unaffected until the frontend is confirmed to send Authorization: Bearer.
     AUTH_ENFORCED: bool = False
-    # DEMO_AUTH_ENABLED gates the hardcoded demo-user login path in auth_service.
+    # DEMO_AUTH_ENABLED gates the demo-user login path in auth_service.
     # Keep True for the MVP demo; set False in production.
     DEMO_AUTH_ENABLED: bool = True
+    # Password for the contexia.marketing@gmail.com demo-admin account. Never
+    # hardcode a real value — empty default fails closed (see
+    # remediate-gbrain-audit-findings, auth-demo-credentials spec).
+    DEMO_ADMIN_PASSWORD: str = ""
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://localhost:3002,https://contexia.online,https://www.contexia.online"

@@ -83,3 +83,31 @@ never deployed to Railway or any cloud compute.
 Brain content is plain markdown in git (`contexia-brain` repo). If GBrain is ever dropped,
 `raw/` + the MECE compiled directories + the canon docs in `antigravity-app` remain fully
 usable — no vendor lock-in, no proprietary format.
+
+## Runbook: re-applying the Contexia skill projection after a GBrain upstream pull
+
+The WSL GBrain clone has local modifications to two upstream-tracked files —
+`skills/manifest.json` and `skills/RESOLVER.md` — needed so GBrain's `total_skills` count and
+resolver actually include the generated Contexia agent skills (`contexia-agent-<slug>/SKILL.md`).
+This is an accepted trade-off (see `openspec/changes/archive/2026-07-05-adopt-gbrain-second-brain/design.md`),
+not a bug, but it means a `git pull` inside the GBrain clone can overwrite those two files.
+
+After any `git pull` in the GBrain clone:
+
+```bash
+cd ~/gbrain && git pull
+cd /path/to/antigravity-app && python scripts/generate_gbrain_skills.py
+```
+
+This regenerates `contexia-agent-<slug>/SKILL.md` files from `AGENTES.md` and re-applies the
+`manifest.json`/`RESOLVER.md` entries. Safe to re-run any time (idempotent) — it's not only a
+post-pull step.
+
+## Restart policy
+
+`gbrain-autopilot.service` (WSL systemd user unit) uses `Restart=always`, not
+`Restart=on-failure`. GBrain's own internal circuit breaker ("N consecutive worker crashes,
+giving up") exits with status 0 after repeated internal crashes (e.g. a transient DB reconnect
+failure hitting a `config.poolSize` bug) — a clean exit that `Restart=on-failure` does not treat
+as a failure. `Restart=always` restarts regardless of exit status, so the service self-heals
+without a human running `systemctl restart` manually.
