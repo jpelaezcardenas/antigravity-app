@@ -6,12 +6,12 @@
     "scope_source": "openspec/changes/<id>/tasks.md",
     "valid_status": ["pending", "in_progress", "done", "blocked"]
   },
-  "active": "adopt-gbrain-second-brain",
+  "active": null,
   "features": [
     {
       "id": "adopt-gbrain-second-brain",
-      "status": "in_progress",
-      "summary": "Adopt GBrain (Garry Tan's MIT tool) as Contexia's Level-5 second brain + markdown raw->wiki loop foundation. Resumed after reconcile-railway-antigravity-projects closed (archived 2026-07-05). Scope: openspec/changes/adopt-gbrain-second-brain/tasks.md"
+      "status": "done",
+      "summary": "COMPLETE (60/60 tasks), archived 2026-07-05 as openspec/changes/archive/2026-07-05-adopt-gbrain-second-brain. GBrain running in WSL, Supabase-backed, wired into Claude Code/Codex/Hermes, autopilot scheduled."
     }
   ]
 }
