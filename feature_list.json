@@ -6,17 +6,12 @@
     "scope_source": "openspec/changes/<id>/tasks.md",
     "valid_status": ["pending", "in_progress", "done", "blocked"]
   },
-  "active": "reconcile-railway-antigravity-projects",
+  "active": "adopt-gbrain-second-brain",
   "features": [
     {
-      "id": "reconcile-railway-antigravity-projects",
-      "status": "in_progress",
-      "summary": "Reconcile two duplicate Railway antigravity-app deployments (elegant-success/-175a vs enthusiastic-youthfulness/-dc78) pointing at the same DB. Founder-directed pivot via /goal. Scope: openspec/changes/reconcile-railway-antigravity-projects/tasks.md"
-    },
-    {
       "id": "adopt-gbrain-second-brain",
-      "status": "pending",
-      "summary": "PAUSED mid-flight (30/60 tasks done), not abandoned — resume after this change closes. Scope: openspec/changes/adopt-gbrain-second-brain/tasks.md"
+      "status": "in_progress",
+      "summary": "Adopt GBrain (Garry Tan's MIT tool) as Contexia's Level-5 second brain + markdown raw->wiki loop foundation. Resumed after reconcile-railway-antigravity-projects closed (archived 2026-07-05). Scope: openspec/changes/adopt-gbrain-second-brain/tasks.md"
     }
   ]
 }
