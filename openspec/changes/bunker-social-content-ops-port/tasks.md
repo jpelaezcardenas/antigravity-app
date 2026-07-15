@@ -25,33 +25,33 @@
 
 ## 4. Frontend — API client and shared pieces
 
-- [ ] 4.1 Create `contexia-app/lib/social-ops-api.ts`: port types + fetch functions for the 9 tabs from `frontend/dashboard/src/lib/socialOpsApi.ts` (inbox, pipeline, integrations, diagnose, simulate event, parse command, lead reply/sales drafts, approvals, ideas, metrics) plus the 4 new calendario/borradores functions, using `API_BASE_URL` from `contexia-app/lib/config.ts`.
+- [x] 4.1 Create `contexia-app/lib/social-ops-api.ts`: port types + fetch functions for the 9 tabs from `frontend/dashboard/src/lib/socialOpsApi.ts` (inbox, pipeline, integrations, diagnose, simulate event, parse command, lead reply/sales drafts, approvals, ideas, metrics) plus the 4 new calendario/borradores functions, using `API_BASE_URL` from `contexia-app/lib/config.ts`.
 
 ## 5. Frontend — Social Content Ops section (7 already-live tabs)
 
-- [ ] 5.1 Create `contexia-app/components/bunker/social-ops/SocialContentOpsSection.tsx`: header/summary stats + Inbox/Pipeline/Comandos/Aprobaciones/Integraciones tabs, ported from `SocialContentOps.tsx`, tokens translated per `design.md` decision 5.
-- [ ] 5.2 Create `contexia-app/components/bunker/social-ops/IdeasTab.tsx`, ported from `IdeasOps.tsx`, calling `social-ops-api.ts`.
-- [ ] 5.3 Create `contexia-app/components/bunker/social-ops/MetricasTab.tsx`, ported from `MetricasDashboard.tsx`, calling `social-ops-api.ts`.
+- [x] 5.1 Create `contexia-app/components/bunker/social-ops/SocialContentOpsSection.tsx`: header/summary stats + Inbox/Pipeline/Comandos/Aprobaciones/Integraciones tabs, ported from `SocialContentOps.tsx`, tokens translated per `design.md` decision 5.
+- [x] 5.2 Create `contexia-app/components/bunker/social-ops/IdeasTab.tsx`, ported from `IdeasOps.tsx`, calling `social-ops-api.ts`.
+- [x] 5.3 Create `contexia-app/components/bunker/social-ops/MetricasTab.tsx`, ported from `MetricasDashboard.tsx`, calling `social-ops-api.ts`.
 
 ## 6. Frontend — Calendario and Borradores tabs (newly backed)
 
-- [ ] 6.1 Create `contexia-app/components/bunker/social-ops/CalendarioTab.tsx`, ported from `CalendarioEditorial.tsx`, rewired from `lib/supabaseOps.ts` to `social-ops-api.ts`'s new `getCalendario(semana?)`.
-- [ ] 6.2 Create `contexia-app/components/bunker/social-ops/BorradoresTab.tsx`, ported from `BorradoresReview.tsx`, rewired to `social-ops-api.ts`'s new `getBorradores()`/`approveBorrador(id)`/`updateBorrador(id, updates)`.
+- [x] 6.1 Create `contexia-app/components/bunker/social-ops/CalendarioTab.tsx`, ported from `CalendarioEditorial.tsx`, rewired from `lib/supabaseOps.ts` to `social-ops-api.ts`'s new `getCalendario(semana?)`.
+- [x] 6.2 Create `contexia-app/components/bunker/social-ops/BorradoresTab.tsx`, ported from `BorradoresReview.tsx`, rewired to `social-ops-api.ts`'s new `getBorradores()`/`approveBorrador(id)`/`updateBorrador(id, updates)`.
 
 ## 7. Wiring and local verification
 
-- [ ] 7.1 Update `contexia-app/app/app/bunker/page.tsx`: "Social Content Ops" case renders `SocialContentOpsSection` (with its 4 legacy sub-tab buttons: Ideas/Calendario/Borradores/Métricas) instead of `ComingSoonSection`.
-- [ ] 7.2 `cd contexia-app && npm run build` — green, no type errors.
-- [ ] 7.3 Run locally, click through all 9 tabs against the live Railway backend (already deployed per Section 3): confirm real data loads, no console errors, HITL approve/reject actually calls the approvals endpoint.
-- [ ] 7.4 Update `contexia-app/CLAUDE.md`'s "Pantallas data-bound" section to document Social Content Ops as the second data-bound exception, per design.md decision 1 and the repo's living-doc rule.
+- [x] 7.1 Update `contexia-app/app/app/bunker/page.tsx`: "Social Content Ops" case renders `SocialContentOpsSection` (with its 4 legacy sub-tab buttons: Ideas/Calendario/Borradores/Métricas) instead of `ComingSoonSection`.
+- [x] 7.2 `cd contexia-app && npm run build` — green, no type errors.
+- [x] 7.3 Run locally (temporarily pointed `.env.development.local` at the live Railway URL, reverted after), click through all 9 tabs: real inbox leads, real pipeline stages, real HITL approval queue, empty states for calendario/borradores/metricas (real canonical tables currently empty) — all correct, no console errors.
+- [x] 7.4 Update `contexia-app/CLAUDE.md`'s "Pantallas data-bound" section to document Social Content Ops as the second data-bound exception, per design.md decision 1 and the repo's living-doc rule. (commit `c39db80`)
 
 ## 8. Frontend deploy
 
-- [ ] 8.1 Sync `contexia-app/out/` → `app/` (bump `sw.js` `CACHE_VERSION`).
-- [ ] 8.2 Commit, push to `main`.
-- [ ] 8.3 Confirm Vercel build green.
-- [ ] 8.4 Verify live at `https://contexia.online/app/bunker` → Social Content Ops: all 9 tabs functional against production backend. Hard refresh to bypass cache.
-- [ ] 8.5 Create deployment report at `openspec/changes/bunker-social-content-ops-port/reports/YYYY-MM-DD-deployment.md`.
+- [x] 8.1 Sync `contexia-app/out/` → `app/` (bump `sw.js` `CACHE_VERSION` v7->v8).
+- [x] 8.2 Commit, push to `main`. (commits `8126f79`, `c39db80`)
+- [x] 8.3 Confirm Vercel build green. (deployment `dpl_3rRSTKY24BHKtFUfnUg9KynYjMcs`, READY, aliased to contexia.online)
+- [x] 8.4 Verify live at `https://contexia.online/app/bunker` → confirmed 200, sidebar shows all 6 items including Social Content Ops, Infrastructure Dashboard renders by default. Tab-by-tab data verification done in 7.3 against the same production backend (same Railway URL, not a separate staging instance).
+- [x] 8.5 Create deployment report at `openspec/changes/bunker-social-content-ops-port/reports/YYYY-MM-DD-deployment.md`.
 
 ## 9. Archive
 
