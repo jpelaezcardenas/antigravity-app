@@ -286,6 +286,46 @@ def generate_idea_draft(idea_id: int):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.get("/calendario")
+def list_calendario(semana: Optional[int] = Query(default=None, ge=1)):
+    return get_social_ops_service().list_calendario(semana=semana)
+
+
+@router.get("/borradores")
+def list_borradores():
+    return get_social_ops_service().list_borradores()
+
+
+class BorradorApprovalRequest(BaseModel):
+    actor_handle: str = Field(default="ops_admin", min_length=1)
+
+
+@router.post("/borradores/{borrador_id}/approve")
+def approve_borrador(borrador_id: int, payload: BorradorApprovalRequest):
+    try:
+        return get_social_ops_service().approve_borrador(borrador_id, actor=payload.actor_handle)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+class BorradorUpdateRequest(BaseModel):
+    hook: Optional[str] = None
+    hook_alt_1: Optional[str] = None
+    hook_alt_2: Optional[str] = None
+    copy_body: Optional[str] = None
+    cta: Optional[str] = None
+    hashtags: Optional[str] = None
+
+
+@router.post("/borradores/{borrador_id}/update")
+def update_borrador(borrador_id: int, payload: BorradorUpdateRequest):
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    try:
+        return get_social_ops_service().update_borrador(borrador_id, updates)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.get("/metrics")
 def metrics_dashboard():
     return get_social_ops_service().get_metrics_dashboard()

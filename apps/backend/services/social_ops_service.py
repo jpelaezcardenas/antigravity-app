@@ -181,6 +181,8 @@ class SocialOpsService:
         self.reply_drafts: Dict[str, Dict[str, Any]] = {}
         self.service_reply_drafts: Dict[str, Dict[str, Any]] = {}
         self.ideas: Dict[int, Dict[str, Any]] = {}
+        self.calendario: List[Dict[str, Any]] = []
+        self.contenido: Dict[int, Dict[str, Any]] = {}
         self.metrics: List[Dict[str, Any]] = []
         self.publications: List[Dict[str, Any]] = []
         self.channel_accounts = _default_accounts()
@@ -1515,6 +1517,58 @@ class SocialOpsService:
             "score_potencial": 7,
         }
 
+        self.calendario = [
+            {
+                "id": 1,
+                "semana": 1,
+                "fecha_publicacion": "2026-07-06",
+                "dia_semana": "Lunes",
+                "idea_id": 1,
+                "pilar": "CLARIDAD",
+                "formato": "CARRUSEL",
+                "titulo_trabajo": "Que es Contexia y por que no somos contadores tradicionales",
+                "status": "PLANIFICADO",
+                "responsable": "Taty",
+                "notas_editoriales": None,
+                "created_at": utc_now(),
+            },
+            {
+                "id": 2,
+                "semana": 1,
+                "fecha_publicacion": "2026-07-08",
+                "dia_semana": "Miercoles",
+                "idea_id": 2,
+                "pilar": "ACCION",
+                "formato": "VIDEO_CORTO",
+                "titulo_trabajo": "5 beneficios de integrar IA con Notion para tu agencia",
+                "status": "EN_PRODUCCION",
+                "responsable": "Taty",
+                "notas_editoriales": None,
+                "created_at": utc_now(),
+            },
+        ]
+
+        self.contenido[1] = {
+            "id": 1,
+            "cal_id": 2,
+            "hook": "Tu agencia pierde horas cada semana en tareas que Notion + IA resuelven en minutos.",
+            "hook_alt_1": "Notion sin IA es una libreta cara.",
+            "hook_alt_2": "5 formas de automatizar tu agencia con Notion.",
+            "hook_seleccionado": "principal",
+            "copy_body": "En Contexia usamos IA sobre Notion para automatizar reportes y seguimiento de clientes. Aqui 5 formas de hacerlo tu tambien.",
+            "cta": "Escribe 'Bunker' y te compartimos el playbook completo.",
+            "hashtags": "#PyMEsColombia #IA #Productividad",
+            "guion_video": None,
+            "notas_visual": None,
+            "asset_url": None,
+            "version": 1,
+            "status": "BORRADOR_IA",
+            "fecha_aprobacion": None,
+            "aprobado_por": None,
+            "qa_humanizacion": False,
+            "created_at": utc_now(),
+        }
+
     def list_ideas(self) -> Dict[str, Any]:
         """Return ideas for Operaciones/Ideas (prefers Supabase when configured)."""
         try:
@@ -1644,6 +1698,83 @@ class SocialOpsService:
             "metricas": metricas,
             "publicaciones": publicaciones,
         }
+
+    def list_calendario(self, semana: Optional[int] = None) -> Dict[str, Any]:
+        """Editorial calendar for Operaciones/Calendario (prefers Supabase when configured)."""
+        try:
+            if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_KEY"):
+                client = get_supabase()
+                query = client.table("calendario").select("*").order("fecha_publicacion", desc=False)
+                if semana is not None:
+                    query = query.eq("semana", semana)
+                result = query.execute()
+                return {"source": "supabase", "items": result.data or []}
+        except Exception as exc:
+            logger.warning("Calendario: supabase unavailable, using demo memory: %s", exc)
+
+        items = deepcopy(self.calendario)
+        if semana is not None:
+            items = [item for item in items if item.get("semana") == semana]
+        return {"source": "demo_fallback", "items": items}
+
+    def list_borradores(self) -> Dict[str, Any]:
+        """Pending-review drafts for Operaciones/Borradores (prefers Supabase when configured)."""
+        pending_statuses = {"BORRADOR_IA", "EDITADO_HUMANO"}
+        try:
+            if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_KEY"):
+                client = get_supabase()
+                result = (
+                    client.table("contenido")
+                    .select("*")
+                    .in_("status", list(pending_statuses))
+                    .order("created_at", desc=True)
+                    .execute()
+                )
+                return {"source": "supabase", "items": result.data or []}
+        except Exception as exc:
+            logger.warning("Borradores: supabase unavailable, using demo memory: %s", exc)
+
+        items = [item for item in self.contenido.values() if item.get("status") in pending_statuses]
+        items.sort(key=lambda item: item.get("created_at") or "", reverse=True)
+        return {"source": "demo_fallback", "items": deepcopy(items)}
+
+    def approve_borrador(self, borrador_id: int, actor: str) -> Dict[str, Any]:
+        approval_date = datetime.now(timezone.utc).date().isoformat()
+        try:
+            if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_KEY"):
+                client = get_supabase()
+                client.table("contenido").update(
+                    {"status": "APROBADO", "fecha_aprobacion": approval_date, "aprobado_por": actor}
+                ).eq("id", borrador_id).execute()
+                return {"ok": True, "source": "supabase"}
+        except Exception as exc:
+            logger.warning("Borradores: approve failed in supabase, falling back: %s", exc)
+
+        borrador = self.contenido.get(int(borrador_id))
+        if not borrador:
+            raise KeyError("borrador_id not found")
+        borrador["status"] = "APROBADO"
+        borrador["fecha_aprobacion"] = approval_date
+        borrador["aprobado_por"] = actor
+        return {"ok": True, "source": "demo_fallback"}
+
+    def update_borrador(self, borrador_id: int, updates: Dict[str, Any]) -> Dict[str, Any]:
+        allowed_fields = {"hook", "hook_alt_1", "hook_alt_2", "copy_body", "cta", "hashtags"}
+        content_updates = {k: v for k, v in updates.items() if k in allowed_fields}
+        payload = {**content_updates, "status": "EDITADO_HUMANO"}
+        try:
+            if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_KEY"):
+                client = get_supabase()
+                client.table("contenido").update(payload).eq("id", borrador_id).execute()
+                return {"ok": True, "source": "supabase"}
+        except Exception as exc:
+            logger.warning("Borradores: update failed in supabase, falling back: %s", exc)
+
+        borrador = self.contenido.get(int(borrador_id))
+        if not borrador:
+            raise KeyError("borrador_id not found")
+        borrador.update(payload)
+        return {"ok": True, "source": "demo_fallback"}
 
     def simulate_metrics(self) -> Dict[str, Any]:
         """Create demo metrics/publications for local smoke tests."""

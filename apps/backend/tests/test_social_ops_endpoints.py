@@ -119,3 +119,106 @@ class TestLeadReplyApprovalQueueIntegration:
         call_kwargs = call_args[1] if call_args[1] else {}
         enqueued_draft_type = call_kwargs.get("draft_type") or (call_args[0][1] if len(call_args[0]) > 1 else None)
         assert enqueued_draft_type == "social_reply"
+
+
+class TestCalendarioBorradoresEndpoints:
+    """Router-level tests for the new /calendario and /borradores endpoints."""
+
+    def test_list_calendario_endpoint_returns_items(self) -> None:
+        from presentation.social_ops_endpoints import list_calendario
+        from services.social_ops_service import get_social_ops_service
+
+        service = get_social_ops_service()
+        service.calendario = [
+            {"id": 1, "semana": 1, "fecha_publicacion": "2026-07-06", "dia_semana": "Lunes",
+             "idea_id": None, "pilar": "CLARIDAD", "formato": "CARRUSEL", "titulo_trabajo": "Post A",
+             "status": "PLANIFICADO", "responsable": "Ops", "notas_editoriales": None, "created_at": "2026-07-01"},
+        ]
+
+        result = list_calendario(semana=None)
+
+        assert result["items"][0]["id"] == 1
+
+    def test_list_calendario_endpoint_filters_by_semana(self) -> None:
+        from presentation.social_ops_endpoints import list_calendario
+        from services.social_ops_service import get_social_ops_service
+
+        service = get_social_ops_service()
+        service.calendario = [
+            {"id": 1, "semana": 1, "fecha_publicacion": "2026-07-06", "dia_semana": "Lunes",
+             "idea_id": None, "pilar": "CLARIDAD", "formato": "CARRUSEL", "titulo_trabajo": "Post A",
+             "status": "PLANIFICADO", "responsable": "Ops", "notas_editoriales": None, "created_at": "2026-07-01"},
+            {"id": 2, "semana": 2, "fecha_publicacion": "2026-07-13", "dia_semana": "Lunes",
+             "idea_id": None, "pilar": "ACCION", "formato": "VIDEO_CORTO", "titulo_trabajo": "Post B",
+             "status": "DRAFT", "responsable": "Ops", "notas_editoriales": None, "created_at": "2026-07-01"},
+        ]
+
+        result = list_calendario(semana=2)
+
+        assert len(result["items"]) == 1
+        assert result["items"][0]["semana"] == 2
+
+    def test_list_borradores_endpoint_returns_items(self) -> None:
+        from presentation.social_ops_endpoints import list_borradores
+        from services.social_ops_service import get_social_ops_service
+
+        service = get_social_ops_service()
+        service.contenido = {
+            1: {"id": 1, "cal_id": 1, "hook": "Hook 1", "hook_alt_1": None, "hook_alt_2": None,
+                "copy_body": "Copy 1", "cta": "CTA 1", "hashtags": "#a", "version": 1,
+                "status": "BORRADOR_IA", "qa_humanizacion": False, "fecha_aprobacion": None,
+                "aprobado_por": None, "created_at": "2026-07-01"},
+        }
+
+        result = list_borradores()
+
+        assert result["items"][0]["id"] == 1
+
+    def test_approve_borrador_endpoint(self) -> None:
+        from presentation.social_ops_endpoints import approve_borrador, BorradorApprovalRequest
+        from services.social_ops_service import get_social_ops_service
+
+        service = get_social_ops_service()
+        service.contenido = {
+            1: {"id": 1, "cal_id": 1, "hook": "Hook 1", "hook_alt_1": None, "hook_alt_2": None,
+                "copy_body": "Copy 1", "cta": "CTA 1", "hashtags": "#a", "version": 1,
+                "status": "BORRADOR_IA", "qa_humanizacion": False, "fecha_aprobacion": None,
+                "aprobado_por": None, "created_at": "2026-07-01"},
+        }
+
+        result = approve_borrador(1, BorradorApprovalRequest(actor_handle="ops_admin"))
+
+        assert result["ok"] is True
+        assert service.contenido[1]["status"] == "APROBADO"
+
+    def test_approve_borrador_endpoint_404_for_unknown_id(self) -> None:
+        from fastapi import HTTPException
+        from presentation.social_ops_endpoints import approve_borrador, BorradorApprovalRequest
+        from services.social_ops_service import get_social_ops_service
+
+        service = get_social_ops_service()
+        service.contenido = {}
+
+        try:
+            approve_borrador(999, BorradorApprovalRequest(actor_handle="ops_admin"))
+            assert False, "expected HTTPException"
+        except HTTPException as exc:
+            assert exc.status_code == 404
+
+    def test_update_borrador_endpoint(self) -> None:
+        from presentation.social_ops_endpoints import update_borrador, BorradorUpdateRequest
+        from services.social_ops_service import get_social_ops_service
+
+        service = get_social_ops_service()
+        service.contenido = {
+            1: {"id": 1, "cal_id": 1, "hook": "Hook 1", "hook_alt_1": None, "hook_alt_2": None,
+                "copy_body": "Copy 1", "cta": "CTA 1", "hashtags": "#a", "version": 1,
+                "status": "BORRADOR_IA", "qa_humanizacion": False, "fecha_aprobacion": None,
+                "aprobado_por": None, "created_at": "2026-07-01"},
+        }
+
+        result = update_borrador(1, BorradorUpdateRequest(hook="Nuevo hook"))
+
+        assert result["ok"] is True
+        assert service.contenido[1]["hook"] == "Nuevo hook"
+        assert service.contenido[1]["status"] == "EDITADO_HUMANO"
