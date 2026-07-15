@@ -5,13 +5,15 @@ import { BunkerSidebar, type BunkerSection } from "@/components/bunker/BunkerSid
 import { InfrastructureDashboard } from "@/components/bunker/InfrastructureDashboard";
 import { CrmVentasSection } from "@/components/bunker/CrmVentasSection";
 import { ComingSoonSection } from "@/components/bunker/ComingSoonSection";
+import { SocialContentOpsSection } from "@/components/bunker/social-ops/SocialContentOpsSection";
 
 const PLACEHOLDER_LABELS: Partial<Record<BunkerSection, string>> = {
   onboarding: "Onboarding",
-  "social-content-ops": "Social Content Ops",
   "agentic-os": "Agentic OS",
   configuracion: "Configuración",
 };
+
+const PLACEHOLDER_SECTIONS: BunkerSection[] = ["onboarding", "agentic-os", "configuracion"];
 
 export default function BunkerPage() {
   const [activeSection, setActiveSection] = useState<BunkerSection>("dashboard");
@@ -42,7 +44,8 @@ export default function BunkerPage() {
           <div className="px-container-margin-mobile md:px-container-margin-desktop max-w-6xl mx-auto w-full mt-6">
             {activeSection === "dashboard" && <InfrastructureDashboard />}
             {activeSection === "crm-ventas" && <CrmVentasSection />}
-            {activeSection !== "dashboard" && activeSection !== "crm-ventas" && (
+            {activeSection === "social-content-ops" && <SocialContentOpsSection />}
+            {PLACEHOLDER_SECTIONS.includes(activeSection) && (
               <ComingSoonSection label={PLACEHOLDER_LABELS[activeSection] ?? ""} />
             )}
           </div>

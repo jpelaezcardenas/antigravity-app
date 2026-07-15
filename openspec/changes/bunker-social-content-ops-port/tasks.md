@@ -1,27 +1,27 @@
 ## 1. Backend — Calendario endpoint (TDD)
 
-- [ ] 1.1 Write failing tests in `apps/backend/tests/test_social_ops_service.py`: `list_calendario()` returns demo-fallback items when Supabase unset; `list_calendario(semana=2)` filters correctly.
-- [ ] 1.2 Write failing tests in `apps/backend/tests/test_social_ops_endpoints.py`: `GET /social-ops/calendario` returns 200 with `items`; `GET /social-ops/calendario?semana=2` filters.
-- [ ] 1.3 Add `self.calendario: List[Dict[str, Any]] = []` to `SocialOpsService.reset_memory()`, seed 3-4 illustrative entries in `_seed_demo()` matching the `Calendario` shape (id, semana, fecha_publicacion, dia_semana, idea_id, pilar, formato, titulo_trabajo, status, responsable, notas_editoriales, created_at).
-- [ ] 1.4 Implement `list_calendario(semana: Optional[int] = None) -> Dict[str, Any]` in `SocialOpsService`, following the exact Supabase-preferred/demo-fallback pattern of `list_ideas()`.
-- [ ] 1.5 Add `GET /social-ops/calendario` route in `apps/backend/presentation/social_ops_endpoints.py` accepting optional `semana` query param.
-- [ ] 1.6 Run `pytest apps/backend/tests/test_social_ops_service.py apps/backend/tests/test_social_ops_endpoints.py` — all green.
+- [x] 1.1 Write failing tests in `apps/backend/tests/test_social_ops_service.py`: `list_calendario()` returns demo-fallback items when Supabase unset; `list_calendario(semana=2)` filters correctly.
+- [x] 1.2 Write failing tests in `apps/backend/tests/test_social_ops_endpoints.py`: `GET /social-ops/calendario` returns 200 with `items`; `GET /social-ops/calendario?semana=2` filters.
+- [x] 1.3 Add `self.calendario: List[Dict[str, Any]] = []` to `SocialOpsService.reset_memory()`, seed 3-4 illustrative entries in `_seed_demo()` matching the `Calendario` shape (id, semana, fecha_publicacion, dia_semana, idea_id, pilar, formato, titulo_trabajo, status, responsable, notas_editoriales, created_at).
+- [x] 1.4 Implement `list_calendario(semana: Optional[int] = None) -> Dict[str, Any]` in `SocialOpsService`, following the exact Supabase-preferred/demo-fallback pattern of `list_ideas()`.
+- [x] 1.5 Add `GET /social-ops/calendario` route in `apps/backend/presentation/social_ops_endpoints.py` accepting optional `semana` query param.
+- [x] 1.6 Run `pytest apps/backend/tests/test_social_ops_service.py apps/backend/tests/test_social_ops_endpoints.py` — all green.
 
 ## 2. Backend — Borradores endpoints (TDD)
 
-- [ ] 2.1 Write failing tests: `list_borradores()` returns only `BORRADOR_IA`/`EDITADO_HUMANO` items (demo-fallback); `approve_borrador(id)` sets status `APROBADO` + `fecha_aprobacion` + `aprobado_por`, raises `KeyError` for unknown id; `update_borrador(id, updates)` applies partial update and sets `status=EDITADO_HUMANO`.
-- [ ] 2.2 Write failing endpoint tests: `GET /social-ops/borradores`, `POST /social-ops/borradores/{id}/approve` (200 + 404 cases), `POST /social-ops/borradores/{id}/update`.
-- [ ] 2.3 Add `self.contenido: Dict[int, Dict[str, Any]] = {}` to `reset_memory()`, seed 2-3 illustrative drafts in `_seed_demo()` matching the `Contenido` shape (id, cal_id, hook, hook_alt_1, hook_alt_2, copy_body, cta, hashtags, version, status, qa_humanizacion, created_at).
-- [ ] 2.4 Implement `list_borradores()`, `approve_borrador(id, actor)`, `update_borrador(id, updates)` in `SocialOpsService`, same pattern.
-- [ ] 2.5 Add `GET /social-ops/borradores`, `POST /social-ops/borradores/{id}/approve`, `POST /social-ops/borradores/{id}/update` routes.
-- [ ] 2.6 Run `pytest apps/backend/tests/test_social_ops_service.py apps/backend/tests/test_social_ops_endpoints.py` — all green.
+- [x] 2.1 Write failing tests: `list_borradores()` returns only `BORRADOR_IA`/`EDITADO_HUMANO` items (demo-fallback); `approve_borrador(id)` sets status `APROBADO` + `fecha_aprobacion` + `aprobado_por`, raises `KeyError` for unknown id; `update_borrador(id, updates)` applies partial update and sets `status=EDITADO_HUMANO`.
+- [x] 2.2 Write failing endpoint tests: `GET /social-ops/borradores`, `POST /social-ops/borradores/{id}/approve` (200 + 404 cases), `POST /social-ops/borradores/{id}/update`.
+- [x] 2.3 Add `self.contenido: Dict[int, Dict[str, Any]] = {}` to `reset_memory()`, seed 2-3 illustrative drafts in `_seed_demo()` matching the `Contenido` shape (id, cal_id, hook, hook_alt_1, hook_alt_2, copy_body, cta, hashtags, version, status, qa_humanizacion, created_at).
+- [x] 2.4 Implement `list_borradores()`, `approve_borrador(id, actor)`, `update_borrador(id, updates)` in `SocialOpsService`, same pattern.
+- [x] 2.5 Add `GET /social-ops/borradores`, `POST /social-ops/borradores/{id}/approve`, `POST /social-ops/borradores/{id}/update` routes.
+- [x] 2.6 Run `pytest apps/backend/tests/test_social_ops_service.py apps/backend/tests/test_social_ops_endpoints.py` — all green (21/21).
 
 ## 3. Backend deploy
 
-- [ ] 3.1 Commit backend changes, push to `main`.
-- [ ] 3.2 Confirm Railway (`-175a`) deploy completes and is healthy.
-- [ ] 3.3 Flip `SOCIAL_OPS_CANONICAL=true` on Railway `-175a` (confirmed with user — see `design.md` decision 7: this replaces n8n as the Social Ops handler in production, not just adding endpoints).
-- [ ] 3.4 `curl` all 7 existing `/social-ops/*` endpoints (inbox, pipeline, integrations, approvals, ideas, metrics + the 4 new calendario/borradores ones) against the live Railway URL — confirm 200 responses with expected shapes, none still 404.
+- [x] 3.1 Commit backend changes, push to `main`. (commit `123cdc7`)
+- [x] 3.2 Confirm Railway (`-175a`) deploy completes and is healthy. (deployment `d5e25ce4`)
+- [x] 3.3 Flip `SOCIAL_OPS_CANONICAL=true` on Railway `-175a` (confirmed with user — see `design.md` decision 7: this replaces n8n as the Social Ops handler in production, not just adding endpoints). (deployment `c685a456`)
+- [x] 3.4 `curl` all `/social-ops/*` endpoints against the live Railway URL — all 200: inbox, pipeline, integrations, approvals, ideas, metrics, calendario, borradores. `calendario` connected to canonical Supabase (`"source":"supabase"`, table exists, currently empty).
 
 ## 4. Frontend — API client and shared pieces
 

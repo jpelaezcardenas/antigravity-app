@@ -1,0 +1,1 @@
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,82516,a=>{"use strict";let i=a.i(65529).default.env.NEXT_PUBLIC_API_BASE_URL||"https://antigravity-app-production-175a.up.railway.app",t={financials:`${i}/api/v1/financials`};a.s(["API_BASE_URL",0,i,"API_ENDPOINTS",0,t])}]);
