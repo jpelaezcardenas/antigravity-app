@@ -4,7 +4,7 @@ Demo mock visual de la app Contexia. Stack: Next.js 16 App Router + React 19 + T
 
 ## Reglas duras
 
-- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (hoy, solo Pulso/Overview → Caja Real) PUEDEN hacer fetch read-only de snapshots del backend Contexia (`/api/v1/*`). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
+- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real; Búnker → Social Content Ops) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real es solo lectura; Social Content Ops sí escribe — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
 - **Fuente de verdad visual**: el export de Stitch y los screenshots `screen.png` del ZIP `stitch_contexia_evolution_cfo_as_a_service`. No rediseñar pantallas que Stitch ya definió.
 - **Sin CDN**: nada de React/Tailwind/Babel por unpkg. Las únicas URLs externas son Google Fonts (Inter, JetBrains Mono, Material Symbols) cargadas desde [app/layout.tsx](app/layout.tsx).
 - **Sin librerías nuevas** salvo que sea estrictamente necesario. Stack mínimo.
@@ -31,6 +31,27 @@ blanco ni revienta si el backend no responde.
   espera COP completos — dividir entre 100 al mapear la respuesta.
 - **Mocks**: el resto de cards de Pulso (Health, Alerts, Note) y todas las demás
   pantallas (Fiscal, Radar, Patrimonio, Flujo-detalle) siguen en mocks.
+
+### Búnker → Social Content Ops (segunda excepción data-bound)
+
+`components/bunker/social-ops/SocialContentOpsSection.tsx` (+ `IdeasTab`,
+`CalendarioTab`, `BorradoresTab`, `MetricasTab`) es la segunda pantalla
+data-bound. A diferencia de `CashTodayCard` (solo lectura), esta sí escribe:
+crea eventos, diagnostica leads, genera borradores IA, aprueba/rechaza
+(HITL). Backend real ya desplegado (`apps/backend/presentation/
+social_ops_endpoints.py`, gateado por el feature flag `SOCIAL_OPS_CANONICAL`,
+`true` en Railway `-175a` desde 2026-07-15 — reemplaza n8n como handler de
+Social Ops en producción).
+
+- **Cliente tipado**: `lib/social-ops-api.ts`.
+- **Ideas / Métricas / Calendario / Borradores** completan el pipeline
+  Ideas → Calendario → Borradores → Métricas que `AGENTES.md` documenta como
+  "preservado" (Tier 3, agentes 6a–6d). Calendario/Borradores son endpoints
+  nuevos (mismo patrón Supabase-preferido/demo-fallback que ideas/metrics) —
+  antes vivían solo en un dashboard Vite no enlazado, contra un proyecto
+  Supabase distinto y no documentado (el sandbox del Wizard).
+- **HITL intacto**: todo borrador queda en `pending_approval`; el tab
+  Aprobaciones es el único gate que libera una acción outbound.
 
 Esto es una excepción escoped al charter "sin backend" — pantallas data-bound son
 un puente hacia el MVP data-driven; mocks aplican para todo lo demás.
