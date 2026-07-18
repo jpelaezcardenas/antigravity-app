@@ -102,7 +102,7 @@ export const INITIAL_WIZARD_STATE: WizardState = {
 
 export const WIZARD_STORAGE_KEY = "contexia_crear_empresa_wizard_v1";
 
-export const PRICE_CREAR_EMPRESA = 399_000; // COP
+export const PRICE_CREAR_EMPRESA = 1_200_000; // COP
 
 export const WIZARD_STEPS_LABELS: Record<WizardStep, { short: string; long: string }> = {
   1: { short: "Contacto", long: "Tus datos" },

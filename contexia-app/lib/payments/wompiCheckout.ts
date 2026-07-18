@@ -112,6 +112,6 @@ export async function validateCoupon(code: string): Promise<CouponResponse> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ code }),
   });
-  if (!res.ok) return { valid: false, discountCop: 0, description: null, baseCop: 399_000, finalCop: 399_000 };
+  if (!res.ok) return { valid: false, discountCop: 0, description: null, baseCop: 1_200_000, finalCop: 1_200_000 };
   return res.json();
 }

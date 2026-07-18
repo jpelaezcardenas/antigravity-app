@@ -1,6 +1,6 @@
 import { validateCoupon } from "./coupons";
 
-export const PRICE_CREAR_EMPRESA_COP = 399_000;
+export const PRICE_CREAR_EMPRESA_COP = 1_200_000;
 export const MIN_FINAL_AMOUNT_COP = 1_000;
 
 export interface FinalAmount {
