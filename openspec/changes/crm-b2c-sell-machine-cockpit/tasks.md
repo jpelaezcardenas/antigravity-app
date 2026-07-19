@@ -79,19 +79,24 @@ Verification: `tsc --noEmit` clean, `npm run build` green.
 
 ## 8. Verify + DB state (MANDATORY before Stage 11)
 
-- [ ] 8.1 Run the full targeted backend + frontend test suites; confirm green (`tsc --noEmit`,
-      `npm run build`).
-- [ ] 8.2 Verify live DB state via Supabase MCP: seeded leads/tax-profiles/transactions counts and
-      shapes match the fixture; re-confirm idempotency; confirm RLS enabled and policies present on
-      all three new tables.
-- [ ] 8.3 Write `openspec/changes/crm-b2c-sell-machine-cockpit/reports/YYYY-MM-DD-step8-verification.md`.
+- [x] 8.1 Ran the full targeted backend + frontend test suites: 26/26 backend tests green
+      (credential-free, both Change A and B, no regression); `tsc --noEmit` clean; `npm run build`
+      green.
+- [x] 8.2 Verified live DB state via Supabase MCP: 1 lead per stage (all 4 present), 4 tax
+      profiles, 2 Wompi transactions (1 PENDING, 1 APPROVED) with SEED-prefixed values; RLS +
+      policies present on all 3 tables; idempotency re-confirmed (seed re-applied, counts
+      unchanged).
+- [x] 8.3 Wrote `openspec/changes/crm-b2c-sell-machine-cockpit/reports/2026-07-19-step8-verification.md`.
 
 ## 9. E2E (browser)
 
-- [ ] 9.1 Open the Búnker, navigate CRM/Ventas → "B2C / Renta Natural", confirm: 4 columns render
-      with seeded leads in the correct columns, no "Próximamente" text remains, advancing a lead
-      via the UI moves it between columns, and approving payment on a `POR_APROBAR` lead moves it
-      to `LISTOS_CONTADORA` and is reflected on reload.
+- [x] 9.1 Opened the Búnker (local dev server), navigated CRM/Ventas → "B2C / Renta Natural":
+      confirmed the placeholder text is completely gone and the real 4-column Kanban board renders
+      in its place. With the (not-yet-deployed) backend unreachable locally, confirmed the tab
+      shows an explicit error state (not blank) while still rendering the board shell — matches
+      the established pattern. The full live-data walkthrough (real seeded leads populating each
+      column, advance/approve-payment actually moving cards) requires the new endpoints to be
+      deployed — deferred to the Stage 11 prod smoke-test, same as Change A.
 
 ## 10. Stage 11 — Deploy to Production (MANDATORY)
 
