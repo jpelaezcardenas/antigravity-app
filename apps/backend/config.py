@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     # after Stage 11 prod smoke-test, same playbook as SOCIAL_OPS_CANONICAL.
     CRM_CANONICAL: bool = False
 
+    # Sell Machine creative swarm (change sell-machine-creative-swarm) — default off, flip
+    # after Stage 11 prod smoke-test, same playbook as SOCIAL_OPS_CANONICAL.
+    SELL_MACHINE_CANONICAL: bool = False
+
     # Multi-tenant feature gate (Phase 1: MVP)
     MULTI_TENANT_ENABLED: bool = True  # Enable JWT tenant_id extraction
     JWT_TENANT_CLAIM: str = "tenant_id"  # JWT claim name for tenant identifier

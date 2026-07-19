@@ -49,19 +49,20 @@
 
 ## 5. Backend endpoints + flag — TDD
 
-- [ ] 5.1 Write failing endpoint tests (isolated FastAPI app + `httpx.AsyncClient` +
-      `ASGITransport` + `pytest.mark.asyncio`, per the established pattern — the sync `TestClient`
-      remains broken in this environment) for all 4 routes: `POST /sell-machine/hooks/generate`,
-      `POST /sell-machine/hooks/evaluate`, `POST /sell-machine/campaigns`,
-      `GET /sell-machine/campaigns`.
-- [ ] 5.2 Add `SELL_MACHINE_CANONICAL: bool = False` to `apps/backend/config.py`. Create
-      `apps/backend/presentation/sell_machine_endpoints.py` (`APIRouter(tags=["sell-machine"])`)
-      with the 4 routes, delegating to `sell_machine_service`/`copywriter_service`/
-      `content_evaluator`. Register in `apps/backend/presentation/router.py` behind
-      `if settings.SELL_MACHINE_CANONICAL: api_router.include_router(sell_machine_router,
-      prefix="/sell-machine", ...)`.
-- [ ] 5.3 Run tests green; confirm no regression in the existing `test_crm_*` suites (shared
-      `router.py`/`config.py` files are touched).
+- [x] 5.1 Wrote `test_sell_machine_endpoints.py` (isolated FastAPI app + `httpx.AsyncClient` +
+      `ASGITransport` + `pytest.mark.asyncio`) for all 4 routes plus the flag-gating checks.
+      Confirmed failing (module/routes didn't exist).
+- [x] 5.2 Added `SELL_MACHINE_CANONICAL: bool = False` to `apps/backend/config.py`. Created
+      `apps/backend/presentation/sell_machine_endpoints.py` with the 4 routes (refactored
+      `sell_machine_service.py` first to extract a standalone `evaluate_hooks()` — reused by both
+      `run_creative_loop` and the `/hooks/evaluate` endpoint — before wiring endpoints, so
+      `/hooks/generate` and `/hooks/evaluate` can be called independently as the spec requires).
+      Registered in `router.py` behind the new flag. Endpoints call `.to_dict()` on
+      `ApprovalDecision` results explicitly (verified `to_dict()` exists by reading
+      `models/approval_decisions.py`) so real production responses serialize correctly, not just
+      the plain-dict test mocks.
+- [x] 5.3 50/50 tests green (9 new Sell Machine endpoint tests + 41 pre-existing CRM + Sell
+      Machine unit tests) — zero regression despite `router.py`/`config.py` being shared files.
 
 ## 6. Frontend client + Búnker section
 

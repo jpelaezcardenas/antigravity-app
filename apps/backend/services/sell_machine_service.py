@@ -21,10 +21,10 @@ from services.copywriter_service import generate_hooks, rewrite_hook
 logger = logging.getLogger(__name__)
 
 
-def run_creative_loop(count: int = 5, target_segment: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Generate `count` hooks, evaluate each, give a rejected hook exactly one rewrite attempt,
-    and return only the survivors (design.md Decision 7)."""
-    hooks = generate_hooks(count=count)
+def evaluate_hooks(hooks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Evaluate a given list of hooks, giving each rejected hook exactly one rewrite attempt,
+    and return only the survivors (design.md Decision 7). Backs both `run_creative_loop` and the
+    standalone `POST /sell-machine/hooks/evaluate` endpoint."""
     survivors: List[Dict[str, Any]] = []
 
     for hook in hooks:
@@ -43,6 +43,12 @@ def run_creative_loop(count: int = 5, target_segment: Optional[str] = None) -> L
             )
 
     return survivors
+
+
+def run_creative_loop(count: int = 5, target_segment: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Generate `count` hooks and evaluate them, returning only the survivors."""
+    hooks = generate_hooks(count=count)
+    return evaluate_hooks(hooks)
 
 
 async def create_campaign_package(

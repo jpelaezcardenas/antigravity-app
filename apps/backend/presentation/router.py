@@ -22,6 +22,7 @@ from presentation.shadow_gl_endpoints import router as shadow_gl_router
 from presentation.pulso_diario_endpoints import router as pulso_diario_router
 from presentation.auditoria_sombra_endpoints import router as auditoria_sombra_router
 from presentation.crm_endpoints import router as crm_router
+from presentation.sell_machine_endpoints import router as sell_machine_router
 
 api_router = APIRouter()
 
@@ -56,3 +57,7 @@ api_router.include_router(auditoria_sombra_router, prefix="/agents/auditoria-som
 # CRM B2B retainers cockpit — feature flag gated (default off, flip after Stage 11 smoke-test)
 if settings.CRM_CANONICAL:
     api_router.include_router(crm_router, prefix="/crm", tags=["crm"])
+
+# Sell Machine creative swarm — feature flag gated (default off, flip after Stage 11 smoke-test)
+if settings.SELL_MACHINE_CANONICAL:
+    api_router.include_router(sell_machine_router, prefix="/sell-machine", tags=["sell-machine"])
