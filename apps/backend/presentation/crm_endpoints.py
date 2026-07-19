@@ -5,9 +5,10 @@ Mounted at /api/v1/crm behind the CRM_CANONICAL feature flag (see presentation/r
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
 
 from services.crm_service import get_crm_service
 
@@ -25,3 +26,42 @@ def get_b2b_payments_grid(
     to_period: Optional[str] = Query(default="2026-06-30"),
 ):
     return get_crm_service().b2b_payments_grid(from_period=from_period, to_period=to_period)
+
+
+@router.get("/b2c/pipeline")
+def get_b2c_pipeline():
+    return get_crm_service().b2c_pipeline()
+
+
+class AdvanceLeadRequest(BaseModel):
+    stage: str = Field(..., min_length=1)
+
+
+@router.post("/leads/{lead_id}/advance")
+def advance_lead(lead_id: str, payload: AdvanceLeadRequest):
+    try:
+        return get_crm_service().advance_lead(lead_id, payload.stage)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/leads/{lead_id}/tax-profile")
+def get_lead_tax_profile(lead_id: str):
+    return get_crm_service().get_tax_profile(lead_id)
+
+
+@router.patch("/leads/{lead_id}/tax-profile")
+def patch_lead_tax_profile(lead_id: str, payload: Dict[str, Any]):
+    return get_crm_service().update_tax_profile(lead_id, payload)
+
+
+class ApprovePaymentRequest(BaseModel):
+    approved_by: str = Field(..., min_length=1)
+
+
+@router.post("/leads/{lead_id}/approve-payment")
+def approve_lead_payment(lead_id: str, payload: ApprovePaymentRequest):
+    try:
+        return get_crm_service().approve_payment(lead_id, approved_by=payload.approved_by)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc

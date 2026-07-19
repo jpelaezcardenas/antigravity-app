@@ -36,20 +36,22 @@
       `b2c_pipeline()`, `advance_lead(lead_id, stage)` (including the invalid-stage-4xx case),
       `get_tax_profile(lead_id)`/`update_tax_profile(lead_id, patch)`, and
       `approve_payment(lead_id, approved_by)` (including the not-`POR_APROBAR`-rejected case).
-- [ ] 4.2 Extend `apps/backend/services/crm_service.py` with these methods (same
-      Supabase-preferred/demo-fallback idiom, `get_service_supabase()` reads/writes as established
-      in Change A).
-- [ ] 4.3 Run tests green.
+      Wrote `test_crm_service_b2c_logic.py` (credential-free, mocked client, mirrors
+      `test_crm_service_grid_logic.py`). Confirmed failing (methods didn't exist).
+- [x] 4.2 Extended `apps/backend/services/crm_service.py` with `b2c_pipeline`, `advance_lead`,
+      `get_tax_profile`, `update_tax_profile`, `approve_payment` (Supabase-preferred/demo-fallback
+      idiom where applicable; writes go through `get_service_supabase()` per Change A's Decision 8).
+- [x] 4.3 8/8 new tests green; re-ran Change A's `test_crm_service_grid_logic.py` alongside —
+      14/14 total, no regression.
 
 ## 5. Backend endpoints — TDD
 
-- [ ] 5.1 Write failing endpoint tests (isolated FastAPI app + `httpx.AsyncClient` +
-      `ASGITransport` + `pytest.mark.asyncio`, per Change A's `test_crm_endpoints.py` pattern —
-      the sync `TestClient` remains broken in this environment) for all 4 new routes, including the
-      4xx cases (invalid stage, approve-payment on a non-`POR_APROBAR` lead).
-- [ ] 5.2 Add the 4 routes to `apps/backend/presentation/crm_endpoints.py` (same router, same
+- [x] 5.1 Wrote `test_crm_b2c_endpoints.py` (isolated FastAPI app + `httpx.AsyncClient` +
+      `ASGITransport` + `pytest.mark.asyncio`, per Change A's pattern). Confirmed failing (routes
+      didn't exist — 404s).
+- [x] 5.2 Added the 4 routes to `apps/backend/presentation/crm_endpoints.py` (same router, same
       `CRM_CANONICAL` flag already registered in `router.py` — no new flag needed).
-- [ ] 5.3 Run tests green.
+- [x] 5.3 12/12 endpoint tests green (7 new + 5 from Change A), no regression.
 
 ## 6. Frontend client + Kanban tab
 

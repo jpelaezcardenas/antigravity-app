@@ -29,6 +29,20 @@ _DEMO_PAYMENTS: List[Dict[str, Any]] = [
     {"client_id": "demo-client-2", "period": "2026-01-01", "amount_cents": 50_000_00},
 ]
 
+# B2C sell-machine funnel (crm-b2c-sell-machine-cockpit, Change B)
+VALID_LEAD_STAGES = ["NUEVOS", "PROSPECTOS", "POR_APROBAR", "LISTOS_CONTADORA"]
+_STAGE_LABELS: Dict[str, str] = {
+    "NUEVOS": "Nuevos",
+    "PROSPECTOS": "Prospectos",
+    "POR_APROBAR": "Por Aprobar",
+    "LISTOS_CONTADORA": "Listos Contadora",
+}
+
+_DEMO_LEADS: List[Dict[str, Any]] = [
+    {"id": "demo-lead-1", "full_name": "Lead Demo Nuevos", "stage": "NUEVOS", "score": 10},
+    {"id": "demo-lead-2", "full_name": "Lead Demo Prospectos", "stage": "PROSPECTOS", "score": 40},
+]
+
 
 def _month_periods(from_period: str, to_period: str) -> List[str]:
     """Return a list of first-of-month ISO date strings from from_period to to_period, inclusive."""
@@ -143,6 +157,98 @@ class CrmService:
                 "by_client": by_client,
             },
         }
+
+
+    def b2c_pipeline(self) -> Dict[str, Any]:
+        """B2C Renta Natural lead funnel, board-shaped (prefers Supabase when configured)."""
+        leads: List[Dict[str, Any]] = []
+        source = "demo_fallback"
+        try:
+            if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_ROLE_KEY"):
+                client = get_service_supabase()
+                tenant_id = self._resolve_cliente_cero_tenant_id(client)
+                result = (
+                    client.table("crm_leads")
+                    .select("id, full_name, whatsapp_phone, stage, score, last_message")
+                    .eq("tenant_id", tenant_id)
+                    .order("score", desc=True)
+                    .execute()
+                )
+                leads = result.data or []
+                source = "supabase"
+        except Exception as exc:
+            logger.warning("CRM b2c pipeline: supabase unavailable, using demo fallback: %s", exc)
+
+        if source == "demo_fallback":
+            leads = deepcopy(_DEMO_LEADS)
+
+        columns = []
+        for stage in VALID_LEAD_STAGES:
+            stage_leads = [lead for lead in leads if lead.get("stage") == stage]
+            columns.append({"id": stage, "label": _STAGE_LABELS[stage], "leads": stage_leads})
+
+        return {
+            "source": source,
+            "columns": columns,
+            "summary": {"total_leads": len(leads)},
+        }
+
+    def advance_lead(self, lead_id: str, stage: str) -> Dict[str, Any]:
+        """Advance a lead to a new stage. Raises ValueError for an invalid stage."""
+        if stage not in VALID_LEAD_STAGES:
+            raise ValueError(f"Invalid stage: {stage!r}. Must be one of {VALID_LEAD_STAGES}.")
+
+        client = get_service_supabase()
+        result = (
+            client.table("crm_leads").update({"stage": stage}).eq("id", lead_id).execute()
+        )
+        return (result.data or [{}])[0]
+
+    def get_tax_profile(self, lead_id: str) -> Dict[str, Any]:
+        client = get_service_supabase()
+        result = (
+            client.table("crm_tax_profiles").select("*").eq("lead_id", lead_id).single().execute()
+        )
+        return result.data or {}
+
+    def update_tax_profile(self, lead_id: str, patch: Dict[str, Any]) -> Dict[str, Any]:
+        client = get_service_supabase()
+        result = (
+            client.table("crm_tax_profiles").update(patch).eq("lead_id", lead_id).execute()
+        )
+        return (result.data or [{}])[0]
+
+    def approve_payment(self, lead_id: str, approved_by: str) -> Dict[str, Any]:
+        """HITL gate: only valid for a lead currently in POR_APROBAR. Advances the lead to
+        LISTOS_CONTADORA and stamps its associated crm_wompi_transactions row APPROVED."""
+        client = get_service_supabase()
+
+        lead_result = (
+            client.table("crm_leads").select("id, stage").eq("id", lead_id).single().execute()
+        )
+        lead = lead_result.data or {}
+        if lead.get("stage") != "POR_APROBAR":
+            raise ValueError(
+                f"Lead {lead_id!r} is not in POR_APROBAR stage (current: {lead.get('stage')!r})."
+            )
+
+        from datetime import datetime, timezone
+
+        client.table("crm_wompi_transactions").update(
+            {
+                "status": "APPROVED",
+                "approved_by": approved_by,
+                "approved_at": datetime.now(timezone.utc).isoformat(),
+            }
+        ).eq("lead_id", lead_id).execute()
+
+        updated = (
+            client.table("crm_leads")
+            .update({"stage": "LISTOS_CONTADORA"})
+            .eq("id", lead_id)
+            .execute()
+        )
+        return (updated.data or [{}])[0]
 
 
 _crm_service: Optional[CrmService] = None
