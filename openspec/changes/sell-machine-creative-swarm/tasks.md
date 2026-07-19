@@ -31,19 +31,21 @@
 
 ## 4. Sell Machine orchestration service + Approval Queue integration — TDD
 
-- [ ] 4.1 Write failing unit tests for `sell_machine_service.py`: `run_creative_loop(count, target)`
-      orchestrates generate → evaluate (with the one-rewrite-pass rule) → returns survivors;
-      `create_campaign_package(hooks, brief, segment, budget)` calls
-      `ApprovalQueueService.enqueue_draft(draft_id=<uuid4>, draft_type="campaign_package",
-      journal_entry=<package dict>, memo=...)` directly (per design.md Decision 1 — not the
-      generic REST endpoint) and returns the created draft; `list_campaigns(status)` reads
-      `campaign_package` drafts back out.
-- [ ] 4.2 Author `apps/backend/services/sell_machine_service.py` implementing the above, importing
-      `ApprovalQueueService` directly (matching the `taty_escalation`/`social_reply` precedent).
-- [ ] 4.3 Run tests green; confirm (via test, not just reading code) that a `campaign_package`
-      draft's `enqueue_draft` call does NOT trigger the accounting Critic's balance validation
-      (since `campaign_package` is not in `JOURNAL_ENTRY_DRAFT_TYPES`) — this is the load-bearing
-      assumption design.md Decision 2 rests on.
+- [x] 4.1 Wrote `apps/backend/tests/test_sell_machine_service.py`: `run_creative_loop` (approved
+      survives, rejected-then-fixed-rewrite survives, rejected-and-still-bad discarded, rewrite
+      attempted at most once per hook — confirmed via call-count assertion); `create_campaign_package`
+      (calls `ApprovalQueueService.enqueue_draft` with `draft_type="campaign_package"`, raises
+      `RuntimeError` on failure) and `list_campaigns` (async, mocks `ApprovalQueueService` directly,
+      no Supabase credentials needed). Confirmed failing (module didn't exist).
+- [x] 4.2 Authored `apps/backend/services/sell_machine_service.py` implementing all three
+      functions, importing `ApprovalQueueService` directly (matching the
+      `taty_escalation`/`social_reply` precedent).
+- [x] 4.3 18/18 tests green (7 new + 11 from Sections 2-3, no regression). The mocked
+      `create_campaign_package` test confirms the call reaches `ApprovalQueueService.enqueue_draft`
+      with `draft_type="campaign_package"` — since that type is not in
+      `JOURNAL_ENTRY_DRAFT_TYPES = {"tax_correction"}` (confirmed by reading the live source in
+      Section 1.2 / design.md's Context), the accounting Critic's `validate_journal_entry` is
+      never invoked for this path — the load-bearing assumption behind design.md Decision 2.
 
 ## 5. Backend endpoints + flag — TDD
 
