@@ -66,21 +66,23 @@
 
 ## 6. Frontend client + Búnker section
 
-- [ ] 6.1 Create `contexia-app/lib/sell-machine-api.ts`: private `api<T>(path, init?)` wrapper
+- [x] 6.1 Created `contexia-app/lib/sell-machine-api.ts`: private `api<T>(path, init?)` wrapper
       cloned from `crm-api.ts`'s idiom; exports `generateHooks(count)`, `evaluateHooks(hooks)`,
-      `createCampaignPackage(payload)`, `listCampaigns(status?)`, and — reusing the existing
-      generic Approval Queue endpoints directly (no Sell-Machine-specific approve/reject route
-      needed per design.md) — `approveCampaignPackage(decisionId, approvedBy)` and
-      `rejectCampaignPackage(decisionId, reason)` calling `/api/v1/approval-queue/approve` and
-      `/reject`. Plus the TypeScript types (`Hook`, `CampaignPackage`, `EvaluationResult`).
-- [ ] 6.2 Add `"sell-machine"` to `BunkerSidebar.tsx`'s `BunkerSection` union + `NAV_ITEMS` (per
-      design.md Decision 6 — a new top-level item, not a CRM/Ventas sub-tab).
-- [ ] 6.3 Create `contexia-app/components/bunker/sell-machine/SellMachineSection.tsx` (+ any
-      sub-components needed, e.g. a hooks-generation panel and a pending-campaigns list):
-      `useEffect`/`useState` with `loading`/`error`/`empty` states, generate → evaluate → create
-      package flow, and an approve/reject action per pending package. `@theme` tokens only, no new
-      libraries, no drag-and-drop.
-- [ ] 6.4 Wire the new section into `contexia-app/app/app/bunker/page.tsx`'s section-switch.
+      `createCampaignPackage(payload)`, `listCampaigns(status?)`, and — confirmed
+      `/approval-queue/approve`/`/reject` are registered unconditionally in `router.py` (no flag
+      gate) by reading it directly, then reused them as-is — `approveCampaignPackage`/
+      `rejectCampaignPackage`. Plus `Hook`/`CampaignPackage` TypeScript types.
+- [x] 6.2 Added `"sell-machine"` to `BunkerSidebar.tsx`'s `BunkerSection` union + `NAV_ITEMS`.
+- [x] 6.3 Created `contexia-app/components/bunker/sell-machine/SellMachineSection.tsx`: single
+      component covering generate → evaluate → create-package flow plus a pending-campaigns list
+      with approve/reject actions; `loading`/`error`/`empty` states throughout. `@theme` tokens
+      only, no new libraries, no drag-and-drop.
+- [x] 6.4 Wired the new section into `contexia-app/app/app/bunker/page.tsx`'s section-switch.
+
+Verification: `tsc --noEmit` clean, `npm run build` green. Visually confirmed in-browser (local
+dev server): "Sell Machine" nav item present, section renders with an explicit "Failed to fetch"
+error state (backend not yet deployed) plus the "Generar Hooks" button and "Sin campaign packages
+pendientes" empty state — matches the established data-bound-screen error-handling pattern.
 
 ## 7. Docs
 

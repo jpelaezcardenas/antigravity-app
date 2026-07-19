@@ -5,6 +5,7 @@ export type BunkerSection =
   | "crm-ventas"
   | "onboarding"
   | "social-content-ops"
+  | "sell-machine"
   | "agentic-os"
   | "configuracion";
 
@@ -13,6 +14,7 @@ const NAV_ITEMS: { id: BunkerSection; label: string }[] = [
   { id: "crm-ventas", label: "CRM / Ventas" },
   { id: "onboarding", label: "Onboarding" },
   { id: "social-content-ops", label: "Social Content Ops" },
+  { id: "sell-machine", label: "Sell Machine" },
   { id: "agentic-os", label: "Agentic OS" },
   { id: "configuracion", label: "Configuración" },
 ];

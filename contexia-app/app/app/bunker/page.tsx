@@ -7,6 +7,7 @@ import { CrmVentasSection } from "@/components/bunker/CrmVentasSection";
 import { ComingSoonSection } from "@/components/bunker/ComingSoonSection";
 import { SocialContentOpsSection } from "@/components/bunker/social-ops/SocialContentOpsSection";
 import { OnboardingSection } from "@/components/bunker/onboarding/OnboardingSection";
+import { SellMachineSection } from "@/components/bunker/sell-machine/SellMachineSection";
 
 const PLACEHOLDER_LABELS: Partial<Record<BunkerSection, string>> = {
   "agentic-os": "Agentic OS",
@@ -46,6 +47,7 @@ export default function BunkerPage() {
             {activeSection === "crm-ventas" && <CrmVentasSection />}
             {activeSection === "social-content-ops" && <SocialContentOpsSection />}
             {activeSection === "onboarding" && <OnboardingSection />}
+            {activeSection === "sell-machine" && <SellMachineSection />}
             {PLACEHOLDER_SECTIONS.includes(activeSection) && (
               <ComingSoonSection label={PLACEHOLDER_LABELS[activeSection] ?? ""} />
             )}
