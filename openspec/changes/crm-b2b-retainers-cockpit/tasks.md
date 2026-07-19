@@ -73,18 +73,29 @@
 
 ## 6. Frontend client + tab shell
 
-- [ ] 6.1 Create `contexia-app/lib/crm-api.ts`: a private `api<T>(path, init?)` wrapper cloned from
-      `social-ops-api.ts`'s pattern over `${API_BASE_URL}/api/v1`; export `getB2bClients()`,
+- [x] 6.1 Created `contexia-app/lib/crm-api.ts`: a private `api<T>(path, init?)` wrapper cloned from
+      `social-ops-api.ts`'s pattern over `${API_BASE_URL}/api/v1`; exports `getB2bClients()`,
       `getB2bPaymentsGrid()`, and their TypeScript response types.
-- [ ] 6.2 Rewrite `contexia-app/components/bunker/CrmVentasSection.tsx` as a tab shell (modeled on
+- [x] 6.2 Rewrote `contexia-app/components/bunker/CrmVentasSection.tsx` as a tab shell (modeled on
       `SocialContentOpsSection.tsx`'s `useState<CrmTab>` pattern) with two tabs: "B2B / Retainers"
-      (live) and "B2C / Renta Natural" (placeholder only — no functionality yet). Delete the
-      hardcoded `clients` mock array entirely.
-- [ ] 6.3 Create `contexia-app/components/bunker/crm/B2bRetainersTab.tsx`: `load()` in
-      `useEffect(...,[])` with explicit `loading`/`error`/`source` states, a `<table>` grid (clients
-      × Jan–Jun periods) with per-period and grand-total rows using the existing `formatCop`
-      helper (÷100), and active/inactive status chips. Use only existing `@theme` tokens — no new
-      colors, no new libraries.
+      (live) and "B2C / Renta Natural" (placeholder only — no functionality yet). Deleted the
+      hardcoded `clients` mock array entirely. Kept the file at its existing path (no import-path
+      change needed in `app/app/bunker/page.tsx`); new sub-components live under the new
+      `components/bunker/crm/` folder.
+- [x] 6.3 Created `contexia-app/components/bunker/crm/B2bRetainersTab.tsx`: `load()` in
+      `useEffect(...,[])` with explicit `loading`/`error`/`empty`/`source` states, a `<table>` grid
+      (clients × Jan–Jun periods) with per-period and grand-total rows using the existing
+      `formatCop` helper (÷100), and active/inactive status chips. Uses only existing `@theme`
+      tokens — no new colors, no new libraries.
+
+Verification: `tsc --noEmit` clean, `npm run build` green (including `/app/bunker` static export).
+Visually confirmed in-browser: the tab shell renders both tabs, the old mock clients (e.g.
+"Contexia Marketing", "Studio 4") are completely gone, and — critically — when the backend/flag is
+unreachable the B2B tab shows an explicit "Failed to fetch" error state rather than blank/crashing,
+satisfying the spec's error-state scenario. A full live-data screenshot (real 10-client grid,
+`source: "supabase"`) was attempted locally but blocked by local environment constraints shared with
+a concurrent session on this machine (see Section 8 notes) — deferred to the Stage 11 prod
+smoke-test, where `CRM_CANONICAL` will be flipped against the real deployed backend.
 
 ## 7. Docs
 
