@@ -4,7 +4,7 @@ Demo mock visual de la app Contexia. Stack: Next.js 16 App Router + React 19 + T
 
 ## Reglas duras
 
-- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real; Búnker → Social Content Ops; Búnker → Onboarding; Búnker → CRM/Ventas) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real es solo lectura; Social Content Ops, Onboarding, y CRM/Ventas B2C escriben; CRM/Ventas B2B es de solo lectura — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
+- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real; Búnker → Social Content Ops; Búnker → Onboarding; Búnker → CRM/Ventas; Búnker → Sell Machine) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real es solo lectura; Social Content Ops, Onboarding, CRM/Ventas B2C, y Sell Machine escriben; CRM/Ventas B2B es de solo lectura — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
 - **Fuente de verdad visual**: el export de Stitch y los screenshots `screen.png` del ZIP `stitch_contexia_evolution_cfo_as_a_service`. No rediseñar pantallas que Stitch ya definió.
 - **Sin CDN**: nada de React/Tailwind/Babel por unpkg. Las únicas URLs externas son Google Fonts (Inter, JetBrains Mono, Material Symbols) cargadas desde [app/layout.tsx](app/layout.tsx).
 - **Sin librerías nuevas** salvo que sea estrictamente necesario. Stack mínimo.
@@ -94,6 +94,26 @@ live tabs sharing the same backend (`apps/backend/presentation/crm_endpoints.py`
   drag-and-drop (click-to-advance en vez de arrastrar).
 - **Unidades**: el backend devuelve `amount_cents` (COP en centavos); dividir entre 100 con
   `formatCop` al renderizar, igual que Caja Real.
+
+### Búnker → Sell Machine (quinta excepción data-bound)
+
+`components/bunker/sell-machine/SellMachineSection.tsx` es la quinta pantalla data-bound, gateada
+por `SELL_MACHINE_CANONICAL` (mismo playbook que `SOCIAL_OPS_CANONICAL`/`CRM_CANONICAL`). Es el
+loop creativo del Sell Machine: un agente Copywriter genera hooks de marketing, un agente Content
+Critic (evaluator-optimizer) los filtra contra la marca de Contexia (nunca framear a Contexia como
+firma contable regulada, evitar tono robótico/jerga opaca), y los sobrevivientes se empaquetan como
+un `campaign_package` que entra al **Approval Queue existente de Supabase** (no una tabla nueva) —
+Juan David aprueba/rechaza desde el Búnker antes de que cualquier cosa se publique en cualquier
+lado. Esta pantalla **no publica nada** — solo produce un registro aprobado; la ejecución real
+(Meta/Manus) es un change futuro (F).
+
+- **Cliente tipado**: `lib/sell-machine-api.ts`. El approve/reject reutiliza los endpoints
+  genéricos ya existentes `/api/v1/approval-queue/approve` y `/reject` (no son específicos de
+  Sell Machine — no se tocó ese código).
+- **Escribe**: generar hooks, evaluar hooks, crear campaign package, aprobar/rechazar (vía la
+  Approval Queue). Igual que Social Content Ops y CRM/Ventas B2C.
+- **HITL**: todo campaign package queda `pending_approval` en la Approval Queue; no hay ninguna
+  ejecución automática — Juan David es el único gate.
 
 Esto es una excepción escoped al charter "sin backend" — pantallas data-bound son
 un puente hacia el MVP data-driven; mocks aplican para todo lo demás.

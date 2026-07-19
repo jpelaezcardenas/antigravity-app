@@ -86,10 +86,10 @@ pendientes" empty state — matches the established data-bound-screen error-hand
 
 ## 7. Docs
 
-- [ ] 7.1 Add a fifth data-bound screen entry ("Búnker → Sell Machine") to `contexia-app/CLAUDE.md`'s
-      *Pantallas data-bound* section (reads + writes: generate/evaluate hooks, create + approve/
-      reject campaign packages), and update the top-level "Reglas duras" bullet accordingly.
-- [ ] 7.2 Confirm the `sell-machine-creative-swarm` delta spec is in place at
+- [x] 7.1 Added the fifth data-bound screen entry ("Búnker → Sell Machine") to
+      `contexia-app/CLAUDE.md`'s *Pantallas data-bound* section, and updated the top-level
+      "Reglas duras" bullet accordingly.
+- [x] 7.2 Confirmed the `sell-machine-creative-swarm` delta spec is in place at
       `specs/sell-machine-creative-swarm/spec.md`, ready for archive-time sync.
 
 ## 8. Verify + DB state (MANDATORY before Stage 11)
