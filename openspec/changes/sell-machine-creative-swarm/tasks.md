@@ -116,30 +116,35 @@ pendientes" empty state — matches the established data-bound-screen error-hand
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 10.1 Commit the backend and frontend changes in scoped commits, referencing this change id.
-- [ ] 10.2 Merge to `main` (check for conflicts against any concurrent work) and push.
-- [ ] 10.3 Confirm Railway backend deploy completes green with `SELL_MACHINE_CANONICAL=false` (dark
+- [x] 10.1 Commit the backend and frontend changes in scoped commits, referencing this change id.
+- [x] 10.2 Merge to `main` (check for conflicts against any concurrent work) and push.
+- [x] 10.3 Confirm Railway backend deploy completes green with `SELL_MACHINE_CANONICAL=false` (dark
       deploy — this DOES need the dark-deploy step, unlike Change B, since this is a new flag).
-- [ ] 10.4 **Bump `contexia-app/public/sw.js` `CACHE_VERSION`** (commit and push immediately,
+      Confirmed via `railway_list_variables` the flag was absent (defaults `false`) before flipping.
+- [x] 10.4 **Bump `contexia-app/public/sw.js` `CACHE_VERSION`** (commit and push immediately,
       learned from prior collisions), rebuild, and sync `contexia-app/out/` → `app/` additively
       using the Python-based all-characters chunk verifier established after Change A's incident.
-      Confirm Vercel deploy green.
-- [ ] 10.5 Verify live at `https://contexia.online/app/bunker`: sidebar shows the new "Sell
+      Confirm Vercel deploy green. Vercel `dpl_4XdUcCgykA8heQKyFKWe6MtnuXPA` (commit `bb450fd`)
+      READY, aliased to `contexia.online`.
+- [x] 10.5 Verify live at `https://contexia.online/app/bunker`: sidebar shows the new "Sell
       Machine" item; existing sections (CRM/Ventas B2B+B2C, Social Content Ops, Onboarding)
-      unaffected.
-- [ ] 10.6 Flip `SELL_MACHINE_CANONICAL=true` on Railway; in production, exercise the full loop
+      unaffected. Confirmed pre-flip 404 handled gracefully (no blank/crash).
+- [x] 10.6 Flip `SELL_MACHINE_CANONICAL=true` on Railway; in production, exercise the full loop
       once: generate hooks → evaluate → create a campaign package → approve it via the UI. Confirm
       via direct SQL that the `approval_queue` row's status is `approved`. Note in the deployment
       report that this creates a real (if harmless) `campaign_package` row in production — decide
       whether to leave it (as a demonstration) or clean it up, matching the precedent set in
-      Change B's report.
-- [ ] 10.7 Create deployment report at
+      Change B's report. Full loop exercised via API: generate→evaluate (3/3 survived)→create
+      package `7b4439c3-ba70-4490-bd0b-3fcd412aac20`→approve. Confirmed live in Supabase:
+      `status="approved"`. Decision: leaving the demo row in place (harmless draft record).
+- [x] 10.7 Create deployment report at
       `openspec/changes/sell-machine-creative-swarm/reports/YYYY-MM-DD-deployment.md`, including
       the accepted-risk notes from design.md (non-deterministic Critic backed by a hard
-      deterministic gate; `tenant_id` not persisted on Approval Queue rows, pre-existing).
+      deterministic gate; `tenant_id` not persisted on Approval Queue rows, pre-existing). Written
+      at `reports/2026-07-19-deployment.md`.
 
 ## 11. Archive
 
-- [ ] 11.1 Sync the `sell-machine-creative-swarm` capability into `openspec/specs/` (using `git mv`
+- [x] 11.1 Sync the `sell-machine-creative-swarm` capability into `openspec/specs/` (using `git mv`
       for the archive move, per the process fix established after Change A's tree-drift incident)
       and archive this change once Stage 11 is confirmed complete and verified live.
