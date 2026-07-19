@@ -75,27 +75,29 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 6.1 Commit backend changes in scoped commits referencing this change id.
-- [ ] 6.2 Merge to `main` (check for conflicts) and push.
-- [ ] 6.3 Confirm Railway backend deploy completes green. No frontend touched in this change, so
-      **no `sw.js` bump / no `contexia-app` rebuild-sync needed** — confirm this assumption still
-      holds at merge time (re-check `git diff` for any accidental frontend file).
-- [ ] 6.4 Since this reuses the already-`true` `SELL_MACHINE_CANONICAL` flag (design.md Decision
-      3), the new routes are live immediately on deploy — there is no dark-deploy step for a flag
-      flip. Instead, verify immediately post-deploy: `GET /api/v1/sell-machine/tasks/pending`
-      returns `[]` (or existing tasks) with a 200, not a 404/500.
-- [ ] 6.5 Live smoke test: create a `research` task via curl (no approval needed), confirm it
-      appears in `/tasks/pending`; mark it `dispatched` then `completed` with a sample `result`;
-      confirm both transitions via direct Supabase SQL. Then dispatch a real approved
-      `campaign_package` into a `post_content` task and confirm that row via SQL too.
-- [ ] 6.6 Create deployment report at
-      `openspec/changes/hermes-manus-execution-bridge/reports/YYYY-MM-DD-deployment.md`, including
-      the accepted-risk notes from design.md (endpoints live immediately since the flag is already
-      true; no retry/timeout for stuck `dispatched` tasks; no FK from `operator_tasks` to
-      `approval_queue`, traceability via `payload.source_decision_id` instead).
+- [x] 6.1 Committed backend changes on `feature/hermes-manus-execution-bridge` (`d7b830a`),
+      referencing this change id.
+- [x] 6.2 Fast-forward merged to `main` (no divergence, confirmed via `git fetch` + `git log
+      origin/main` first) and pushed.
+- [x] 6.3 Railway deploy `ef9dc1d3-b611-4b3d-a048-a90b0e38318e` reached `SUCCESS`. Confirmed via
+      `git status --short` before committing that no `contexia-app/` files were touched — no sw.js
+      bump/rebuild-sync needed.
+- [x] 6.4 Confirmed live post-deploy: `GET /api/v1/sell-machine/tasks/pending` returned `200 []`
+      (took ~10-12 min cold start, longer than prior deploys but no crash in logs — noted in the
+      deployment report).
+- [x] 6.5 Full live smoke test via curl against production: created a `research` task (pending) →
+      confirmed in `/tasks/pending` → marked `dispatched` (200) → re-dispatch correctly rejected
+      (409) → reported a `completed` result (200) → dispatched the real approved
+      `campaign_package` `7b4439c3-...` into a `post_content` task with `payload.source_decision_id`
+      set (200) → dispatching an unknown decision correctly rejected (404) → creating
+      `post_content` directly correctly rejected (400). Both resulting rows confirmed via direct
+      Supabase SQL.
+- [x] 6.6 Created deployment report at
+      `openspec/changes/hermes-manus-execution-bridge/reports/2026-07-19-deployment.md`, including
+      all accepted-risk notes from design.md.
 
 ## 7. Archive
 
-- [ ] 7.1 Sync the `hermes-manus-execution-bridge` capability into `openspec/specs/` (using
+- [x] 7.1 Sync the `hermes-manus-execution-bridge` capability into `openspec/specs/` (using
       `git mv` for the archive move, per the process fix established after Change A's tree-drift
       incident) and archive this change once Stage 11 is confirmed complete and verified live.
