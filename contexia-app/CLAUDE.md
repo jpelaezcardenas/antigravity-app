@@ -4,7 +4,7 @@ Demo mock visual de la app Contexia. Stack: Next.js 16 App Router + React 19 + T
 
 ## Reglas duras
 
-- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real; Búnker → Social Content Ops; Búnker → Onboarding; Búnker → CRM/Ventas B2B) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real es solo lectura; Social Content Ops y Onboarding escriben; CRM/Ventas B2B es de solo lectura por ahora — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
+- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real; Búnker → Social Content Ops; Búnker → Onboarding; Búnker → CRM/Ventas) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real es solo lectura; Social Content Ops, Onboarding, y CRM/Ventas B2C escriben; CRM/Ventas B2B es de solo lectura — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
 - **Fuente de verdad visual**: el export de Stitch y los screenshots `screen.png` del ZIP `stitch_contexia_evolution_cfo_as_a_service`. No rediseñar pantallas que Stitch ya definió.
 - **Sin CDN**: nada de React/Tailwind/Babel por unpkg. Las únicas URLs externas son Google Fonts (Inter, JetBrains Mono, Material Symbols) cargadas desde [app/layout.tsx](app/layout.tsx).
 - **Sin librerías nuevas** salvo que sea estrictamente necesario. Stack mínimo.
@@ -70,22 +70,30 @@ crea seed drafts), no es solo lectura.
   (S1/S2/S3 + Go-Live).
 - **HITL intacto**: seed drafts quedan en `pending_approval`, igual que el resto.
 
-### Búnker → CRM/Ventas B2B (cuarta excepción data-bound)
+### Búnker → CRM/Ventas B2B + B2C (cuarta excepción data-bound)
 
-`components/bunker/CrmVentasSection.tsx` (tab shell) + `components/bunker/crm/B2bRetainersTab.tsx`
-es la cuarta pantalla data-bound. Como `CashTodayCard`, es **solo lectura** por ahora: muestra el
-roster real de clientes B2B de Contexia (retenedores mensuales, antes en un Excel manual) y la
-grilla de pagos Ene–Jun 2026, sourced desde Supabase. Backend real (`apps/backend/presentation/
-crm_endpoints.py`), gateado por el feature flag `CRM_CANONICAL` (mismo playbook que
-`SOCIAL_OPS_CANONICAL`: default `false`, se activa tras el smoke-test de producción).
+`components/bunker/CrmVentasSection.tsx` (tab shell) is the fourth data-bound screen, with two
+live tabs sharing the same backend (`apps/backend/presentation/crm_endpoints.py`, gated by
+`CRM_CANONICAL` — default `false`, activated after the production smoke-test, same playbook as
+`SOCIAL_OPS_CANONICAL`):
 
-- **Cliente tipado**: `lib/crm-api.ts`.
+- **"B2B / Retainers"** (`components/bunker/crm/B2bRetainersTab.tsx`) — **read-only**, like
+  `CashTodayCard`: the real roster of Contexia's B2B retainer clients (monthly retainers, formerly
+  a manual Excel) and the Jan–Jun payment grid, sourced from Supabase.
+- **"B2C / Renta Natural"** (`components/bunker/crm/B2cKanbanTab.tsx`) — **reads and writes**, like
+  Social Content Ops: a 4-stage Kanban funnel (Nuevos → Prospectos → Por Aprobar → Listos
+  Contadora) for the Renta Natural 2026 lead pipeline. Writes: advancing a lead's stage, and the
+  "Aprobar Pago" HITL action (only on `POR_APROBAR` cards), which advances the lead to
+  `LISTOS_CONTADORA` and stamps its associated Wompi transaction row `APPROVED`. Payment
+  verification itself is seeded/simulated only in this change (`crm-b2c-sell-machine-cockpit`) —
+  no live Wompi integration yet.
+
+- **Cliente tipado**: `lib/crm-api.ts` (both tabs share this client).
 - **Patrón**: idéntico al de `IdeasTab.tsx` — `useEffect` + `useState` con estados `loading`/
-  `error`/`source` explícitos, tokens `@theme` únicamente, sin librerías nuevas.
+  `error`/`source` explícitos, tokens `@theme` únicamente, sin librerías nuevas, sin
+  drag-and-drop (click-to-advance en vez de arrastrar).
 - **Unidades**: el backend devuelve `amount_cents` (COP en centavos); dividir entre 100 con
   `formatCop` al renderizar, igual que Caja Real.
-- **Tab "B2C / Renta Natural"** en la misma sección es un placeholder — su contenido (embudo
-  Kanban) es un change de OpenSpec separado (`crm-b2c-sell-machine-cockpit`).
 
 Esto es una excepción escoped al charter "sin backend" — pantallas data-bound son
 un puente hacia el MVP data-driven; mocks aplican para todo lo demás.

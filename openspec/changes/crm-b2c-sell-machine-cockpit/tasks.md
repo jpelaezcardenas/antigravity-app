@@ -71,11 +71,10 @@ Verification: `tsc --noEmit` clean, `npm run build` green.
 
 ## 7. Docs
 
-- [ ] 7.1 Update the CRM/Ventas entry in `contexia-app/CLAUDE.md`'s *Pantallas data-bound* section
-      to note the B2C tab is now live (reads + writes: advance, tax-profile update, approve
-      payment) rather than a placeholder — this doesn't add a new numbered exception (the section
-      itself is unchanged, its content is what's now live).
-- [ ] 7.2 Confirm the `crm-b2c-sell-machine` delta spec is in place at
+- [x] 7.1 Updated the CRM/Ventas entry in `contexia-app/CLAUDE.md`'s *Pantallas data-bound* section
+      (and the top-level "Reglas duras" bullet) to describe both live tabs: B2B read-only, B2C
+      reads + writes (advance, approve-payment HITL) — no longer a placeholder.
+- [x] 7.2 Confirmed the `crm-b2c-sell-machine` delta spec is in place at
       `specs/crm-b2c-sell-machine/spec.md`, ready for archive-time sync.
 
 ## 8. Verify + DB state (MANDATORY before Stage 11)
