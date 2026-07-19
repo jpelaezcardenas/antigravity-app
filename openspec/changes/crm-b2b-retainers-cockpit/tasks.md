@@ -99,12 +99,12 @@ smoke-test, where `CRM_CANONICAL` will be flipped against the real deployed back
 
 ## 7. Docs
 
-- [ ] 7.1 Add the "third data-bound screen" entry (CRM/Ventas — reads live B2B data) to the
+- [x] 7.1 Added the "third data-bound screen" entry (Búnker → CRM/Ventas B2B, read-only) to the
       *Pantallas data-bound* section of `contexia-app/CLAUDE.md`, following the existing Social
-      Content Ops entry's structure.
-- [ ] 7.2 Sync the `crm-b2b-retainers` capability into `openspec/specs/` at archive time (handled by
-      the archive step, not here — confirm the delta spec file is in place under
-      `specs/crm-b2b-retainers/spec.md`).
+      Content Ops entry's structure; updated the top-level "Reglas duras" bullet accordingly.
+- [x] 7.2 Confirmed the delta spec file is in place at
+      `specs/crm-b2b-retainers/spec.md` — ready for `openspec-sync-specs`/archive to sync into
+      `openspec/specs/`.
 
 ## 8. Verify + DB state (MANDATORY before Stage 11)
 
