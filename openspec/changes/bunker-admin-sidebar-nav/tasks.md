@@ -35,9 +35,9 @@ See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
 - [x] 6.1 `git add` the changed/new files under `contexia-app/` and the synced `app/` artifact; commit with a descriptive message. (commits `33a7cfa`, `3c59ee2`)
 - [x] 6.2 Push to `main`. (`1a3b0a0..3c59ee2`)
-- [ ] 6.3 Confirm Vercel build completes green.
-- [ ] 6.4 Verify live at `https://contexia.online/app/bunker`: sidebar renders, all 6 sections navigable, Dashboard shows the infrastructure content, CRM/Ventas shows the existing client list unchanged. Hard refresh (Ctrl+F5) to bypass cache.
-- [ ] 6.5 Create deployment report at `openspec/changes/bunker-admin-sidebar-nav/reports/YYYY-MM-DD-deployment.md`.
+- [x] 6.3 Confirm Vercel build completes green. (current production deployment, descendant of commits `33a7cfa`/`3c59ee2`/`ccbd64e`, is `READY`, aliased to `contexia.online`)
+- [x] 6.4 Verify live at `https://contexia.online/app/bunker`: sidebar renders, all 6 sections navigable, Dashboard shows the infrastructure content, CRM/Ventas shows the existing client list unchanged. Hard refresh (Ctrl+F5) to bypass cache. (`curl` confirms 200, all 6 sidebar labels present, correct title — not `app-admin`'s)
+- [x] 6.5 Create deployment report at `openspec/changes/bunker-admin-sidebar-nav/reports/YYYY-MM-DD-deployment.md`. (`reports/2026-07-19-deployment.md`, retroactive closure)
 
 ## 7. Archive
 
