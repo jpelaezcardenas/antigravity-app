@@ -166,6 +166,51 @@ export interface Publicacion {
   plataforma: string;
 }
 
+export interface OnboardingStep {
+  id: string;
+  label: string;
+  description: string;
+}
+
+export interface OnboardingWorkspace {
+  id: string;
+  company_name: string;
+  customer_email: string;
+  plan_name: string;
+  owner_handle: string;
+  sla?: { client_credentials_response_hours?: number };
+  qa_targets?: { adoption_day7?: string };
+}
+
+export interface OnboardingSeedDraft {
+  id: string;
+  workspace_id: string;
+  status: string;
+  business_summary: string;
+}
+
+export interface OnboardingResponse {
+  items: OnboardingWorkspace[];
+  seed_drafts: OnboardingSeedDraft[];
+  intake_items: Array<{
+    id: string;
+    workspace_id: string;
+    source: string;
+    actor_handle: string;
+    text: string;
+    extracted: Record<string, unknown>;
+    present: string[];
+    missing: string[];
+    created_at: string;
+  }>;
+  template_steps: OnboardingStep[];
+  policy: {
+    trigger: string;
+    sensitive_steps: string;
+    connections: string[];
+  };
+}
+
 const API_BASE = `${API_BASE_URL}/api/v1`;
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -330,5 +375,64 @@ export function updateSocialOpsBorrador(id: number, updates: Partial<Contenido>)
   return api<{ ok: boolean }>(`/social-ops/borradores/${id}/update`, {
     method: "POST",
     body: JSON.stringify(updates),
+  });
+}
+
+export function getSocialOpsOnboarding() {
+  return api<OnboardingResponse>("/social-ops/onboarding");
+}
+
+export function startSocialOpsOnboarding(payload: {
+  company_name: string;
+  customer_email: string;
+  payment_reference: string;
+  plan_name: string;
+  owner_handle?: string;
+  requested_channels?: string[];
+}) {
+  return api<OnboardingWorkspace>("/social-ops/onboarding/start", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function advanceSocialOpsOnboardingStep(
+  workspaceId: string,
+  stepId: string,
+  payload: { status: string; notes?: string }
+) {
+  return api<OnboardingWorkspace>(`/social-ops/onboarding/${workspaceId}/steps/${stepId}/advance`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function createSocialOpsOnboardingSeed(
+  workspaceId: string,
+  payload: { business_summary?: string; initial_channels?: string[] }
+) {
+  return api<OnboardingSeedDraft>(`/social-ops/onboarding/${workspaceId}/seed`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function intakeSocialOpsOnboarding(
+  workspaceId: string,
+  payload: { text: string; source?: string; actor_handle?: string }
+) {
+  return api<{
+    id: string;
+    workspace_id: string;
+    source: string;
+    actor_handle: string;
+    text: string;
+    extracted: Record<string, unknown>;
+    present: string[];
+    missing: string[];
+    created_at: string;
+  }>(`/social-ops/onboarding/${workspaceId}/intake`, {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }

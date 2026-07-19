@@ -4,7 +4,7 @@ Demo mock visual de la app Contexia. Stack: Next.js 16 App Router + React 19 + T
 
 ## Reglas duras
 
-- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real; Búnker → Social Content Ops) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real es solo lectura; Social Content Ops sí escribe — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
+- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real; Búnker → Social Content Ops; Búnker → Onboarding) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real es solo lectura; Social Content Ops y Onboarding sí escriben — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
 - **Fuente de verdad visual**: el export de Stitch y los screenshots `screen.png` del ZIP `stitch_contexia_evolution_cfo_as_a_service`. No rediseñar pantallas que Stitch ya definió.
 - **Sin CDN**: nada de React/Tailwind/Babel por unpkg. Las únicas URLs externas son Google Fonts (Inter, JetBrains Mono, Material Symbols) cargadas desde [app/layout.tsx](app/layout.tsx).
 - **Sin librerías nuevas** salvo que sea estrictamente necesario. Stack mínimo.
@@ -52,6 +52,23 @@ Social Ops en producción).
   Supabase distinto y no documentado (el sandbox del Wizard).
 - **HITL intacto**: todo borrador queda en `pending_approval`; el tab
   Aprobaciones es el único gate que libera una acción outbound.
+
+### Búnker → Onboarding (tercera excepción data-bound)
+
+`components/bunker/onboarding/OnboardingSection.tsx` es la tercera pantalla
+data-bound, mismo backend canónico que Social Content Ops (`SOCIAL_OPS_CANONICAL`,
+ya activo). Igual que Social Content Ops, escribe (inicia onboarding, envía intake,
+crea seed drafts), no es solo lectura.
+
+- **Cliente tipado**: mismas funciones de `lib/social-ops-api.ts` (extendido con
+  las de onboarding: `getSocialOpsOnboarding`, `startSocialOpsOnboarding`,
+  `advanceSocialOpsOnboardingStep`, `createSocialOpsOnboardingSeed`,
+  `intakeSocialOpsOnboarding`).
+- **Flujo**: formulario de inicio (empresa/email/pago/plan/owner) → selector de
+  workspace con SLA/QA targets → intake en lenguaje natural (IA extrae
+  credenciales presentes/faltantes) → seed draft → checklist de 21 días
+  (S1/S2/S3 + Go-Live).
+- **HITL intacto**: seed drafts quedan en `pending_approval`, igual que el resto.
 
 Esto es una excepción escoped al charter "sin backend" — pantallas data-bound son
 un puente hacia el MVP data-driven; mocks aplican para todo lo demás.

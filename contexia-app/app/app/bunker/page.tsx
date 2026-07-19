@@ -6,14 +6,14 @@ import { InfrastructureDashboard } from "@/components/bunker/InfrastructureDashb
 import { CrmVentasSection } from "@/components/bunker/CrmVentasSection";
 import { ComingSoonSection } from "@/components/bunker/ComingSoonSection";
 import { SocialContentOpsSection } from "@/components/bunker/social-ops/SocialContentOpsSection";
+import { OnboardingSection } from "@/components/bunker/onboarding/OnboardingSection";
 
 const PLACEHOLDER_LABELS: Partial<Record<BunkerSection, string>> = {
-  onboarding: "Onboarding",
   "agentic-os": "Agentic OS",
   configuracion: "Configuración",
 };
 
-const PLACEHOLDER_SECTIONS: BunkerSection[] = ["onboarding", "agentic-os", "configuracion"];
+const PLACEHOLDER_SECTIONS: BunkerSection[] = ["agentic-os", "configuracion"];
 
 export default function BunkerPage() {
   const [activeSection, setActiveSection] = useState<BunkerSection>("dashboard");
@@ -45,6 +45,7 @@ export default function BunkerPage() {
             {activeSection === "dashboard" && <InfrastructureDashboard />}
             {activeSection === "crm-ventas" && <CrmVentasSection />}
             {activeSection === "social-content-ops" && <SocialContentOpsSection />}
+            {activeSection === "onboarding" && <OnboardingSection />}
             {PLACEHOLDER_SECTIONS.includes(activeSection) && (
               <ComingSoonSection label={PLACEHOLDER_LABELS[activeSection] ?? ""} />
             )}
