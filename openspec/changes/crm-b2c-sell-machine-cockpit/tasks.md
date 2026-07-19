@@ -1,36 +1,33 @@
 ## 1. Setup + schema verification
 
-- [ ] 1.1 Create branch `feature/crm-b2c-sell-machine-cockpit`; capture `git status` baseline.
-      Re-confirm this repo's shared-working-directory risk from Change A: commit each completed
-      section promptly rather than batching, in case a concurrent session touches the same tree.
-- [ ] 1.2 Re-verify live: `tenants.is_cliente_cero` tenant id unchanged, `user_roles.role` enum
-      labels unchanged, and confirm `crm_leads`/`crm_tax_profiles`/`crm_wompi_transactions` names
-      are free (no collision with existing tables).
+- [x] 1.1 Created branch `feature/crm-b2c-sell-machine-cockpit`; committing each section promptly
+      given the demonstrated shared-working-directory collision risk from Change A.
+- [x] 1.2 Re-verified live: Cliente Cero tenant id unchanged (`e2d30d09-6b96-4ebe-a79a-c6aff7a5df34`),
+      and `crm_leads`/`crm_tax_profiles`/`crm_wompi_transactions` names confirmed free.
 
 ## 2. Migration (DDL) — TDD
 
-- [ ] 2.1 Write a failing schema-assertion test (`test_crm_b2c_schema.py`, gated `RUN_CRM_B2B=1`
-      to reuse Change A's existing gate, or a new `RUN_CRM_B2C=1`) asserting the three tables exist
-      with RLS enabled.
-- [ ] 2.2 Author `apps/backend/migrations/0022_crm_b2c_sell_machine.sql`: `crm_leads` (`stage` via
+- [x] 2.1 Wrote `apps/backend/tests/test_crm_b2c_schema.py` (RUN_CRM_B2B=1-gated). Confirmed failing
+      (tables didn't exist).
+- [x] 2.2 Authored `apps/backend/migrations/0022_crm_b2c_sell_machine.sql`: `crm_leads` (`stage` via
       `CHECK` constraint, `UNIQUE(tenant_id, whatsapp_phone)`), `crm_tax_profiles`
       (`UNIQUE(lead_id)`), `crm_wompi_transactions` (`reference UNIQUE`, FK `lead_id`) — RLS
-      admin-only using the live `role_type` enum (`role = 'admin'`), `updated_at` triggers,
-      idempotent DDL (`IF NOT EXISTS`; `DROP POLICY IF EXISTS ... ; CREATE POLICY ...`).
-- [ ] 2.3 Apply via Supabase MCP `apply_migration`; confirm all three tables exist and RLS is
-      enabled with policies present (verify live via SQL, don't just trust the migration file).
+      admin-only using the live `role_type` enum (`role = 'admin'`), `updated_at` triggers (reusing
+      `update_crm_b2b_updated_at()` from Change A), idempotent DDL.
+- [x] 2.3 Applied via Supabase MCP `apply_migration`. Verified live: all 3 tables exist with
+      `relrowsecurity = true` and their `*_admin_only` policies present.
 
 ## 3. Seed (idempotent) — TDD
 
-- [ ] 3.1 Write a failing test asserting: sample leads exist spread across all 4 stages, each has
-      a `crm_tax_profiles` row, and `POR_APROBAR` leads have an associated pending
-      `crm_wompi_transactions` row (needed to exercise the approve-payment flow end-to-end).
-- [ ] 3.2 Author `apps/backend/migrations/0023_seed_crm_b2c_leads.sql`: insert sample leads (obvious
-      placeholder names/phones, e.g. prefixed `SEED-`), one `crm_tax_profiles` row each, and
-      `crm_wompi_transactions` rows for `POR_APROBAR` leads with clearly-fake `reference` values
-      (e.g. `SEED-REF-...`) so they can never be confused with real payment activity — using
-      `ON CONFLICT (tenant_id, whatsapp_phone) DO UPDATE` for idempotency.
-- [ ] 3.3 Apply via Supabase MCP; re-apply once more to prove idempotency (row counts unchanged).
+- [x] 3.1 (covered by `test_crm_b2c_schema.py`) — asserts leads across all 4 stages, every lead has
+      a tax profile, and `POR_APROBAR` leads have a pending Wompi transaction.
+- [x] 3.2 Authored `apps/backend/migrations/0023_seed_crm_b2c_leads.sql`: 4 sample leads (one per
+      stage, `SEED-` prefixed names/phones), 4 tax profiles, and 2 Wompi transactions
+      (`SEED-REF-...` references — one `PENDING` for the `POR_APROBAR` lead, one `APPROVED` for the
+      `LISTOS_CONTADORA` lead), idempotent via `ON CONFLICT`.
+- [x] 3.3 Applied via Supabase MCP; verified live (4 leads across all 4 stages, 4 tax profiles, 2
+      transactions); re-applied the full seed a second time — counts unchanged, confirming
+      idempotency.
 
 ## 4. Backend service — TDD
 
