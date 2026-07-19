@@ -1,26 +1,23 @@
 ## 1. Setup + verification
 
-- [ ] 1.1 Create branch `feature/sell-machine-creative-swarm`; capture `git status` baseline.
-      Commit each completed section promptly (established discipline from Changes A/B given this
-      shared working directory's collision risk).
-- [ ] 1.2 Read `apps/backend/agents/llm_engine.py`'s `PROFILE_CONFIGS["social-ops-v1"]` and
-      `social_ops_service.generate_idea_draft()` once more in this session to confirm the exact
-      call idiom before writing new code against it.
+- [x] 1.1 Created branch `feature/sell-machine-creative-swarm`.
+- [x] 1.2 Re-confirmed `get_ai_response_with_profile`'s exact signature and `generate_idea_draft`'s
+      sync (not async) call idiom by reading the live source directly.
 
 ## 2. Content Critic rubric + module — TDD
 
-- [ ] 2.1 Write failing unit tests for `content_evaluator.py`: a hard-reject case (hook text
-      asserts Contexia is a regulated accounting firm → always rejected, LLM-independent keyword
-      check), a pass-through case (clean hook → survives unchanged), and a rewrite-then-pass case
-      (fixable tone issue → one rewrite requested → re-evaluated → survives).
-- [ ] 2.2 Author `apps/backend/agents/content_evaluator.py` (new module — no relation to
-      `agent_critic.py`): a hardcoded brand-rubric string constant condensed from
-      `content_ops_rules.md` §7-8 (Never rules + humanización rules); a deterministic keyword-ban
-      pre-check (hard gate, cannot be overridden by an LLM "pass"); an LLM-based tone/quality check
-      via `get_ai_response_with_profile(profile_name="social-ops-v1", response_format="json", ...)`
-      wrapped in `try/except AllProvidersFailedError` with a deterministic fallback (keyword-check
-      result only, no rewrite) per the established idiom.
-- [ ] 2.3 Run tests green.
+- [x] 2.1 Wrote `apps/backend/tests/test_content_evaluator.py` (credential-free, mocks the single
+      `_llm_tone_check` call point): hard-ban rejection (unconditional, LLM cannot override),
+      pass-through, LLM-failure fallback (both clean and hard-banned hooks), and LLM-driven tone
+      rejection. Confirmed failing (module didn't exist).
+- [x] 2.2 Authored `apps/backend/agents/content_evaluator.py` — pure per-hook evaluation
+      (`evaluate_hook(hook) -> {approved, reason}`), no relation to `agent_critic.py`. Hardcoded
+      brand rubric (condensed from `content_ops_rules.md` §7-8) as both an LLM system prompt and a
+      literal hard-ban phrase list (non-overridable gate); LLM tone check isolated in
+      `_llm_tone_check()` for clean test patching; deterministic fallback (hard-ban result alone)
+      on any LLM failure. Note: the one-rewrite-pass orchestration lives in `sell_machine_service`
+      (Section 4), not here — this module only evaluates one hook at a time, no rewrite logic.
+- [x] 2.3 6/6 tests green.
 
 ## 3. Copywriter module — TDD
 
