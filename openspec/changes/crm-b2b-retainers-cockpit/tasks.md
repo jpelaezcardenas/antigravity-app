@@ -133,23 +133,35 @@ smoke-test, where `CRM_CANONICAL` will be flipped against the real deployed back
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 10.1 `git add`/commit the migrations, backend, and frontend changes with a descriptive message
-      referencing this change id.
-- [ ] 10.2 Push to `main`.
-- [ ] 10.3 Confirm Railway backend deploy completes green with `CRM_CANONICAL=false` (dark deploy).
-- [ ] 10.4 Confirm Vercel frontend build completes green. **Bump `contexia-app/public/sw.js`
-      `CACHE_VERSION`** before this deploy since `_next/static/<buildId>/` changes; sync
-      `contexia-app/out/` → `app/` per the established build-artifact rule (never hand-edit `app/`).
-- [ ] 10.5 Verify live at `https://contexia.online/app/bunker` (hard refresh, Ctrl+F5): sidebar and
-      existing sections unaffected; CRM/Ventas shows the new tab shell (B2C tab as placeholder,
-      B2B tab may still show empty/flagged-off state until 10.6).
-- [ ] 10.6 Flip `CRM_CANONICAL=true` on Railway `-175a`; re-verify `/app/bunker` → CRM/Ventas → B2B
-      shows the live grid with correct totals in production. **Note the accepted risk**: these
-      endpoints currently have no request-level auth beyond the Búnker's edge-middleware gate and the
-      feature flag (consistent with the existing Social Ops posture) — flag this explicitly in the
+- [x] 10.1 Committed the migrations, backend, and frontend changes across 7 scoped commits on
+      `feature/crm-b2b-retainers-cockpit` (600a11d, 963f0df, 1df3c59, 62acefb, 9cbc520 + the merge).
+- [x] 10.2 Merged into `main` (resolved one real conflict in `CLAUDE.md`'s data-bound section against
+      a concurrent session's Onboarding work — both entries kept, CRM/Ventas renumbered "cuarta") and
+      pushed (`1783df7`).
+- [x] 10.3 Confirmed Railway backend deploy green (dark deploy, `CRM_CANONICAL` unset/false).
+- [x] 10.4 Bumped `contexia-app/public/sw.js` `CACHE_VERSION` (v9→v10; committed separately as
+      `b8dd433` after a concurrent-session collision reverted the first attempt), rebuilt
+      (`npm run build`), and synced `contexia-app/out/` → `app/` additively (`f26dfa4`): new buildId's
+      static chunks, `app/bunker.html`/`.txt`, the previously-uncommitted `app/bunker/` RSC subfolder
+      (force-added to match sibling pages), and root `sw.js`. Confirmed Vercel deploy green.
+      **Caught in production verification**: one chunk (`188-e0~0ya.2n.js`, filename containing `~`)
+      was missed by the initial grep-based reference check and 404'd live — root-caused to the
+      check's regex not handling `~` in filenames, fixed with a proper parser, hotfixed (`9658b68`),
+      redeployed, re-verified 0 missing references across all 11 real chunk refs.
+- [x] 10.5 Verified live at `https://contexia.online/app/bunker`: sidebar and existing sections
+      unaffected; CRM/Ventas shows the new tab shell (B2C placeholder; B2B showed the expected
+      "Failed to fetch" state pre-flag-flip).
+- [x] 10.6 Flipped `CRM_CANONICAL=true` on Railway `-175a`. Re-verified in production:
+      `GET /api/v1/crm/b2b/clients` → `source: "supabase"`, all 10 real clients;
+      `GET /api/v1/crm/b2b/payments` → `source: "supabase"`, grand total `3,732,000,000` cents; and
+      the actual `/app/bunker` → CRM/Ventas → B2B UI renders the full live grid with every client,
+      every month's amount, and the grand total (`$37.320.000`) matching exactly — including
+      **Repuestos Don Álvaro's March = $1.200.000** (typo correctly fixed, not $12.000.000).
+      **Accepted risk noted**: these endpoints have no request-level auth beyond the Búnker's
+      edge-middleware gate and the feature flag (same posture as Social Ops) — documented in the
       deployment report.
-- [ ] 10.7 Create deployment report at
-      `openspec/changes/crm-b2b-retainers-cockpit/reports/YYYY-MM-DD-deployment.md`.
+- [x] 10.7 Created deployment report at
+      `openspec/changes/crm-b2b-retainers-cockpit/reports/2026-07-19-deployment.md`.
 
 ## 11. Archive
 
