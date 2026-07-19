@@ -55,16 +55,19 @@
 
 ## 6. Frontend client + Kanban tab
 
-- [ ] 6.1 Extend `contexia-app/lib/crm-api.ts` with `getB2cPipeline()`, `advanceCrmLead(id, stage)`,
-      `getCrmTaxProfile(id)`, `updateCrmTaxProfile(id, patch)`, `approveCrmPayment(id, approvedBy)`
-      and their TypeScript types (board-shaped `CrmPipelineResponse`, `CrmLead`, `CrmStage`).
-- [ ] 6.2 Create `contexia-app/components/bunker/crm/B2cKanbanTab.tsx`: `COLUMNS` for the 4 stages,
-      `load()` in `useEffect(...,[])` with `loading`/`error`/`source` states, `useMemo` grouping by
-      stage, a `move(leadId, stage)` handler (await `advanceCrmLead` then reload), an
+- [x] 6.1 Extended `contexia-app/lib/crm-api.ts` with `getB2cPipeline()`,
+      `advanceCrmLead(id, stage)`, `getCrmTaxProfile(id)`, `updateCrmTaxProfile(id, patch)`,
+      `approveCrmPayment(id, approvedBy)` and their TypeScript types (`CrmPipelineResponse`,
+      `CrmLead`, `CrmStage`, `CrmTaxProfile`).
+- [x] 6.2 Created `contexia-app/components/bunker/crm/B2cKanbanTab.tsx`: `COLUMNS` for the 4
+      stages, `load()` in `useEffect(...,[])` with `loading`/`error`/`source` states, `useMemo`
+      grouping by stage, an `advance(lead)` handler (await `advanceCrmLead` then reload), an
       "Aprobar Pago" button rendered only on `POR_APROBAR` cards (calls `approveCrmPayment` then
       reload). CSS-grid columns, `@theme` tokens only — no drag-and-drop, no new libraries.
-- [ ] 6.3 Wire `B2cKanbanTab` into `CrmVentasSection.tsx`'s "B2C / Renta Natural" tab, replacing the
-      "Próximamente" placeholder text entirely.
+- [x] 6.3 Wired `B2cKanbanTab` into `CrmVentasSection.tsx`'s "B2C / Renta Natural" tab, replacing
+      the "Próximamente" placeholder text entirely.
+
+Verification: `tsc --noEmit` clean, `npm run build` green.
 
 ## 7. Docs
 

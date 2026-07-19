@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { B2bRetainersTab } from "./crm/B2bRetainersTab";
+import { B2cKanbanTab } from "./crm/B2cKanbanTab";
 
 type CrmTab = "b2b" | "b2c";
 
@@ -41,11 +42,7 @@ export function CrmVentasSection() {
       </div>
 
       {activeTab === "b2b" && <B2bRetainersTab />}
-      {activeTab === "b2c" && (
-        <div className="rounded-xl border border-outline-variant/30 bg-surface-container p-6 text-on-surface-variant">
-          Próximamente: embudo Kanban de Renta Natural 2026.
-        </div>
-      )}
+      {activeTab === "b2c" && <B2cKanbanTab />}
     </div>
   );
 }
