@@ -52,6 +52,10 @@ class Settings(BaseSettings):
     # Feature Flags (Task 4.4: Social Ops canonical endpoints)
     SOCIAL_OPS_CANONICAL: bool = False
 
+    # CRM B2B retainers cockpit (change crm-b2b-retainers-cockpit) — default off, flip
+    # after Stage 11 prod smoke-test, same playbook as SOCIAL_OPS_CANONICAL.
+    CRM_CANONICAL: bool = False
+
     # Multi-tenant feature gate (Phase 1: MVP)
     MULTI_TENANT_ENABLED: bool = True  # Enable JWT tenant_id extraction
     JWT_TENANT_CLAIM: str = "tenant_id"  # JWT claim name for tenant identifier

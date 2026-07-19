@@ -4,7 +4,7 @@ Demo mock visual de la app Contexia. Stack: Next.js 16 App Router + React 19 + T
 
 ## Reglas duras
 
-- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real; Búnker → Social Content Ops; Búnker → Onboarding) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real es solo lectura; Social Content Ops y Onboarding sí escriben — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
+- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real; Búnker → Social Content Ops; Búnker → Onboarding; Búnker → CRM/Ventas B2B) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real es solo lectura; Social Content Ops y Onboarding escriben; CRM/Ventas B2B es de solo lectura por ahora — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
 - **Fuente de verdad visual**: el export de Stitch y los screenshots `screen.png` del ZIP `stitch_contexia_evolution_cfo_as_a_service`. No rediseñar pantallas que Stitch ya definió.
 - **Sin CDN**: nada de React/Tailwind/Babel por unpkg. Las únicas URLs externas son Google Fonts (Inter, JetBrains Mono, Material Symbols) cargadas desde [app/layout.tsx](app/layout.tsx).
 - **Sin librerías nuevas** salvo que sea estrictamente necesario. Stack mínimo.
@@ -69,6 +69,23 @@ crea seed drafts), no es solo lectura.
   credenciales presentes/faltantes) → seed draft → checklist de 21 días
   (S1/S2/S3 + Go-Live).
 - **HITL intacto**: seed drafts quedan en `pending_approval`, igual que el resto.
+
+### Búnker → CRM/Ventas B2B (cuarta excepción data-bound)
+
+`components/bunker/CrmVentasSection.tsx` (tab shell) + `components/bunker/crm/B2bRetainersTab.tsx`
+es la cuarta pantalla data-bound. Como `CashTodayCard`, es **solo lectura** por ahora: muestra el
+roster real de clientes B2B de Contexia (retenedores mensuales, antes en un Excel manual) y la
+grilla de pagos Ene–Jun 2026, sourced desde Supabase. Backend real (`apps/backend/presentation/
+crm_endpoints.py`), gateado por el feature flag `CRM_CANONICAL` (mismo playbook que
+`SOCIAL_OPS_CANONICAL`: default `false`, se activa tras el smoke-test de producción).
+
+- **Cliente tipado**: `lib/crm-api.ts`.
+- **Patrón**: idéntico al de `IdeasTab.tsx` — `useEffect` + `useState` con estados `loading`/
+  `error`/`source` explícitos, tokens `@theme` únicamente, sin librerías nuevas.
+- **Unidades**: el backend devuelve `amount_cents` (COP en centavos); dividir entre 100 con
+  `formatCop` al renderizar, igual que Caja Real.
+- **Tab "B2C / Renta Natural"** en la misma sección es un placeholder — su contenido (embudo
+  Kanban) es un change de OpenSpec separado (`crm-b2c-sell-machine-cockpit`).
 
 Esto es una excepción escoped al charter "sin backend" — pantallas data-bound son
 un puente hacia el MVP data-driven; mocks aplican para todo lo demás.
