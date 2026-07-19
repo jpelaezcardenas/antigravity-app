@@ -102,30 +102,30 @@ Verification: `tsc --noEmit` clean, `npm run build` green.
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 10.1 Commit the migrations, backend, and frontend changes in scoped commits, referencing this
-      change id.
-- [ ] 10.2 Merge to `main` (resolve any conflicts against concurrent work carefully — do not
-      overwrite unrelated in-progress changes) and push.
-- [ ] 10.3 Confirm Railway backend deploy completes green. `CRM_CANONICAL` is already `true` in
-      production from Change A — the new B2C endpoints go live immediately on this deploy; there is
-      no dark-deploy step for the flag itself here (only the new routes are new).
-- [ ] 10.4 **Bump `contexia-app/public/sw.js` `CACHE_VERSION`**, rebuild (`npm run build`), and
-      sync `contexia-app/out/` → `app/` additively. **Use a chunk-reference verifier that handles
-      all filename characters including `~`** (Change A's initial grep-based check missed `~` and
-      caused a production 404 — use the Python-based parser approach from that incident, not a
-      shell regex). Confirm Vercel deploy green.
-- [ ] 10.5 Verify live at `https://contexia.online/app/bunker` → CRM/Ventas → "B2C / Renta Natural":
-      real Kanban board renders with seeded leads across all 4 columns.
-- [ ] 10.6 In production, exercise the full loop once: advance a lead from `NUEVOS` to
-      `PROSPECTOS` via the UI, and approve payment on a `POR_APROBAR` lead, confirming it reaches
-      `LISTOS_CONTADORA` — then, if these were real seed rows (not a copy meant to stay pristine),
-      note in the deployment report whether state was left mutated or restored.
-- [ ] 10.7 Create deployment report at
-      `openspec/changes/crm-b2c-sell-machine-cockpit/reports/YYYY-MM-DD-deployment.md`, including
-      an explicit reminder of the R1-style accepted-auth-risk note (now covering a payment-approval
-      action, not just reads) and the seeded-`crm_wompi_transactions`-is-not-real caveat.
+- [x] 10.1 Committed migrations/backend/frontend in scoped commits across `feature/crm-b2c-sell-machine-cockpit`.
+- [x] 10.2 Merged to `main` (fast-forward, no conflicts) and pushed.
+- [x] 10.3 Confirmed Railway backend deploy `SUCCESS`. `CRM_CANONICAL` was already `true` from
+      Change A — the new B2C endpoints went live immediately on this deploy.
+- [x] 10.4 Bumped `contexia-app/public/sw.js` `CACHE_VERSION` (v10→v11, committed and pushed
+      immediately this time to avoid the earlier concurrent-session collision pattern), rebuilt,
+      and synced `contexia-app/out/` → `app/` additively using the **Python-based chunk-reference
+      verifier from the start** (handles all filename characters including `~`) — **0 missing
+      references on the first attempt**, confirming the lesson from Change A's incident held.
+      Confirmed Vercel deploy `READY`.
+- [x] 10.5 Verified live at `https://contexia.online/app/bunker` → CRM/Ventas: B2B tab still works
+      (no regression); "B2C / Renta Natural" tab renders the real Kanban board with all 4 seeded
+      leads in their correct columns, `Fuente: supabase`.
+- [x] 10.6 Exercised the full loop live in production: clicked "Avanzar" on Maria (`NUEVOS` →
+      `PROSPECTOS`) — confirmed via UI reload. Clicked "Aprobar Pago" on Ana (`POR_APROBAR`) —
+      confirmed she moved to `LISTOS_CONTADORA` and her `crm_wompi_transactions` row was stamped
+      `APPROVED`/`approved_by: admin@contexia.online` via direct SQL check. **State was then
+      restored** to the documented seed baseline via a follow-up SQL update (not a new migration —
+      a one-off restoration, since the mutation was itself proof the feature works) so future work
+      finds the documented starting point.
+- [x] 10.7 Created deployment report at
+      `openspec/changes/crm-b2c-sell-machine-cockpit/reports/2026-07-19-deployment.md`.
 
 ## 11. Archive
 
-- [ ] 11.1 Sync the `crm-b2c-sell-machine` capability into `openspec/specs/` and archive this change
-      once Stage 11 is confirmed complete and verified live.
+- [x] 11.1 Synced the `crm-b2c-sell-machine` capability into `openspec/specs/` and archived this
+      change to `openspec/changes/archive/2026-07-19-crm-b2c-sell-machine-cockpit/`.
