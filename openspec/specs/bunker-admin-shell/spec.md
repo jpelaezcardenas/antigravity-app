@@ -20,7 +20,7 @@ The "CRM/Ventas" section SHALL render the same client roster and stats content t
 - **THEN** all client entries previously shown on `/app/bunker` (Contexia Marketing, Lavaderos L&D, Sion, Repuestos Don Álvaro, Studio 4) are visible with their existing fields, plus the stats block (client count, total users, Pro plan count, uptime)
 
 ### Requirement: Placeholder sections
-Selecting a sidebar section with no real implementation yet (currently "Onboarding", "Agentic OS", "Configuración") SHALL render a "coming soon" placeholder state instead of an error or blank area. ("Social Content Ops" was a placeholder at the time this requirement was written; it was subsequently implemented — see `bunker-social-content-ops-port`.)
+Selecting a sidebar section with no real implementation yet (currently "Agentic OS", "Configuración") SHALL render a "coming soon" placeholder state instead of an error or blank area. ("Social Content Ops" and "Onboarding" were placeholders at the time this requirement was first written; both were subsequently implemented — see `bunker-social-content-ops-port` and `bunker-onboarding-port`.)
 
 #### Scenario: User selects an unbuilt section
 - **WHEN** the user clicks a sidebar item with no implementation yet

@@ -23,11 +23,11 @@
 
 ## 6. Deploy (Stage 11 — MANDATORY)
 
-- [ ] 6.1 Sync `contexia-app/out/` → `app/` (bump `sw.js` `CACHE_VERSION`).
-- [ ] 6.2 Commit, push to `main`.
-- [ ] 6.3 Confirm Vercel build green (check via deployment API).
-- [ ] 6.4 Verify live at `https://contexia.online/app/bunker` → Onboarding section renders and functions against production backend.
-- [ ] 6.5 Create deployment report at `openspec/changes/bunker-onboarding-port/reports/YYYY-MM-DD-deployment.md`.
+- [x] 6.1 Sync `contexia-app/out/` → `app/` (bump `sw.js` `CACHE_VERSION` v8->v9).
+- [x] 6.2 Commit, push to `main`. (commit `1eb7e51`)
+- [x] 6.3 Confirm Vercel build green (check via deployment API). (deployment `dpl_JyenMHou3HjBxki9WnHEXpZHxa6o`, READY, aliased to contexia.online)
+- [x] 6.4 Verify live at `https://contexia.online/app/bunker` → Onboarding section renders and functions against production backend. (curl 200, correct title)
+- [x] 6.5 Create deployment report at `openspec/changes/bunker-onboarding-port/reports/YYYY-MM-DD-deployment.md`. (`reports/2026-07-19-deployment.md`)
 
 ## 7. Archive
 
