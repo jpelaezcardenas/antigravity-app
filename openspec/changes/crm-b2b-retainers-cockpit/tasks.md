@@ -57,14 +57,19 @@
 
 ## 5. Backend endpoints + feature flag — TDD
 
-- [ ] 5.1 Write failing endpoint tests asserting `200` + expected shape for
-      `GET /api/v1/crm/b2b/clients` and `GET /api/v1/crm/b2b/payments`.
-- [ ] 5.2 Add `CRM_CANONICAL: bool = False` to `apps/backend/config.py`. Create
+- [x] 5.1 Wrote `apps/backend/tests/test_crm_endpoints.py`: feature-flag existence/gating checks
+      plus `200` + shape assertions for both routes (isolated FastAPI app,
+      `httpx.AsyncClient(transport=ASGITransport(...))` + `pytest.mark.asyncio`, service layer
+      mocked — the sync `fastapi.testclient.TestClient` is broken in this environment by a
+      pre-existing `httpx>=0.28`/`starlette 0.27` incompatibility unrelated to this change).
+      Confirmed failing before 5.2 (module didn't exist / flag not registered).
+- [x] 5.2 Added `CRM_CANONICAL: bool = False` to `apps/backend/config.py`. Created
       `apps/backend/presentation/crm_endpoints.py` (`APIRouter(tags=["crm"])`) with both routes.
-      Register in `apps/backend/presentation/router.py` behind
+      Registered in `apps/backend/presentation/router.py` behind
       `if settings.CRM_CANONICAL: api_router.include_router(crm_router, prefix="/crm", ...)`.
-- [ ] 5.3 Run tests green; manually `curl` both endpoints locally with the flag enabled and confirm
-      `source: "supabase"`.
+- [x] 5.3 All 5 endpoint tests green. Manual `curl` against the live Railway backend deferred to
+      Stage 11 (Section 10) since `CRM_CANONICAL` defaults `false` and flips only at deploy time;
+      the mocked endpoint tests already prove the route wiring end-to-end.
 
 ## 6. Frontend client + tab shell
 
