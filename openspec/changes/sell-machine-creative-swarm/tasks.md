@@ -21,13 +21,13 @@
 
 ## 3. Copywriter module — TDD
 
-- [ ] 3.1 Write failing unit tests for `copywriter_service.py`: `generate_hooks(count)` returns the
-      requested count with the correct shape; falls back to a deterministic hook set when all LLM
-      providers fail; `rewrite_hook(hook, rejection_reason)` returns a single rewritten hook.
-- [ ] 3.2 Author `apps/backend/services/copywriter_service.py`: `generate_hooks(count=5)` and
-      `rewrite_hook(hook, reason)`, same LLM-call idiom as Change 2's Critic (shared
-      `social-ops-v1` profile per design.md Decision 3), deterministic fallback hook set.
-- [ ] 3.3 Run tests green.
+- [x] 3.1 Wrote `apps/backend/tests/test_copywriter_service.py` (credential-free, mocks
+      `_llm_generate_hooks`/`_llm_rewrite_hook`): correct shape/count, deterministic fallback on
+      LLM failure (both functions). Confirmed failing (module didn't exist).
+- [x] 3.2 Authored `apps/backend/services/copywriter_service.py`: `generate_hooks(count=5)` and
+      `rewrite_hook(hook, reason)`, shared `social-ops-v1` profile (design.md Decision 3),
+      deterministic fallback hook set/original-hook-passthrough on any LLM failure.
+- [x] 3.3 11/11 tests green (5 new + 6 from Section 2, no regression).
 
 ## 4. Sell Machine orchestration service + Approval Queue integration — TDD
 
