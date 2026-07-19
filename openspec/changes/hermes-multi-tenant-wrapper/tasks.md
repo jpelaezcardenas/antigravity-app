@@ -1061,7 +1061,39 @@ Stage 6 (Deploy):  Jul 26+     T36-T40 (E2E verification + Stage 11 production d
 **Owner:** DevOps / Security  
 **Effort:** 2 hours  
 **Deadline:** 2026-07-18  
-**Status:** ⏳ Ready
+**Status:** 🟡 Partially done (2026-07-19)
+
+**What actually happened (2026-07-19):** Investigated as a prerequisite for porting the Búnker's
+"Agentic OS" section (`bunker-onboarding-port` follow-up). Found: no named Cloudflare tunnel
+exists — still on the ephemeral quick-tunnel (`*.trycloudflare.com`, resolved dynamically from
+Supabase `hermes_tunnel` table). Step 1 (`.cloudflared/config.yaml` + named tunnel) requires
+`cloudflared tunnel login` (interactive Cloudflare OAuth in a browser) and `cloudflared tunnel
+create` — cannot be done by an agent; needs the user to run these themselves. **Deferred, not
+done.**
+
+Steps 2-3 done:
+- ✅ Step 2: `api/hermes/status.ts` now validates `Authorization: Bearer <HERMES_TUNNEL_TOKEN>`
+  before proxying, 401s otherwise (fails open — no gate — if the env var is unset, matching this
+  repo's existing precedent for `SUPABASE_JWT_SECRET` in `middleware.ts`).
+- ✅ Step 3 (partial): no real `contexia-dev-token-123` secret was ever deployed anywhere (grep +
+  `railway variables` + `vercel env ls` confirmed clean) — it was a hardcoded example value in
+  `docs/hermes-integration-guide.md` for a *different* token (`HERMES_API_TOKEN`, Hermes's own
+  WebSocket approval-queue auth), not this endpoint's token. Nothing to rotate; generated a fresh
+  `HERMES_TUNNEL_TOKEN` instead (`openssl rand -hex 32`), set on Vercel production as both
+  `HERMES_TUNNEL_TOKEN` (server-side check) and `NEXT_PUBLIC_HERMES_TUNNEL_TOKEN` (so the future
+  Bunker frontend can send it — Vercel warns this makes it visible in the browser, which is
+  expected/accepted, see code comment). **Not stored in Bitwarden** — `bw` CLI is installed but
+  unauthenticated locally; unlocking it requires the master password, which is off-limits for an
+  agent to handle regardless of authorization. The token value was shown once in chat for the
+  user to save into Bitwarden themselves (`Contexia/Infrastructure/Hermes-Tunnel-Token`).
+- Did **not** set `HERMES_TUNNEL_TOKEN` on Railway — nothing in the actual code reads it there;
+  only the Vercel function (`api/hermes/status.ts`) checks it. The task's own header text
+  ("Secure the Cloudflare tunnel that exposes Hermes gateway to Railway") appears to conflate
+  Railway with Vercel; verified against the real proxy code, which is Vercel-only.
+
+**Remaining before Agentic OS can be ported:** user runs `cloudflared tunnel login` +
+`cloudflared tunnel create` + writes `.cloudflared/config.yaml` (step 1) whenever ready. Once
+that's done, this task can close for real.
 
 ---
 

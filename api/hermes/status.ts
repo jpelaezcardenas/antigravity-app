@@ -9,7 +9,7 @@
 import { createHmac } from 'crypto';
 
 // Minimal request/response shape for Vercel's classic Node runtime (no @vercel/node dep installed)
-type Req = { method?: string };
+type Req = { method?: string; headers?: Record<string, string | string[] | undefined> };
 type Res = {
   status: (code: number) => Res;
   json: (body: unknown) => void;
@@ -25,6 +25,13 @@ const HERMES_WEBHOOK_SECRET = process.env.HERMES_WEBHOOK_SECRET || '';
 // so this function resolves it at runtime — no redeploy needed when it rotates.
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://kpynymwghfwshvcvevxq.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+
+// T23 (hermes-multi-tenant-wrapper): shared-secret gate on this endpoint so it
+// isn't openly scannable/abusable by bots hitting the tunnel to the local
+// Hermes gateway. Not a strong boundary (the token ships to the browser via
+// NEXT_PUBLIC_HERMES_TUNNEL_TOKEN for the Bunker's own same-origin call) —
+// it stops anonymous internet traffic, which is the actual threat here.
+const HERMES_TUNNEL_TOKEN = process.env.HERMES_TUNNEL_TOKEN || '';
 
 // In-memory cache so we don't hit Supabase on every request (per warm instance).
 let cachedUrl: { value: string; at: number } | null = null;
@@ -68,6 +75,16 @@ export default async function handler(req: Req, res: Res): Promise<void> {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
+  }
+
+  if (HERMES_TUNNEL_TOKEN) {
+    const authHeader = req.headers?.authorization;
+    const provided = Array.isArray(authHeader) ? authHeader[0] : authHeader;
+    const token = provided?.startsWith('Bearer ') ? provided.slice('Bearer '.length) : undefined;
+    if (token !== HERMES_TUNNEL_TOKEN) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
   }
 
   const gatewayUrl = await resolveGatewayUrl();
