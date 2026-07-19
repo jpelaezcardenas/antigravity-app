@@ -13,6 +13,7 @@ from presentation.radar_endpoints import router as radar_router
 from presentation.wizard_endpoints import router as wizard_router
 from presentation.social_ops_endpoints import router as social_ops_router
 from presentation.meta_endpoints import router as meta_router
+from presentation.whatsapp_endpoints import router as whatsapp_router
 from presentation.tiktok_endpoints import router as tiktok_router
 from presentation.linkedin_endpoints import router as linkedin_router
 from presentation.financials_endpoints import router as financials_router
@@ -61,3 +62,8 @@ if settings.CRM_CANONICAL:
 # Sell Machine creative swarm — feature flag gated (default off, flip after Stage 11 smoke-test)
 if settings.SELL_MACHINE_CANONICAL:
     api_router.include_router(sell_machine_router, prefix="/sell-machine", tags=["sell-machine"])
+
+# Taty WhatsApp sales router — feature flag gated (default off, flip after Stage 11 smoke-test;
+# no real WhatsApp Business number/token exists yet)
+if settings.WHATSAPP_CANONICAL:
+    api_router.include_router(whatsapp_router, prefix="/channels/whatsapp", tags=["whatsapp"])

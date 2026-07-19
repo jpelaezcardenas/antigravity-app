@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     # after Stage 11 prod smoke-test, same playbook as SOCIAL_OPS_CANONICAL.
     SELL_MACHINE_CANONICAL: bool = False
 
+    # Taty WhatsApp sales router (change taty-whatsapp-sales-router) — new channel surface,
+    # default off, dark-deployed and flipped after Stage 11 prod smoke-test with a simulated
+    # payload (no real WhatsApp Business number/token exists yet).
+    WHATSAPP_CANONICAL: bool = False
+
     # Multi-tenant feature gate (Phase 1: MVP)
     MULTI_TENANT_ENABLED: bool = True  # Enable JWT tenant_id extraction
     JWT_TENANT_CLAIM: str = "tenant_id"  # JWT claim name for tenant identifier
