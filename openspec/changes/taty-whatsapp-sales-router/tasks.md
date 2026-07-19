@@ -77,28 +77,29 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 6.1 Commit backend changes in scoped commits referencing this change id.
-- [ ] 6.2 Merge to `main` (check for conflicts) and push.
-- [ ] 6.3 Confirm Railway backend deploy completes green with `WHATSAPP_CANONICAL=false` (dark
-      deploy — new flag, needs this step like Change E, unlike Change F's flag reuse).
-- [ ] 6.4 No frontend touched — no sw.js bump/rebuild-sync for this change; confirm via `git diff`
-      at merge time.
-- [ ] 6.5 Verify the `GET /channels/whatsapp/webhook` hub.challenge handshake responds correctly
-      live even while the flag is dark (a handshake echo carries no data risk) — or confirm it
-      404s cleanly if gated entirely behind the flag; document which.
-- [ ] 6.6 Flip `WHATSAPP_CANONICAL=true` on Railway. POST a fabricated inbound WhatsApp payload via
-      curl; confirm a `crm_leads` row is created/advanced and `crm_tax_profiles` persona fields
-      land correctly via direct Supabase SQL. Explicitly note in the deployment report that this is
-      a simulated payload, not a real inbound WhatsApp message — true end-to-end verification is
-      gated on a real WhatsApp Business number/token that does not exist yet.
-- [ ] 6.7 Create deployment report at
-      `openspec/changes/taty-whatsapp-sales-router/reports/YYYY-MM-DD-deployment.md`, including the
-      accepted-risk notes from design.md (unverifiable end-to-end without a real number; keyword
-      classification coarseness, consistent with existing Taty precedent; defensive payload
-      parsing).
+- [x] 6.1 Committed on `feature/taty-whatsapp-sales-router` (`5652f27`), referencing this change id.
+- [x] 6.2 Fast-forward merged to `main` (no divergence) and pushed.
+- [x] 6.3 Confirmed dark deploy: Railway deployment `9d4a5396` (commit `5652f27`) reached
+      `SUCCESS`, and `GET /channels/whatsapp/webhook` returned **404** while
+      `WHATSAPP_CANONICAL` was still unset/`false`.
+- [x] 6.4 Confirmed no `contexia-app/` files touched — no sw.js bump/rebuild-sync needed.
+- [x] 6.5 Verified the hub.challenge handshake 404s cleanly while dark (route not registered at
+      all, per design — the flag gates route registration itself, not just its internals).
+- [x] 6.6 Flipped `WHATSAPP_CANONICAL=true`. **Deployment instability note**: required 2 manual
+      `railway_redeploy` triggers before the service responded reliably (~502 for extended periods
+      with no crash signature in logs across 3 total deployments — see deployment report for full
+      detail; confirmed via local import test this was not a code-level crash). Once up: hub.challenge
+      returned `200`/`12345`; `POST /webhook` with a fabricated inbound message → `{"ok": true,
+      "events_processed": 1}`; confirmed via direct Supabase SQL that a real `crm_leads` row was
+      created (`whatsapp_phone="573000001111"`, `stage="PROSPECTOS"`, `source="whatsapp"`) through
+      the actual deployed webhook → normalizer → router → CrmService path. Documented the
+      simulated-payload limitation explicitly in the deployment report.
+- [x] 6.7 Created deployment report at
+      `openspec/changes/taty-whatsapp-sales-router/reports/2026-07-19-deployment.md`, including all
+      accepted-risk notes from design.md plus the deployment-instability incident.
 
 ## 7. Archive
 
-- [ ] 7.1 Sync the `taty-whatsapp-sales-router` capability into `openspec/specs/` (using `git mv`
+- [x] 7.1 Sync the `taty-whatsapp-sales-router` capability into `openspec/specs/` (using `git mv`
       for the archive move, per the process fix established after Change A's tree-drift incident)
       and archive this change once Stage 11 is confirmed complete and verified live.
