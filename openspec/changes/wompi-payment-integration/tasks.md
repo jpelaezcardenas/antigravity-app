@@ -34,7 +34,7 @@
 ## 6. Local verification
 
 - [x] 6.1 Run full backend test suite: `python -m pytest tests/` — 53/53 Wompi/CRM tests pass; 40 pre-existing unrelated failures (httpx/TestClient version mismatch, missing legacy-phase artifacts, Siigo CSV parser) confirmed unaffected by this change (none reference wompi/crm).
-- [ ] 6.2 Manually exercise the checkout endpoint against Wompi sandbox (using the sandbox keys already in Railway) and confirm a real sandbox transaction is created against a test `crm_leads` row. (Deferred to 7.4 — a real end-to-end transaction needs the webhook to be reachable at a public URL, which only exists after deploy.)
+- [x] 6.2 Manually exercise the checkout endpoint against Wompi sandbox (using the sandbox keys already in Railway) and confirm a real sandbox transaction is created against a test `crm_leads` row. Done via 7.4 — real checkout for "Ana SEED (Por Aprobar)" (`lead_id=4d500757-27c9-40b1-b9f6-27afe30fc230`), completed on Wompi's hosted sandbox checkout with a test card, $89.000 COP, receipt confirmed by the founder.
 
 ## 7. Stage 11. Deploy to Production (MANDATORY — CLOSES THE LOOP)
 
@@ -47,6 +47,6 @@ Project-specific details:
 Tasks:
 - [x] 7.1 git commit + push to main (ce4c23a, hotfix 938dd16)
 - [x] 7.2 Railway deploy active with all Wompi sandbox env vars verified present (deployment 71c53eb2, status SUCCESS post-hotfix; WOMPI_ENV=sandbox + 4 sandbox-prefixed keys confirmed via railway_list_variables; live smoke-test confirms checkout endpoint returns 404, not 500, for an unknown lead)
-- [ ] 7.3 **USER ACTION REQUIRED** — Register the deployed webhook URL (`https://antigravity-app-production-175a.up.railway.app/api/v1/crm/wompi/webhook`) as "URL de Eventos" in the Wompi sandbox dashboard (Desarrollo → Programadores). Cannot be automated — requires the founder's Wompi login session.
-- [ ] 7.4 **USER ACTION REQUIRED** — Trigger one real Wompi sandbox test transaction end-to-end (needs a real `crm_leads` row + completing Wompi's hosted checkout page, which requires a human on Wompi's UI) and confirm the webhook updates `crm_wompi_transactions` status in production. Also closes 6.2.
+- [x] 7.3 Register the deployed webhook URL (`https://antigravity-app-production-175a.up.railway.app/api/v1/crm/wompi/webhook`) as "URL de Eventos" in the Wompi sandbox dashboard (Desarrollo → Programadores). Done by the founder (2026-07-20, confirmed via screenshot).
+- [x] 7.4 Trigger one real Wompi sandbox test transaction end-to-end and confirm the webhook updates `crm_wompi_transactions` status in production. Founder completed a real $89.000 COP sandbox payment for lead "Ana SEED (Por Aprobar)"; Wompi's real webhook delivery surfaced a second production bug (see below), fixed and verified by replaying the same real transaction's event after the fix deployed. Final state confirmed in Supabase: `status=APPROVED`, `wompi_transaction_id=12141585-1784507850-60928`, same row updated (no duplicate).
 - [x] 7.5 Create report: `openspec/changes/wompi-payment-integration/reports/2026-07-20-deployment.md`
