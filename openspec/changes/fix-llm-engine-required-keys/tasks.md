@@ -36,17 +36,21 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 4.1 Commit + merge to `main` (check for divergence) + push.
-- [ ] 4.2 Confirm Railway deploy green. No flag involved (internal utility, always active).
-- [ ] 4.3 Live smoke test: call the real `POST /api/v1/sell-machine/hooks/generate` endpoint;
-      confirm `200`, and inspect Railway logs to confirm NO `TypeError:
-      _parse_llm_response() takes ...` occurs, and that the response reflects fresh LLM-generated
-      hook content (not the deterministic fallback set that appeared in every prior Stage 11 this
-      session) — the definitive proof this bug is fixed.
-- [ ] 4.4 Create deployment report at
-      `openspec/changes/fix-llm-engine-required-keys/reports/YYYY-MM-DD-deployment.md`.
+- [x] 4.1 Committed (`1ae83fb`, `ddb30bd`), merged to `main`, pushed.
+- [x] 4.2 Railway deploys `ed1279cc` then `85e1246d` reached `SUCCESS`. No flag involved (internal
+      utility, always active).
+- [x] 4.3 **Live smoke test — two rounds**: first round (fix #1 only) returned `200` but still the
+      deterministic fallback, revealing a second bug (`AttributeError` on list-shaped responses,
+      fixed within this same change — see report). Second round (both fixes deployed):
+      `POST /sell-machine/hooks/generate` → `200`, returned hooks completely different from the
+      known deterministic fallback set — definitive proof the real LLM JSON path works
+      end-to-end. Railway logs confirm zero `TypeError`/`AttributeError`, and the existing
+      retry-with-re-prompt logic correctly recovered from one malformed-JSON attempt.
+- [x] 4.4 Created deployment report at
+      `openspec/changes/fix-llm-engine-required-keys/reports/2026-07-20-deployment.md`, documenting
+      both bugs.
 
 ## 5. Archive
 
-- [ ] 5.1 No delta specs to sync (internal bugfix, no capability document changed). Archive via
-      `git mv` once Stage 11 is confirmed complete.
+- [x] 5.1 No delta specs to sync (internal bugfix, no capability document changed). Archived via
+      `git mv` to `openspec/changes/archive/2026-07-20-fix-llm-engine-required-keys/`.
