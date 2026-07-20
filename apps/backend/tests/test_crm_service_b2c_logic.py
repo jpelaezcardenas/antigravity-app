@@ -136,12 +136,20 @@ class TestApprovePayment:
     @pytest.mark.asyncio
     async def test_approves_a_por_aprobar_lead(self):
         client = MagicMock()
+        table_mocks = {}
 
         def table_side_effect(name):
+            if name in table_mocks:
+                return table_mocks[name]
             m = MagicMock()
             if name == "crm_leads":
                 m.select.return_value.eq.return_value.single.return_value.execute.return_value = MagicMock(
-                    data={"id": "l1", "stage": "POR_APROBAR", "whatsapp_phone": "573001234567"}
+                    data={
+                        "id": "l1",
+                        "stage": "POR_APROBAR",
+                        "whatsapp_phone": "573001234567",
+                        "tenant_id": "tenant-1",
+                    }
                 )
                 m.update.return_value.eq.return_value.execute.return_value = MagicMock(
                     data=[{"id": "l1", "stage": "LISTOS_CONTADORA"}]
@@ -155,6 +163,7 @@ class TestApprovePayment:
                 m.update.return_value.eq.return_value.execute.return_value = MagicMock(
                     data=[{"lead_id": "l1", "rut_status": "requested"}]
                 )
+            table_mocks[name] = m
             return m
 
         client.table.side_effect = table_side_effect
@@ -167,6 +176,10 @@ class TestApprovePayment:
         assert result["stage"] == "LISTOS_CONTADORA"
         mock_send.assert_called_once()
         assert mock_send.call_args[0][0] == "573001234567"
+        # Regression check for the tenant_id NOT NULL bug found live during Change I's Stage 11.
+        table_mocks["crm_tax_profiles"].insert.assert_called_once_with(
+            {"lead_id": "l1", "tenant_id": "tenant-1"}
+        )
 
     @pytest.mark.asyncio
     async def test_rejects_a_lead_not_in_por_aprobar(self):

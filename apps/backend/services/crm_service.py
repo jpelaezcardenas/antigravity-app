@@ -253,7 +253,7 @@ class CrmService:
 
         lead_result = (
             client.table("crm_leads")
-            .select("id, stage, whatsapp_phone")
+            .select("id, stage, whatsapp_phone, tenant_id")
             .eq("id", lead_id)
             .single()
             .execute()
@@ -283,7 +283,9 @@ class CrmService:
             client.table("crm_tax_profiles").select("lead_id").eq("lead_id", lead_id).execute()
         )
         if not (existing_profile.data or []):
-            client.table("crm_tax_profiles").insert({"lead_id": lead_id}).execute()
+            client.table("crm_tax_profiles").insert(
+                {"lead_id": lead_id, "tenant_id": lead.get("tenant_id")}
+            ).execute()
         client.table("crm_tax_profiles").update({"rut_status": "requested"}).eq(
             "lead_id", lead_id
         ).execute()

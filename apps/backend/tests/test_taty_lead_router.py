@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from services.taty_lead_router import (
+    _create_empty_tax_profile,
     classify_lead_intent,
     find_or_create_lead,
     generate_wompi_link,
@@ -266,6 +267,21 @@ class TestRouteLeadDocument:
 
         mock_service.update_tax_profile.assert_not_called()
         assert result["processed"] is False
+
+
+class TestCreateEmptyTaxProfile:
+    def test_includes_tenant_id_from_the_lead(self):
+        """Regression test for a bug found live during Change I's Stage 11 (2026-07-20):
+        crm_tax_profiles.tenant_id is NOT NULL but the insert never included it."""
+        mock_client = MagicMock()
+        mock_client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value.data = {
+            "tenant_id": "tenant-1"
+        }
+        with patch("services.taty_lead_router.get_service_supabase", return_value=mock_client):
+            _create_empty_tax_profile("lead-1")
+
+        insert_call = mock_client.table.return_value.insert
+        insert_call.assert_called_once_with({"lead_id": "lead-1", "tenant_id": "tenant-1"})
 
 
 class TestFindOrCreateLead:

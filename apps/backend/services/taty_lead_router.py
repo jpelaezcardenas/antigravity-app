@@ -114,9 +114,15 @@ def _build_web_checkout_url(
 
 def _create_empty_tax_profile(lead_id: str) -> None:
     """Creates an empty crm_tax_profiles row for a lead that doesn't have one yet (isolated for
-    test patching). Mirrors Change B's seed pattern of one tax-profile row per lead."""
+    test patching). Mirrors Change B's seed pattern of one tax-profile row per lead.
+
+    Bug found live during Change I's Stage 11 (2026-07-20): crm_tax_profiles.tenant_id is
+    NOT NULL, but this insert never included it — a pre-existing bug from Change D that its
+    mocked unit tests never caught. Fixed by reading the lead's tenant_id first."""
     client = get_service_supabase()
-    client.table("crm_tax_profiles").insert({"lead_id": lead_id}).execute()
+    lead_result = client.table("crm_leads").select("tenant_id").eq("id", lead_id).single().execute()
+    tenant_id = (lead_result.data or {}).get("tenant_id")
+    client.table("crm_tax_profiles").insert({"lead_id": lead_id, "tenant_id": tenant_id}).execute()
 
 
 def _detect_persona_fields(message: str) -> Dict[str, Any]:
