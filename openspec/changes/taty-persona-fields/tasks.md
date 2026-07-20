@@ -42,19 +42,24 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 5.1 Commit + merge to `main` (check for divergence from other concurrent in-progress
-      changes first) + push.
-- [ ] 5.2 Confirm Railway deploy green. No new flag — reuses `WHATSAPP_CANONICAL`.
-- [ ] 5.3 Live smoke test: create a real disposable test lead, POST a fabricated WhatsApp
-      text-message webhook mentioning a topes amount (e.g. "el año pasado me consignaron 80
-      millones"), confirm via Supabase SQL that `topes.consignaciones=80000000` (or the chosen
-      unit) and `obligado_declarar=true` (since 80M > `UMBRAL_RENTA_COP` ≈ 69.7M). Send a second
-      message with a lower amount for a fresh lead and confirm `obligado_declarar=false`. Clean up
-      all test data.
-- [ ] 5.4 Create deployment report at
-      `openspec/changes/taty-persona-fields/reports/YYYY-MM-DD-deployment.md`.
+- [x] 5.1 Committed (`4ef3df8`), fast-forward merged to `main` (confirmed no divergence via
+      `git merge-base`), pushed.
+- [x] 5.2 Railway deploy of `4ef3df8` reached `SUCCESS`. No new flag — reuses
+      `WHATSAPP_CANONICAL`.
+- [x] 5.3 **Live smoke test found a real bug on first attempt**: POSTing a fabricated WhatsApp
+      message for a lead with no existing tax profile returned `500`
+      (`postgrest.exceptions.APIError: PGRST116` — `CrmService.get_tax_profile`'s `.single()`
+      raised on 0 rows, a pre-existing bug only now exposed because this change calls
+      `get_tax_profile` unconditionally). Fixed via `.maybe_single()` (commit `2fe9854`),
+      redeployed, then confirmed via Supabase SQL: a message mentioning consignaciones of 80M
+      correctly set `topes={"consignaciones":80000000}`/`obligado_declarar=true`; a message
+      mentioning ingresos of 10M correctly set `topes={"ingresos":10000000}`/
+      `obligado_declarar=false`. All test leads/profiles cleaned up.
+- [x] 5.4 Created deployment report at
+      `openspec/changes/taty-persona-fields/reports/2026-07-20-deployment.md`.
 
 ## 6. Archive
 
-- [ ] 6.1 Sync the MODIFIED `taty-whatsapp-sales-router` delta into `openspec/specs/` (merge into
-      the existing spec file), archive via `git mv` once Stage 11 is confirmed complete.
+- [x] 6.1 Synced the MODIFIED `taty-whatsapp-sales-router` delta into `openspec/specs/` (merged
+      into the existing spec file), archived via `git mv` to
+      `openspec/changes/archive/2026-07-20-taty-persona-fields/`.
