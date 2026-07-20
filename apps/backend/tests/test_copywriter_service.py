@@ -6,9 +6,14 @@ Mocks the LLM engine entirely, same pattern as test_content_evaluator.py.
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-from services.copywriter_service import generate_hooks, rewrite_hook
+from services.copywriter_service import (
+    _build_grounding_query,
+    _llm_generate_hooks,
+    generate_hooks,
+    rewrite_hook,
+)
 
 
 class TestGenerateHooks:
@@ -69,6 +74,61 @@ class TestGenerateHooksWithTelemetryReport(object):
             result = generate_hooks(count=3, report=report)
 
         assert len(result) > 0
+
+
+class TestBuildGroundingQuery:
+    def test_no_report_returns_generic_dian_query(self):
+        query = _build_grounding_query()
+        assert "renta" in query.lower() or "dian" in query.lower()
+
+    def test_report_with_hook_performance_mentions_its_pain_tags(self):
+        report = {"hook_performance": {"multa_dian": {"count": 3}}, "funnel_snapshot": {}}
+        query = _build_grounding_query(report)
+        assert "multa_dian" in query
+
+
+class TestLlmGenerateHooksGrounding:
+    def test_retrieved_chunks_are_included_in_the_prompt(self):
+        fake_engine = MagicMock()
+        fake_engine.get_ai_response_with_profile.return_value = [
+            {"headline": "H", "body": "B", "cta": "C", "pain_tag": "multa_dian"}
+        ]
+        with patch(
+            "services.copywriter_service.retrieve_similar",
+            return_value=[{"source": "dian", "content": "Articulo 592..."}],
+        ) as mock_retrieve, patch(
+            "agents.llm_engine.get_llm_engine", return_value=fake_engine
+        ):
+            _llm_generate_hooks(3)
+
+        mock_retrieve.assert_called_once()
+        args, kwargs = fake_engine.get_ai_response_with_profile.call_args
+        prompt = kwargs.get("prompt") or args[0]
+        assert "Articulo 592" in prompt
+
+    def test_empty_retrieval_does_not_block_generation(self):
+        fake_engine = MagicMock()
+        fake_engine.get_ai_response_with_profile.return_value = [
+            {"headline": "H", "body": "B", "cta": "C", "pain_tag": "multa_dian"}
+        ]
+        with patch(
+            "services.copywriter_service.retrieve_similar", return_value=[]
+        ), patch("agents.llm_engine.get_llm_engine", return_value=fake_engine):
+            result = _llm_generate_hooks(3)
+
+        assert len(result) == 1
+
+    def test_retrieval_failure_does_not_block_generation(self):
+        fake_engine = MagicMock()
+        fake_engine.get_ai_response_with_profile.return_value = [
+            {"headline": "H", "body": "B", "cta": "C", "pain_tag": "multa_dian"}
+        ]
+        with patch(
+            "services.copywriter_service.retrieve_similar", side_effect=Exception("KB down")
+        ), patch("agents.llm_engine.get_llm_engine", return_value=fake_engine):
+            result = _llm_generate_hooks(3)
+
+        assert len(result) == 1
 
 
 class TestRewriteHook:

@@ -9,7 +9,11 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
+from services.kb_seeding_service import retrieve_similar
+
 logger = logging.getLogger(__name__)
+
+_GENERIC_GROUNDING_QUERY = "declarar renta, multas DIAN, obligación tributaria"
 
 _SYSTEM_PROMPT = (
     "Eres el equipo de copywriting de Contexia (GPS Financiero para PyMEs colombianas, NO una "
@@ -53,6 +57,23 @@ def _format_telemetry_report(report: Dict[str, Any]) -> str:
     )
 
 
+def _build_grounding_query(report: Optional[Dict[str, Any]] = None) -> str:
+    """Derives a KB retrieval query for hook grounding (copywriter-rag). Favors a report's
+    hook_performance pain_tags when present (Change G feedback-loop flavor, design.md Decision 2);
+    falls back to a generic DIAN-pains query for cold-start generation with no prior signal."""
+    hook_performance = (report or {}).get("hook_performance") or {}
+    if hook_performance:
+        return ", ".join(hook_performance.keys())
+    return _GENERIC_GROUNDING_QUERY
+
+
+def _format_kb_grounding(chunks: List[Dict[str, Any]]) -> str:
+    """Renders retrieved KB chunks as a labeled prompt section, mirroring
+    _format_telemetry_report's style (copywriter-rag)."""
+    content = "\n".join(chunk.get("content", "") for chunk in chunks)
+    return f"\n\nContenido de referencia (basa los hooks en dolores fiscales reales):\n{content}"
+
+
 def _llm_generate_hooks(count: int, report: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
     """Isolated so tests can patch this single call point without needing LLM credentials."""
     from agents.llm_engine import get_llm_engine
@@ -61,6 +82,15 @@ def _llm_generate_hooks(count: int, report: Optional[Dict[str, Any]] = None) -> 
     prompt = f"Genera {count} hooks de marketing distintos."
     if report:
         prompt += _format_telemetry_report(report)
+
+    try:
+        chunks = retrieve_similar(_build_grounding_query(report), "__global__", top_k=3)
+    except Exception as exc:
+        logger.warning("copywriter_service: KB retrieval unavailable, generating ungrounded: %s", exc)
+        chunks = []
+    if chunks:
+        prompt += _format_kb_grounding(chunks)
+
     response = llm_engine.get_ai_response_with_profile(
         prompt=prompt,
         profile_name="social-ops-v1",
