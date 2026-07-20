@@ -15,7 +15,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 
-from channels.whatsapp import normalize_whatsapp_webhook
+from channels.whatsapp import normalize_whatsapp_webhook, send_whatsapp_message
 from services.taty_lead_router import find_or_create_lead, route_lead_document, route_lead_message
 
 router = APIRouter(tags=["whatsapp"])
@@ -43,6 +43,7 @@ async def whatsapp_webhook(payload: Dict[str, Any]):
         if event.get("media_id"):
             await route_lead_document(lead_id, event["media_id"], event.get("mime_type") or "")
         else:
-            route_lead_message(lead_id, event["text"])
+            result = route_lead_message(lead_id, event["text"])
+            await send_whatsapp_message(event["account_id"], result["reply"])
 
     return {"ok": True, "events_processed": len(events)}

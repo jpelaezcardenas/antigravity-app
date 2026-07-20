@@ -8,7 +8,7 @@ test_operator_task_endpoints.py.
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
@@ -110,6 +110,101 @@ class TestInboundWebhook:
         assert response.status_code == 200
         assert response.json()["events_processed"] == 1
         mock_route.assert_called_once_with("lead-1", "Quiero saber si me toca declarar renta este año")
+
+    @pytest.mark.asyncio
+    async def test_text_message_reply_is_sent_back_to_the_lead(self, wa_client) -> None:
+        fake_events = [
+            {
+                "channel": "whatsapp",
+                "account_id": "573001234567",
+                "text": "Quiero saber si me toca declarar renta este año",
+                "actor_name": "Maria Lead",
+                "raw_payload": {},
+            }
+        ]
+        async with wa_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.normalize_whatsapp_webhook",
+                return_value=fake_events,
+            ), patch(
+                "presentation.whatsapp_endpoints.find_or_create_lead", return_value="lead-1"
+            ), patch(
+                "presentation.whatsapp_endpoints.route_lead_message",
+                return_value={
+                    "intent": "sales_interest",
+                    "confidence": 0.8,
+                    "reply": "Aquí tienes el link de pago...",
+                },
+            ), patch(
+                "presentation.whatsapp_endpoints.send_whatsapp_message",
+                new=AsyncMock(return_value=True),
+            ) as mock_send:
+                response = await client.post("/channels/whatsapp/webhook", json={"entry": []})
+
+        assert response.status_code == 200
+        mock_send.assert_called_once_with("573001234567", "Aquí tienes el link de pago...")
+
+    @pytest.mark.asyncio
+    async def test_send_failure_does_not_affect_the_webhook_response(self, wa_client) -> None:
+        fake_events = [
+            {
+                "channel": "whatsapp",
+                "account_id": "573001234567",
+                "text": "hola",
+                "actor_name": "Maria Lead",
+                "raw_payload": {},
+            }
+        ]
+        async with wa_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.normalize_whatsapp_webhook",
+                return_value=fake_events,
+            ), patch(
+                "presentation.whatsapp_endpoints.find_or_create_lead", return_value="lead-1"
+            ), patch(
+                "presentation.whatsapp_endpoints.route_lead_message",
+                return_value={"intent": "unknown", "confidence": 0.0, "reply": "..."},
+            ), patch(
+                "presentation.whatsapp_endpoints.send_whatsapp_message",
+                new=AsyncMock(return_value=False),
+            ):
+                response = await client.post("/channels/whatsapp/webhook", json={"entry": []})
+
+        assert response.status_code == 200
+        assert response.json()["events_processed"] == 1
+
+    @pytest.mark.asyncio
+    async def test_document_event_does_not_call_send_directly_from_handler(self, wa_client) -> None:
+        """route_lead_document already handles its own sends internally (Change I) — the
+        handler must not additionally call send_whatsapp_message for media events."""
+        fake_events = [
+            {
+                "channel": "whatsapp",
+                "account_id": "573001234567",
+                "media_id": "MEDIA123",
+                "mime_type": "application/pdf",
+                "text": "",
+                "actor_name": "Maria Lead",
+                "raw_payload": {},
+            }
+        ]
+        async with wa_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.normalize_whatsapp_webhook",
+                return_value=fake_events,
+            ), patch(
+                "presentation.whatsapp_endpoints.find_or_create_lead", return_value="lead-1"
+            ), patch(
+                "presentation.whatsapp_endpoints.route_lead_document",
+                new=AsyncMock(return_value={"processed": True}),
+            ), patch(
+                "presentation.whatsapp_endpoints.send_whatsapp_message",
+                new=AsyncMock(return_value=True),
+            ) as mock_send:
+                response = await client.post("/channels/whatsapp/webhook", json={"entry": []})
+
+        assert response.status_code == 200
+        mock_send.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_empty_events_returns_ack_without_routing(self, wa_client) -> None:
