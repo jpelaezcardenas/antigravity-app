@@ -45,8 +45,8 @@ Project-specific details:
 - Backend URL: https://antigravity-app-production-175a.up.railway.app
 
 Tasks:
-- [ ] 7.1 git commit + push to main
-- [ ] 7.2 Railway deploy active with all Wompi sandbox env vars verified present
-- [ ] 7.3 Register the deployed webhook URL (`https://antigravity-app-production-175a.up.railway.app/api/v1/crm/wompi/webhook`) as "URL de Eventos" in Wompi sandbox dashboard
-- [ ] 7.4 Trigger one real Wompi sandbox test transaction end-to-end and confirm the webhook updates `crm_wompi_transactions` status in production
-- [ ] 7.5 Create report: `openspec/changes/wompi-payment-integration/reports/YYYY-MM-DD-deployment.md`
+- [x] 7.1 git commit + push to main (ce4c23a, hotfix 938dd16)
+- [x] 7.2 Railway deploy active with all Wompi sandbox env vars verified present (deployment 71c53eb2, status SUCCESS post-hotfix; WOMPI_ENV=sandbox + 4 sandbox-prefixed keys confirmed via railway_list_variables; live smoke-test confirms checkout endpoint returns 404, not 500, for an unknown lead)
+- [ ] 7.3 **USER ACTION REQUIRED** — Register the deployed webhook URL (`https://antigravity-app-production-175a.up.railway.app/api/v1/crm/wompi/webhook`) as "URL de Eventos" in the Wompi sandbox dashboard (Desarrollo → Programadores). Cannot be automated — requires the founder's Wompi login session.
+- [ ] 7.4 **USER ACTION REQUIRED** — Trigger one real Wompi sandbox test transaction end-to-end (needs a real `crm_leads` row + completing Wompi's hosted checkout page, which requires a human on Wompi's UI) and confirm the webhook updates `crm_wompi_transactions` status in production. Also closes 6.2.
+- [x] 7.5 Create report: `openspec/changes/wompi-payment-integration/reports/2026-07-20-deployment.md`
