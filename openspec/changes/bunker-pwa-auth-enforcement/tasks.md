@@ -44,6 +44,39 @@
       `test_social_ops_service.py`, zero regression.
 - [x] 4.2 Wrote `openspec/changes/bunker-pwa-auth-enforcement/reports/2026-07-20-step4-verification.md`.
 
+## 4b. login.html — remove Microsoft, real sign-up + reset-password (addendum)
+
+- [x] 4b.1 Removed the "Sign in with Microsoft" button and its `data-provider="azure"` markup
+      from `login.html`. Confirmed zero remaining `azure`/`Microsoft` references.
+- [x] 4b.2 Applied a Postgres migration (`default_role_on_signup`, via Supabase MCP
+      `apply_migration`) — a `BEFORE INSERT` trigger on `auth.users` that sets
+      `raw_app_meta_data.role = "cliente"` when no role is already present. Verified the trigger
+      is active (`tgenabled='O'`) via direct SQL. Self-service sign-up can never grant `admin`.
+- [x] 4b.3 Wired real sign-up in `login.html`: a mode toggle (`setMode`) shows a
+      confirm-password field and switches the submit handler to `client.auth.signUp`; validates
+      password match + minimum length client-side before calling Supabase; handles both the
+      immediate-session case (email confirmation disabled) and the pending-confirmation case
+      (shows a "check your email" message).
+- [x] 4b.4 Wired real "Forgot password?" in `login.html`: calls
+      `client.auth.resetPasswordForEmail(email, {redirectTo: origin + "/reset-password.html"})`;
+      guards against an empty email client-side before calling Supabase.
+- [x] 4b.5 Created `reset-password.html` (repo root): completes the recovery flow via
+      `client.auth.onAuthStateChange`/`getSession` (Supabase JS auto-parses the recovery token
+      from the URL) + `client.auth.updateUser({password})`; validates password match/length and
+      a missing/expired recovery session client-side before calling Supabase.
+- [x] 4b.6 Updated `middleware.ts` (`PUBLIC_PATHS` += `/reset-password.html`) and `vercel.json`
+      (redirect `/reset-password` → `/reset-password.html`; added to the shared no-cache header
+      group alongside `login`/`logout`/`crear-empresa`/`landing`). Validated `vercel.json` is
+      still well-formed JSON.
+- [x] 4b.7 **Live browser verification** (via a local static server, since `file://` snapshots
+      don't execute JS): confirmed the Microsoft button is gone; confirmed the sign-up toggle
+      correctly changes the button label, reveals the confirm-password field, and flips the
+      toggle link text; confirmed "Forgot password?" with an empty email shows the guard message
+      without calling Supabase; confirmed `reset-password.html` renders correctly and both its
+      password-mismatch and no-valid-recovery-session guards fire without calling Supabase (no
+      real accounts created, no real emails sent, no real password changes attempted during
+      verification).
+
 ## 5. Stage 11 — Deploy to Production (MANDATORY, staged rollout)
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`

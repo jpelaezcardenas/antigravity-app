@@ -50,3 +50,25 @@ since Hermes has no browser session. This SHALL NOT change behavior while `AUTH_
 #### Scenario: The Hermes bridge is unaffected
 - **WHEN** Hermes calls `GET /sell-machine/tasks/pending` (no bearer token)
 - **THEN** the request is unaffected by this change, regardless of `AUTH_ENFORCED`
+
+### Requirement: login.html supports real self-service sign-up and password reset, Google-only SSO
+The system SHALL remove the "Sign in with Microsoft" option from `login.html`, keeping only Google
+SSO and email/password. `login.html` SHALL support a real sign-up mode
+(`client.auth.signUp`), and a real "Forgot password?" flow
+(`client.auth.resetPasswordForEmail` + a `reset-password.html` completion page using
+`client.auth.updateUser`). Self-service sign-ups SHALL default to `role: cliente` (via a
+database trigger), never `admin`.
+
+#### Scenario: Signing up creates an account with the cliente role by default
+- **WHEN** a new user signs up via `login.html`'s sign-up mode with no pre-existing role
+- **THEN** the resulting `auth.users` row has `app_metadata.role = "cliente"`
+
+#### Scenario: Forgot password sends a real reset email
+- **WHEN** a user submits a non-empty email via "Forgot password?"
+- **THEN** `client.auth.resetPasswordForEmail` is called with a redirect to
+  `/reset-password.html`
+
+#### Scenario: reset-password.html rejects a submission with no valid recovery session
+- **WHEN** the reset-password form is submitted without a valid Supabase recovery session
+  established (e.g. an expired or missing link)
+- **THEN** the form shows an error and does not call `client.auth.updateUser`

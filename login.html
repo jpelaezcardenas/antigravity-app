@@ -293,16 +293,6 @@
             Sign in with Google
           </button>
 
-          <button class="sso" type="button" data-provider="azure">
-            <span class="icon ms" aria-hidden="true">
-              <span style="background:#f25022"></span>
-              <span style="background:#7fba00"></span>
-              <span style="background:#00a4ef"></span>
-              <span style="background:#ffb900"></span>
-            </span>
-            Sign in with Microsoft
-          </button>
-
           <button class="sso" type="button" id="email-focus">
             <span class="icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -319,6 +309,7 @@
         <form id="login-form">
           <input id="email" name="email" type="email" autocomplete="email" required placeholder="Email" aria-label="Email" />
           <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Password" aria-label="Password" />
+          <input id="password-confirm" name="password-confirm" type="password" autocomplete="new-password" placeholder="Confirm password" aria-label="Confirm password" style="display:none" />
           <div id="role-toggle" class="role-toggle" aria-label="Modo para admin">
             <button class="active" type="button" data-role="client">Cliente</button>
             <button type="button" data-role="admin">Admin</button>
@@ -327,8 +318,8 @@
         </form>
 
         <div class="links">
-          <a href="https://wa.me/573018948151?text=Hola,%20quiero%20solicitar%20acceso%20a%20Contexia" target="_blank" rel="noopener noreferrer">No account? Sign up</a>
-          <a href="https://wa.me/573018948151?text=Hola,%20necesito%20recuperar%20mi%20acceso%20a%20Contexia" target="_blank" rel="noopener noreferrer">Forgot password?</a>
+          <a href="#" id="signup-toggle">No account? Sign up</a>
+          <a href="#" id="forgot-password">Forgot password?</a>
         </div>
 
         <div id="message" class="msg" role="status" aria-live="polite"></div>
@@ -345,11 +336,16 @@
       // Required values: "admin" or "cliente". Set via SQL in auth.users.raw_app_meta_data.
       // See migration: contexia-wizard/supabase/migrations/20260525_seed_user_roles.sql
       var role = new URLSearchParams(window.location.search).get("role") || "client";
+      var mode = "login"; // "login" | "signup"
       var form = document.getElementById("login-form");
       var message = document.getElementById("message");
       var button = document.getElementById("login-button");
       var emailInput = document.getElementById("email");
+      var passwordInput = document.getElementById("password");
+      var passwordConfirmInput = document.getElementById("password-confirm");
       var roleToggle = document.getElementById("role-toggle");
+      var signupToggle = document.getElementById("signup-toggle");
+      var forgotPasswordLink = document.getElementById("forgot-password");
       var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       function normalizeEmail(email) {
@@ -377,10 +373,25 @@
         throw new Error("Tu cuenta no tiene un rol asignado. Contactá a soporte.");
       }
 
+      function defaultButtonLabel() {
+        return mode === "signup" ? "Create Account" : "Log In";
+      }
+
       function setBusy(isBusy, label) {
         button.disabled = isBusy;
-        button.textContent = label || "Log In";
+        button.textContent = label || defaultButtonLabel();
         document.querySelectorAll(".sso").forEach(function (btn) { btn.disabled = isBusy; });
+      }
+
+      function setMode(nextMode) {
+        mode = nextMode === "signup" ? "signup" : "login";
+        passwordConfirmInput.style.display = mode === "signup" ? "" : "none";
+        passwordConfirmInput.required = mode === "signup";
+        passwordInput.autocomplete = mode === "signup" ? "new-password" : "current-password";
+        button.textContent = defaultButtonLabel();
+        signupToggle.textContent = mode === "signup" ? "Have an account? Log in" : "No account? Sign up";
+        forgotPasswordLink.style.display = mode === "signup" ? "none" : "";
+        message.textContent = "";
       }
 
       function setRole(nextRole) {
@@ -435,29 +446,64 @@
         } catch (e) {}
       }
 
+      async function handleLogin(email, password) {
+        var result = await client.auth.signInWithPassword({ email: email, password: password });
+        if (result.error) throw result.error;
+        var user = result.data.user;
+        var resolvedRole = readRoleFromUser(user);
+        var dest = destinationForRole(resolvedRole);
+        storeSession(result.data.session, user);
+        auditLogin({
+          email: email,
+          outcome: "success",
+          method: "password",
+          resolved_role: resolvedRole,
+          destination: dest,
+        });
+        window.location.assign(dest);
+      }
+
+      async function handleSignup(email, password, passwordConfirm) {
+        if (password !== passwordConfirm) {
+          throw new Error("Las contraseñas no coinciden.");
+        }
+        if (password.length < 8) {
+          throw new Error("La contraseña debe tener al menos 8 caracteres.");
+        }
+        var result = await client.auth.signUp({ email: email, password: password });
+        if (result.error) throw result.error;
+
+        var session = result.data.session;
+        var user = result.data.user;
+        auditLogin({ email: email, outcome: "signup", method: "password" });
+
+        if (session && user) {
+          // Email confirmation disabled on this project — signed in immediately.
+          // New accounts default to role=cliente via the set_default_role_on_signup
+          // trigger (never admin — that stays manually assigned).
+          var resolvedRole = readRoleFromUser(user);
+          var dest = destinationForRole(resolvedRole);
+          storeSession(session, user);
+          window.location.assign(dest);
+          return;
+        }
+
+        message.style.color = "";
+        message.textContent = "Cuenta creada. Revisa tu correo para confirmar el acceso.";
+      }
+
       form.addEventListener("submit", async function (event) {
         event.preventDefault();
         message.textContent = "";
         setBusy(true, "...");
         var email = emailInput.value.trim();
+        var password = passwordInput.value;
         try {
-          var result = await client.auth.signInWithPassword({
-            email: email,
-            password: document.getElementById("password").value
-          });
-          if (result.error) throw result.error;
-          var user = result.data.user;
-          var resolvedRole = readRoleFromUser(user);
-          var dest = destinationForRole(resolvedRole);
-          storeSession(result.data.session, user);
-          auditLogin({
-            email: email,
-            outcome: "success",
-            method: "password",
-            resolved_role: resolvedRole,
-            destination: dest,
-          });
-          window.location.assign(dest);
+          if (mode === "signup") {
+            await handleSignup(email, password, passwordConfirmInput.value);
+          } else {
+            await handleLogin(email, password);
+          }
         } catch (error) {
           var code = error && error.status ? String(error.status) : (error && error.code) || null;
           var outcome = "invalid_credentials";
@@ -465,11 +511,39 @@
           auditLogin({
             email: email,
             outcome: outcome,
-            method: "password",
+            method: mode === "signup" ? "signup" : "password",
             error_code: code,
             error_message: error && error.message ? error.message : null,
           });
-          message.textContent = error.message || "No fue posible iniciar sesion.";
+          message.textContent = error.message || "No fue posible completar la solicitud.";
+        } finally {
+          setBusy(false);
+        }
+      });
+
+      signupToggle.addEventListener("click", function (event) {
+        event.preventDefault();
+        setMode(mode === "signup" ? "login" : "signup");
+      });
+
+      forgotPasswordLink.addEventListener("click", async function (event) {
+        event.preventDefault();
+        var email = emailInput.value.trim();
+        if (!email) {
+          message.textContent = "Escribe tu correo arriba y vuelve a intentar.";
+          emailInput.focus();
+          return;
+        }
+        message.textContent = "";
+        setBusy(true, "...");
+        try {
+          var redirectTo = window.location.origin + "/reset-password.html";
+          var result = await client.auth.resetPasswordForEmail(email, { redirectTo: redirectTo });
+          if (result.error) throw result.error;
+          message.style.color = "";
+          message.textContent = "Te enviamos un correo con instrucciones para restablecer tu contraseña.";
+        } catch (error) {
+          message.textContent = error.message || "No fue posible enviar el correo de recuperación.";
         } finally {
           setBusy(false);
         }
@@ -495,6 +569,7 @@
 
       setRole(role);
       syncRoleVisibility();
+      setMode("login");
 
       if (new URLSearchParams(window.location.search).get("oauth") === "1") {
         client.auth.getSession().then(function (result) {

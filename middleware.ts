@@ -17,6 +17,7 @@ const PUBLIC_PATHS = new Set([
   "/",
   "/landing.html",
   "/login.html",
+  "/reset-password.html",
   "/logout.html",
   "/index.html",
   "/404.html",

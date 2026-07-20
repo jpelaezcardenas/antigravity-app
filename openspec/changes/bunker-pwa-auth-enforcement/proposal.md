@@ -47,6 +47,22 @@ entirely — so the backend API itself remains unauthenticated regardless of the
 (no `openspec/specs/` capability document currently describes auth on these screens; this closes
 accepted risk R1 from `crm-b2c-sell-machine-cockpit`/`sell-machine-creative-swarm`.)
 
+## Addendum — login.html real sign-up/reset-password + Microsoft removal
+
+While reviewing the real login system, the founder asked for three concrete changes to
+`login.html` itself:
+- Remove the "Sign in with Microsoft" button (Google stays — its `signInWithOAuth` code was
+  already complete and correct; only the Google/Microsoft Cloud Console + Supabase provider
+  configuration remains, which is the founder's own action, not code).
+- Make "No account? Sign up" real — `login.html` now toggles into a sign-up mode
+  (`client.auth.signUp`) instead of opening a WhatsApp link.
+- Make "Forgot password?" real — calls `client.auth.resetPasswordForEmail`, and a new
+  `reset-password.html` completes the recovery flow (`client.auth.updateUser`).
+- A new Postgres trigger (`set_default_role_on_signup` on `auth.users`) assigns
+  `role: cliente` to any self-service sign-up that doesn't already have a role — self-service can
+  never grant `admin`, which stays manually assigned (matches the existing manual-seed
+  precedent in `contexia-wizard/supabase/migrations/20260525_seed_user_roles.sql`).
+
 ## Impact
 
 - **Backend**: `core/deps.py` (Supabase-JWT fallback), `config.py` (`SUPABASE_JWT_SECRET`
