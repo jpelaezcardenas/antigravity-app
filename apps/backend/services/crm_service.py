@@ -69,6 +69,20 @@ def _month_periods(from_period: str, to_period: str) -> List[str]:
     return periods
 
 
+def get_funnel_snapshot() -> Dict[str, int]:
+    """Current crm_leads count per VALID_LEAD_STAGES stage (sell-machine-telemetry-loop, Change G).
+    Reads directly, not via CrmService (no tenant filtering needed for this Cliente Cero-only
+    funnel), returning zero for any stage with no leads."""
+    client = get_service_supabase()
+    result = client.table("crm_leads").select("stage").execute()
+    counts = {stage: 0 for stage in VALID_LEAD_STAGES}
+    for row in result.data or []:
+        stage = row.get("stage")
+        if stage in counts:
+            counts[stage] += 1
+    return counts
+
+
 class CrmService:
     def _resolve_cliente_cero_tenant_id(self, client) -> Optional[str]:
         result = (

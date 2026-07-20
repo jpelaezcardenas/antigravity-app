@@ -78,6 +78,37 @@ class TestRunCreativeLoop:
         assert mock_eval.call_count == 2
         mock_rewrite.assert_called_once()
 
+    def test_default_use_telemetry_false_does_not_fetch_a_report(self):
+        """sell-machine-telemetry-loop, Change G: existing callers see no behavior change."""
+        hooks = [_hook(1)]
+        with patch(
+            "services.sell_machine_service.generate_hooks", return_value=hooks
+        ) as mock_generate, patch(
+            "services.sell_machine_service.evaluate_hook", return_value={"approved": True, "reason": "ok"}
+        ), patch("services.sell_machine_service.get_telemetry_report") as mock_report:
+            run_creative_loop(count=1)
+
+        mock_report.assert_not_called()
+        _, kwargs = mock_generate.call_args
+        assert kwargs.get("report") is None
+
+    def test_use_telemetry_true_fetches_and_passes_the_report(self):
+        """sell-machine-telemetry-loop, Change G: opt-in report consumption."""
+        hooks = [_hook(1)]
+        fake_report = {"hook_performance": {"post_content": {"count": 1}}, "funnel_snapshot": {}}
+        with patch(
+            "services.sell_machine_service.generate_hooks", return_value=hooks
+        ) as mock_generate, patch(
+            "services.sell_machine_service.evaluate_hook", return_value={"approved": True, "reason": "ok"}
+        ), patch(
+            "services.sell_machine_service.get_telemetry_report", return_value=fake_report
+        ) as mock_report:
+            run_creative_loop(count=1, use_telemetry=True)
+
+        mock_report.assert_called_once()
+        _, kwargs = mock_generate.call_args
+        assert kwargs.get("report") == fake_report
+
 
 class TestCreateCampaignPackage:
     @pytest.mark.asyncio

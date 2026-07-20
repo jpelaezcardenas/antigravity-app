@@ -36,6 +36,41 @@ class TestGenerateHooks:
         assert isinstance(result, list)
 
 
+class TestGenerateHooksWithTelemetryReport(object):
+    """sell-machine-telemetry-loop, Change G: generate_hooks gains an optional `report` param."""
+
+    def test_no_report_behaves_identically_to_before(self):
+        fake_hooks = [{"headline": "H", "body": "B", "cta": "C", "pain_tag": "multa_dian"}]
+        with patch(
+            "services.copywriter_service._llm_generate_hooks", return_value=fake_hooks
+        ) as mock_llm:
+            result = generate_hooks(count=1)
+
+        assert result == fake_hooks
+        # Called with no report-derived argument beyond count — signature unchanged for this call.
+        mock_llm.assert_called_once_with(1, report=None)
+
+    def test_report_is_passed_through_to_the_llm_call_point(self):
+        fake_hooks = [{"headline": "H", "body": "B", "cta": "C", "pain_tag": "multa_dian"}]
+        report = {"hook_performance": {"post_content": {"count": 2}}, "funnel_snapshot": {}}
+        with patch(
+            "services.copywriter_service._llm_generate_hooks", return_value=fake_hooks
+        ) as mock_llm:
+            result = generate_hooks(count=1, report=report)
+
+        assert result == fake_hooks
+        mock_llm.assert_called_once_with(1, report=report)
+
+    def test_falls_back_to_deterministic_set_when_llm_fails_even_with_a_report(self):
+        report = {"hook_performance": {}, "funnel_snapshot": {}}
+        with patch(
+            "services.copywriter_service._llm_generate_hooks", side_effect=Exception("down")
+        ):
+            result = generate_hooks(count=3, report=report)
+
+        assert len(result) > 0
+
+
 class TestRewriteHook:
     def test_returns_a_rewritten_hook_via_llm(self):
         original = {"headline": "H", "body": "B", "cta": "C", "pain_tag": "multa_dian"}

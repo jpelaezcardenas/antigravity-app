@@ -27,6 +27,7 @@ from services.operator_task_service import (
 from services.sell_machine_service import (
     create_campaign_package,
     evaluate_hooks,
+    get_telemetry_report,
     list_campaigns,
 )
 
@@ -93,6 +94,11 @@ def _raise_for_error(error: str) -> None:
     if "is '" in error and "not '" in error:
         raise HTTPException(status_code=409, detail=error)
     raise HTTPException(status_code=400, detail=error)
+
+
+@router.get("/telemetry/report")
+def telemetry_report_endpoint():
+    return get_telemetry_report()
 
 
 @router.get("/tasks/pending")

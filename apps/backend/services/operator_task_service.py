@@ -71,6 +71,18 @@ def list_pending_tasks() -> List[Dict[str, Any]]:
     return result.data
 
 
+def list_completed_tasks(task_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    """List all operator_tasks rows with status='completed', oldest first, optionally filtered
+    by task_type. The read-back capability for Change F's operator-task results, deferred to
+    sell-machine-telemetry-loop (Change G)."""
+    client = get_service_supabase()
+    query = client.table("operator_tasks").select("*").eq("status", "completed")
+    if task_type:
+        query = query.eq("task_type", task_type)
+    result = query.order("created_at").execute()
+    return result.data
+
+
 def mark_dispatched(task_id: str) -> Result:
     """Transition a task from pending -> dispatched. Any other current status is rejected."""
     try:

@@ -7,7 +7,7 @@ Critic, orchestrated by services/sell_machine_service.py).
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +41,26 @@ _DETERMINISTIC_FALLBACK_HOOKS: List[Dict[str, Any]] = [
 ]
 
 
-def _llm_generate_hooks(count: int) -> List[Dict[str, Any]]:
+def _format_telemetry_report(report: Dict[str, Any]) -> str:
+    """Renders a telemetry report (sell-machine-telemetry-loop, Change G) as a short prompt
+    section. Tolerant of an empty/thin report — never raises."""
+    hook_performance = report.get("hook_performance") or {}
+    funnel_snapshot = report.get("funnel_snapshot") or {}
+    return (
+        "\n\nContexto de desempeño previo (usa esto para mejorar, no lo repitas literal):\n"
+        f"- Resultados de hooks por tipo: {hook_performance}\n"
+        f"- Estado actual del embudo (Renta Natural): {funnel_snapshot}"
+    )
+
+
+def _llm_generate_hooks(count: int, report: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
     """Isolated so tests can patch this single call point without needing LLM credentials."""
     from agents.llm_engine import get_llm_engine
 
     llm_engine = get_llm_engine()
     prompt = f"Genera {count} hooks de marketing distintos."
+    if report:
+        prompt += _format_telemetry_report(report)
     response = llm_engine.get_ai_response_with_profile(
         prompt=prompt,
         profile_name="social-ops-v1",
@@ -82,11 +96,16 @@ def _llm_rewrite_hook(hook: Dict[str, Any], reason: str) -> Dict[str, Any]:
     return response
 
 
-def generate_hooks(count: int = 5) -> List[Dict[str, Any]]:
+def generate_hooks(count: int = 5, report: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
     """Generate `count` marketing hooks. Falls back to a deterministic hook set (never errors)
-    if the LLM engine is unavailable."""
+    if the LLM engine is unavailable.
+
+    `report` (sell-machine-telemetry-loop, Change G) is an optional prior-performance summary
+    (see services.operator_task_service.list_completed_tasks / crm_service.get_funnel_snapshot)
+    woven into the prompt as context. Omitting it (every pre-Change-G call site) leaves this
+    function's behavior identical to before."""
     try:
-        hooks = _llm_generate_hooks(count)
+        hooks = _llm_generate_hooks(count, report=report)
         if hooks:
             return hooks
     except Exception as exc:
