@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional
 
 from postgrest.exceptions import APIError
 
+from channels.whatsapp import send_whatsapp_message
 from config import settings
 from core.supabase_client import get_service_supabase
 from services.wompi_signature import compute_integrity_signature, verify_event_checksum
@@ -242,21 +243,26 @@ class CrmService:
         )
         return (result.data or [{}])[0]
 
-    def approve_payment(self, lead_id: str, approved_by: str) -> Dict[str, Any]:
+    async def approve_payment(self, lead_id: str, approved_by: str) -> Dict[str, Any]:
         """HITL gate: only valid for a lead currently in POR_APROBAR. Advances the lead to
-        LISTOS_CONTADORA and stamps its associated crm_wompi_transactions row APPROVED."""
+        LISTOS_CONTADORA, stamps its associated crm_wompi_transactions row APPROVED, and
+        proactively triggers Taty's document-collection flow (taty-document-collection, Change I)
+        by requesting the RUT via WhatsApp — this is the only trigger point for that flow,
+        deliberately synchronous (this repo has no scheduler/cron by design)."""
         client = get_service_supabase()
 
         lead_result = (
-            client.table("crm_leads").select("id, stage").eq("id", lead_id).single().execute()
+            client.table("crm_leads")
+            .select("id, stage, whatsapp_phone")
+            .eq("id", lead_id)
+            .single()
+            .execute()
         )
         lead = lead_result.data or {}
         if lead.get("stage") != "POR_APROBAR":
             raise ValueError(
                 f"Lead {lead_id!r} is not in POR_APROBAR stage (current: {lead.get('stage')!r})."
             )
-
-        from datetime import datetime, timezone
 
         client.table("crm_wompi_transactions").update(
             {
@@ -272,6 +278,23 @@ class CrmService:
             .eq("id", lead_id)
             .execute()
         )
+
+        existing_profile = (
+            client.table("crm_tax_profiles").select("lead_id").eq("lead_id", lead_id).execute()
+        )
+        if not (existing_profile.data or []):
+            client.table("crm_tax_profiles").insert({"lead_id": lead_id}).execute()
+        client.table("crm_tax_profiles").update({"rut_status": "requested"}).eq(
+            "lead_id", lead_id
+        ).execute()
+
+        phone = lead.get("whatsapp_phone")
+        if phone:
+            await send_whatsapp_message(
+                phone,
+                "¡Gracias por tu pago! Para continuar, envíame una foto o PDF de tu RUT.",
+            )
+
         return (updated.data or [{}])[0]
 
     def checkout_lead_payment(self, lead_id: str) -> Dict[str, Any]:

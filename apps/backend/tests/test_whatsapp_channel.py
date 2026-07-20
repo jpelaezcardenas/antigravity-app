@@ -12,7 +12,11 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from channels.whatsapp import normalize_whatsapp_webhook, send_whatsapp_message
+from channels.whatsapp import (
+    download_whatsapp_media,
+    normalize_whatsapp_webhook,
+    send_whatsapp_message,
+)
 
 
 def _fabricated_text_message_payload(phone="573001234567", text="Hola, quiero saber de la declaracion de renta"):
@@ -33,6 +37,73 @@ def _fabricated_text_message_payload(phone="573001234567", text="Hola, quiero sa
                                     "timestamp": "1721400000",
                                     "text": {"body": text},
                                     "type": "text",
+                                }
+                            ],
+                        },
+                        "field": "messages",
+                    }
+                ],
+            }
+        ]
+    }
+
+
+def _fabricated_document_message_payload(phone="573001234567", media_id="MEDIA_ID_123"):
+    return {
+        "entry": [
+            {
+                "id": "WABA_ID",
+                "changes": [
+                    {
+                        "value": {
+                            "messaging_product": "whatsapp",
+                            "metadata": {"phone_number_id": "PHONE_ID"},
+                            "contacts": [{"profile": {"name": "Doc Lead"}, "wa_id": phone}],
+                            "messages": [
+                                {
+                                    "from": phone,
+                                    "id": "wamid.DOC123",
+                                    "timestamp": "1721400000",
+                                    "type": "document",
+                                    "document": {
+                                        "filename": "rut.pdf",
+                                        "mime_type": "application/pdf",
+                                        "sha256": "abc123",
+                                        "id": media_id,
+                                    },
+                                }
+                            ],
+                        },
+                        "field": "messages",
+                    }
+                ],
+            }
+        ]
+    }
+
+
+def _fabricated_image_message_payload(phone="573001234567", media_id="MEDIA_ID_456"):
+    return {
+        "entry": [
+            {
+                "id": "WABA_ID",
+                "changes": [
+                    {
+                        "value": {
+                            "messaging_product": "whatsapp",
+                            "metadata": {"phone_number_id": "PHONE_ID"},
+                            "contacts": [{"profile": {"name": "Img Lead"}, "wa_id": phone}],
+                            "messages": [
+                                {
+                                    "from": phone,
+                                    "id": "wamid.IMG456",
+                                    "timestamp": "1721400000",
+                                    "type": "image",
+                                    "image": {
+                                        "mime_type": "image/jpeg",
+                                        "sha256": "def456",
+                                        "id": media_id,
+                                    },
                                 }
                             ],
                         },
@@ -87,6 +158,26 @@ class TestNormalizeWhatsappWebhook:
         events = normalize_whatsapp_webhook({"entry": [{"changes": [{"value": {}}]}]})
         assert events == []
 
+    def test_document_message_normalizes_with_media_id_and_mime_type(self):
+        events = normalize_whatsapp_webhook(_fabricated_document_message_payload())
+
+        assert len(events) == 1
+        event = events[0]
+        assert event["channel"] == "whatsapp"
+        assert event["account_id"] == "573001234567"
+        assert event["media_id"] == "MEDIA_ID_123"
+        assert event["mime_type"] == "application/pdf"
+        assert event["text"] == ""
+
+    def test_image_message_normalizes_the_same_way(self):
+        events = normalize_whatsapp_webhook(_fabricated_image_message_payload())
+
+        assert len(events) == 1
+        event = events[0]
+        assert event["media_id"] == "MEDIA_ID_456"
+        assert event["mime_type"] == "image/jpeg"
+        assert event["text"] == ""
+
 
 class TestSendWhatsappMessage:
     @pytest.mark.asyncio
@@ -117,3 +208,57 @@ class TestSendWhatsappMessage:
         mock_client.post.assert_called_once()
         call_args = mock_client.post.call_args
         assert "PHONE_ID" in call_args[0][0]
+
+
+class TestDownloadWhatsappMedia:
+    @pytest.mark.asyncio
+    async def test_returns_none_when_not_configured(self):
+        with patch("channels.whatsapp.os.getenv", return_value=None):
+            result = await download_whatsapp_media("MEDIA_ID_123")
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_downloads_via_two_step_graph_api_flow_when_configured(self):
+        metadata_response = AsyncMock()
+        metadata_response.status_code = 200
+        metadata_response.json = lambda: {
+            "url": "https://media.whatsapp.example/download-me",
+            "mime_type": "application/pdf",
+        }
+        file_response = AsyncMock()
+        file_response.status_code = 200
+        file_response.content = b"fake-pdf-bytes"
+
+        with patch(
+            "channels.whatsapp.os.getenv",
+            side_effect=lambda key, default=None: {"WHATSAPP_TOKEN": "fake-token"}.get(
+                key, default
+            ),
+        ), patch("channels.whatsapp.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.get.side_effect = [metadata_response, file_response]
+            mock_client_cls.return_value.__aenter__.return_value = mock_client
+
+            result = await download_whatsapp_media("MEDIA_ID_123")
+
+        assert result == {"content": b"fake-pdf-bytes", "mime_type": "application/pdf"}
+        assert mock_client.get.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_returns_none_when_metadata_fetch_fails(self):
+        metadata_response = AsyncMock()
+        metadata_response.status_code = 404
+
+        with patch(
+            "channels.whatsapp.os.getenv",
+            side_effect=lambda key, default=None: {"WHATSAPP_TOKEN": "fake-token"}.get(
+                key, default
+            ),
+        ), patch("channels.whatsapp.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.get.return_value = metadata_response
+            mock_client_cls.return_value.__aenter__.return_value = mock_client
+
+            result = await download_whatsapp_media("MEDIA_ID_123")
+
+        assert result is None

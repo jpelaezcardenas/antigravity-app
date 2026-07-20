@@ -16,8 +16,10 @@ from typing import Any, Dict, Optional, Tuple
 from urllib.parse import urlencode
 
 from config import settings
+from channels.whatsapp import download_whatsapp_media, send_whatsapp_message
 from core.supabase_client import get_service_supabase
 from services.crm_service import get_crm_service
+from services.document_storage_service import upload_tax_document
 from services.wompi_signature import compute_integrity_signature
 
 WOMPI_WEB_CHECKOUT_BASE_URL = "https://checkout.wompi.co/p/"
@@ -65,6 +67,15 @@ def _get_lead_stage(lead_id: str) -> Optional[str]:
     client = get_service_supabase()
     result = client.table("crm_leads").select("stage").eq("id", lead_id).single().execute()
     return (result.data or {}).get("stage")
+
+
+def _get_lead_phone(lead_id: str) -> Optional[str]:
+    """Reads the lead's whatsapp_phone directly from crm_leads (isolated for test patching)."""
+    client = get_service_supabase()
+    result = (
+        client.table("crm_leads").select("whatsapp_phone").eq("id", lead_id).single().execute()
+    )
+    return (result.data or {}).get("whatsapp_phone")
 
 
 def _get_latest_transaction(lead_id: str) -> Optional[Dict[str, Any]]:
@@ -230,6 +241,71 @@ def route_lead_message(lead_id: str, message: str) -> Dict[str, Any]:
             "No estoy segura de tu pregunta. ¿Quieres saber si te toca declarar renta este año?"
         ),
     }
+
+
+RUT_REQUEST_MESSAGE = "Por favor envíame una foto o PDF de tu RUT para continuar con tu declaración."
+EXTRACTOS_REQUEST_MESSAGE = (
+    "¡Gracias! Ahora envíame tus extractos bancarios (PDF o foto) para terminar de armar tu carpeta."
+)
+
+
+async def route_lead_document(lead_id: str, media_id: str, mime_type: str) -> Dict[str, Any]:
+    """Handles an incoming WhatsApp document/image for a lead (taty-document-collection,
+    Change I). Only processes documents once the lead has reached LISTOS_CONTADORA (i.e. a human
+    has already approved the payment at the POR_APROBAR HITL gate via CrmService.approve_payment)
+    — a document arriving earlier is acknowledged but not stored as RUT/extractos, so this flow
+    can never act ahead of that gate.
+
+    Sequential collection (design.md Decision 4): the RUT is whatever arrives first
+    (rut_status != 'collected'); once collected, the next document is treated as extractos.
+    Reuses the live 'pending'/'requested'/'collected' status vocabulary (the DB CHECK constraint
+    only allows these three, extended from the original 'pending'/'collected' pair during Stage 8
+    DB verification).
+
+    Returns {"processed": bool}.
+    """
+    current_stage = _get_lead_stage(lead_id)
+    if current_stage != "LISTOS_CONTADORA":
+        return {"processed": False}
+
+    service = get_crm_service()
+    tax_profile = service.get_tax_profile(lead_id)
+    rut_status = tax_profile.get("rut_status")
+    extractos_status = tax_profile.get("extractos_status")
+
+    if rut_status != "collected":
+        document_type = "rut"
+    elif extractos_status != "collected":
+        document_type = "extractos"
+    else:
+        return {"processed": False}
+
+    downloaded = await download_whatsapp_media(media_id)
+    if not downloaded:
+        return {"processed": False}
+
+    storage_path = upload_tax_document(
+        lead_id=lead_id,
+        document_type=document_type,
+        file_bytes=downloaded["content"],
+        mime_type=downloaded.get("mime_type") or mime_type,
+    )
+
+    patch = {
+        f"{document_type}_status": "collected",
+        f"{document_type}_storage_path": storage_path,
+    }
+    if document_type == "rut":
+        patch["extractos_status"] = "requested"
+
+    service.update_tax_profile(lead_id, patch)
+
+    if document_type == "rut":
+        phone = _get_lead_phone(lead_id)
+        if phone:
+            await send_whatsapp_message(phone, EXTRACTOS_REQUEST_MESSAGE)
+
+    return {"processed": True}
 
 
 def generate_wompi_link(lead_id: str) -> str:

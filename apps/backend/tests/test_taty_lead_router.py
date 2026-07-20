@@ -9,7 +9,7 @@ throughout the CRM/Sell Machine test suites.
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -17,6 +17,7 @@ from services.taty_lead_router import (
     classify_lead_intent,
     find_or_create_lead,
     generate_wompi_link,
+    route_lead_document,
     route_lead_message,
     verify_wompi_transaction,
 )
@@ -167,6 +168,104 @@ class TestDetectPersonaFieldsIndependiente:
 
         args, _ = mock_service.update_tax_profile.call_args
         assert args[1] == {"es_asalariado": False}
+
+
+class TestRouteLeadDocument:
+    def _mock_crm_service(self, tax_profile=None):
+        mock_service = MagicMock()
+        mock_service.get_tax_profile.return_value = tax_profile or {
+            "rut_status": "requested",
+            "extractos_status": "pending",
+        }
+        mock_service.update_tax_profile.return_value = {"lead_id": "lead-1"}
+        return mock_service
+
+    @pytest.mark.asyncio
+    async def test_document_before_listos_contadora_is_not_processed(self):
+        mock_service = self._mock_crm_service()
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="PROSPECTOS"
+        ):
+            result = await route_lead_document("lead-1", "MEDIA_ID_1", "application/pdf")
+
+        mock_service.update_tax_profile.assert_not_called()
+        assert result["processed"] is False
+
+    @pytest.mark.asyncio
+    async def test_first_document_is_treated_as_rut_and_requests_extractos(self):
+        mock_service = self._mock_crm_service(
+            tax_profile={"rut_status": "requested", "extractos_status": "pending"}
+        )
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="LISTOS_CONTADORA"
+        ), patch(
+            "services.taty_lead_router.download_whatsapp_media",
+            new=AsyncMock(return_value={"content": b"fake-pdf", "mime_type": "application/pdf"}),
+        ), patch(
+            "services.taty_lead_router.upload_tax_document", return_value="lead-1/rut.pdf"
+        ) as mock_upload, patch(
+            "services.taty_lead_router._get_lead_phone", return_value="573001234567"
+        ), patch(
+            "services.taty_lead_router.send_whatsapp_message", new=AsyncMock(return_value=True)
+        ) as mock_send:
+            result = await route_lead_document("lead-1", "MEDIA_ID_1", "application/pdf")
+
+        mock_upload.assert_called_once_with(
+            lead_id="lead-1", document_type="rut", file_bytes=b"fake-pdf", mime_type="application/pdf"
+        )
+        args, kwargs = mock_service.update_tax_profile.call_args
+        patch_dict = kwargs if kwargs else args[1]
+        assert patch_dict["rut_status"] == "collected"
+        assert patch_dict["rut_storage_path"] == "lead-1/rut.pdf"
+        assert patch_dict["extractos_status"] == "requested"
+        mock_send.assert_called_once()
+        assert result["processed"] is True
+
+    @pytest.mark.asyncio
+    async def test_second_document_is_treated_as_extractos(self):
+        mock_service = self._mock_crm_service(
+            tax_profile={"rut_status": "collected", "extractos_status": "requested"}
+        )
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="LISTOS_CONTADORA"
+        ), patch(
+            "services.taty_lead_router.download_whatsapp_media",
+            new=AsyncMock(return_value={"content": b"fake-pdf", "mime_type": "application/pdf"}),
+        ), patch(
+            "services.taty_lead_router.upload_tax_document", return_value="lead-1/extractos.pdf"
+        ) as mock_upload:
+            result = await route_lead_document("lead-1", "MEDIA_ID_2", "application/pdf")
+
+        mock_upload.assert_called_once_with(
+            lead_id="lead-1", document_type="extractos", file_bytes=b"fake-pdf",
+            mime_type="application/pdf",
+        )
+        args, kwargs = mock_service.update_tax_profile.call_args
+        patch_dict = kwargs if kwargs else args[1]
+        assert patch_dict["extractos_status"] == "collected"
+        assert result["processed"] is True
+
+    @pytest.mark.asyncio
+    async def test_download_failure_does_not_update_any_status(self):
+        mock_service = self._mock_crm_service()
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="LISTOS_CONTADORA"
+        ), patch(
+            "services.taty_lead_router.download_whatsapp_media",
+            new=AsyncMock(return_value=None),
+        ):
+            result = await route_lead_document("lead-1", "MEDIA_ID_1", "application/pdf")
+
+        mock_service.update_tax_profile.assert_not_called()
+        assert result["processed"] is False
 
 
 class TestFindOrCreateLead:

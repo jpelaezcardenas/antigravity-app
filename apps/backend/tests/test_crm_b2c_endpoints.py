@@ -9,7 +9,7 @@ this environment.
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
@@ -102,10 +102,9 @@ class TestApprovePaymentEndpoint:
     async def test_approves_payment(self, crm_client) -> None:
         async with crm_client as client:
             with patch("presentation.crm_endpoints.get_crm_service") as mock_get_service:
-                mock_get_service.return_value.approve_payment.return_value = {
-                    "id": "l1",
-                    "stage": "LISTOS_CONTADORA",
-                }
+                mock_get_service.return_value.approve_payment = AsyncMock(
+                    return_value={"id": "l1", "stage": "LISTOS_CONTADORA"}
+                )
                 response = await client.post(
                     "/crm/leads/l1/approve-payment", json={"approved_by": "admin@contexia.online"}
                 )
@@ -117,8 +116,8 @@ class TestApprovePaymentEndpoint:
     async def test_rejects_when_not_por_aprobar(self, crm_client) -> None:
         async with crm_client as client:
             with patch("presentation.crm_endpoints.get_crm_service") as mock_get_service:
-                mock_get_service.return_value.approve_payment.side_effect = ValueError(
-                    "Lead is not in POR_APROBAR stage"
+                mock_get_service.return_value.approve_payment = AsyncMock(
+                    side_effect=ValueError("Lead is not in POR_APROBAR stage")
                 )
                 response = await client.post(
                     "/crm/leads/l1/approve-payment", json={"approved_by": "admin@contexia.online"}

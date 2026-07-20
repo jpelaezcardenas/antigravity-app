@@ -60,9 +60,9 @@ class ApprovePaymentRequest(BaseModel):
 
 
 @router.post("/leads/{lead_id}/approve-payment")
-def approve_lead_payment(lead_id: str, payload: ApprovePaymentRequest):
+async def approve_lead_payment(lead_id: str, payload: ApprovePaymentRequest):
     try:
-        return get_crm_service().approve_payment(lead_id, approved_by=payload.approved_by)
+        return await get_crm_service().approve_payment(lead_id, approved_by=payload.approved_by)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

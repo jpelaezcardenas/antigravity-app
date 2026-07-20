@@ -9,7 +9,7 @@ tests live in test_crm_b2c_schema.py (RUN_CRM_B2B=1).
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -133,14 +133,15 @@ class TestTaxProfile:
 
 
 class TestApprovePayment:
-    def test_approves_a_por_aprobar_lead(self):
+    @pytest.mark.asyncio
+    async def test_approves_a_por_aprobar_lead(self):
         client = MagicMock()
 
         def table_side_effect(name):
             m = MagicMock()
             if name == "crm_leads":
                 m.select.return_value.eq.return_value.single.return_value.execute.return_value = MagicMock(
-                    data={"id": "l1", "stage": "POR_APROBAR"}
+                    data={"id": "l1", "stage": "POR_APROBAR", "whatsapp_phone": "573001234567"}
                 )
                 m.update.return_value.eq.return_value.execute.return_value = MagicMock(
                     data=[{"id": "l1", "stage": "LISTOS_CONTADORA"}]
@@ -149,16 +150,26 @@ class TestApprovePayment:
                 m.update.return_value.eq.return_value.execute.return_value = MagicMock(
                     data=[{"lead_id": "l1", "status": "APPROVED"}]
                 )
+            elif name == "crm_tax_profiles":
+                m.select.return_value.eq.return_value.execute.return_value = MagicMock(data=[])
+                m.update.return_value.eq.return_value.execute.return_value = MagicMock(
+                    data=[{"lead_id": "l1", "rut_status": "requested"}]
+                )
             return m
 
         client.table.side_effect = table_side_effect
 
-        with patch("services.crm_service.get_service_supabase", return_value=client), _patched_env():
-            result = CrmService().approve_payment("l1", approved_by="admin@contexia.online")
+        with patch("services.crm_service.get_service_supabase", return_value=client), patch(
+            "services.crm_service.send_whatsapp_message", new=AsyncMock(return_value=True)
+        ) as mock_send, _patched_env():
+            result = await CrmService().approve_payment("l1", approved_by="admin@contexia.online")
 
         assert result["stage"] == "LISTOS_CONTADORA"
+        mock_send.assert_called_once()
+        assert mock_send.call_args[0][0] == "573001234567"
 
-    def test_rejects_a_lead_not_in_por_aprobar(self):
+    @pytest.mark.asyncio
+    async def test_rejects_a_lead_not_in_por_aprobar(self):
         client = MagicMock()
 
         def table_side_effect(name):
@@ -173,4 +184,4 @@ class TestApprovePayment:
 
         with patch("services.crm_service.get_service_supabase", return_value=client), _patched_env():
             with pytest.raises(ValueError):
-                CrmService().approve_payment("l1", approved_by="admin@contexia.online")
+                await CrmService().approve_payment("l1", approved_by="admin@contexia.online")
