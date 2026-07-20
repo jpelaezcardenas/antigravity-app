@@ -314,9 +314,15 @@ class CrmService:
 
         Raises PermissionError if the event's checksum doesn't match — callers
         MUST translate that into a 401 and must not have written anything
-        before this raises. Idempotent: upserts by wompi_transaction_id, which
-        has a unique index (migration 0025), so redelivery of the same event
-        never creates a duplicate row.
+        before this raises. Updates (does not insert) the row by `reference`:
+        checkout_lead_payment() always creates the PENDING row first, so the
+        row is guaranteed to exist by the time a webhook for it arrives.
+        UPDATE-by-reference is naturally idempotent on redelivery, and avoids
+        the NOT NULL violation an upsert would hit — Postgres validates a
+        proposed INSERT row's NOT NULL columns (like tenant_id, absent from
+        this payload) even when it ultimately resolves via ON CONFLICT DO
+        UPDATE, so plain upsert() fails here (found via a real Wompi sandbox
+        webhook during Stage 11 verification).
         """
         if not verify_event_checksum(event, settings.WOMPI_EVENTS_SECRET):
             raise PermissionError("Wompi webhook event signature verification failed")
@@ -327,14 +333,13 @@ class CrmService:
         payload = {
             "wompi_transaction_id": transaction["id"],
             "status": transaction["status"],
-            "reference": transaction["reference"],
             "amount_cents": transaction["amount_in_cents"],
         }
-        client.table("crm_wompi_transactions").upsert(
-            payload, on_conflict="reference"
+        client.table("crm_wompi_transactions").update(payload).eq(
+            "reference", transaction["reference"]
         ).execute()
 
-        return payload
+        return {**payload, "reference": transaction["reference"]}
 
 
 _crm_service: Optional[CrmService] = None

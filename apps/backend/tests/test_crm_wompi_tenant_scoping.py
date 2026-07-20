@@ -97,12 +97,14 @@ class TestWebhookTenantScoping:
         def table_side_effect(name):
             m = MagicMock()
             if name == "crm_wompi_transactions":
-                def _upsert(payload, **kwargs):
+                def _update(payload):
                     captured.update(payload)
+                    inner = MagicMock()
                     r = MagicMock()
                     r.execute.return_value = MagicMock(data=[payload])
-                    return r
-                m.upsert.side_effect = _upsert
+                    inner.eq.return_value = r
+                    return inner
+                m.update.side_effect = _update
             return m
 
         client.table.side_effect = table_side_effect
