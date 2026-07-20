@@ -14,9 +14,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from services.taty_lead_router import (
+    _classify_fiscal_question,
     _create_empty_tax_profile,
     _detect_persona_fields,
     _extract_topes_amount,
+    _synthesize_kb_reply,
     classify_lead_intent,
     find_or_create_lead,
     generate_wompi_link,
@@ -98,6 +100,9 @@ class TestRouteLeadMessage:
         ) as mock_create, patch(
             "services.taty_lead_router.generate_wompi_link",
             return_value="https://checkout.wompi.co/p/?reference=abc",
+        ), patch(
+            "services.taty_lead_router._classify_fiscal_question",
+            return_value={"is_fiscal_question": False, "search_query": ""},
         ):
             route_lead_message("lead-1", "Sí, soy asalariado")
 
@@ -166,11 +171,143 @@ class TestDetectPersonaFieldsIndependiente:
         ), patch("services.taty_lead_router._create_empty_tax_profile"), patch(
             "services.taty_lead_router.generate_wompi_link",
             return_value="https://checkout.wompi.co/p/?reference=abc",
+        ), patch(
+            "services.taty_lead_router._classify_fiscal_question",
+            return_value={"is_fiscal_question": False, "search_query": ""},
         ):
             route_lead_message("lead-1", "Soy independiente, trabajo por mi cuenta")
 
         args, _ = mock_service.update_tax_profile.call_args
         assert args[1] == {"es_asalariado": False}
+
+
+class TestClassifyFiscalQuestion:
+    def test_fiscal_question_detected(self):
+        with patch(
+            "services.taty_lead_router.get_anonymized_ai_response",
+            return_value={"is_fiscal_question": True, "search_query": "declarar renta tarde"},
+        ) as mock_llm:
+            result = _classify_fiscal_question("¿qué pasa si no declaro la renta a tiempo?")
+
+        assert result == {"is_fiscal_question": True, "search_query": "declarar renta tarde"}
+        mock_llm.assert_called_once()
+        _, kwargs = mock_llm.call_args
+        assert kwargs.get("response_format") == "json"
+
+    def test_non_fiscal_message_detected(self):
+        with patch(
+            "services.taty_lead_router.get_anonymized_ai_response",
+            return_value={"is_fiscal_question": False, "search_query": ""},
+        ):
+            result = _classify_fiscal_question("hola, buenos días")
+
+        assert result["is_fiscal_question"] is False
+
+
+class TestSynthesizeKbReply:
+    def test_returns_llm_text_reply_grounded_in_chunks(self):
+        chunks = [{"source": "dian_normograma", "content": "Articulo 592 del Estatuto..."}]
+        with patch(
+            "services.taty_lead_router.get_anonymized_ai_response",
+            return_value="Según la normativa, si declaras tarde puedes tener una sanción...",
+        ) as mock_llm:
+            reply = _synthesize_kb_reply("¿qué pasa si declaro tarde?", chunks)
+
+        assert "sanción" in reply
+        mock_llm.assert_called_once()
+        _, kwargs = mock_llm.call_args
+        assert kwargs.get("response_format", "text") == "text"
+
+
+class TestRouteLeadMessageFiscalFallback:
+    def _mock_crm_service(self):
+        mock_service = MagicMock()
+        mock_service.get_tax_profile.return_value = {}
+        return mock_service
+
+    def test_fiscal_question_with_chunks_returns_synthesized_reply(self):
+        mock_service = self._mock_crm_service()
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="NUEVOS"
+        ), patch(
+            "services.taty_lead_router._classify_fiscal_question",
+            return_value={"is_fiscal_question": True, "search_query": "declarar tarde"},
+        ), patch(
+            "services.taty_lead_router.retrieve_similar",
+            return_value=[{"source": "dian", "content": "..."}],
+        ) as mock_retrieve, patch(
+            "services.taty_lead_router._synthesize_kb_reply",
+            return_value="Según la DIAN, declarar tarde genera una sanción...",
+        ) as mock_synthesize:
+            result = route_lead_message("lead-1", "¿qué pasa si declaro tarde?")
+
+        assert result["intent"] == "unknown"
+        assert result["reply"] == "Según la DIAN, declarar tarde genera una sanción..."
+        mock_retrieve.assert_called_once_with("declarar tarde", "__global__", top_k=3)
+        mock_synthesize.assert_called_once()
+
+    def test_fiscal_question_with_no_chunks_returns_graceful_fallback(self):
+        mock_service = self._mock_crm_service()
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="NUEVOS"
+        ), patch(
+            "services.taty_lead_router._classify_fiscal_question",
+            return_value={"is_fiscal_question": True, "search_query": "algo muy especifico"},
+        ), patch(
+            "services.taty_lead_router.retrieve_similar", return_value=[]
+        ), patch(
+            "services.taty_lead_router._synthesize_kb_reply"
+        ) as mock_synthesize:
+            result = route_lead_message("lead-1", "una pregunta fiscal muy especifica")
+
+        assert result["intent"] == "unknown"
+        assert "no tengo" in result["reply"].lower() or "asesor" in result["reply"].lower()
+        mock_synthesize.assert_not_called()
+
+    def test_non_fiscal_message_keeps_original_static_reply(self):
+        mock_service = self._mock_crm_service()
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="NUEVOS"
+        ), patch(
+            "services.taty_lead_router._classify_fiscal_question",
+            return_value={"is_fiscal_question": False, "search_query": ""},
+        ), patch(
+            "services.taty_lead_router.retrieve_similar"
+        ) as mock_retrieve, patch(
+            "services.taty_lead_router._synthesize_kb_reply"
+        ) as mock_synthesize:
+            result = route_lead_message("lead-1", "hola, buenos días")
+
+        assert result["reply"] == (
+            "No estoy segura de tu pregunta. ¿Quieres saber si te toca declarar renta este año?"
+        )
+        mock_retrieve.assert_not_called()
+        mock_synthesize.assert_not_called()
+
+    def test_classification_failure_falls_back_to_static_reply(self):
+        mock_service = self._mock_crm_service()
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="NUEVOS"
+        ), patch(
+            "services.taty_lead_router._classify_fiscal_question",
+            side_effect=Exception("LLM provider down"),
+        ), patch(
+            "services.taty_lead_router.retrieve_similar"
+        ) as mock_retrieve:
+            result = route_lead_message("lead-1", "una pregunta cualquiera")
+
+        assert result["reply"] == (
+            "No estoy segura de tu pregunta. ¿Quieres saber si te toca declarar renta este año?"
+        )
+        mock_retrieve.assert_not_called()
 
 
 class TestExtractTopesAmount:

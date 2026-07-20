@@ -17,12 +17,22 @@ from typing import Any, Dict, Optional, Tuple
 from urllib.parse import urlencode
 
 from config import settings
+from agents.secure_llm import get_anonymized_ai_response
 from channels.whatsapp import download_whatsapp_media, send_whatsapp_message
 from core.constants import UMBRAL_RENTA_COP
 from core.supabase_client import get_service_supabase
 from services.crm_service import get_crm_service
 from services.document_storage_service import upload_tax_document
+from services.kb_seeding_service import retrieve_similar
 from services.wompi_signature import compute_integrity_signature
+
+KB_FALLBACK_REPLY = (
+    "No tengo esa información a la mano en este momento, pero un asesor de Contexia te puede "
+    "ayudar con eso."
+)
+STATIC_UNKNOWN_REPLY = (
+    "No estoy segura de tu pregunta. ¿Quieres saber si te toca declarar renta este año?"
+)
 
 WOMPI_WEB_CHECKOUT_BASE_URL = "https://checkout.wompi.co/p/"
 
@@ -200,6 +210,39 @@ def _detect_persona_fields(
     return fields
 
 
+def _classify_fiscal_question(message: str) -> Dict[str, Any]:
+    """Reason step 1 of the bounded Reason->Act->Reason loop for Taty's unknown-intent fallback
+    (taty-kb-and-react-router, design.md Decision 2). One anonymized, JSON-mode LLM call decides
+    whether the message is a fiscal question worth searching the KB for, and if so what to search.
+    Never calls the raw (non-anonymized) llm_engine directly — SOSP compliance is mandatory for
+    any message that may carry a lead's PII/fiscal specifics."""
+    return get_anonymized_ai_response(
+        prompt=message,
+        system_prompt=(
+            "Eres un clasificador. Dado un mensaje de WhatsApp de un lead colombiano, decide si "
+            "es una pregunta fiscal/tributaria (sobre declarar renta, DIAN, impuestos, etc.). "
+            "Responde solo JSON: {\"is_fiscal_question\": bool, \"search_query\": string}."
+        ),
+        response_format="json",
+        required_keys={"is_fiscal_question", "search_query"},
+    )
+
+
+def _synthesize_kb_reply(message: str, chunks: list) -> str:
+    """Reason step 2 of the bounded loop: synthesizes a reply grounded strictly in the retrieved
+    KB chunks (never called when zero chunks were retrieved — design.md Decision 2, to avoid
+    ungrounded hallucination)."""
+    context = "\n\n".join(chunk.get("content", "") for chunk in chunks)
+    return get_anonymized_ai_response(
+        prompt=message,
+        system_prompt=(
+            "Eres Taty, la asistente fiscal de Contexia. Responde la pregunta del lead usando "
+            "SOLO la siguiente información de referencia. Sé breve y clara.\n\n"
+            f"Información de referencia:\n{context}"
+        ),
+    )
+
+
 def find_or_create_lead(whatsapp_phone: str, full_name: Optional[str] = None) -> str:
     """Finds a crm_leads row by whatsapp_phone, or creates a new NUEVOS lead if none exists.
     whatsapp_phone is the identity/mapping key (Change B's column, confirmed live) — no separate
@@ -305,12 +348,23 @@ def route_lead_message(lead_id: str, message: str) -> Dict[str, Any]:
             ),
         }
 
+    reply = STATIC_UNKNOWN_REPLY
+    try:
+        classification = _classify_fiscal_question(message)
+    except Exception:
+        classification = {"is_fiscal_question": False, "search_query": ""}
+
+    if classification.get("is_fiscal_question"):
+        chunks = retrieve_similar(classification.get("search_query", ""), "__global__", top_k=3)
+        if chunks:
+            reply = _synthesize_kb_reply(message, chunks)
+        else:
+            reply = KB_FALLBACK_REPLY
+
     return {
         "intent": intent,
         "confidence": confidence,
-        "reply": (
-            "No estoy segura de tu pregunta. ¿Quieres saber si te toca declarar renta este año?"
-        ),
+        "reply": reply,
     }
 
 
