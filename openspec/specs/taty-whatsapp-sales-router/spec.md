@@ -18,7 +18,10 @@ existing Meta webhook's verification behavior exactly.
 ### Requirement: Inbound WhatsApp messages are normalized into a common event shape
 The system SHALL normalize an inbound WhatsApp Cloud API webhook payload into the same event shape
 used by the Telegram channel (`channel`, `account_id`, `source_event_id`, `actor_handle`,
-`actor_name`, `text`, `raw_payload`), tolerating missing/malformed fields without raising.
+`actor_name`, `text`, `raw_payload`), tolerating missing/malformed fields without raising. Document
+and image messages SHALL also be normalized (additively — existing text-message normalization is
+unaffected), populating `media_id` and `mime_type` on the event when present, with `text` empty for
+these message types.
 
 #### Scenario: A well-formed inbound text message normalizes correctly
 - **WHEN** a WhatsApp Cloud API webhook payload containing one text message from a given phone
@@ -30,6 +33,18 @@ used by the Telegram channel (`channel`, `account_id`, `source_event_id`, `actor
 - **WHEN** the payload is missing expected fields (e.g. a status/delivery-receipt webhook with no
   message text)
 - **THEN** normalization returns an empty list of events rather than raising an exception
+
+#### Scenario: A document message normalizes with media_id and mime_type populated
+- **WHEN** a WhatsApp Cloud API webhook payload containing one document message (`type="document"`)
+  is normalized
+- **THEN** the resulting event has `channel="whatsapp"`, the sender's phone number as
+  `account_id`, `media_id` and `mime_type` populated from the document payload, and empty `text`
+
+#### Scenario: An image message normalizes the same way as a document message
+- **WHEN** a WhatsApp Cloud API webhook payload containing one image message (`type="image"`) is
+  normalized
+- **THEN** the resulting event has `media_id` and `mime_type` populated the same way as a document
+  message
 
 ### Requirement: Inbound sales-intent messages create or update a lead and advance NUEVOS to PROSPECTOS
 The system SHALL route a normalized inbound WhatsApp message to `route_lead_message(lead_id,
