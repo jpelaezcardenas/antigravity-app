@@ -10,6 +10,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from postgrest.exceptions import APIError
+
 from services.crm_service import CrmService
 
 
@@ -70,6 +72,31 @@ class TestCheckoutLeadPayment:
             if name == "crm_leads":
                 m.select.return_value.eq.return_value.single.return_value.execute.return_value = MagicMock(
                     data=None
+                )
+            elif name == "crm_wompi_transactions":
+                m.insert.side_effect = AssertionError("must not insert for an unknown lead")
+            return m
+
+        client.table.side_effect = table_side_effect
+
+        with patch("services.crm_service.get_service_supabase", return_value=client), _patched_env(), _patched_wompi_settings():
+            with pytest.raises(LookupError):
+                CrmService().checkout_lead_payment("does-not-exist")
+
+    def test_postgrest_single_row_not_found_error_becomes_lookup_error(self):
+        # Real postgrest-py behavior: .single().execute() RAISES APIError when
+        # zero rows match, it does not return data=None (unlike our other
+        # mocked tests here). This reproduces the bug found in Railway
+        # production logs (checkout for an unknown lead returned 500, not
+        # 404) — the try/except APIError in checkout_lead_payment must
+        # translate this into the same LookupError as the "no data" case.
+        client = MagicMock()
+
+        def table_side_effect(name):
+            m = MagicMock()
+            if name == "crm_leads":
+                m.select.return_value.eq.return_value.single.return_value.execute.side_effect = APIError(
+                    {"message": "JSON object requested, multiple (or no) rows returned", "code": "PGRST116"}
                 )
             elif name == "crm_wompi_transactions":
                 m.insert.side_effect = AssertionError("must not insert for an unknown lead")

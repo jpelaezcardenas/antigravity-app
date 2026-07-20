@@ -14,6 +14,8 @@ from copy import deepcopy
 from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from postgrest.exceptions import APIError
+
 from config import settings
 from core.supabase_client import get_service_supabase
 from services.wompi_signature import compute_integrity_signature, verify_event_checksum
@@ -268,9 +270,14 @@ class CrmService:
         """
         client = get_service_supabase()
 
-        lead_result = (
-            client.table("crm_leads").select("id, tenant_id").eq("id", lead_id).single().execute()
-        )
+        try:
+            lead_result = (
+                client.table("crm_leads").select("id, tenant_id").eq("id", lead_id).single().execute()
+            )
+        except APIError as exc:
+            # postgrest-py's .single() raises (rather than returning data=None)
+            # when zero rows match — that's the "unknown lead" case here.
+            raise LookupError(f"Lead {lead_id!r} not found") from exc
         lead = lead_result.data or {}
         if not lead.get("id"):
             raise LookupError(f"Lead {lead_id!r} not found")
