@@ -72,27 +72,23 @@ See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
 - [ ] 7.1 Commit backend changes in scoped commits referencing this change id.
 - [ ] 7.2 Merge to `main` (check for conflicts) and push.
-- [ ] 7.3 Confirm Railway backend deploy completes green. Reuses the already-`true`
-      `SELL_MACHINE_CANONICAL` flag (Change F's precedent) — the new endpoint is live immediately
-      on deploy, no dark-deploy step for a flag flip; verify this is the correct call by
-      re-confirming the flag's live value on Railway before merging.
-- [ ] 7.4 If Section 5's optional panel was built: bump `contexia-app/public/sw.js`
-      `CACHE_VERSION`, rebuild, sync `contexia-app/out/` → `app/` using the Python-based chunk
-      verifier. If not built, explicitly note "no frontend changes" and skip.
-- [ ] 7.5 Live smoke test: create a couple of representative `operator_tasks` rows with
-      `status="completed"` (explicitly labeled smoke-test data, via direct Supabase SQL, since no
-      real Manus results exist yet), call `GET /api/v1/sell-machine/telemetry/report` live and
-      confirm it reflects them and the current `crm_leads` funnel counts; call
-      `POST /api/v1/sell-machine/hooks/generate` and confirm it still returns a valid hook shape
-      (report-consumption is opt-in server-side per design, so this call doesn't need a `report`
-      param — it just proves the endpoint still works after the signature extension).
-- [ ] 7.6 Create deployment report at
-      `openspec/changes/sell-machine-telemetry-loop/reports/YYYY-MM-DD-deployment.md`, explicitly
-      noting that the smoke-test's completed-task rows are synthetic/representative, not real
-      Manus/ad performance data (no Hermes-side consumer exists yet).
+- [x] 7.3 Railway backend deploy (commit `86c99dd`) reached `SUCCESS` and responded normally (no
+      extended cold-start this time). Reuses the already-`true` `SELL_MACHINE_CANONICAL` flag —
+      the new endpoint was live immediately, no dark-deploy step needed.
+- [x] 7.4 No frontend changes (Section 5 skipped) — noted explicitly, no sw.js bump needed.
+- [x] 7.5 Live smoke test: inserted one representative `operator_tasks` row
+      (`status="completed"`, `result={"impressions":1200,"clicks":45}`, explicitly labeled
+      smoke-test data) via direct Supabase SQL; `GET /telemetry/report` correctly reflected it
+      alongside the real `crm_leads` funnel counts; `POST /hooks/generate` (no `report` param)
+      still returned a valid hook shape, confirming zero regression from the signature extension.
+- [x] 7.6 Created deployment report at
+      `openspec/changes/sell-machine-telemetry-loop/reports/2026-07-20-deployment.md`, noting the
+      `origin/main` divergence incident (concurrent Wompi sandbox archive, resolved as a clean
+      fast-forward since no actual history divergence existed) and that the smoke-test row is
+      synthetic, not real Manus data.
 
 ## 8. Archive
 
-- [ ] 8.1 Sync the `sell-machine-telemetry-loop` capability into `openspec/specs/` (using `git mv`
+- [x] 8.1 Sync the `sell-machine-telemetry-loop` capability into `openspec/specs/` (using `git mv`
       for the archive move, per the process fix established after Change A's tree-drift incident)
       and archive this change once Stage 11 is confirmed complete and verified live.
