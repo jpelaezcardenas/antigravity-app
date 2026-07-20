@@ -23,16 +23,19 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 4.1 Commit + merge to `main` (check for divergence) + push.
-- [ ] 4.2 Confirm Railway deploy green. No new flag — reuses `SELL_MACHINE_CANONICAL`.
-- [ ] 4.3 Live smoke test: call the real `POST /api/v1/sell-machine/creative-loop/run` endpoint;
-      confirm `200` and a non-empty `survivors` list; inspect Railway logs for evidence
-      `get_telemetry_report`/`list_completed_tasks`/`get_funnel_snapshot` were actually invoked
-      (confirming the telemetry branch executed, not the generic one).
-- [ ] 4.4 Create deployment report at
-      `openspec/changes/activate-telemetry-loop/reports/YYYY-MM-DD-deployment.md`.
+- [x] 4.1 Committed (`afd0bd2`), fast-forward merged to `main`, pushed.
+- [x] 4.2 Railway deploy `26464f67` reached `SUCCESS`. No new flag — reuses
+      `SELL_MACHINE_CANONICAL`.
+- [x] 4.3 **Live smoke test**: `POST /sell-machine/creative-loop/run` → `200`, non-empty
+      `survivors`, correct shape. Railway logs confirm the telemetry branch executed for real
+      (`list_completed_tasks` ×2 + `get_funnel_snapshot`'s underlying queries all fired). Also
+      reconfirmed the `llm_engine.py` bug flagged in `copywriter-rag`, now seen affecting
+      `content_evaluator.py` too — both degraded gracefully, no crash.
+- [x] 4.4 Created deployment report at
+      `openspec/changes/activate-telemetry-loop/reports/2026-07-20-deployment.md`.
 
 ## 5. Archive
 
-- [ ] 5.1 Sync the ADDED `sell-machine-telemetry-loop` requirement into `openspec/specs/` (append
-      to the existing spec file), archive via `git mv` once Stage 11 is confirmed complete.
+- [x] 5.1 Synced the ADDED `sell-machine-telemetry-loop` requirement into `openspec/specs/`
+      (appended to the existing spec file), archived via `git mv` to
+      `openspec/changes/archive/2026-07-20-activate-telemetry-loop/`.
