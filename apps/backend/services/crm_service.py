@@ -230,11 +230,22 @@ class CrmService:
         return (result.data or [{}])[0]
 
     def get_tax_profile(self, lead_id: str) -> Dict[str, Any]:
+        """Returns {} (not an error) when the lead has no tax profile row yet — a valid, common
+        state for any lead that hasn't reached CrmService.approve_payment. Bug found live during
+        taty-persona-fields' Stage 11 (2026-07-20): .single() raises PGRST116 on 0 rows; this
+        pre-existing bug was only exposed once route_lead_message started calling
+        get_tax_profile unconditionally on every inbound message rather than only when a persona
+        field was detected. Fixed via .maybe_single(), which returns data=None on 0 rows instead
+        of raising."""
         client = get_service_supabase()
         result = (
-            client.table("crm_tax_profiles").select("*").eq("lead_id", lead_id).single().execute()
+            client.table("crm_tax_profiles")
+            .select("*")
+            .eq("lead_id", lead_id)
+            .maybe_single()
+            .execute()
         )
-        return result.data or {}
+        return (result.data if result else None) or {}
 
     def update_tax_profile(self, lead_id: str, patch: Dict[str, Any]) -> Dict[str, Any]:
         client = get_service_supabase()

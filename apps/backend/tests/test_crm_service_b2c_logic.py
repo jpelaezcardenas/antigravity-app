@@ -100,7 +100,7 @@ class TestTaxProfile:
         def table_side_effect(name):
             m = MagicMock()
             if name == "crm_tax_profiles":
-                m.select.return_value.eq.return_value.single.return_value.execute.return_value = MagicMock(
+                m.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(
                     data={"lead_id": "l1", "es_asalariado": True, "rut_status": "pending"}
                 )
             return m
@@ -112,6 +112,25 @@ class TestTaxProfile:
 
         assert result["es_asalariado"] is True
         assert result["rut_status"] == "pending"
+
+    def test_get_tax_profile_returns_empty_dict_when_none_exists(self):
+        """Regression test for the PGRST116 bug found live during taty-persona-fields' Stage 11
+        (2026-07-20): postgrest's maybe_single().execute() returns None (not a data=None object)
+        when 0 rows exist — get_tax_profile must handle that without raising."""
+        client = MagicMock()
+
+        def table_side_effect(name):
+            m = MagicMock()
+            if name == "crm_tax_profiles":
+                m.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = None
+            return m
+
+        client.table.side_effect = table_side_effect
+
+        with patch("services.crm_service.get_service_supabase", return_value=client), _patched_env():
+            result = CrmService().get_tax_profile("l1")
+
+        assert result == {}
 
     def test_update_tax_profile_applies_patch(self):
         client = MagicMock()
