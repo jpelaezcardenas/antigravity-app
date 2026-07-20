@@ -62,26 +62,27 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 7.1 Commit backend changes in scoped commits referencing this change id.
-- [ ] 7.2 Merge to `main` (check for conflicts) and push.
-- [ ] 7.3 Confirm Railway backend deploy completes green. No new flag — reuses
-      `WHATSAPP_CANONICAL` (already live), so this change is live immediately on deploy.
-- [ ] 7.4 Live smoke test: create/find a real test lead via direct Supabase SQL; call
-      `generate_wompi_link(lead_id)` for real (this hits the live, production-credentialed
-      `checkout_lead_payment` — creates one real `PENDING` `crm_wompi_transactions` row, no money
-      moves since only a signed URL is generated, not a completed payment); confirm the URL's
-      query params and that the signature recomputes identically from the same inputs; call
-      `verify_wompi_transaction(lead_id)` and confirm it correctly reports `PENDING`; call
-      `generate_wompi_link` again for the same lead and confirm via Supabase SQL that no duplicate
-      row was created (reuse path).
-- [ ] 7.5 Create deployment report at
-      `openspec/changes/taty-wompi-tools-integration/reports/YYYY-MM-DD-deployment.md`, noting the
-      real `PENDING` transaction row created during verification (harmless, no money moved) and the
-      accepted risk of no TTL/staleness handling for abandoned `PENDING` rows.
+- [x] 7.1 Committed on `feature/taty-wompi-tools-integration` (`e682613`), referencing this change id.
+- [x] 7.2 Fast-forward merged to `main` (confirmed no divergence via `git merge-base`) and pushed.
+- [x] 7.3 Railway deploy (commit `e682613`) reached `SUCCESS` and responded (~15 min cold start,
+      same recurring platform pattern, no crash signature — confirmed no import issue locally).
+      No new flag — reused `WHATSAPP_CANONICAL` (already live).
+- [x] 7.4 Live smoke test through the real deployed WhatsApp webhook (indirect, since these are
+      internal functions not standalone endpoints): created a real test lead → sent a fabricated
+      sales-interest WhatsApp message → confirmed a real `crm_wompi_transactions` row was created
+      (`status="PENDING"`, real `amount_cents`/`reference`) and the lead advanced
+      `NUEVOS→PROSPECTOS` → sent a fabricated "ya pagué" message → confirmed the lead correctly
+      stayed at `PROSPECTOS` (not falsely advanced, since the transaction is genuinely `PENDING`)
+      → re-sent the sales-interest message → confirmed via Supabase SQL exactly 1 transaction row
+      exists (reuse logic works, no duplicate).
+- [x] 7.5 Created deployment report at
+      `openspec/changes/taty-wompi-tools-integration/reports/2026-07-20-deployment.md`, noting the
+      real `PENDING` transaction row created during verification (harmless) and the accepted risk
+      of no TTL/staleness handling for abandoned `PENDING` rows.
 
 ## 8. Archive
 
-- [ ] 8.1 Sync the `taty-whatsapp-sales-router` capability's updated spec into `openspec/specs/`
+- [x] 8.1 Sync the `taty-whatsapp-sales-router` capability's updated spec into `openspec/specs/`
       (this is a MODIFIED delta, not a new capability — merge into the existing spec file) using
       `git mv` for the archive move, and archive this change once Stage 11 is confirmed complete
       and verified live.
