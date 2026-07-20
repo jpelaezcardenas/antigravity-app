@@ -7,6 +7,9 @@ supabase==2.0.3
 psycopg2-binary==2.9.9
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt<4.1  # passlib 1.7.4 reads bcrypt.__about__.__version__, removed in bcrypt>=4.1 — pins the
+            # compatible range (found live during bunker-pwa-auth-enforcement's Stage 11 prep;
+            # unpinned bcrypt would silently break every password hash/verify call)
 python-dotenv==1.0.0
 httpx==0.24.1
 python-multipart==0.0.6

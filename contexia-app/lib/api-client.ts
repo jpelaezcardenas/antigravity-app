@@ -3,6 +3,7 @@
  */
 
 import { API_ENDPOINTS } from "./config";
+import { authenticatedFetch } from "./authenticated-fetch";
 
 export interface FinancialsSnapshot {
   caja_real: number; // COP minor units (cents) — cumulative bank balance as of today
@@ -23,7 +24,7 @@ export class ApiError extends Error {
 }
 
 export async function fetchFinancials(): Promise<FinancialsSnapshot> {
-  const response = await fetch(API_ENDPOINTS.financials, {
+  const response = await authenticatedFetch(API_ENDPOINTS.financials, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

@@ -1,8 +1,10 @@
 """Tests for env-gated auth dependencies (core/deps.py)."""
 import asyncio
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi import HTTPException
+from jose import jwt as jose_jwt
 
 from config import settings
 from core import deps
@@ -13,6 +15,18 @@ from core.deps import (
 )
 from core.identity_resolver import IdentityResolver
 from core.security import create_access_token
+
+
+def _make_supabase_jwt(secret: str, **claims) -> str:
+    """Builds a token shaped like a real Supabase Auth JWT (aud=authenticated,
+    app_metadata.role), signed with the given secret — mirrors middleware.ts's own
+    verification target, not the backend's own create_access_token."""
+    payload = {
+        "aud": "authenticated",
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+        **claims,
+    }
+    return jose_jwt.encode(payload, secret, algorithm="HS256")
 
 
 class _FakeQuery:
@@ -124,3 +138,57 @@ def test_ownership_enforced_blocks_mismatch(monkeypatch):
 def test_ownership_enforced_allows_match(monkeypatch):
     monkeypatch.setattr(settings, "AUTH_ENFORCED", True)
     assert run(verify_resource_ownership("same", "same")) is True
+
+
+class TestSupabaseJwtFallback:
+    """get_current_user recognizes a Supabase-issued JWT (bunker-pwa-auth-enforcement) — the
+    token login.html already stores in localStorage["token"] and sends as Authorization: Bearer,
+    verified with SUPABASE_JWT_SECRET (same target middleware.ts already validates), as a
+    fallback when the backend's own verify_token doesn't recognize it."""
+
+    def test_valid_supabase_jwt_is_recognized(self, monkeypatch):
+        monkeypatch.setattr(settings, "SUPABASE_JWT_SECRET", "supabase-test-secret")
+        token = _make_supabase_jwt(
+            "supabase-test-secret",
+            sub="76680e1f-2943-4235-8501-18b090d59257",
+            email="growth@contexia.online",
+            app_metadata={"role": "cliente", "roles": ["cliente"]},
+        )
+        user = run(get_current_user(f"Bearer {token}"))
+        assert user["id"] == "76680e1f-2943-4235-8501-18b090d59257"
+        assert user["email"] == "growth@contexia.online"
+
+    def test_backends_own_jwt_still_works_unchanged(self, monkeypatch):
+        monkeypatch.setattr(settings, "SUPABASE_JWT_SECRET", "supabase-test-secret")
+        token = create_access_token({"sub": "user-123", "email": "u@x.co"})
+        user = run(get_current_user(f"Bearer {token}"))
+        assert user["id"] == "user-123"
+        assert user["email"] == "u@x.co"
+
+    def test_enforced_accepts_a_real_supabase_session(self, monkeypatch):
+        monkeypatch.setattr(settings, "SUPABASE_JWT_SECRET", "supabase-test-secret")
+        monkeypatch.setattr(settings, "AUTH_ENFORCED", True)
+        token = _make_supabase_jwt(
+            "supabase-test-secret",
+            sub="bd0700fb-6274-49ed-a2d0-e2844100e857",
+            email="contexia.marketing@gmail.com",
+            app_metadata={"role": "admin", "roles": ["admin"]},
+        )
+        user = run(get_current_user(f"Bearer {token}"))
+        assert user["email"] == "contexia.marketing@gmail.com"
+
+    def test_enforced_still_rejects_a_token_signed_with_the_wrong_secret(self, monkeypatch):
+        monkeypatch.setattr(settings, "SUPABASE_JWT_SECRET", "supabase-test-secret")
+        monkeypatch.setattr(settings, "AUTH_ENFORCED", True)
+        token = _make_supabase_jwt("some-other-secret", sub="x", email="x@x.co")
+        with pytest.raises(HTTPException) as exc:
+            run(get_current_user(f"Bearer {token}"))
+        assert exc.value.status_code == 401
+
+    def test_no_supabase_secret_configured_does_not_crash(self, monkeypatch):
+        monkeypatch.setattr(settings, "SUPABASE_JWT_SECRET", "")
+        monkeypatch.setattr(settings, "AUTH_ENFORCED", True)
+        token = _make_supabase_jwt("whatever-secret", sub="x", email="x@x.co")
+        with pytest.raises(HTTPException) as exc:
+            run(get_current_user(f"Bearer {token}"))
+        assert exc.value.status_code == 401

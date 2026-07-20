@@ -6,6 +6,7 @@
  */
 
 import { API_BASE_URL } from "./config";
+import { authenticatedFetch } from "./authenticated-fetch";
 
 export interface B2bClient {
   id: string;
@@ -40,7 +41,7 @@ export interface B2bPaymentsResponse {
 const API_BASE = `${API_BASE_URL}/api/v1`;
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await authenticatedFetch(`${API_BASE}${path}`, {
     ...init,
     headers: init?.body ? { "Content-Type": "application/json", ...init.headers } : init?.headers,
   });

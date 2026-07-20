@@ -3,9 +3,30 @@
 from fastapi import Header, HTTPException, status
 from typing import Optional
 
+from jose import JWTError, jwt
+
 from config import settings
 from core.security import verify_token
 from core.identity_resolver import identity_resolver
+
+
+def _verify_supabase_token(token: str) -> Optional[dict]:
+    """Verifies a Supabase Auth-issued JWT (HS256, SUPABASE_JWT_SECRET) — the same token
+    login.html already stores in localStorage["token"] and middleware.ts already validates
+    at the Vercel edge (bunker-pwa-auth-enforcement). Returns None (never raises) if the
+    secret isn't configured or the token doesn't verify, so callers can fall through
+    cleanly to the existing 401/staging-user behavior."""
+    if not settings.SUPABASE_JWT_SECRET:
+        return None
+    try:
+        return jwt.decode(
+            token,
+            settings.SUPABASE_JWT_SECRET,
+            algorithms=["HS256"],
+            audience="authenticated",
+        )
+    except JWTError:
+        return None
 
 
 # Fallback identity used only when auth is NOT enforced (demo/staging back-compat).
@@ -39,6 +60,8 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
     """
     token = _extract_bearer_token(authorization)
     payload = verify_token(token) if token else None
+    if not payload and token:
+        payload = _verify_supabase_token(token)
 
     if payload and payload.get("sub"):
         sub = payload["sub"]

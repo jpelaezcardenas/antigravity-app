@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     # agent_operations audit writes). Never exposed to request input. See
     # change agent-operations-multitenant-security, design D6.
     SUPABASE_SERVICE_ROLE_KEY: str = ""
+    # Supabase Auth's own JWT signing secret (Supabase Dashboard → Settings → API →
+    # JWT Secret). Already set in Railway; declared here so get_current_user can verify
+    # the same Supabase-issued session token middleware.ts already validates at the
+    # Vercel edge (bunker-pwa-auth-enforcement) — a separate scheme from this backend's
+    # own JWT_SECRET below.
+    SUPABASE_JWT_SECRET: str = ""
     DATABASE_URL: str = ""
     JWT_SECRET: str = ""
     JWT_ALGORITHM: str = "HS256"

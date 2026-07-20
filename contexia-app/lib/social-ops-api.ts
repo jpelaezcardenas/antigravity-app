@@ -6,6 +6,7 @@
  */
 
 import { API_BASE_URL } from "./config";
+import { authenticatedFetch } from "./authenticated-fetch";
 
 export type SocialChannel = "telegram" | "facebook" | "instagram" | "tiktok" | "linkedin";
 
@@ -214,7 +215,7 @@ export interface OnboardingResponse {
 const API_BASE = `${API_BASE_URL}/api/v1`;
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await authenticatedFetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
       ...(init?.body ? { "Content-Type": "application/json" } : {}),

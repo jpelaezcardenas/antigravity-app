@@ -13,9 +13,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from core.deps import get_current_user
 from services.copywriter_service import generate_hooks
 from services.operator_task_service import (
     create_task,
@@ -40,7 +41,9 @@ class GenerateHooksRequest(BaseModel):
 
 
 @router.post("/hooks/generate")
-def generate_hooks_endpoint(payload: GenerateHooksRequest):
+def generate_hooks_endpoint(
+    payload: GenerateHooksRequest, _user: dict = Depends(get_current_user)
+):
     hooks = generate_hooks(count=payload.count)
     return {"hooks": hooks}
 
@@ -50,7 +53,9 @@ class EvaluateHooksRequest(BaseModel):
 
 
 @router.post("/hooks/evaluate")
-def evaluate_hooks_endpoint(payload: EvaluateHooksRequest):
+def evaluate_hooks_endpoint(
+    payload: EvaluateHooksRequest, _user: dict = Depends(get_current_user)
+):
     survivors = evaluate_hooks(payload.hooks)
     return {"survivors": survivors}
 
@@ -86,7 +91,9 @@ def _to_dict(obj: Any) -> Any:
 
 
 @router.post("/campaigns")
-async def create_campaign_endpoint(payload: CreateCampaignRequest):
+async def create_campaign_endpoint(
+    payload: CreateCampaignRequest, _user: dict = Depends(get_current_user)
+):
     decision = await create_campaign_package(
         hooks=payload.hooks,
         brief=payload.brief,
@@ -97,7 +104,9 @@ async def create_campaign_endpoint(payload: CreateCampaignRequest):
 
 
 @router.get("/campaigns")
-async def list_campaigns_endpoint(status: Optional[str] = Query(default=None)):
+async def list_campaigns_endpoint(
+    status: Optional[str] = Query(default=None), _user: dict = Depends(get_current_user)
+):
     decisions = await list_campaigns(status=status)
     return [_to_dict(d) for d in decisions]
 

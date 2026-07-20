@@ -2,12 +2,13 @@
 
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from core.deps import get_current_user
 from services.social_ops_service import get_social_ops_service
 
-router = APIRouter(tags=["social-ops"])
+router = APIRouter(tags=["social-ops"], dependencies=[Depends(get_current_user)])
 
 
 class SocialOpsEventRequest(BaseModel):

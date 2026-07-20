@@ -118,6 +118,24 @@ lado. Esta pantalla **no publica nada** — solo produce un registro aprobado; l
 Esto es una excepción escoped al charter "sin backend" — pantallas data-bound son
 un puente hacia el MVP data-driven; mocks aplican para todo lo demás.
 
+### Fetch autenticado (bunker-pwa-auth-enforcement)
+
+El login real de la PWA/Búnker **ya existía antes de este change** y no vive en `contexia-app`:
+`login.html` (raíz del repo) autentica contra **Supabase Auth**
+(`client.auth.signInWithPassword`), guarda el access token en `localStorage["token"]` y una cookie
+`sb-access-token`, y `middleware.ts` (Vercel Edge, raíz del repo) ya protege cada navegación a
+`/app/*`/`/app-admin/*` verificando esa cookie server-side — incluyendo el gate por rol
+(`/app/bunker` requiere `app_metadata.role=admin`). Ninguno de los dos se toca desde
+`contexia-app`.
+
+Lo que sí faltaba: las 5 pantallas data-bound llaman al backend en Railway **directamente**
+(bypaseando el dominio de Vercel y por lo tanto `middleware.ts`), sin adjuntar nunca ese token.
+`lib/authenticated-fetch.ts` cierra ese hueco — adjunta `Authorization: Bearer` leyendo el mismo
+`localStorage["token"]` que `login.html` ya llena, usado internamente por los 5 clientes tipados
+de arriba (sus firmas exportadas no cambian). Es deliberadamente mínimo: no redirige ni limpia
+sesión en un 401 — eso ya lo hace `middleware.ts` del lado servidor, más robusto que cualquier
+cosa que este helper pudiera duplicar del lado cliente.
+
 ## Reglas de interactividad (mock-first, pero viva)
 
 La demo debe **sentirse real**. Estado local con `useState` siempre que un control cambie lo que el usuario ve.

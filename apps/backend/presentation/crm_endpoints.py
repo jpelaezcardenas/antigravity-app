@@ -7,12 +7,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
+from core.deps import get_current_user
 from services.crm_service import get_crm_service
 
-router = APIRouter(tags=["crm"])
+router = APIRouter(tags=["crm"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("/b2b/clients")
