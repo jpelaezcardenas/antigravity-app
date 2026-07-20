@@ -34,15 +34,23 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 5.1 Commit + merge to `main` (check for divergence) + push.
-- [ ] 5.2 Confirm Railway deploy green. No new flag — reuses `SELL_MACHINE_CANONICAL`.
-- [ ] 5.3 Live smoke test: call the real `POST /api/v1/sell-machine/hooks/generate` endpoint;
-      confirm `200`, correct hook shape, and inspect Railway logs for a real `retrieve_similar`
-      call (or its graceful degradation) having occurred during the request.
-- [ ] 5.4 Create deployment report at
-      `openspec/changes/copywriter-rag/reports/YYYY-MM-DD-deployment.md`.
+- [x] 5.1 Committed (`9932cf7`), fast-forward merged to `main`, pushed.
+- [x] 5.2 Railway deploy `ab41edfd` reached `SUCCESS`. No new flag — reuses
+      `SELL_MACHINE_CANONICAL`.
+- [x] 5.3 **Live smoke test**: `POST /sell-machine/hooks/generate` → `200`, correct hook shape.
+      Railway logs confirm this change's `retrieve_similar` call executed for real and gracefully
+      degraded under a real OpenAI embeddings `429`. A **separate, pre-existing bug** in
+      `agents/llm_engine.py` (`_get_json_with_retry_custom_order` calls `_parse_llm_response` with
+      an unsupported `required_keys` arg) then caused the real LLM call to fail post-success,
+      correctly triggering `generate_hooks`'s own deterministic fallback — satisfying the
+      requirement's contract exactly, but meaning fresh LLM-grounded content wasn't observed this
+      run. Flagged as a new gap, not fixed (unrelated file, out of this change's scope).
+- [x] 5.4 Created deployment report at
+      `openspec/changes/copywriter-rag/reports/2026-07-20-deployment.md`, including the flagged
+      `llm_engine.py` bug.
 
 ## 6. Archive
 
-- [ ] 6.1 Sync the MODIFIED `sell-machine-creative-swarm` delta into `openspec/specs/` (merge into
-      the existing spec file), archive via `git mv` once Stage 11 is confirmed complete.
+- [x] 6.1 Synced the MODIFIED `sell-machine-creative-swarm` delta into `openspec/specs/` (merged
+      into the existing spec file), archived via `git mv` to
+      `openspec/changes/archive/2026-07-20-copywriter-rag/`.
