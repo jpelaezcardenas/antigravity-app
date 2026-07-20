@@ -55,19 +55,25 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 6.1 Commit + merge to `main` (check for divergence) + push.
-- [ ] 6.2 Confirm Railway deploy green. No new flag — reuses `WHATSAPP_CANONICAL`.
-- [ ] 6.3 Live smoke test: POST a fabricated WhatsApp webhook asking a real fiscal question not
-      covered by the sales/payment keyword lists (e.g. "¿qué pasa si no declaro la renta a
-      tiempo?") for a real disposable test lead; inspect the actual reply (LLM output, so eyeball
-      for plausibility rather than exact-match) and confirm it reflects retrieved KB content or the
-      graceful fallback, not the old static message. Send a second, clearly off-topic message
-      (e.g. "hola, buenos días") and confirm the original static reply is unchanged. Clean up test
-      data.
-- [ ] 6.4 Create deployment report at
-      `openspec/changes/taty-kb-and-react-router/reports/YYYY-MM-DD-deployment.md`.
+- [x] 6.1 Committed (`98d4632`), fast-forward merged to `main`, pushed.
+- [x] 6.2 Railway deploy `756cd369` reached `SUCCESS`. No new flag — reuses `WHATSAPP_CANONICAL`.
+- [x] 6.3 **Live smoke test, adapted mid-flight**: discovered `route_lead_message`'s reply is never
+      actually sent over WhatsApp by `whatsapp_endpoints.py` (return value discarded for text
+      messages, pre-existing since Change D — flagged as a new, separate gap, not fixed here).
+      Verification therefore focused on confirming the real integration path executes correctly:
+      fiscal-question message → `200` in 4.8s, Railway logs confirm a real Groq LLM call succeeded
+      for classification, `retrieve_similar` hit a real OpenAI embeddings `429` and correctly fell
+      back to the in-memory KB backend (no crash); off-topic message → `200` in 0.85s, exactly one
+      LLM call (classification only), zero KB/embedding calls, confirming the KB path is correctly
+      skipped. Bonus: both requests' `get_tax_profile` calls hit a real PostgREST `406` and were
+      correctly absorbed by the `.maybe_single()` fix from `taty-persona-fields`, confirming that
+      fix works against the real server. Both disposable test leads cleaned up.
+- [x] 6.4 Created deployment report at
+      `openspec/changes/taty-kb-and-react-router/reports/2026-07-20-deployment.md`, including the
+      newly-flagged "replies aren't sent" gap.
 
 ## 7. Archive
 
-- [ ] 7.1 Sync the ADDED `taty-whatsapp-sales-router` requirement into `openspec/specs/` (append
-      to the existing spec file), archive via `git mv` once Stage 11 is confirmed complete.
+- [x] 7.1 Synced the ADDED `taty-whatsapp-sales-router` requirement into `openspec/specs/`
+      (appended to the existing spec file), archived via `git mv` to
+      `openspec/changes/archive/2026-07-20-taty-kb-and-react-router/`.
