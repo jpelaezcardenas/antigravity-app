@@ -23,6 +23,14 @@
       `test_llm_engine.py`/`test_copywriter_service.py`/`test_content_evaluator.py`/
       `test_sell_machine_service.py`/`test_sell_machine_endpoints.py`, zero regression.
 - [x] 3.2 Wrote `openspec/changes/fix-llm-engine-required-keys/reports/2026-07-20-step3-verification.md`.
+- [x] 3.3 **Second bug found live during Stage 11 smoke testing, fixed within this same change**:
+      `parsed.get("parsing_error")` crashed with `AttributeError: 'list' object has no attribute
+      'get'` whenever the LLM legitimately returns a top-level JSON array (exactly what
+      Copywriter's system prompt requests: "una lista de objetos") — present in both
+      `_get_json_with_retry` and `_get_json_with_retry_custom_order` (identical line, both fixed
+      for consistency, per design.md's own goal of byte-identical behavior between the two
+      variants). Fixed via an `isinstance(parsed, dict)` guard; added 2 regression tests
+      (`TestJsonRetryListShapedResponse`). 57/57 green after this second fix, zero regression.
 
 ## 4. Stage 11 — Deploy to Production (MANDATORY)
 

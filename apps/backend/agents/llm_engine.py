@@ -332,7 +332,7 @@ class LLMEngine:
             parsed = self._parse_llm_response(raw, synonyms=synonyms, list_keys=list_keys)
 
             valid, missing = self._validate_required(parsed, required_keys)
-            parse_failed = parsed.get("parsing_error") is True
+            parse_failed = isinstance(parsed, dict) and parsed.get("parsing_error") is True
 
             if valid and not parse_failed:
                 return parsed
@@ -450,7 +450,7 @@ class LLMEngine:
             parsed = self._parse_llm_response(raw_response, synonyms=synonyms, list_keys=list_keys)
 
             valid, missing = self._validate_required(parsed, required_keys)
-            parse_failed = parsed.get("parsing_error") is True
+            parse_failed = isinstance(parsed, dict) and parsed.get("parsing_error") is True
 
             if valid and not parse_failed:
                 return parsed

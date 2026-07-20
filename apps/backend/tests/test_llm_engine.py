@@ -190,6 +190,55 @@ class TestJsonRetry:
         assert out.get("parsing_error") is True
 
 
+class TestJsonRetryListShapedResponse:
+    """A second bug found while verifying the fix above, live: when the LLM legitimately returns
+    a top-level JSON array (e.g. Copywriter's system prompt explicitly asks for "una lista de
+    objetos"), _parse_llm_response returns a Python list, and both retry functions crashed on
+    `parsed.get("parsing_error")` — list has no .get(). Reproduces + fixes for both
+    _get_json_with_retry and _get_json_with_retry_custom_order."""
+
+    def test_get_json_with_retry_accepts_a_top_level_list_response(self) -> None:
+        engine = LLMEngine()
+        with patch.object(
+            engine, "_call_with_failover", return_value='[{"headline": "H"}, {"headline": "H2"}]'
+        ):
+            out = engine._get_json_with_retry(
+                prompt="x",
+                system_prompt="",
+                max_tokens=100,
+                temperature=0.5,
+                timeout=10,
+                synonyms={},
+                list_keys=set(),
+                required_keys=set(),
+                max_retries=1,
+            )
+
+        assert out == [{"headline": "H"}, {"headline": "H2"}]
+
+    def test_get_json_with_retry_custom_order_accepts_a_top_level_list_response(self) -> None:
+        engine = LLMEngine()
+        with patch.object(
+            engine,
+            "_call_with_failover_custom_order",
+            return_value='[{"headline": "H"}, {"headline": "H2"}]',
+        ):
+            out = engine._get_json_with_retry_custom_order(
+                prompt="x",
+                system_prompt="",
+                max_tokens=100,
+                temperature=0.5,
+                timeout=10,
+                provider_order=[LLMProvider.GROQ],
+                synonyms={},
+                list_keys=set(),
+                required_keys=set(),
+                max_retries=1,
+            )
+
+        assert out == [{"headline": "H"}, {"headline": "H2"}]
+
+
 class TestJsonRetryCustomOrder:
     """_get_json_with_retry_custom_order (used by get_ai_response_with_profile's JSON-mode path)
     — regression tests for a live bug found during taty-persona-fields/copywriter-rag/
