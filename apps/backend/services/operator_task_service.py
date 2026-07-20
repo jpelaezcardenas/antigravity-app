@@ -159,10 +159,11 @@ async def dispatch_campaign_package(decision_id: str) -> Result:
     try:
         client = get_service_supabase()
         tenant_id = _resolve_cliente_cero_tenant_id(client)
+        task_type = "run_ads_ab" if decision.payload.get("budget_cents") else "post_content"
         row = {
             "id": str(uuid.uuid4()),
             "tenant_id": tenant_id,
-            "task_type": "post_content",
+            "task_type": task_type,
             "payload": {**decision.payload, "source_decision_id": decision_id},
         }
         result = client.table("operator_tasks").insert(row).execute()

@@ -159,6 +159,65 @@ class TestDispatchCampaignPackage:
         assert insert_call_args["payload"]["source_decision_id"] == "decision-1"
 
     @pytest.mark.asyncio
+    async def test_dispatches_run_ads_ab_when_budget_cents_is_set(self):
+        decision = _fake_decision(
+            status="approved",
+            payload={
+                "hooks": [{"headline": "H1", "body": "B1", "cta": "C", "pain_tag": "multa_dian"}],
+                "creative_brief": "brief",
+                "target_segment": "asalariados",
+                "budget_cents": 500000,
+            },
+        )
+        mock_client = MagicMock()
+        mock_client.table.return_value.insert.return_value.execute.return_value.data = [
+            {"id": "task-1", "task_type": "run_ads_ab", "status": "pending"}
+        ]
+        with patch(
+            "services.operator_task_service.ApprovalQueueService.list_drafts",
+            new=AsyncMock(return_value=[decision]),
+        ), patch(
+            "services.operator_task_service.get_service_supabase", return_value=mock_client
+        ), patch(
+            "services.operator_task_service._resolve_cliente_cero_tenant_id", return_value="tenant-1"
+        ):
+            success, row, error = await dispatch_campaign_package("decision-1")
+
+        assert success is True
+        assert row["task_type"] == "run_ads_ab"
+        insert_call_args = mock_client.table.return_value.insert.call_args[0][0]
+        assert insert_call_args["task_type"] == "run_ads_ab"
+
+    @pytest.mark.asyncio
+    async def test_dispatches_post_content_when_budget_cents_is_zero(self):
+        decision = _fake_decision(
+            status="approved",
+            payload={
+                "hooks": [{"headline": "H1", "body": "B1", "cta": "C", "pain_tag": "multa_dian"}],
+                "creative_brief": "brief",
+                "target_segment": "asalariados",
+                "budget_cents": 0,
+            },
+        )
+        mock_client = MagicMock()
+        mock_client.table.return_value.insert.return_value.execute.return_value.data = [
+            {"id": "task-1", "task_type": "post_content", "status": "pending"}
+        ]
+        with patch(
+            "services.operator_task_service.ApprovalQueueService.list_drafts",
+            new=AsyncMock(return_value=[decision]),
+        ), patch(
+            "services.operator_task_service.get_service_supabase", return_value=mock_client
+        ), patch(
+            "services.operator_task_service._resolve_cliente_cero_tenant_id", return_value="tenant-1"
+        ):
+            success, row, error = await dispatch_campaign_package("decision-1")
+
+        assert success is True
+        insert_call_args = mock_client.table.return_value.insert.call_args[0][0]
+        assert insert_call_args["task_type"] == "post_content"
+
+    @pytest.mark.asyncio
     async def test_rejects_a_decision_that_is_not_approved(self):
         decision = _fake_decision(status="pending_approval")
         with patch(
