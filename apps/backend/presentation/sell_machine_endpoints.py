@@ -29,6 +29,7 @@ from services.sell_machine_service import (
     evaluate_hooks,
     get_telemetry_report,
     list_campaigns,
+    run_creative_loop,
 )
 
 router = APIRouter(tags=["sell-machine"])
@@ -51,6 +52,22 @@ class EvaluateHooksRequest(BaseModel):
 @router.post("/hooks/evaluate")
 def evaluate_hooks_endpoint(payload: EvaluateHooksRequest):
     survivors = evaluate_hooks(payload.hooks)
+    return {"survivors": survivors}
+
+
+class CreativeLoopRunRequest(BaseModel):
+    count: int = Field(default=5, ge=1, le=20)
+    target_segment: Optional[str] = None
+
+
+@router.post("/creative-loop/run")
+def creative_loop_run_endpoint(payload: CreativeLoopRunRequest):
+    """Runs the telemetry-aware creative loop (activate-telemetry-loop) — the only way it runs
+    in production, since this repo has no in-backend scheduler; Hermes (local) triggers this on
+    its own schedule per the settled architecture (ARCHITECTURE.md decision #1)."""
+    survivors = run_creative_loop(
+        count=payload.count, target_segment=payload.target_segment, use_telemetry=True
+    )
     return {"survivors": survivors}
 
 

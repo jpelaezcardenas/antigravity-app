@@ -68,6 +68,48 @@ class TestEvaluateHooksEndpoint:
         assert len(response.json()["survivors"]) == 1
 
 
+class TestCreativeLoopRunEndpoint:
+    @pytest.mark.asyncio
+    async def test_returns_survivors_from_the_telemetry_aware_loop(self, sm_client) -> None:
+        survivors = [{"headline": "H", "body": "B", "cta": "C", "pain_tag": "multa_dian"}]
+        async with sm_client as client:
+            with patch(
+                "presentation.sell_machine_endpoints.run_creative_loop", return_value=survivors
+            ) as mock_loop:
+                response = await client.post(
+                    "/sell-machine/creative-loop/run", json={"count": 3}
+                )
+
+        assert response.status_code == 200
+        assert response.json()["survivors"] == survivors
+        mock_loop.assert_called_once_with(count=3, target_segment=None, use_telemetry=True)
+
+    @pytest.mark.asyncio
+    async def test_passes_through_target_segment(self, sm_client) -> None:
+        async with sm_client as client:
+            with patch(
+                "presentation.sell_machine_endpoints.run_creative_loop", return_value=[]
+            ) as mock_loop:
+                await client.post(
+                    "/sell-machine/creative-loop/run",
+                    json={"count": 2, "target_segment": "asalariados_renta_natural"},
+                )
+
+        mock_loop.assert_called_once_with(
+            count=2, target_segment="asalariados_renta_natural", use_telemetry=True
+        )
+
+    @pytest.mark.asyncio
+    async def test_defaults_count_when_omitted(self, sm_client) -> None:
+        async with sm_client as client:
+            with patch(
+                "presentation.sell_machine_endpoints.run_creative_loop", return_value=[]
+            ) as mock_loop:
+                await client.post("/sell-machine/creative-loop/run", json={})
+
+        mock_loop.assert_called_once_with(count=5, target_segment=None, use_telemetry=True)
+
+
 class TestCreateCampaignEndpoint:
     @pytest.mark.asyncio
     async def test_creates_a_campaign_package(self, sm_client) -> None:
