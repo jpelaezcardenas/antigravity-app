@@ -25,17 +25,21 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 4.1 Commit + merge to `main` (check for divergence) + push.
-- [ ] 4.2 Confirm Railway deploy green. No new flag — reuses `SELL_MACHINE_CANONICAL`.
-- [ ] 4.3 Live smoke test: create two real approved `campaign_package` Approval Queue drafts (one
-      with `budget_cents` set, one without) via direct Supabase SQL/API, call the real
-      `POST /sell-machine/campaigns/{id}/dispatch` for each, confirm via Supabase SQL that the
-      resulting `operator_tasks.task_type` is `run_ads_ab` and `post_content` respectively. Clean
-      up test data.
-- [ ] 4.4 Create deployment report at
-      `openspec/changes/ads-ab-task-dispatch/reports/YYYY-MM-DD-deployment.md`.
+- [x] 4.1 Committed (`c9841a6`), fast-forward merged to `main`, pushed.
+- [x] 4.2 Railway deploy `a8d0a193` reached `SUCCESS`. No new flag — reuses
+      `SELL_MACHINE_CANONICAL`.
+- [x] 4.3 **Live smoke test**: created two real `approval_queue` rows (`status='approved'`,
+      `draft_type='campaign_package'` — one with `budget_cents=500000`, one with `budget_cents:
+      null`) via Supabase SQL, dispatched both via the real
+      `POST /sell-machine/campaigns/{id}/dispatch` endpoint → `200`/`run_ads_ab` and
+      `200`/`post_content` respectively, confirmed directly via Supabase SQL against the resulting
+      `operator_tasks` rows. All test data cleaned up.
+- [x] 4.4 Created deployment report at
+      `openspec/changes/ads-ab-task-dispatch/reports/2026-07-20-deployment.md`, including the
+      full session summary (all 6 gaps closed + 2 new bugs flagged).
 
 ## 5. Archive
 
-- [ ] 5.1 Sync the MODIFIED `hermes-manus-execution-bridge` delta into `openspec/specs/` (merge
-      into the existing spec file), archive via `git mv` once Stage 11 is confirmed complete.
+- [x] 5.1 Synced the MODIFIED `hermes-manus-execution-bridge` delta into `openspec/specs/`
+      (merged into the existing spec file), archived via `git mv` to
+      `openspec/changes/archive/2026-07-20-ads-ab-task-dispatch/`.
