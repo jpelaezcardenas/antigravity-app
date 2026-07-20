@@ -25,18 +25,20 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 4.1 Commit + merge to `main` (check for divergence) + push.
-- [ ] 4.2 Confirm Railway deploy green. No new flag — reuses `WHATSAPP_CANONICAL`.
-- [ ] 4.3 Live smoke test (logic-only, no real WhatsApp number — same accepted limitation as
-      every Taty change this session): create a real disposable test lead, POST a fabricated
-      WhatsApp text-message webhook, confirm `200` and (via Railway logs) that
-      `send_whatsapp_message` was actually invoked with the lead's phone and a non-empty reply,
-      confirming it fails gracefully (no crash) since `WHATSAPP_TOKEN` is unset. Clean up test
-      data.
-- [ ] 4.4 Create deployment report at
-      `openspec/changes/wire-whatsapp-reply-sending/reports/YYYY-MM-DD-deployment.md`.
+- [x] 4.1 Committed (`7def583`), fast-forward merged to `main`, pushed.
+- [x] 4.2 Railway deploy `83489932` reached `SUCCESS`. No new flag — reuses
+      `WHATSAPP_CANONICAL`.
+- [x] 4.3 **Live smoke test**: created a real disposable test lead, POSTed a fabricated WhatsApp
+      text-message webhook (`"hola"`) → `200`, `events_processed:1`. Railway logs confirm
+      `send_whatsapp_message: WHATSAPP_TOKEN/WHATSAPP_PHONE_NUMBER_ID not configured` — proves the
+      send was actually attempted (reaching the credential check) and degraded gracefully, no
+      crash. Test lead cleaned up.
+- [x] 4.4 Created deployment report at
+      `openspec/changes/wire-whatsapp-reply-sending/reports/2026-07-20-deployment.md`, including
+      the full session wrap-up (7 changes closed).
 
 ## 5. Archive
 
-- [ ] 5.1 Sync the ADDED `taty-whatsapp-sales-router` requirement into `openspec/specs/` (append
-      to the existing spec file), archive via `git mv` once Stage 11 is confirmed complete.
+- [x] 5.1 Synced the ADDED `taty-whatsapp-sales-router` requirement into `openspec/specs/`
+      (appended to the existing spec file), archived via `git mv` to
+      `openspec/changes/archive/2026-07-20-wire-whatsapp-reply-sending/`.
