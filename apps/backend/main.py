@@ -24,6 +24,10 @@ logger = logging.getLogger("contexia-api")
 # never called — see openspec/changes/reconcile-railway-antigravity-projects.
 settings.validate_production_config()
 
+# Fail fast on Wompi sandbox/production key mismatch or missing production
+# credentials — see openspec/changes/wompi-payment-integration.
+settings.validate_wompi_config()
+
 app = FastAPI(
     title="Contexia API",
     description="Backend para la plataforma de Inteligencia Financiera Contexia",

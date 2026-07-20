@@ -70,6 +70,17 @@ class Settings(BaseSettings):
     JWT_TENANT_CLAIM: str = "tenant_id"  # JWT claim name for tenant identifier
     KNOWN_TENANTS: str = "contexia-org-1,client-xyz,client-abc"  # Comma-separated list
 
+    # Wompi (Bancolombia) payment gateway — change wompi-payment-integration.
+    # WOMPI_ENV selects sandbox vs production; keys must match that environment
+    # (see validate_wompi_config). No hardcoded defaults for secrets — empty
+    # values fail closed, never silently fall back to sandbox in production.
+    WOMPI_ENV: str = "sandbox"  # "sandbox" | "production"
+    WOMPI_PUBLIC_KEY: str = ""
+    WOMPI_PRIVATE_KEY: str = ""
+    WOMPI_INTEGRITY_SECRET: str = ""
+    WOMPI_EVENTS_SECRET: str = ""
+    WOMPI_BASE_URL: str = "https://sandbox.wompi.co/v1"
+
     @property
     def origins_list(self) -> List[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]
@@ -89,6 +100,50 @@ class Settings(BaseSettings):
                 raise ValueError("JWT_SECRET must be at least 32 characters long.")
             if not self.SUPABASE_URL or not self.SUPABASE_KEY:
                 raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in production.")
+
+    def validate_wompi_config(self) -> None:
+        """
+        Fail-closed validation for Wompi payment settings. Called during app
+        startup. Never allows a sandbox/production key mismatch, and requires
+        all four Wompi credentials when WOMPI_ENV=production.
+        """
+        if self.WOMPI_ENV not in ("sandbox", "production"):
+            raise ValueError(f"WOMPI_ENV must be 'sandbox' or 'production', got '{self.WOMPI_ENV}'.")
+
+        prod_prefixes = ("pub_prod_", "prv_prod_")
+        test_prefixes = ("pub_test_", "prv_test_")
+        keys = [self.WOMPI_PUBLIC_KEY, self.WOMPI_PRIVATE_KEY]
+
+        if self.WOMPI_ENV == "sandbox":
+            for key in keys:
+                if key and key.startswith(prod_prefixes):
+                    raise ValueError(
+                        "WOMPI_ENV=sandbox but a production-prefixed Wompi key "
+                        "(pub_prod_/prv_prod_) is configured. Refusing to start."
+                    )
+
+        if self.WOMPI_ENV == "production":
+            for key in keys:
+                if key and key.startswith(test_prefixes):
+                    raise ValueError(
+                        "WOMPI_ENV=production but a sandbox-prefixed Wompi key "
+                        "(pub_test_/prv_test_) is configured. Refusing to start."
+                    )
+            missing = [
+                name
+                for name, value in (
+                    ("WOMPI_PUBLIC_KEY", self.WOMPI_PUBLIC_KEY),
+                    ("WOMPI_PRIVATE_KEY", self.WOMPI_PRIVATE_KEY),
+                    ("WOMPI_INTEGRITY_SECRET", self.WOMPI_INTEGRITY_SECRET),
+                    ("WOMPI_EVENTS_SECRET", self.WOMPI_EVENTS_SECRET),
+                )
+                if not value
+            ]
+            if missing:
+                raise ValueError(
+                    f"WOMPI_ENV=production requires all Wompi credentials to be set. "
+                    f"Missing: {', '.join(missing)}."
+                )
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from services.crm_service import get_crm_service
@@ -65,3 +65,30 @@ def approve_lead_payment(lead_id: str, payload: ApprovePaymentRequest):
         return get_crm_service().approve_payment(lead_id, approved_by=payload.approved_by)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/leads/{lead_id}/checkout")
+def checkout_lead_payment(lead_id: str):
+    """Create a signed Wompi checkout for a lead's Renta Natural payment.
+
+    See openspec/changes/wompi-payment-integration ("Change C" for
+    crm-b2c-sell-machine-cockpit's crm_wompi_transactions table).
+    """
+    try:
+        return get_crm_service().checkout_lead_payment(lead_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/wompi/webhook")
+async def wompi_webhook(request: Request):
+    """Receive and verify a Wompi transaction-status event.
+
+    Public endpoint (Wompi has no user session) — the signature check IS the
+    access control. See services.crm_service.handle_wompi_webhook.
+    """
+    event = await request.json()
+    try:
+        return get_crm_service().handle_wompi_webhook(event)
+    except PermissionError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc

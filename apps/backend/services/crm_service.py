@@ -11,10 +11,12 @@ from __future__ import annotations
 import logging
 import os
 from copy import deepcopy
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from config import settings
 from core.supabase_client import get_service_supabase
+from services.wompi_signature import compute_integrity_signature, verify_event_checksum
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +44,12 @@ _DEMO_LEADS: List[Dict[str, Any]] = [
     {"id": "demo-lead-1", "full_name": "Lead Demo Nuevos", "stage": "NUEVOS", "score": 10},
     {"id": "demo-lead-2", "full_name": "Lead Demo Prospectos", "stage": "PROSPECTOS", "score": 40},
 ]
+
+# Renta Natural 2026 filing service price — matches the seed data convention in
+# migrations/0023_seed_crm_b2c_leads.sql ($89.000 COP). Wompi payment integration
+# (Change C) — see openspec/changes/wompi-payment-integration.
+RENTA_NATURAL_PRICE_CENTS = 8_900_000
+RENTA_NATURAL_CURRENCY = "COP"
 
 
 def _month_periods(from_period: str, to_period: str) -> List[str]:
@@ -249,6 +257,77 @@ class CrmService:
             .execute()
         )
         return (updated.data or [{}])[0]
+
+    def checkout_lead_payment(self, lead_id: str) -> Dict[str, Any]:
+        """Create a signed Wompi checkout for a lead's Renta Natural payment.
+
+        Creates a PENDING crm_wompi_transactions row keyed by a fresh reference
+        and returns the signed data the frontend needs to redirect to Wompi's
+        hosted checkout. The real transaction status arrives later via the
+        Wompi webhook (see webhook handler), matched by this same reference.
+        """
+        client = get_service_supabase()
+
+        lead_result = (
+            client.table("crm_leads").select("id, tenant_id").eq("id", lead_id).single().execute()
+        )
+        lead = lead_result.data or {}
+        if not lead.get("id"):
+            raise LookupError(f"Lead {lead_id!r} not found")
+
+        reference = f"{lead_id}-{int(datetime.now(timezone.utc).timestamp())}"
+        amount_in_cents = RENTA_NATURAL_PRICE_CENTS
+        currency = RENTA_NATURAL_CURRENCY
+
+        client.table("crm_wompi_transactions").insert(
+            {
+                "tenant_id": lead["tenant_id"],
+                "lead_id": lead_id,
+                "reference": reference,
+                "amount_cents": amount_in_cents,
+                "currency": currency,
+                "status": "PENDING",
+            }
+        ).execute()
+
+        signature = compute_integrity_signature(
+            reference, amount_in_cents, currency, settings.WOMPI_INTEGRITY_SECRET
+        )
+
+        return {
+            "public_key": settings.WOMPI_PUBLIC_KEY,
+            "currency": currency,
+            "amount_in_cents": amount_in_cents,
+            "reference": reference,
+            "signature": signature,
+        }
+
+    def handle_wompi_webhook(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Verify and process a Wompi transaction-status webhook event.
+
+        Raises PermissionError if the event's checksum doesn't match — callers
+        MUST translate that into a 401 and must not have written anything
+        before this raises. Idempotent: upserts by wompi_transaction_id, which
+        has a unique index (migration 0025), so redelivery of the same event
+        never creates a duplicate row.
+        """
+        if not verify_event_checksum(event, settings.WOMPI_EVENTS_SECRET):
+            raise PermissionError("Wompi webhook event signature verification failed")
+
+        transaction = event["data"]["transaction"]
+        client = get_service_supabase()
+
+        payload = {
+            "wompi_transaction_id": transaction["id"],
+            "status": transaction["status"],
+            "reference": transaction["reference"],
+            "amount_cents": transaction["amount_in_cents"],
+        }
+        client.table("crm_wompi_transactions").upsert(
+            payload, on_conflict="reference"
+        ).execute()
+
+        return payload
 
 
 _crm_service: Optional[CrmService] = None
