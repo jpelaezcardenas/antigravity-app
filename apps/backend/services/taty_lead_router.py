@@ -13,9 +13,14 @@ Wompi integration (Change C) — never a fabricated payment confirmation.
 from __future__ import annotations
 
 from typing import Any, Dict, Optional, Tuple
+from urllib.parse import urlencode
 
+from config import settings
 from core.supabase_client import get_service_supabase
 from services.crm_service import get_crm_service
+from services.wompi_signature import compute_integrity_signature
+
+WOMPI_WEB_CHECKOUT_BASE_URL = "https://checkout.wompi.co/p/"
 
 SALES_INTEREST_KEYWORDS = (
     "declarar renta",
@@ -33,6 +38,7 @@ PAYMENT_CONFIRMATION_KEYWORDS = ("ya pague", "ya pagué", "ya hice el pago", "li
 INTENT_CONFIDENCE_THRESHOLD = 0.6
 
 _ASALARIADO_KEYWORDS = ("soy asalariado", "trabajo asalariado", "tengo un empleo fijo")
+_INDEPENDIENTE_KEYWORDS = ("soy independiente", "trabajo por mi cuenta", "soy freelance", "soy freelancer")
 
 
 def classify_lead_intent(message: str) -> Tuple[str, float]:
@@ -61,6 +67,40 @@ def _get_lead_stage(lead_id: str) -> Optional[str]:
     return (result.data or {}).get("stage")
 
 
+def _get_latest_transaction(lead_id: str) -> Optional[Dict[str, Any]]:
+    """Reads the lead's most recent crm_wompi_transactions row directly (isolated for test
+    patching, mirroring _get_lead_stage). This table is kept authoritative by the existing,
+    unmodified Wompi webhook handler (CrmService.handle_wompi_webhook) — never queried against
+    Wompi's API a second time here."""
+    client = get_service_supabase()
+    result = (
+        client.table("crm_wompi_transactions")
+        .select("*")
+        .eq("lead_id", lead_id)
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    rows = result.data or []
+    return rows[0] if rows else None
+
+
+def _build_web_checkout_url(
+    public_key: str, currency: str, amount_in_cents: int, reference: str, signature: str
+) -> str:
+    """Builds a Wompi Web Checkout URL (hosted page) from signed checkout data — the same fields
+    CrmService.checkout_lead_payment already computes for the Widget Checkout, reused here as URL
+    query params per Wompi's documented Web Checkout format (docs.wompi.co)."""
+    params = {
+        "public-key": public_key,
+        "currency": currency,
+        "amount-in-cents": amount_in_cents,
+        "reference": reference,
+        "signature:integrity": signature,
+    }
+    return f"{WOMPI_WEB_CHECKOUT_BASE_URL}?{urlencode(params)}"
+
+
 def _create_empty_tax_profile(lead_id: str) -> None:
     """Creates an empty crm_tax_profiles row for a lead that doesn't have one yet (isolated for
     test patching). Mirrors Change B's seed pattern of one tax-profile row per lead."""
@@ -74,6 +114,8 @@ def _detect_persona_fields(message: str) -> Dict[str, Any]:
     fields: Dict[str, Any] = {}
     if any(keyword in message_lower for keyword in _ASALARIADO_KEYWORDS):
         fields["es_asalariado"] = True
+    elif any(keyword in message_lower for keyword in _INDEPENDIENTE_KEYWORDS):
+        fields["es_asalariado"] = False
     return fields
 
 
@@ -139,22 +181,45 @@ def route_lead_message(lead_id: str, message: str) -> Dict[str, Any]:
     if intent == "sales_interest":
         if current_stage == "NUEVOS":
             service.advance_lead(lead_id, "PROSPECTOS")
+        link = generate_wompi_link(lead_id)
         return {
             "intent": intent,
             "confidence": confidence,
             "reply": (
-                "¡Con gusto te ayudo! Cuéntame un poco más de tu situación para saber si te toca "
-                "declarar renta este año."
+                "¡Con gusto te ayudo! Aquí tienes el link para hacer tu pago de Renta Natural "
+                f"2026 de forma segura: {link}"
             ),
         }
 
     if intent == "payment_confirmation":
+        transaction = verify_wompi_transaction(lead_id)
+        status = transaction.get("status")
+        if status == "APPROVED":
+            if current_stage != "POR_APROBAR":
+                service.advance_lead(lead_id, "POR_APROBAR")
+            return {
+                "intent": intent,
+                "confidence": confidence,
+                "reply": (
+                    "¡Perfecto! Ya confirmamos tu pago. Un asesor de Contexia revisará tu caso "
+                    "en breve para continuar con tu declaración."
+                ),
+            }
+        if status == "PENDING":
+            return {
+                "intent": intent,
+                "confidence": confidence,
+                "reply": (
+                    "Aún no hemos recibido la confirmación de tu pago. Dame un momento y te "
+                    "aviso apenas se confirme."
+                ),
+            }
         return {
             "intent": intent,
             "confidence": confidence,
             "reply": (
-                "Gracias, aún no puedo confirmar pagos automáticamente — un asesor de Contexia "
-                "revisará tu caso y te confirmará en breve."
+                "No tengo ningún pago pendiente registrado a tu nombre. ¿Quieres que te envíe el "
+                "link de pago?"
             ),
         }
 
@@ -167,17 +232,40 @@ def route_lead_message(lead_id: str, message: str) -> Dict[str, Any]:
     }
 
 
-def generate_wompi_link(lead_id: str, amount_cents: int) -> str:
-    """Stub pending the real Wompi integration (Change C, crm-wompi-payment-integration)."""
-    raise NotImplementedError(
-        "generate_wompi_link is not implemented yet — closed by Change C "
-        "(crm-wompi-payment-integration)."
+def generate_wompi_link(lead_id: str) -> str:
+    """Returns a real Wompi Web Checkout URL for this lead's Renta Natural payment
+    (taty-wompi-tools-integration, Change H). Reuses an existing PENDING transaction's reference
+    if one exists (design.md Decision 2) rather than creating a duplicate on every message;
+    otherwise calls the existing, unmodified CrmService.checkout_lead_payment to create a fresh
+    one."""
+    latest = _get_latest_transaction(lead_id)
+
+    if latest and latest.get("status") == "PENDING":
+        signature = compute_integrity_signature(
+            latest["reference"], latest["amount_cents"], latest["currency"],
+            settings.WOMPI_INTEGRITY_SECRET,
+        )
+        return _build_web_checkout_url(
+            settings.WOMPI_PUBLIC_KEY, latest["currency"], latest["amount_cents"],
+            latest["reference"], signature,
+        )
+
+    service = get_crm_service()
+    checkout = service.checkout_lead_payment(lead_id)
+    return _build_web_checkout_url(
+        checkout["public_key"], checkout["currency"], checkout["amount_in_cents"],
+        checkout["reference"], checkout["signature"],
     )
 
 
 def verify_wompi_transaction(lead_id: str) -> Dict[str, Any]:
-    """Stub pending the real Wompi integration (Change C, crm-wompi-payment-integration)."""
-    raise NotImplementedError(
-        "verify_wompi_transaction is not implemented yet — closed by Change C "
-        "(crm-wompi-payment-integration)."
-    )
+    """Reports the lead's current Wompi transaction status by reading crm_wompi_transactions
+    directly (taty-wompi-tools-integration, Change H) — makes no new outbound call to Wompi's
+    API, since the existing webhook handler already keeps this row authoritative."""
+    latest = _get_latest_transaction(lead_id)
+    if not latest:
+        return {"status": None, "wompi_transaction_id": None}
+    return {
+        "status": latest.get("status"),
+        "wompi_transaction_id": latest.get("wompi_transaction_id"),
+    }
