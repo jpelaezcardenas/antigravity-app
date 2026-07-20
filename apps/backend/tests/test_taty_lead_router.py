@@ -15,6 +15,8 @@ import pytest
 
 from services.taty_lead_router import (
     _create_empty_tax_profile,
+    _detect_persona_fields,
+    _extract_topes_amount,
     classify_lead_intent,
     find_or_create_lead,
     generate_wompi_link,
@@ -169,6 +171,57 @@ class TestDetectPersonaFieldsIndependiente:
 
         args, _ = mock_service.update_tax_profile.call_args
         assert args[1] == {"es_asalariado": False}
+
+
+class TestExtractTopesAmount:
+    def test_plain_number_with_consignaciones_keyword(self):
+        result = _extract_topes_amount("el año pasado me consignaron 80000000 en el banco")
+        assert result == ("consignaciones", 80000000)
+
+    def test_millones_suffix_with_ingresos_keyword(self):
+        result = _extract_topes_amount("mis ingresos fueron de 70 millones el año pasado")
+        assert result == ("ingresos", 70000000)
+
+    def test_k_suffix_with_compras_keyword(self):
+        result = _extract_topes_amount("hice compras por 70k el año pasado")
+        assert result == ("compras", 70000)
+
+    def test_patrimonio_keyword_detected(self):
+        result = _extract_topes_amount("mi patrimonio es de 500 millones")
+        assert result == ("patrimonio", 500000000)
+
+    def test_no_category_keyword_returns_none(self):
+        assert _extract_topes_amount("hola, como estas hoy 80000000") is None
+
+    def test_category_keyword_without_amount_returns_none(self):
+        assert _extract_topes_amount("tengo dudas sobre mis ingresos") is None
+
+
+class TestDetectPersonaFieldsTopes:
+    def test_topes_amount_merges_with_existing_topes(self):
+        fields = _detect_persona_fields(
+            "mis ingresos fueron 20000000", existing_topes={"consignaciones": 50000000}
+        )
+        assert fields["topes"] == {"consignaciones": 50000000, "ingresos": 20000000}
+
+    def test_obligado_declarar_true_when_above_threshold(self):
+        fields = _detect_persona_fields("me consignaron 80000000 el año pasado", existing_topes={})
+        assert fields["topes"] == {"consignaciones": 80000000}
+        assert fields["obligado_declarar"] is True
+
+    def test_obligado_declarar_false_when_below_threshold(self):
+        fields = _detect_persona_fields("mis ingresos fueron 10000000", existing_topes={})
+        assert fields["topes"] == {"ingresos": 10000000}
+        assert fields["obligado_declarar"] is False
+
+    def test_no_topes_detected_leaves_fields_empty(self):
+        fields = _detect_persona_fields("hola, como estas", existing_topes={})
+        assert "topes" not in fields
+        assert "obligado_declarar" not in fields
+
+    def test_es_asalariado_still_detected_alongside_topes_logic(self):
+        fields = _detect_persona_fields("Sí, soy asalariado", existing_topes={})
+        assert fields == {"es_asalariado": True}
 
 
 class TestRouteLeadDocument:

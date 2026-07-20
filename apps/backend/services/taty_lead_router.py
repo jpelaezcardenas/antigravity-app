@@ -12,11 +12,13 @@ Wompi integration (Change C) — never a fabricated payment confirmation.
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, Optional, Tuple
 from urllib.parse import urlencode
 
 from config import settings
 from channels.whatsapp import download_whatsapp_media, send_whatsapp_message
+from core.constants import UMBRAL_RENTA_COP
 from core.supabase_client import get_service_supabase
 from services.crm_service import get_crm_service
 from services.document_storage_service import upload_tax_document
@@ -41,6 +43,15 @@ INTENT_CONFIDENCE_THRESHOLD = 0.6
 
 _ASALARIADO_KEYWORDS = ("soy asalariado", "trabajo asalariado", "tengo un empleo fijo")
 _INDEPENDIENTE_KEYWORDS = ("soy independiente", "trabajo por mi cuenta", "soy freelance", "soy freelancer")
+
+_TOPES_CATEGORY_PATTERNS = (
+    ("consignaciones", re.compile(r"consign")),
+    ("ingresos", re.compile(r"ingres")),
+    ("compras", re.compile(r"compr")),
+    ("patrimonio", re.compile(r"patrimonio")),
+)
+_TOPES_AMOUNT_PATTERN = re.compile(r"(\d[\d.,]*)\s*(millones?|mill|k)?\b")
+_TOPES_RENTA_CATEGORIES = ("ingresos", "consignaciones")
 
 
 def classify_lead_intent(message: str) -> Tuple[str, float]:
@@ -125,14 +136,67 @@ def _create_empty_tax_profile(lead_id: str) -> None:
     client.table("crm_tax_profiles").insert({"lead_id": lead_id, "tenant_id": tenant_id}).execute()
 
 
-def _detect_persona_fields(message: str) -> Dict[str, Any]:
-    """Extracts persona-state fields (es_asalariado, topes) detectable from the message text."""
+def _extract_topes_amount(message: str) -> Optional[Tuple[str, int]]:
+    """Extracts a (category, amount_cop) pair from a message that mentions one of the UVT
+    topes categories (consignaciones/ingresos/compras/patrimonio) alongside a peso amount
+    (taty-persona-fields). Supports plain numbers, a "millones"/"mill" suffix, and a "k"
+    (thousands) suffix — the three shapes a WhatsApp lead realistically types. Returns None if no
+    category keyword is present, or if a category keyword is present with no adjacent amount."""
+    message_lower = message.lower()
+    category = next(
+        (name for name, pattern in _TOPES_CATEGORY_PATTERNS if pattern.search(message_lower)),
+        None,
+    )
+    if not category:
+        return None
+
+    match = _TOPES_AMOUNT_PATTERN.search(message_lower)
+    if not match:
+        return None
+
+    raw_number = match.group(1).replace(".", "").replace(",", "")
+    try:
+        number = int(raw_number)
+    except ValueError:
+        return None
+
+    suffix = match.group(2)
+    if suffix and suffix.startswith("mill"):
+        amount = number * 1_000_000
+    elif suffix == "k":
+        amount = number * 1_000
+    else:
+        amount = number
+
+    return category, amount
+
+
+def _detect_persona_fields(
+    message: str, existing_topes: Optional[Dict[str, int]] = None
+) -> Dict[str, Any]:
+    """Extracts persona-state fields (es_asalariado, topes, obligado_declarar) detectable from the
+    message text. `topes` merges with `existing_topes` (never overwritten wholesale — design.md
+    Decision 2). `obligado_declarar` is a preliminary internal signal, not a legally authoritative
+    determination (design.md Non-Goals) — computed from the known ingresos/consignaciones amount
+    against core.constants.UMBRAL_RENTA_COP whenever topes changes."""
     message_lower = message.lower()
     fields: Dict[str, Any] = {}
     if any(keyword in message_lower for keyword in _ASALARIADO_KEYWORDS):
         fields["es_asalariado"] = True
     elif any(keyword in message_lower for keyword in _INDEPENDIENTE_KEYWORDS):
         fields["es_asalariado"] = False
+
+    topes_result = _extract_topes_amount(message)
+    if topes_result:
+        category, amount = topes_result
+        merged_topes = dict(existing_topes or {})
+        merged_topes[category] = amount
+        fields["topes"] = merged_topes
+
+        renta_amount = max(merged_topes.get(cat, 0) for cat in _TOPES_RENTA_CATEGORIES)
+        if renta_amount:
+            fields["obligado_declarar"] = renta_amount >= UMBRAL_RENTA_COP
+
     return fields
 
 
@@ -188,9 +252,10 @@ def route_lead_message(lead_id: str, message: str) -> Dict[str, Any]:
     service = get_crm_service()
     current_stage = _get_lead_stage(lead_id)
 
-    persona_fields = _detect_persona_fields(message)
+    tax_profile = service.get_tax_profile(lead_id)
+    existing_topes = (tax_profile or {}).get("topes") or {}
+    persona_fields = _detect_persona_fields(message, existing_topes=existing_topes)
     if persona_fields:
-        tax_profile = service.get_tax_profile(lead_id)
         if not tax_profile:
             _create_empty_tax_profile(lead_id)
         service.update_tax_profile(lead_id, persona_fields)
