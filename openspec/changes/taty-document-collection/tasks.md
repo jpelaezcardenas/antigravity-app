@@ -104,32 +104,34 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 9.1 Commit backend changes in scoped commits referencing this change id.
-- [ ] 9.2 Merge to `main` (check for conflicts) and push.
-- [ ] 9.3 Confirm Railway backend deploy completes green. No new flag — reuses
-      `WHATSAPP_CANONICAL` (already live).
-- [ ] 9.4 Live smoke test (logic-only for the WhatsApp document flow, since no real WhatsApp
-      number exists yet — same accepted limitation as Change D): approve a real test lead's
-      payment via the live endpoint, confirm `rut_status` becomes `requested` and a
-      `send_whatsapp_message` call was attempted (will no-op/log since `WHATSAPP_TOKEN` is unset —
-      confirm this fails gracefully, not with an error); POST a fabricated document-message
-      webhook payload for that lead and confirm the document flow logic runs correctly end-to-end
-      against the real database (status transitions, storage path recorded) even though the
-      actual file bytes can't be really downloaded from Meta without a real token — decide exactly
-      how to simulate this gap explicitly in the smoke test and document it plainly in the
-      deployment report.
-- [ ] 9.5 **Separately, verify the Storage bucket for real** (this part doesn't depend on a real
-      WhatsApp number): upload a real test file via the service-role client, generate a signed
-      URL, confirm it's reachable, confirm a non-admin/anon request is blocked, delete the test
-      file.
-- [ ] 9.6 Create deployment report at
-      `openspec/changes/taty-document-collection/reports/YYYY-MM-DD-deployment.md`, explicitly
-      documenting the WhatsApp-number limitation (same as Change D) and the real Storage
-      verification performed.
+- [x] 9.1 Committed backend changes in scoped commits: `94487fa` (feat: RUT/extractos document
+      collection) and `c3929e9` (fix: `crm_tax_profiles` inserts were missing `tenant_id`, found
+      live during this Stage 11).
+- [x] 9.2 Merged to `main` (fast-forward, no conflicts, confirmed via `git merge-base`) and pushed.
+- [x] 9.3 Railway backend deploy completed green after the `tenant_id` fix (2 manual redeploys
+      needed across both commits due to the recurring Railway slow-boot pattern; no crash
+      signature in logs at any point). No new flag — reuses `WHATSAPP_CANONICAL` (already live).
+- [x] 9.4 Live smoke test executed against production: approved a real test lead's payment via
+      `POST /crm/leads/{id}/approve-payment` — **first attempt returned 500** (the `tenant_id`
+      NOT NULL bug), fixed and redeployed, then returned `200` with `rut_status="requested"` and
+      the correct `tenant_id` confirmed via Supabase SQL. POSTed a fabricated document-message
+      webhook payload for that lead to `/channels/whatsapp/webhook` → `200`,
+      `{"ok":true,"events_processed":1}`, no crash; confirmed via Supabase SQL that `rut_status`
+      correctly stayed `"requested"` (not falsely advanced) and `rut_storage_path` stayed `null` —
+      the real media download failed gracefully since `WHATSAPP_TOKEN` is unset in production (no
+      real WhatsApp Business number exists yet, same accepted limitation as Change D). All test
+      data cleaned up.
+- [x] 9.5 Storage bucket already verified for real during Section 8 (upload + signed URL +
+      blocked public access via direct Storage REST API calls) — this part doesn't depend on the
+      deploy, so it wasn't re-verified here.
+- [x] 9.6 Created deployment report at
+      `openspec/changes/taty-document-collection/reports/2026-07-20-deployment.md`, documenting
+      the live smoke test, the WhatsApp-number limitation (same as Change D), and the `tenant_id`
+      bug found and fixed live during this Stage 11.
 
 ## 10. Archive
 
-- [ ] 10.1 Sync the new `taty-document-collection` capability AND the modified
-      `taty-whatsapp-sales-router` requirement into `openspec/specs/` (merge the MODIFIED
-      requirement into the existing spec file, same process as Change H) using `git mv` for the
-      archive move, and archive this change once Stage 11 is confirmed complete and verified live.
+- [x] 10.1 Synced the new `taty-document-collection` capability AND the modified
+      `taty-whatsapp-sales-router` requirement into `openspec/specs/` (merged the MODIFIED
+      requirement into the existing spec file, same process as Change H), archived via `git mv`
+      to `openspec/changes/archive/2026-07-20-taty-document-collection/`.
