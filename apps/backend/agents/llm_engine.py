@@ -436,28 +436,44 @@ class LLMEngine:
         required_keys: set,
         max_retries: int,
     ) -> Dict:
-        """Get JSON response with custom provider order, retrying on parse failure."""
+        """Get JSON response with custom provider order, retrying on validation failure.
+        Mirrors _get_json_with_retry's parse-then-validate pattern exactly (bugfix:
+        fix-llm-engine-required-keys — _parse_llm_response never accepted required_keys nor
+        returned a tuple; validation is a separate step via _validate_required)."""
+        current_prompt = prompt
+        parsed: Dict = {}
+
         for attempt in range(max_retries + 1):
             raw_response = self._call_with_failover_custom_order(
-                prompt, system_prompt, max_tokens, temperature, timeout, provider_order
+                current_prompt, system_prompt, max_tokens, temperature, timeout, provider_order
             )
-            parsed, is_valid = self._parse_llm_response(
-                raw_response, synonyms, list_keys, required_keys
-            )
+            parsed = self._parse_llm_response(raw_response, synonyms=synonyms, list_keys=list_keys)
 
-            if is_valid:
+            valid, missing = self._validate_required(parsed, required_keys)
+            parse_failed = parsed.get("parsing_error") is True
+
+            if valid and not parse_failed:
                 return parsed
+
+            last_error = (
+                f"Missing required keys: {sorted(missing)}"
+                if missing
+                else "Response was not valid JSON; fallback structure returned"
+            )
+            logger.warning(
+                f"JSON validation failed (attempt {attempt + 1}/{max_retries + 1}): {last_error}"
+            )
 
             if attempt < max_retries:
-                error_context = f"Previous parse error. Raw: {raw_response[:200]}"
-                prompt = f"{prompt}\n\n[PARSE ERROR - Retry {attempt + 1}]: {error_context}\nPlease fix format."
-                logger.warning(f"JSON parse failed (attempt {attempt + 1}), retrying...")
-            else:
-                logger.error(f"JSON parse failed after {max_retries + 1} attempts")
-                parsed["parsing_error"] = True
-                return parsed
+                current_prompt = (
+                    f"{prompt}\n\n"
+                    f"IMPORTANT: Your previous response failed validation: {last_error}. "
+                    f"Return ONLY a valid JSON object containing keys "
+                    f"{sorted(required_keys) if required_keys else 'as specified above'}. "
+                    f"No prose, no markdown fences."
+                )
 
-        return parsed
+        return parsed  # Return last (possibly fallback) parsed result
 
     @staticmethod
     def _validate_required(parsed: Dict, required_keys: set) -> tuple:

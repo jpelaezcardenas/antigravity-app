@@ -190,6 +190,85 @@ class TestJsonRetry:
         assert out.get("parsing_error") is True
 
 
+class TestJsonRetryCustomOrder:
+    """_get_json_with_retry_custom_order (used by get_ai_response_with_profile's JSON-mode path)
+    — regression tests for a live bug found during taty-persona-fields/copywriter-rag/
+    activate-telemetry-loop's Stage 11 verifications: it called _parse_llm_response with an
+    unsupported `required_keys` positional arg and unpacked a (parsed, is_valid) tuple that
+    method never returns, raising TypeError on every real call."""
+
+    def test_valid_json_on_first_attempt_returns_parsed_dict(self) -> None:
+        engine = LLMEngine()
+        with patch.object(
+            engine,
+            "_call_with_failover_custom_order",
+            return_value='{"summary": "ok", "risks": ["x"]}',
+        ):
+            out = engine._get_json_with_retry_custom_order(
+                prompt="anything",
+                system_prompt="",
+                max_tokens=100,
+                temperature=0.5,
+                timeout=10,
+                provider_order=[LLMProvider.GROQ],
+                synonyms={},
+                list_keys=set(),
+                required_keys={"summary", "risks"},
+                max_retries=1,
+            )
+
+        assert out == {"summary": "ok", "risks": ["x"]}
+
+    def test_retries_on_missing_required_key(self) -> None:
+        engine = LLMEngine()
+        calls = {"n": 0}
+        responses = [
+            '{"summary": "first attempt"}',
+            '{"summary": "ok", "risks": ["x"]}',
+        ]
+
+        def fake_call(*args, **kwargs) -> str:
+            calls["n"] += 1
+            return responses[min(calls["n"] - 1, len(responses) - 1)]
+
+        with patch.object(engine, "_call_with_failover_custom_order", side_effect=fake_call):
+            out = engine._get_json_with_retry_custom_order(
+                prompt="anything",
+                system_prompt="",
+                max_tokens=100,
+                temperature=0.5,
+                timeout=10,
+                provider_order=[LLMProvider.GROQ],
+                synonyms={},
+                list_keys=set(),
+                required_keys={"summary", "risks"},
+                max_retries=1,
+            )
+
+        assert out == {"summary": "ok", "risks": ["x"]}
+        assert calls["n"] == 2
+
+    def test_returns_last_attempt_after_retries_exhausted(self) -> None:
+        engine = LLMEngine()
+        with patch.object(
+            engine, "_call_with_failover_custom_order", return_value="never json"
+        ):
+            out = engine._get_json_with_retry_custom_order(
+                prompt="x",
+                system_prompt="",
+                max_tokens=100,
+                temperature=0.5,
+                timeout=10,
+                provider_order=[LLMProvider.GROQ],
+                synonyms={},
+                list_keys=set(),
+                required_keys={"summary"},
+                max_retries=1,
+            )
+
+        assert out.get("parsing_error") is True
+
+
 # ---------------------------------------------------------------------------
 # Anonymizer integration in BaseAgent
 # ---------------------------------------------------------------------------
