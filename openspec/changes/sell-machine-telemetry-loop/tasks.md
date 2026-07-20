@@ -70,8 +70,9 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 7.1 Commit backend changes in scoped commits referencing this change id.
-- [ ] 7.2 Merge to `main` (check for conflicts) and push.
+- [x] 7.1 Committed on `feature/sell-machine-telemetry-loop` (`86c99dd`), referencing this change id.
+- [x] 7.2 Merged to `main` (fast-forward, confirmed via `git merge-base` no real divergence despite
+      `origin/main` having advanced) and pushed.
 - [x] 7.3 Railway backend deploy (commit `86c99dd`) reached `SUCCESS` and responded normally (no
       extended cold-start this time). Reuses the already-`true` `SELL_MACHINE_CANONICAL` flag —
       the new endpoint was live immediately, no dark-deploy step needed.
