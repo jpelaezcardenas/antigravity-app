@@ -55,6 +55,76 @@ Contexia admin (Contexia as cliente cero)**, independent of SyncManager's API. T
 own scoping (file format, upload mechanism, validation, where it lands in Shadow GL) before
 becoming tasks — tracked as a follow-up, not detailed here yet.
 
+---
+
+## ⚠️ Ground Truth Correction #2 (2026-07-21)
+
+Re-verified live against Supabase (`kpynymwghfwshvcvevxq`) and the current `main` codebase while
+auditing what's still open in this change. Found the T5/T7/T10 bugs described above are real, plus
+one not previously documented:
+
+- **T10 confirmed broken as described**, but a *different* change
+  (`agent-operations-multitenant-security`, already archived) already built the correct fix for
+  the JWT string-vs-UUID problem — `core/identity_resolver.py`'s `IdentityResolver.resolve()`,
+  which resolves the JWT's non-UUID `workspace_id`/`tenant_id` claim to a real `tenants.id` via
+  `tenants.company_id` lookup or `user_tenants` membership, used at the **agent-operations
+  governance chokepoint** (cost tracking, audit writes) — NOT via raw Postgres RLS on
+  `auth.jwt()`. This means the raw-RLS approach T7/T10 describe is a second, redundant
+  isolation mechanism that was never finished, while the sanctioned one already works elsewhere.
+- **NEW finding — two different "default tenant" placeholders exist across the two real tables,
+  neither matching each other or the real Cliente Cero tenant UUID
+  (`e2d30d09-6b96-4ebe-a79a-c6aff7a5df34`, confirmed live via `SELECT * FROM tenants WHERE
+  is_cliente_cero`):**
+  - `approval_queue`: 3 rows `tenant_id = NULL` (never backfilled), 3 rows already correctly
+    stamped with the real Cliente Cero UUID (written by the newer `dispatch_campaign_package`
+    code path, which resolves it live via `_resolve_cliente_cero_tenant_id`).
+  - `centinela_alerts`: all 40 rows stamped with `a0000000-0000-0000-0000-000000000001` — a
+    placeholder UUID from an earlier ad-hoc backfill that doesn't match any real tenant.
+- **NEW finding — RLS isolation on both tables is currently defeated by pre-existing permissive
+  policies with `qual=true`** (`approval_queue_anon_all`; `centinela_alerts_select`,
+  `centinela_alerts_insert`, `centinela_alerts_update`) that coexist with the
+  `*_tenant_isolation` policies. Postgres OR's multiple PERMISSIVE policies for the same
+  command — since these unconditional-`true` policies are also PERMISSIVE, the isolation policy
+  is currently a no-op regardless of the UUID-cast issue. They exist because
+  `approval_queue_service.py`/`centinela_service.py` call Supabase via `get_supabase()` (the
+  **anon-key** client, confirmed via grep — no per-request user JWT is ever attached to the
+  Postgres session), so `auth.jwt()` is NULL for every one of their queries; without the
+  allow-all policies these services would silently return zero rows today.
+
+**Decision on scope (2026-07-21): fix the safe, zero-risk part now; flag the rest for an
+explicit decision before touching live RLS behavior.**
+
+Done in this pass (safe — either pure documentation-accuracy or additive data fixes with zero
+behavioral change, since the permissive policies already make every read tenant-agnostic today):
+- [x] Corrected `0001_add_tenant_id_columns.sql` to only reference the 2 tables that actually
+      exist (`centinela_alerts`, `approval_queue`) — the other 3 blocks
+      (`pulso_results`/`radar_insights`/`auditoria_reports`) would error on `ALTER TABLE` against
+      a nonexistent table; removed rather than "fixed" since those tables were never built.
+- [x] Rewrote `0002_backfill_tenant_id.sql` as portable SQL (no `psql` `\set` meta-command, which
+      Supabase's SQL execution can't run) targeting only the 2 real tables, using the real
+      Cliente Cero UUID as the fill value instead of the ungrounded placeholder.
+- [x] Backfilled live: `approval_queue`'s 3 `NULL` rows and `centinela_alerts`'s 40
+      placeholder-UUID rows now all carry the real Cliente Cero UUID
+      (`e2d30d09-6b96-4ebe-a79a-c6aff7a5df34`) — unifying on one real identity. Verified via SQL
+      post-fix: `centinela_alerts` 40/40 rows on the real UUID; `approval_queue` 6/6 rows on the
+      real UUID; zero `NULL`, zero placeholder-UUID rows remain in either table.
+- [x] Corrected `0003_enable_rls_policies.sql`'s hardcoded fallback UUID (`a0000000-...-001`) to
+      the real Cliente Cero UUID for documentation accuracy (the file, not the live policy —
+      live policy left untouched, see below).
+
+**Explicitly NOT done — needs your decision, not a quiet fix, because it changes live read
+behavior on `approval_queue`/`centinela_alerts`:**
+- Whether to drop the permissive allow-all policies (`approval_queue_anon_all`,
+  `centinela_alerts_select/insert/update`) now that the isolation policy and the data both point
+  at one real tenant. Doing so would make `approval_queue_service.py`/`centinela_service.py`
+  (which use the anon-key client with no per-request JWT) start returning **zero rows**, since
+  `auth.jwt()` is NULL for their queries and the isolation policy's fallback default only matches
+  requests with no claim at all if it's re-pointed there — this needs those services switched to
+  the service-role client (bypassing RLS deliberately, the same pattern `get_service_supabase()`
+  already documents) or wired with real per-request sessions, before the permissive policies can
+  safely go. **Not done in this pass** — real production read paths depend on the current
+  permissive behavior; recommend scoping as its own follow-up task rather than bundling here.
+
 **Status going forward:**
 - Phase 1 (T1-T15): reopened as **in-progress, not complete** — real remaining work is fixing
   the tenant_id type mismatch (T10) and either dropping or correcting the 3 non-existent-table
