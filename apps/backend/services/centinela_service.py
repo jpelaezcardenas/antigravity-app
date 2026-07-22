@@ -19,7 +19,8 @@ from typing import Dict, List, Optional
 import logging
 import json
 
-from core.supabase_client import get_supabase
+from core.supabase_client import get_service_supabase
+from core.tenant_context import resolve_cliente_cero_tenant_id
 
 logger = logging.getLogger(__name__)
 
@@ -402,11 +403,13 @@ class CentinelaService:
             return []
 
         try:
-            supabase = get_supabase()
+            supabase = get_service_supabase()
+            tenant_id = resolve_cliente_cero_tenant_id(supabase)
             saved_ids = []
 
             for alert in alerts:
-                result = supabase.table("centinela_alerts").insert(alert).execute()
+                row = alert if "tenant_id" in alert else {**alert, "tenant_id": tenant_id}
+                result = supabase.table("centinela_alerts").insert(row).execute()
                 if result.data:
                     saved_ids.append(result.data[0]["id"])
                 logger.info(f"Alert saved: {alert['rule_id']} for {alert['company_id']}")
@@ -429,7 +432,7 @@ class CentinelaService:
         unavailable, so the Pulso feed always has signal during MVP.
         """
         try:
-            supabase = get_supabase()
+            supabase = get_service_supabase()
             query = (
                 supabase.table("centinela_alerts")
                 .select("*")

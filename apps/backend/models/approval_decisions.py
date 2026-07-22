@@ -41,6 +41,9 @@ class ApprovalDecision:
         vectorization_status: Whether decision was converted to embedding
         vectorization_error: Error message if vectorization failed
         embedding_hash: SHA-256 hash of vectorized content
+        tenant_id: Real tenant UUID (Cliente Cero today), stamped at write time by
+            ApprovalQueueService.enqueue_draft — see hermes-multi-tenant-wrapper/tasks.md,
+            Ground Truth Correction #3
     """
 
     def __init__(
@@ -56,6 +59,7 @@ class ApprovalDecision:
         vectorization_error: Optional[str] = None,
         embedding_hash: Optional[str] = None,
         payload: Optional[Dict[str, Any]] = None,
+        tenant_id: Optional[str] = None,
     ):
         self.id = id
         self.draft_id = draft_id
@@ -68,10 +72,11 @@ class ApprovalDecision:
         self.vectorization_error = vectorization_error
         self.embedding_hash = embedding_hash
         self.payload = payload or {}
+        self.tenant_id = tenant_id
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for database insertion"""
-        return {
+        row = {
             "id": self.id,
             "draft_id": self.draft_id,
             "draft_type": self.draft_type,
@@ -84,3 +89,6 @@ class ApprovalDecision:
             "embedding_hash": self.embedding_hash,
             "payload": self.payload,
         }
+        if self.tenant_id is not None:
+            row["tenant_id"] = self.tenant_id
+        return row

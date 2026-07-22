@@ -1,0 +1,106 @@
+"""Unit tests for tenant_id stamping at write time (hermes-multi-tenant-wrapper,
+Ground Truth Correction #3).
+
+Covers the root-cause fix: ApprovalQueueService.enqueue_draft and CentinelaService.save_alerts
+previously never stamped tenant_id on inserted rows, relying purely on ungrounded column
+defaults. All Supabase access is mocked at the service-role client getter, matching the pattern
+established by test_operator_task_service.py.
+"""
+
+from __future__ import annotations
+
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from services.approval_queue_service import ApprovalQueueService
+from services.centinela_service import CentinelaService
+
+
+def _mock_client_with_tenant(tenant_id: str = "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"):
+    client = MagicMock()
+    client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value.data = {
+        "id": tenant_id
+    }
+    return client
+
+
+class TestEnqueueDraftStampsTenantId:
+    @pytest.mark.asyncio
+    async def test_stamps_resolved_tenant_id_on_insert(self):
+        client = _mock_client_with_tenant()
+        client.table.return_value.insert.return_value.execute.return_value.data = [{}]
+
+        with patch(
+            "services.approval_queue_service.get_service_supabase", return_value=client
+        ):
+            success, decision, error = await ApprovalQueueService.enqueue_draft(
+                draft_id="draft-1",
+                draft_type="risk_review",
+                journal_entry={"risk_score": 91},
+            )
+
+        assert success is True
+        assert error is None
+        assert decision.tenant_id == "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"
+
+        insert_call_args = client.table.return_value.insert.call_args[0][0]
+        assert insert_call_args["tenant_id"] == "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"
+
+    @pytest.mark.asyncio
+    async def test_no_cliente_cero_row_stamps_none_without_crashing(self):
+        client = MagicMock()
+        client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value.data = None
+        client.table.return_value.insert.return_value.execute.return_value.data = [{}]
+
+        with patch(
+            "services.approval_queue_service.get_service_supabase", return_value=client
+        ):
+            success, decision, error = await ApprovalQueueService.enqueue_draft(
+                draft_id="draft-2",
+                draft_type="risk_review",
+                journal_entry={"risk_score": 50},
+            )
+
+        assert success is True
+        assert decision.tenant_id is None
+
+
+class TestSaveAlertsStampsTenantId:
+    def test_stamps_resolved_tenant_id_on_each_alert(self):
+        client = _mock_client_with_tenant()
+        client.table.return_value.insert.return_value.execute.return_value.data = [
+            {"id": "alert-1"}
+        ]
+
+        service = CentinelaService()
+        with patch("services.centinela_service.get_service_supabase", return_value=client):
+            saved_ids = service.save_alerts(
+                [{"rule_id": "R001", "company_id": "ctx-001", "severity": "warning"}]
+            )
+
+        assert saved_ids == ["alert-1"]
+        insert_call_args = client.table.return_value.insert.call_args[0][0]
+        assert insert_call_args["tenant_id"] == "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"
+
+    def test_does_not_override_an_explicitly_provided_tenant_id(self):
+        client = _mock_client_with_tenant()
+        client.table.return_value.insert.return_value.execute.return_value.data = [
+            {"id": "alert-1"}
+        ]
+
+        service = CentinelaService()
+        with patch("services.centinela_service.get_service_supabase", return_value=client):
+            service.save_alerts(
+                [
+                    {
+                        "rule_id": "R001",
+                        "company_id": "ctx-001",
+                        "severity": "warning",
+                        "tenant_id": "other-tenant",
+                    }
+                ]
+            )
+
+        insert_call_args = client.table.return_value.insert.call_args[0][0]
+        assert insert_call_args["tenant_id"] == "other-tenant"

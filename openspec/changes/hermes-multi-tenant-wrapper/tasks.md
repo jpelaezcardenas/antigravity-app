@@ -112,8 +112,8 @@ behavioral change, since the permissive policies already make every read tenant-
       the real Cliente Cero UUID for documentation accuracy (the file, not the live policy —
       live policy left untouched, see below).
 
-**Explicitly NOT done — needs your decision, not a quiet fix, because it changes live read
-behavior on `approval_queue`/`centinela_alerts`:**
+**Explicitly NOT done in the previous pass — needs your decision, not a quiet fix, because it
+changes live read behavior on `approval_queue`/`centinela_alerts`:**
 - Whether to drop the permissive allow-all policies (`approval_queue_anon_all`,
   `centinela_alerts_select/insert/update`) now that the isolation policy and the data both point
   at one real tenant. Doing so would make `approval_queue_service.py`/`centinela_service.py`
@@ -124,6 +124,46 @@ behavior on `approval_queue`/`centinela_alerts`:**
   already documents) or wired with real per-request sessions, before the permissive policies can
   safely go. **Not done in this pass** — real production read paths depend on the current
   permissive behavior; recommend scoping as its own follow-up task rather than bundling here.
+
+---
+
+## Ground Truth Correction #3 (2026-07-21) — root cause + approved 2-layer fix
+
+**Root cause found**: neither `approval_queue_service.py` nor `centinela_service.py` ever stamps
+`tenant_id` on writes. `ApprovalDecision` (the model behind `approval_queue`) has no `tenant_id`
+field at all — `to_dict()` never includes it, so every insert relies purely on whatever the
+column's server-side default happens to be, never a real value. `CentinelaService.save_alerts`
+inserts each `alert` dict as received, same gap. This is why historical data drifted to
+NULL/mismatched placeholders (Correction #2) — nothing is stamping the truth at write time, unlike
+`operator_task_service.py` (Change F), which already does this correctly via
+`_resolve_cliente_cero_tenant_id`. The permissive RLS policies are a symptom of the same gap: both
+services query via `get_supabase()` (anon-key, no per-request JWT reaches Postgres).
+
+**Decision (Juan David, 2026-07-21): implement both layers now, with TDD.**
+
+**Layer 1 — stamp `tenant_id` at write time (the fix for the root cause):**
+- [x] Extract `operator_task_service._resolve_cliente_cero_tenant_id` into a shared
+      `core/tenant_context.py::resolve_cliente_cero_tenant_id(client)`; `operator_task_service.py`
+      keeps its private wrapper delegating to it (zero change to that module's existing tests,
+      which patch the private name).
+- [x] `ApprovalDecision` model: add `tenant_id: Optional[str] = None`, included in `to_dict()`.
+- [x] `ApprovalQueueService.enqueue_draft`: resolve the Cliente Cero tenant and stamp it on the
+      decision before insert.
+- [x] `CentinelaService.save_alerts`: resolve the Cliente Cero tenant and stamp `alert["tenant_id"]`
+      before insert (only if not already present in the input dict).
+
+**Layer 2 — move both services onto the service-role client (only after Layer 1 lands):**
+- [x] `approval_queue_service.py`: switch every `get_supabase()` call to `get_service_supabase()`.
+- [x] `centinela_service.py`: switch every `get_supabase()` call to `get_service_supabase()`.
+- Live RLS policies on both tables are left untouched — they become inert for these two services
+  (service-role bypasses RLS by design) but remain harmless/documentary. Cleaning up the now-moot
+  permissive policies is optional hygiene, not required for isolation to actually work, and is not
+  done here.
+- [x] Updated existing test mocks (`test_centinela_alerts_get.py`) to patch
+      `get_service_supabase` instead of `get_supabase`; added new unit tests asserting `tenant_id`
+      is stamped on `enqueue_draft`/`save_alerts` writes.
+- [x] Full targeted backend test suite green; TDD failing-tests-first followed for the new
+      stamping behavior.
 
 **Status going forward:**
 - Phase 1 (T1-T15): reopened as **in-progress, not complete** — real remaining work is fixing

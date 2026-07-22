@@ -15,6 +15,7 @@ import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
 from core.supabase_client import get_service_supabase
+from core.tenant_context import resolve_cliente_cero_tenant_id
 from services.approval_queue_service import ApprovalQueueService
 
 logger = logging.getLogger(__name__)
@@ -26,8 +27,10 @@ Result = Tuple[bool, Optional[Dict[str, Any]], Optional[str]]
 
 
 def _resolve_cliente_cero_tenant_id(client) -> Optional[str]:
-    result = client.table("tenants").select("id").eq("is_cliente_cero", True).single().execute()
-    return result.data["id"] if result.data else None
+    """Thin wrapper kept for backward compatibility with existing test patches
+    (`patch("services.operator_task_service._resolve_cliente_cero_tenant_id", ...)`);
+    delegates to the shared core.tenant_context helper (Ground Truth Correction #3)."""
+    return resolve_cliente_cero_tenant_id(client)
 
 
 def create_task(task_type: str, payload: Dict[str, Any]) -> Result:

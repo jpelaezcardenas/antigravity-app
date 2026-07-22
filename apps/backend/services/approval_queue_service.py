@@ -12,7 +12,8 @@ from datetime import datetime
 from typing import Tuple, Dict, Any, List, Optional
 
 from agents.agent_critic import validate_journal_entry
-from core.supabase_client import get_supabase
+from core.supabase_client import get_service_supabase
+from core.tenant_context import resolve_cliente_cero_tenant_id
 from models.approval_decisions import ApprovalDecision, ApprovalStatus, VectorizationStatus
 from services.embeddings_service import EmbeddingsService
 
@@ -37,6 +38,7 @@ def _row_to_decision(row: Dict[str, Any]) -> ApprovalDecision:
         vectorization_error=row.get("vectorization_error"),
         embedding_hash=row.get("embedding_hash"),
         payload=row.get("payload") or {},
+        tenant_id=row.get("tenant_id"),
     )
 
 
@@ -71,6 +73,9 @@ class ApprovalQueueService:
                     )
                     return False, None, critic_reason
 
+            supabase = get_service_supabase()
+            tenant_id = resolve_cliente_cero_tenant_id(supabase)
+
             decision = ApprovalDecision(
                 id=str(uuid.uuid4()),
                 draft_id=draft_id,
@@ -81,9 +86,9 @@ class ApprovalQueueService:
                 created_at=datetime.utcnow(),
                 vectorization_status=VectorizationStatus.PENDING,
                 payload=journal_entry,
+                tenant_id=tenant_id,
             )
 
-            supabase = get_supabase()
             supabase.table("approval_queue").insert(decision.to_dict()).execute()
 
             logger.info(
@@ -106,7 +111,7 @@ class ApprovalQueueService:
         List drafts across all draft_type values, optionally filtered by
         status, draft_type, and tenant_id.
         """
-        supabase = get_supabase()
+        supabase = get_service_supabase()
         query = supabase.table("approval_queue").select("*")
 
         if status:
@@ -131,7 +136,7 @@ class ApprovalQueueService:
         back the approval).
         """
         try:
-            supabase = get_supabase()
+            supabase = get_service_supabase()
 
             existing = (
                 supabase.table("approval_queue")
@@ -182,7 +187,7 @@ class ApprovalQueueService:
     ) -> Tuple[bool, Optional[ApprovalDecision], Optional[str]]:
         """Reject a pending draft."""
         try:
-            supabase = get_supabase()
+            supabase = get_service_supabase()
 
             existing = (
                 supabase.table("approval_queue")
@@ -226,7 +231,7 @@ class ApprovalQueueService:
         Synchronous and non-blocking at the application level (DB insert is fast).
         Exceptions are logged but do not roll back the approval.
         """
-        supabase = get_supabase()
+        supabase = get_service_supabase()
         try:
             supabase.table("executor_outbox").insert(
                 {
@@ -250,7 +255,7 @@ class ApprovalQueueService:
     @staticmethod
     async def _vectorize_and_persist(decision: ApprovalDecision) -> None:
         """Background task: vectorize an approved decision, never raises."""
-        supabase = get_supabase()
+        supabase = get_service_supabase()
         try:
             supabase.table("approval_queue").update(
                 {"vectorization_status": VectorizationStatus.IN_PROGRESS.value}

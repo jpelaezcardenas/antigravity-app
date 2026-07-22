@@ -9,7 +9,7 @@ class TestGetAlertsForCompany:
     def test_falls_back_to_demo_when_supabase_unavailable(self):
         service = CentinelaService()
         with patch(
-            "services.centinela_service.get_supabase",
+            "services.centinela_service.get_service_supabase",
             side_effect=Exception("supabase not configured"),
         ):
             alerts = service.get_alerts_for_company("ctx-001", limit=20)
@@ -21,7 +21,7 @@ class TestGetAlertsForCompany:
     def test_severity_filter_demo_fallback(self):
         service = CentinelaService()
         with patch(
-            "services.centinela_service.get_supabase",
+            "services.centinela_service.get_service_supabase",
             side_effect=Exception("offline"),
         ):
             critical = service.get_alerts_for_company("ctx-001", severity="critical")
@@ -53,7 +53,7 @@ class TestGetAlertsForCompany:
         mock_supabase.table.return_value = mock_query
 
         with patch(
-            "services.centinela_service.get_supabase",
+            "services.centinela_service.get_service_supabase",
             return_value=mock_supabase,
         ):
             alerts = service.get_alerts_for_company("ctx-001")
@@ -70,7 +70,7 @@ class TestGetAlertsEndpoint:
         client = TestClient(app)
         # Force fallback path so we don't need Supabase configured for the test
         with patch(
-            "services.centinela_service.get_supabase",
+            "services.centinela_service.get_service_supabase",
             side_effect=Exception("offline"),
         ):
             resp = client.get("/api/v1/centinela/alerts/ctx-001")
