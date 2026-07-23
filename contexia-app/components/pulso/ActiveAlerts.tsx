@@ -17,7 +17,11 @@ function toSeverity(backendSeverity: string): AlertSeverity {
 function toActiveAlert(alert: CentinelaAlert, index: number): ActiveAlert {
   const severity = toSeverity(alert.severity);
   return {
-    id: alert.rule_id || `alert-${index}`,
+    // rule_id is NOT unique per alert row (the same rule can fire once per
+    // affected document — confirmed live, e.g. many SHADOW_GL_DISCREPANCY
+    // rows share one rule_id), so the index must always be part of the key
+    // or React logs duplicate-key warnings and can misrender the list.
+    id: `${alert.rule_id || "alert"}-${index}`,
     icon: SEVERITY_ICON[severity],
     severity,
     message: alert.description ? `${alert.title} — ${alert.description}` : alert.title,
