@@ -6,7 +6,7 @@
     "scope_source": "openspec/changes/<id>/tasks.md",
     "valid_status": ["pending", "in_progress", "done", "blocked"]
   },
-  "active": "chatwoot-hermes-taty-bridge",
+  "active": "approval-queue-tenant-scoping",
   "features": [
     {
       "id": "adopt-gbrain-second-brain",
@@ -15,8 +15,13 @@
     },
     {
       "id": "chatwoot-hermes-taty-bridge",
+      "status": "blocked",
+      "summary": "Task Groups 1-14 done except 14.3/14.4 (BLOCKED — Docker not installed, no Meta WhatsApp Business number/tunnel yet). Not archived. Developed on feature/chatwoot-hermes-taty-bridge, separate from this worktree."
+    },
+    {
+      "id": "approval-queue-tenant-scoping",
       "status": "in_progress",
-      "summary": "Task Groups 5-10: apps/chatwoot-bridge/ FastAPI service bridging Chatwoot WhatsApp to local Hermes Gateway (Taty). Task Groups 1-4 (backend intake endpoint) already done."
+      "summary": "Approval Queue enqueue/list/approve/reject scoped to the caller's resolved tenant (per-tenant-client-access pattern); Cliente Cero-resolved caller = operator sees all tenants. Developed in isolated worktree .claude/worktrees/approval-queue-tenant-scoping."
     }
   ]
 }
