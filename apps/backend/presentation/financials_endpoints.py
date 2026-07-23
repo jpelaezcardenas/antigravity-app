@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import date
-from services.financials_service import compute_pulso_daily_snapshot
+from services.financials_service import compute_pulso_daily_snapshot, compute_liquidity_bridge
 from core.supabase_client import get_supabase
 from core.deps import get_current_user
 from core.tenant_context import resolve_caller_tenant_id
@@ -36,6 +36,20 @@ def _empty_snapshot() -> dict:
         "dinero_disponible": 0,
         "ventas_ayer": 0,
         "gastos_ayer": 0,
+        "status": "empty",
+    }
+
+
+def _empty_liquidity_bridge() -> dict:
+    """Zeroed liquidity bridge for an authenticated caller with no resolved tenant —
+    same non-leak rule as `_empty_snapshot` (pwa-tenant-aware-screens Stage 3)."""
+    today = date.today()
+    return {
+        "initial_balance": 0,
+        "inflows": 0,
+        "outflows": 0,
+        "final_balance": 0,
+        "period": f"{today.year:04d}-{today.month:02d}",
         "status": "empty",
     }
 
@@ -84,4 +98,45 @@ async def get_financials(user: dict = Depends(get_current_user)):
         raise HTTPException(
             status_code=500,
             detail=f"Error computing financial snapshot: {str(e)}"
+        )
+
+
+@router.get("/liquidity-bridge")
+async def get_liquidity_bridge(user: dict = Depends(get_current_user)):
+    """
+    GET /api/v1/financials/liquidity-bridge
+
+    Returns the monthly liquidity bridge derived from account 1110 (Bancos) in the Shadow
+    GL: cumulative balance the day before the current month starts, plus this month's
+    inflows/outflows, plus the resulting final balance (pwa-tenant-aware-screens Stage 3 /
+    design.md D3, spec `pulso-financials-api`).
+
+    Tenant resolution: same shared policy as `GET /api/v1/financials`
+    (`core.tenant_context.resolve_caller_tenant_id`) — own resolved tenant, Cliente Cero only
+    for the staging identity, empty for an authenticated caller with no resolved tenant.
+
+    Response (all amounts in COP minor units — cents):
+    {
+        "initial_balance": 500000000,
+        "inflows": 200000000,
+        "outflows": 80000000,
+        "final_balance": 620000000,
+        "period": "2026-07",
+        "status": "ready"
+    }
+    """
+    try:
+        tenant_id = await resolve_caller_tenant_id(
+            user, cliente_cero_resolver=_resolve_cliente_cero_tenant_id
+        )
+        if tenant_id is None:
+            return _empty_liquidity_bridge()
+
+        today = date.today()
+        bridge = compute_liquidity_bridge(tenant_id, today.year, today.month)
+        return bridge
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error computing liquidity bridge: {str(e)}"
         )

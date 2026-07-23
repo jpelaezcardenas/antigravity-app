@@ -119,6 +119,79 @@ def compute_pulso_snapshot(tenant_id: str, year: int, month: int) -> Dict[str, A
     }
 
 
+def compute_liquidity_bridge(tenant_id: str, year: int, month: int) -> Dict[str, Any]:
+    """
+    Compute the monthly liquidity bridge for a tenant, scoped to account 1110
+    (Bancos) only — pwa-tenant-aware-screens Stage 3 / design.md D3.
+
+    Args:
+        tenant_id: Tenant UUID
+        year: Year (e.g., 2026)
+        month: Month (1-12)
+
+    Returns:
+        Dict with keys:
+        - initial_balance (int): Cumulative 1110 balance as of the day before
+          the month starts, in COP minor units.
+        - inflows (int): Sum of 1110 debits within the month, in COP minor units.
+        - outflows (int): Sum of 1110 credits within the month, in COP minor units.
+        - final_balance (int): initial_balance + inflows - outflows. Equals
+          `_compute_caja_real_balance` for the last day of the month — the two
+          independently-derived values must not diverge.
+        - period (str): "YYYY-MM".
+        - status (str): "empty" if the tenant has zero 1110 lines at all
+          (neither before nor within the month), else "ready".
+    """
+    supabase = get_supabase()
+
+    from calendar import monthrange
+
+    _, last_day = monthrange(year, month)
+    month_start = date(year, month, 1)
+    month_end = date(year, month, last_day)
+    day_before_month = month_start - timedelta(days=1)
+
+    initial_balance = _compute_caja_real_balance(supabase, tenant_id, day_before_month)
+
+    prior_lines_result = (
+        supabase.table("erp_journal_lines")
+        .select("debit_minor, erp_journal_entries!inner(entry_date)")
+        .eq("tenant_id", tenant_id)
+        .eq("account_code", "1110")
+        .lte("erp_journal_entries.entry_date", day_before_month.isoformat())
+        .execute()
+    )
+    has_prior_lines = bool(prior_lines_result.data)
+
+    result = (
+        supabase.table("erp_journal_lines")
+        .select(
+            "debit_minor, credit_minor, erp_journal_entries!inner(entry_date)"
+        )
+        .eq("tenant_id", tenant_id)
+        .eq("account_code", "1110")
+        .gte("erp_journal_entries.entry_date", month_start.isoformat())
+        .lte("erp_journal_entries.entry_date", month_end.isoformat())
+        .execute()
+    )
+    lines = result.data or []
+
+    inflows = sum(line.get("debit_minor", 0) or 0 for line in lines)
+    outflows = sum(line.get("credit_minor", 0) or 0 for line in lines)
+    final_balance = initial_balance + inflows - outflows
+
+    status = "empty" if not has_prior_lines and not lines else "ready"
+
+    return {
+        "initial_balance": initial_balance,
+        "inflows": inflows,
+        "outflows": outflows,
+        "final_balance": final_balance,
+        "period": f"{year:04d}-{month:02d}",
+        "status": status,
+    }
+
+
 def compute_pulso_daily_snapshot(tenant_id: str, as_of_date: date) -> Dict[str, Any]:
     """
     Compute the "Pulso diario" snapshot for a tenant as of a given date — the
