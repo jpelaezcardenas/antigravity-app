@@ -103,7 +103,20 @@ Stage 11 (Deploy to Production) is no longer optional.
 
 ### Reference Files
 
-- **DEPLOYMENT_STAGE/** — Symlink to `ai-specs/openspec-deployment-standard/`
+- **DEPLOYMENT_STAGE/** — A self-contained, repo-local copy of the shared standard whose canonical
+  source is the workspace-level `../ai-specs/openspec-deployment-standard/` (sibling to this repo,
+  shared across all Contexia projects — see `../ai-specs/openspec-deployment-standard/INTEGRATION_GUIDE.md`).
+  **Not a live symlink**, despite earlier planning docs describing it as one: `git ls-tree HEAD
+  DEPLOYMENT_STAGE` shows a real tracked directory (mode `040000`), confirmed 2026-07-23. Keeping
+  it a real directory is deliberate, not an oversight left to fix — Railway/Vercel builds and any
+  fresh clone of this repo alone never have the sibling `../ai-specs/` workspace directory present,
+  so a literal symlink pointing outside this repo would dangle in exactly those environments (the
+  same class of "assumed the file was there, it wasn't" incident CLAUDE.md §9 documents for
+  `contexia-app/`). Consequence: `DEPLOYMENT_STAGE/CHECKPOINTS.md` in this repo has genuinely
+  diverged from the canonical copy (this repo's own Railway-branch-tracking and Next.js
+  static-export checkpoints were never backported) — do not silently "fix" this by converting to a
+  real symlink; if reconciling the drift, backport content into the canonical source deliberately
+  and confirm each checkpoint actually generalizes to every project sharing that standard first.
   - `DEPLOYMENT_STAGE.md` — Full 11-step workflow
   - `CHECKPOINTS.md` — Objective criteria for "done" (evolves via self-improving loop)
   - `checklist-vercel.md` — Frontend deployment steps
