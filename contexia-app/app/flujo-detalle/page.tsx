@@ -26,7 +26,7 @@ export default function FlujoDetallePage() {
       <FlowCompositionCard items={data.flowComposition} />
 
       {/* Cash Flow Waterfall / Bridge */}
-      <MonthlyLiquidityBridgeCard bridge={data.liquidityBridge} />
+      <MonthlyLiquidityBridgeCard />
 
       {/* Health Quadrant Details */}
       <FinancialHealthStatusGrid metrics={data.healthMetrics} />
