@@ -34,8 +34,9 @@ api_router.include_router(centinela_agents_router, prefix="/agents/centinela", t
 api_router.include_router(cobro_router, prefix="/cobro", tags=["cobro"])
 api_router.include_router(agents_router, prefix="/agents", tags=["agents"])
 # taty_router intentionally shares the /agents prefix. Its paths (/agents/ask,
-# /agents/health) do not collide with agents_router's paths (/agents/taty/ask,
-# /agents/social/..., etc.), so both can be mounted at the same prefix.
+# /agents/health) do not collide with agents_router's paths (/agents/social/...,
+# etc.), so both can be mounted at the same prefix. (The deprecated
+# /agents/taty/ask wrapper route was deleted — taty-per-tenant-profiles, task 5.)
 api_router.include_router(taty_router, prefix="/agents", tags=["taty"])
 api_router.include_router(telegram_router, prefix="/channels", tags=["telegram"])
 

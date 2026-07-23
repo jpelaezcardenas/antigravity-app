@@ -85,3 +85,71 @@ punta a punta:
   — ese directorio nunca existió en el repo.
 
 **Estado:** ninguna tarea en curso. `feature_list.json.active = null`.
+
+---
+
+## taty-per-tenant-profiles — task 1 (2026-07-23)
+Service profile resolver: DEFAULT_PROFILE + `_get_tenant_profile(tenant_id)` in taty_service.py,
+replacing hardcoded AGENT_PROFILES. `_error_response` extended with optional `error_code`.
+7 new tests green (test_taty_tenant_profiles.py). Reviewer: APPROVED.
+Deviation: `_get_agent_profile` kept as transitional delegator — task 2 removes it when `ask()`
+is rewired to take `tenant_id` directly.
+## taty-per-tenant-profiles — task 2 (2026-07-23)
+ask(company_id) -> ask(tenant_id) hard rename; _get_agent_profile deleted; _retrieve_chunks keys
+off profile["kb_client_id"]; _build_prompt omits régimen clause when None (GROUND_TRUTH
+compliance). 6 new tests green (test_taty_ask_tenant_scoping.py), task 1's 7 still green.
+3 live callers now broken by design (fixed in tasks 3/4/5, same change). Reviewer: APPROVED.
+Reviewer flagged unrelated pre-existing full-suite issue in test_shadow_gl_stage8_e2e.py for task 7.
+
+## taty-per-tenant-profiles — task 3 (2026-07-23)
+Closed the /api/v1/agents/ask auth hole: Depends(get_current_user) + canonical 3-way tenant
+resolution (own tenant / staging->Cliente Cero / unresolved->in-band tenant_not_resolved error,
+never Cliente Cero) on taty_endpoints.py. company_id in request body now fully ignored for
+resolution (was previously used, unverified, to read any profile). GET delegates to POST's
+single resolution path. 5 new tests, 18/18 green with tasks 1-2. Reviewer ran an adversarial
+bypass trace by hand (missing/malformed auth, staging+spoofed body, resolved+spoofed body,
+authenticated-unresolved) — no leak path found. APPROVED.
+
+## taty-per-tenant-profiles — task 4 (2026-07-23)
+Fixed the Telegram webhook's broken ask(company_id=...) call (task 2's regression). New
+_resolve_tenant_for_company_id(company_id) translates telegram_chat_mappings.company_id ->
+tenants.id before calling taty.ask(tenant_id=...); untranslatable id sends the existing "no
+configurado" reply and never calls ask(). Social Ops onboarding branch (same mapping table)
+untouched. 5 new tests, 23/23 green with tasks 1-3. Reviewer: APPROVED.
+
+## taty-per-tenant-profiles — task 5 (2026-07-23)
+Retirements: deleted deprecated POST /api/v1/agents/taty/ask route (AskRequest model kept,
+shared with unrelated social_generate_content route); deleted taty_intent_router.py + its test
+(dead code, zero live callers, per design D4). Grep-clean, 89/89 agents/taty tests pass,
+23/23 tenant-scoping regression suite green. Reviewer: APPROVED. Flagged stale comment in
+router.py for task 10.
+
+## taty-per-tenant-profiles — task 6 (2026-07-23)
+Mandatory existing-test audit: negative result, zero pre-existing tests affected by tasks 1-5's
+ask() rename / AGENT_PROFILES deletion / taty_intent_router deletion. Reviewer independently
+re-ran every grep + classification, confirmed genuine. Found 2 pre-existing unrelated
+TestClient/httpx-starlette incompatibility failures (test_centinela_alerts_get.py,
+test_secure_llm.py) for task 7 awareness.
+
+## taty-per-tenant-profiles — task 7 (2026-07-23)
+Mandatory full-suite + DB verification. 23/23 targeted tests green. Broader suite:
+648 passed / 25 failed / 13 errors, none traceable to this change's diff (missing local Supabase
+creds, httpx/starlette TestClient incompatibility, Windows-encoding Siigo bug, unrelated
+feature-flag/env/float-tolerance bugs — all pre-existing). Live DB verification deferred to
+Stage 11 (no Supabase creds in this local worktree). Report:
+reports/2026-07-23-step-7-unit-test-and-db-verification.md. Reviewer independently reproduced
+the full failure set byte-for-byte + read 6 tracebacks directly + checked indirect coupling
+via router.py imports. APPROVED.
+
+## taty-per-tenant-profiles — task 8 (2026-07-23)
+Mandatory manual curl testing. Locally testable: 8.2 (unauthenticated staging path, routes
+correctly but 500s due to no local Supabase — confirmed identical to financials_endpoints.py's
+existing pattern, not a regression), 8.6 (deleted route -> 404), 8.7 (malformed body -> 422).
+8.3-8.5 (provisioned-client/spoof/unresolved-tenant JWT scenarios) honestly deferred to Stage 11
+-- no way to mint a real Supabase JWT locally. Reviewer added Stage 11 item 11.6b for the
+unresolved-tenant production check (gap task 8 surfaced). APPROVED.
+
+## taty-per-tenant-profiles — task 10 (2026-07-23)
+Docs: fixed 2 stale docstring spots in taty_endpoints.py (task 3 had already done most of this),
+fixed the stale /agents/taty/ask comment in router.py flagged by task 5. ARCHITECTURE.md/AGENTES.md
+needed no changes (genuine zero-hit grep). 23/23 tests still green. Reviewer: APPROVED.
