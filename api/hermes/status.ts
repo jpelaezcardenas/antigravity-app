@@ -3,10 +3,17 @@
  * El Bunker (frontend Vercel) llama este endpoint para hablar con el Hermes Gateway local
  * vía el túnel público (cloudflared). Classic Vercel Node function: firma (req, res).
  *
- * POST /api/hermes/status → Vercel function → cloudflared tunnel → localhost:8644/webhooks/os-status
+ * POST /api/hermes/status → Vercel function → cloudflared tunnel → localhost:8644/health
+ *
+ * Corrected 2026-07-22: the gateway's generic webhook platform (platforms.webhook,
+ * gateway/platforms/webhook.py) only exposes POST /webhooks/{route_name} for
+ * configured, HMAC-signed routes that get turned into real agent turns — there
+ * is no "os-status" route, and `deliver_only` routes require a real delivery
+ * target (telegram/discord/slack/etc.), not a bare status ack. The module also
+ * registers an unauthenticated GET /health ({"status":"ok","platform":"webhook"})
+ * purpose-built for exactly this liveness check, so we call that instead of
+ * inventing/signing a custom route. HERMES_WEBHOOK_SECRET is no longer used here.
  */
-
-import { createHmac } from 'crypto';
 
 // Minimal request/response shape for Vercel's classic Node runtime (no @vercel/node dep installed)
 type Req = { method?: string; headers?: Record<string, string | string[] | undefined> };
@@ -18,7 +25,6 @@ type Res = {
 // Fallback URL (env var) used only if the Supabase lookup fails.
 const HERMES_GATEWAY_URL_FALLBACK =
   process.env.NEXT_PUBLIC_HERMES_GATEWAY_URL || 'https://ladder-sheet-suggested-buys.trycloudflare.com';
-const HERMES_WEBHOOK_SECRET = process.env.HERMES_WEBHOOK_SECRET || '';
 
 // The cloudflared quick-tunnel URL is ephemeral. The PC-side wrapper writes the
 // current URL into Supabase (table public.hermes_tunnel) on every tunnel start,
@@ -66,11 +72,6 @@ async function resolveGatewayUrl(): Promise<string> {
   return HERMES_GATEWAY_URL_FALLBACK;
 }
 
-function computeHmacSignature(secret: string, payload: string): string {
-  // Hermes generic webhook scheme: hex HMAC-SHA256 over the raw body
-  return createHmac('sha256', secret).update(payload).digest('hex');
-}
-
 export default async function handler(req: Req, res: Res): Promise<void> {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -90,28 +91,17 @@ export default async function handler(req: Req, res: Res): Promise<void> {
   const gatewayUrl = await resolveGatewayUrl();
 
   try {
-    const payload = JSON.stringify({
-      timestamp: new Date().toISOString(),
-      source: 'bunker-vercel',
-    });
-
-    const signature = computeHmacSignature(HERMES_WEBHOOK_SECRET, payload);
-
     // 8s abort guard so we fail fast instead of hitting Vercel's function timeout
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
 
-    const gatewayResponse = await fetch(`${gatewayUrl}/webhooks/os-status`, {
-      method: 'POST',
+    const gatewayResponse = await fetch(`${gatewayUrl}/health`, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        // Hermes generic webhook auth: X-Webhook-Signature = hex HMAC-SHA256(body)
-        'X-Webhook-Signature': signature,
         // cloudflared/localtunnel interstitial bypass + non-browser UA
         'bypass-tunnel-reminder': 'true',
         'User-Agent': 'contexia-bunker/1.0',
       },
-      body: payload,
       signal: controller.signal,
     }).finally(() => clearTimeout(timeout));
 
