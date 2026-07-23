@@ -246,36 +246,13 @@ def _synthesize_kb_reply(message: str, chunks: list) -> str:
 def find_or_create_lead(whatsapp_phone: str, full_name: Optional[str] = None) -> str:
     """Finds a crm_leads row by whatsapp_phone, or creates a new NUEVOS lead if none exists.
     whatsapp_phone is the identity/mapping key (Change B's column, confirmed live) — no separate
-    whatsapp_chat_mappings table (design.md Decision 2)."""
-    client = get_service_supabase()
-    existing = (
-        client.table("crm_leads")
-        .select("id")
-        .eq("whatsapp_phone", whatsapp_phone)
-        .execute()
-    )
-    if existing.data:
-        return existing.data[0]["id"]
+    whatsapp_chat_mappings table (design.md Decision 2).
 
-    tenant_result = (
-        client.table("tenants").select("id").eq("is_cliente_cero", True).single().execute()
-    )
-    tenant_id = tenant_result.data["id"]
-
-    created = (
-        client.table("crm_leads")
-        .insert(
-            {
-                "tenant_id": tenant_id,
-                "whatsapp_phone": whatsapp_phone,
-                "full_name": full_name or whatsapp_phone,
-                "stage": "NUEVOS",
-                "source": "whatsapp",
-            }
-        )
-        .execute()
-    )
-    return created.data[0]["id"]
+    Delegates to CrmService.whatsapp_intake (tenant-scoped find-or-create) rather than querying
+    Supabase directly — see taty-lead-router-tenant-scoping's design.md Decision 1. Do not
+    reintroduce a duplicate, tenant-less crm_leads lookup here."""
+    result = get_crm_service().whatsapp_intake(whatsapp_phone, full_name=full_name)
+    return result["lead_id"]
 
 
 def route_lead_message(lead_id: str, message: str) -> Dict[str, Any]:
