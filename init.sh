@@ -62,8 +62,39 @@ fi
 
 echo ""
 echo "── 4. Backend tests (opt-in: RUN_TESTS=1) ──────────────"
-if [ "${RUN_TESTS:-0}" = "1" ] && [ -n "$PY" ] && [ -d "apps/backend" ]; then
-  if "$PY" -m pytest apps/backend -q 2>&1 | tail -15; then ok "Backend tests passed"; else fail "Backend tests failed"; EXIT_CODE=1; fi
+if [ "${RUN_TESTS:-0}" = "1" ] && [ -d "apps/backend" ]; then
+  # Prefer whichever interpreter actually has pytest installed — on this repo's
+  # dev machines, `command -v python3` can resolve to an unrelated interpreter
+  # (e.g. a Windows Store alias) with no project dependencies installed, while
+  # `python` is the real one. Trying both and picking the one that imports
+  # pytest avoids a silent "wrong interpreter" false negative.
+  PYTEST_PY=""
+  for candidate in python3 python; do
+    if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c "import pytest" >/dev/null 2>&1; then
+      PYTEST_PY="$candidate"
+      break
+    fi
+  done
+
+  if [ -z "$PYTEST_PY" ]; then
+    fail "No interpreter with pytest installed found (tried python3, python)"
+    EXIT_CODE=1
+  else
+    # Run pytest directly (not through a pipe) so its own exit code drives the
+    # gate — piping through `tail` here previously made this always report
+    # success, since `if pipeline; then` checks the LAST command's exit status
+    # (tail's, which is always 0), not pytest's. See taty-lead-router-tenant-
+    # scoping's final review report for the incident this was found in.
+    pytest_output=$("$PYTEST_PY" -m pytest apps/backend -q 2>&1)
+    pytest_status=$?
+    echo "$pytest_output" | tail -15
+    if [ $pytest_status -eq 0 ]; then
+      ok "Backend tests passed"
+    else
+      fail "Backend tests failed (exit code $pytest_status)"
+      EXIT_CODE=1
+    fi
+  fi
 else
   warn "Skipped (set RUN_TESTS=1 to run backend tests; reviewer/CI runs them per change)"
 fi
