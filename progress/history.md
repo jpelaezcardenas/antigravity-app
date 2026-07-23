@@ -100,3 +100,12 @@ off profile["kb_client_id"]; _build_prompt omits régimen clause when None (GROU
 compliance). 6 new tests green (test_taty_ask_tenant_scoping.py), task 1's 7 still green.
 3 live callers now broken by design (fixed in tasks 3/4/5, same change). Reviewer: APPROVED.
 Reviewer flagged unrelated pre-existing full-suite issue in test_shadow_gl_stage8_e2e.py for task 7.
+
+## taty-per-tenant-profiles — task 3 (2026-07-23)
+Closed the /api/v1/agents/ask auth hole: Depends(get_current_user) + canonical 3-way tenant
+resolution (own tenant / staging->Cliente Cero / unresolved->in-band tenant_not_resolved error,
+never Cliente Cero) on taty_endpoints.py. company_id in request body now fully ignored for
+resolution (was previously used, unverified, to read any profile). GET delegates to POST's
+single resolution path. 5 new tests, 18/18 green with tasks 1-2. Reviewer ran an adversarial
+bypass trace by hand (missing/malformed auth, staging+spoofed body, resolved+spoofed body,
+authenticated-unresolved) — no leak path found. APPROVED.

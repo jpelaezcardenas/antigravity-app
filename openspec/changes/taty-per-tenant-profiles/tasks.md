@@ -45,7 +45,7 @@
 
 ## 3. Backend: Endpoint Auth + Tenant Resolution (TDD)
 
-- [ ] 3.1 Write failing tests in `apps/backend/tests/test_taty_endpoints_tenant_scoping.py`
+- [x] 3.1 Write failing tests in `apps/backend/tests/test_taty_endpoints_tenant_scoping.py`
       (mirrors `test_financials_endpoint_tenant_scoping.py` — call handlers directly with
       hand-built user dicts): resolved user → `ask` called with their tenant (scenario
       "Authenticated client is scoped to their own tenant"); staging user → Cliente Cero
@@ -53,12 +53,16 @@
       unresolved → `error_code="tenant_not_resolved"`, Cliente Cero resolver asserted NEVER
       called (scenario "Unresolved authenticated caller does not leak another tenant"); user A
       + spoofed `company_id` of tenant B → `ask` called with A's tenant (scenario "A supplied
-      `company_id` cannot be used to read another tenant's profile")
-- [ ] 3.2 Add `Depends(get_current_user)` + canonical resolution block (financials pattern) to
+      `company_id` cannot be used to read another tenant's profile") —
+      `progress/impl_taty-per-tenant-profiles-task3.md`
+- [x] 3.2 Add `Depends(get_current_user)` + canonical resolution block (financials pattern) to
       POST/GET `/api/v1/agents/ask` in `apps/backend/presentation/taty_endpoints.py`; make
       `TatyAskRequest.company_id` `Optional` and ignored for resolution; add optional
-      `error_code` to `TatyAskResponse`; add local `_resolve_cliente_cero_tenant_id()`
-- [ ] 3.3 Tests from 3.1 green
+      `error_code` to `TatyAskResponse`; add local `_resolve_cliente_cero_tenant_id()`. GET
+      delegates to POST's handler (single resolution path). Reviewed APPROVED with adversarial
+      bypass trace — no path found where a caller reads another tenant's profile.
+      `progress/review_taty-per-tenant-profiles-task3.md`
+- [x] 3.3 Tests from 3.1 green (5/5, 18/18 with tasks 1-2)
 
 ## 4. Backend: Telegram Tenant Translation (TDD)
 
