@@ -180,9 +180,15 @@
 
 ## 8. Migration
 
-- [ ] 8.1 Create `apps/backend/migrations/0033_approval_queue_tenant_not_null.sql` per
+- [x] 8.1 Create `apps/backend/migrations/0033_approval_queue_tenant_not_null.sql` per
       `design.md` (idempotent: safety re-backfill, `DROP DEFAULT`, `SET NOT NULL`)
-- [ ] 8.2 Validate: `npm run migrate:test` (or repo-equivalent dry-run)
+- [x] 8.2 Validate: `npm run migrate:test` (or repo-equivalent dry-run) — no `migrate:test`
+      script exists anywhere in the repo (checked root `package.json`, `contexia-app/`,
+      `contexia-wizard/`, `frontend/dashboard/`; no `apps/backend/package.json` at all); did a
+      static SQL syntax review instead — balanced `DO $$ ... END $$;` / `IF ... THEN ...
+      END IF;`, guard idiom matches `0001_add_tenant_id_columns.sql`/`0003_enable_rls_policies.sql`'s
+      `information_schema.columns` pattern, all statements semicolon-terminated (see
+      `progress/impl_section8_migration_file.md` for full detail)
 - [ ] 8.3 **Ask the founder for explicit confirmation before applying to the live database**
       (schema change on a production table)
 - [ ] 8.4 Apply migration 0033 to Supabase project `kpynymwghfwshvcvevxq` (only after 8.3)
