@@ -40,3 +40,48 @@
 - Reviewer: re-verificación **independiente** (no confió en el reporte del implementer, re-corrió los tests él mismo), detectó y correctamente descartó un diff no relacionado en `app/overview.html` como ruido preexistente de otra sesión.
 - `init.sh` verde tras el cierre.
 - `harness_selftest/` es desechable (demo de bootstrap) — pendiente decisión del usuario: conservar como ejemplo vivo o `git rm`.
+
+---
+
+## 2026-07-23 — hermes-task-queue-tenant-scoping (completo, Tasks 0-11, archivado)
+
+Change OpenSpec `hermes-task-queue-tenant-scoping` — la cola `operator_tasks` que puentea el
+backend con Hermes (local, siempre-hace-poll, Decisión #1) era ciega al tenant; se corrigió de
+punta a punta:
+
+- `create_task()`/`dispatch_campaign_package()` aceptan/derivan un `tenant_id` real (validado
+  contra `tenants`), cayendo a Cliente Cero solo de forma explícita y con `logger.warning` — nunca
+  un default mudo.
+- `list_pending_tasks()` incluye `tenant_id` de forma contractual (proyección explícita de
+  columnas, no un accidente de `select("*")`), más un filtro opcional por tenant.
+- Governance del puente HTTP (5 rutas sin auth previa, riesgo aceptado documentado en
+  `hermes-manus-execution-bridge` design.md R1): se evaluó y **rechazó** reutilizar
+  `AgentAccessControl` completo (su check de membresía usuario↔tenant es vacuo para una máquina
+  que sirve a TODOS los tenants); en su lugar: `HERMES_BRIDGE_TOKEN` env-gated (fail-open hasta que
+  el fundador lo active — activación es tarea suya, no de este cambio), paridad de auditoría vía
+  `agent_operations` (`agent_name="hermes-bridge"`), validación de tenant en escritura.
+- `core/tenant_context.py` recibió solo una adición (`tenant_exists`) — coordinado sin tocar
+  `resolve_cliente_cero_tenant_id`, propiedad del cambio activo concurrente
+  `hermes-multi-tenant-wrapper` (commit `a07bb93`, Ground Truth Correction #3).
+- Reviewer independiente: APROBADO — 47/47 tests dirigidos, suite completa sin regresiones (628
+  pasan / 40 fallas pre-existentes idénticas antes/después). `RUN_TESTS=1 bash init.sh` no salió
+  genuinely green por ~40 fallas pre-existentes no relacionadas + un bug de subprocesos pytest
+  anidados en `test_shadow_gl_stage8_e2e.py` (ninguno de los dos introducido por este cambio) —
+  documentado honestamente en vez de forzar el checkbox; se añadió una regla al self-improving
+  loop de `CHECKPOINTS.md`.
+- Stage 11: merge a `main` (`f944918..7b26638`), deploy Railway `production-175a` SUCCESS
+  (`2c33acc2`), verificación en vivo con curl (200/404/tenant_id presente) + confirmación de la
+  fila de auditoría vía Supabase MCP, estado de BD restaurado (sin endpoint DELETE en el puente —
+  limpieza manual vía SQL).
+- Specs sincronizadas en `openspec/specs/hermes-manus-execution-bridge/spec.md`; archivado en
+  `openspec/changes/archive/2026-07-23-hermes-task-queue-tenant-scoping/`.
+- **Pendiente del fundador (no bloquea el cierre):** activar `HERMES_BRIDGE_TOKEN` — actualizar
+  primero el poller de Hermes (repo separado `hermes-workspace`) y su `.env` local con el header
+  `Authorization: Bearer`, y solo después setear la env var en Railway (el orden inverso tumbaría
+  el poller en vivo).
+- Efecto secundario: se descubrieron y reportaron como tareas separadas (fuera de alcance) (1) el
+  bug de subprocesos runaway en `test_shadow_gl_stage8_e2e.py`, y (2) que `DEPLOYMENT_STAGE/` no es
+  en realidad un symlink a `ai-specs/openspec-deployment-standard/` como afirma `CLAUDE.md` §6/§8
+  — ese directorio nunca existió en el repo.
+
+**Estado:** ninguna tarea en curso. `feature_list.json.active = null`.

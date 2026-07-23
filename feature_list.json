@@ -6,7 +6,7 @@
     "scope_source": "openspec/changes/<id>/tasks.md",
     "valid_status": ["pending", "in_progress", "done", "blocked"]
   },
-  "active": "hermes-task-queue-tenant-scoping",
+  "active": null,
   "features": [
     {
       "id": "adopt-gbrain-second-brain",
@@ -20,8 +20,8 @@
     },
     {
       "id": "hermes-task-queue-tenant-scoping",
-      "status": "in_progress",
-      "summary": "Tenant-scope the operator_tasks queue: create_task()/list_pending_tasks() accept real tenant_id (explicit, logged Cliente Cero fallback), poll payload contractually includes tenant_id, env-gated HERMES_BRIDGE_TOKEN + agent_operations audit parity mitigate the unauthenticated HTTP bridge to Hermes."
+      "status": "done",
+      "summary": "COMPLETE (Tasks 0-11), archived 2026-07-23 as openspec/changes/archive/2026-07-23-hermes-task-queue-tenant-scoping. operator_tasks queue tenant-scoped (create_task/dispatch_campaign_package accept/derive real tenant_id, logged Cliente Cero fallback; list_pending_tasks contractually includes tenant_id via explicit projection); HTTP bridge governance mitigated via env-gated HERMES_BRIDGE_TOKEN (fail-open, founder must still activate it — see design.md D7), agent_operations audit parity, write-time tenant validation. Deployed live to Railway production-175a, verified via curl + Supabase MCP, DB state restored."
     }
   ]
 }

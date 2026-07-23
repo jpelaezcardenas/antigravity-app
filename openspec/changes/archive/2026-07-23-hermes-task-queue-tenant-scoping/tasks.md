@@ -128,29 +128,44 @@ Project-specific details:
   is possible (not just a build/health check)
 
 Tasks:
-- [ ] 9.1 `git branch --show-current` verification, commit, push branch, open PR or hand the
+- [x] 9.1 `git branch --show-current` verification, commit, push branch, open PR or hand the
       `git push origin main` command to the founder if the commit classifier blocks agent pushes
-- [ ] 9.2 Railway `production-175a` build/deploy green (~80s startup window)
-- [ ] 9.3 Live verification: `GET /api/v1/sell-machine/tasks/pending` → every row includes
-      `tenant_id`; `POST /tasks` with a real tenant UUID → 200 + stamped row, then DELETE it to
-      restore state; `POST /tasks` with a random UUID → 404; confirm `HERMES_BRIDGE_TOKEN` is
-      still unset in prod (fail-open, unchanged behavior) — token activation is D7's founder
-      follow-up, not part of this stage
-- [ ] 9.4 Confirm one `agent_operations` row appears with `agent_name='hermes-bridge'` after the
-      live `POST /tasks` test in 9.3
-- [ ] 9.5 Create report
-      `openspec/changes/hermes-task-queue-tenant-scoping/reports/YYYY-MM-DD-deployment.md`
+      — merged `feature/hermes-task-queue-tenant-scoping` into `main` (no-ff), pushed
+      `f944918..7b26638`, no classifier block encountered
+- [x] 9.2 Railway `production-175a` build/deploy green (~80s startup window) — deployment
+      `2c33acc2-28de-4815-8370-0ee2e53b175c`, status SUCCESS
+- [x] 9.3 Live verification: `GET /api/v1/sell-machine/tasks/pending` → every row includes
+      `tenant_id`; `POST /tasks` with a real tenant UUID → 200 + stamped row, then deleted via
+      Supabase MCP to restore state (no DELETE endpoint exists on this bridge); `POST /tasks` with
+      a random UUID → 404; confirmed `HERMES_BRIDGE_TOKEN` absent from Railway variables
+      (fail-open, unchanged behavior) — token activation remains D7's founder follow-up, not part
+      of this stage
+- [x] 9.4 Confirmed one `agent_operations` row with `agent_name='hermes-bridge'`,
+      `user_id='machine:hermes'`, `operation_type='create_task'` after the live `POST /tasks` test
+      in 9.3 — deleted afterward along with the test task to fully restore DB state
+- [x] 9.5 Report created:
+      `openspec/changes/hermes-task-queue-tenant-scoping/reports/2026-07-23-deployment.md`
 
 ## 10. Review Gate
 
-- [ ] 10.1 `reviewer` agent validates the full change against
+- [x] 10.1 `reviewer` agent validated the full change against
       `specs/hermes-manus-execution-bridge/spec.md` (delta), `ARCHITECTURE.md`,
       `DEPLOYMENT_STAGE/CHECKPOINTS.md`: no hardcoded secrets, English-only artifacts, symlink
-      integrity untouched, `tenant_context.py` edits are additive-only
-- [ ] 10.2 `RUN_TESTS=1 bash init.sh` green before marking the change ready to archive
+      integrity untouched, `tenant_context.py` edits additive-only — **APPROVED**, see
+      `progress/review_hermes-task-queue-tenant-scoping.md`
+- [N/A] 10.2 `RUN_TESTS=1 bash init.sh` green — **Reason:** the unfiltered full backend suite has
+      ~40 pre-existing, change-unrelated failures plus a runaway nested-pytest bug in
+      `test_shadow_gl_stage8_e2e.py` (both predate this branch, flagged separately for a future
+      fix). The reviewer independently ran the targeted suite (47/47 green) and the full suite
+      (628 passed / 40 failed / 109 skipped — identical failure count/names before and after this
+      branch, confirmed by name), proving zero regressions were introduced. Explicitly reviewed
+      and documented by the reviewer per `DEPLOYMENT_STAGE/CHECKPOINTS.md`'s
+      "Excepciones Documentadas" convention; a self-improving-loop addition was added to
+      `CHECKPOINTS.md` recommending reviewers verify "no new failures" directly rather than trust
+      `init.sh`'s raw exit code until the baseline is fixed.
 
 ## 11. Sync Specs and Archive
 
-- [ ] 11.1 Sync this change's specs delta into `openspec/specs/hermes-manus-execution-bridge/spec.md`
-- [ ] 11.2 Archive the change to `openspec/changes/archive/YYYY-MM-DD-hermes-task-queue-tenant-scoping/`
-- [ ] 11.3 Update `feature_list.json`: flip `hermes-task-queue-tenant-scoping` to `"status": "done"`
+- [x] 11.1 Synced this change's specs delta into `openspec/specs/hermes-manus-execution-bridge/spec.md`
+- [x] 11.2 Archived the change to `openspec/changes/archive/2026-07-23-hermes-task-queue-tenant-scoping/`
+- [x] 11.3 Updated `feature_list.json`: flipped `hermes-task-queue-tenant-scoping` to `"status": "done"`
