@@ -6,7 +6,7 @@
     "scope_source": "openspec/changes/<id>/tasks.md",
     "valid_status": ["pending", "in_progress", "done", "blocked"]
   },
-  "active": "chatwoot-hermes-taty-bridge",
+  "active": "pwa-tenant-aware-screens",
   "features": [
     {
       "id": "adopt-gbrain-second-brain",
@@ -15,8 +15,13 @@
     },
     {
       "id": "chatwoot-hermes-taty-bridge",
+      "status": "blocked",
+      "summary": "Task Groups 1-14 done except 14.3/14.4 (BLOCKED — Docker not installed, no Meta WhatsApp Business number/tunnel yet) and Review Gate pending. Not archived. Paused while this worktree works pwa-tenant-aware-screens; other parallel sessions may resume it independently."
+    },
+    {
+      "id": "pwa-tenant-aware-screens",
       "status": "in_progress",
-      "summary": "Task Groups 5-10: apps/chatwoot-bridge/ FastAPI service bridging Chatwoot WhatsApp to local Hermes Gateway (Taty). Task Groups 1-4 (backend intake endpoint) already done."
+      "summary": "Next wave of tenant-aware data-bound PWA screens: Pulso ActiveAlerts + Flujo-detalle Monthly Liquidity Bridge, tenant-scoped backend endpoints, rolling reseed of synthetic Shadow GL, CashTodayCard error-state honesty fix. openspec/changes/pwa-tenant-aware-screens/."
     }
   ]
 }
