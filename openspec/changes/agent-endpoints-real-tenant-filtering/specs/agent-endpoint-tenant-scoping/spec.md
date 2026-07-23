@@ -18,24 +18,30 @@ Every route in `agents_endpoints.py`, `pulso_diario_endpoints.py`,
 - **THEN** `get_current_user` returns `_STAGING_USER` and the endpoint proceeds under the
   staging identity, unchanged from today's behavior
 
-### Requirement: Tenant resolution follows the shared three-branch contract
-Endpoints that touch tenant-scoped data SHALL resolve the caller's tenant via the shared
-helper in `core/tenant_context.py` (the generalized successor to
-`financials_endpoints.py`'s three-branch ladder), never via a second, endpoint-local
-implementation.
+### Requirement: Every DB-touching agent route resolves tenant through one canonical helper
+Any route that reads or writes tenant-scoped data SHALL resolve the caller's tenant via
+`core/tenant_context.py::resolve_request_tenant_scope`, and SHALL NOT implement a second,
+endpoint-local or file-local resolution ladder.
 
 #### Scenario: Token with a resolved tenant scopes to that tenant
 - **WHEN** `user["resolved_tenant_id"]` is present
-- **THEN** the endpoint uses that tenant_id for every DB read/write
+- **THEN** the endpoint uses `resolve_request_tenant_scope(user, client).tenant_id` for every
+  DB read/write
 
 #### Scenario: Staging user falls back to Cliente Cero
 - **WHEN** the caller is `_STAGING_USER` (`AUTH_ENFORCED=false`, no token)
-- **THEN** the endpoint resolves to the real Cliente Cero tenant_id
+- **THEN** the endpoint resolves to the real Cliente Cero tenant_id via the same helper
 
 #### Scenario: Authenticated caller without a tenant is never given Cliente Cero
 - **WHEN** a caller is authenticated but has no resolvable tenant membership
-- **THEN** the endpoint returns an empty result or 404 (per its own contract), and never
-  Cliente Cero's data
+- **THEN** `resolve_request_tenant_scope` returns `None`, and the endpoint returns an empty
+  result or a rejection (per its own contract), never Cliente Cero's data
+
+#### Scenario: No second resolution helper exists
+- **WHEN** the codebase is grepped for tenant-resolution logic outside
+  `core/tenant_context.py::resolve_request_tenant_scope`
+- **THEN** no file-local or endpoint-local 3-branch/4-branch ladder is found (the previously
+  separate `resolve_caller_tenant` helper and Taty's inline resolution are both removed)
 
 ### Requirement: Pure-LLM agent endpoints are auth-gated without tenant scoping
 `/social/generate-content`, `/pulso/analyze`, `/centinela/monitor`, `/centinela/decide`,
@@ -62,8 +68,8 @@ response and SHALL require an authenticated caller.
 
 ### Requirement: Stub agent endpoints echo the resolved tenant, never the raw JWT claim
 `pulso_diario_endpoints.py::/summary` and `centinela_agents_endpoints.py::/generate-draft`
-SHALL resolve tenant via the shared helper and SHALL NOT read `request.state.tenant_id`
-directly.
+SHALL resolve tenant via `resolve_request_tenant_scope` and SHALL NOT read
+`request.state.tenant_id` directly.
 
 #### Scenario: Summary reflects the resolved tenant UUID
 - **WHEN** an authenticated caller with a resolved tenant POSTs to `/summary`
@@ -72,17 +78,3 @@ directly.
 #### Scenario: Draft stub never emits "default-tenant"
 - **WHEN** any caller (including the staging identity) POSTs to `/generate-draft`
 - **THEN** the response never contains the literal string `"default-tenant"`
-
-### Requirement: Taty ask derives company context from the caller's tenant
-`agents_endpoints.py::/taty/ask` and `taty_endpoints.py::/ask` SHALL derive the target
-company from the caller's resolved tenant and SHALL NOT trust a client-supplied
-`company_id` that does not belong to that tenant.
-
-#### Scenario: Company context comes from the resolved tenant
-- **WHEN** an authenticated caller with a resolved tenant asks a question with no
-  `company_id` supplied
-- **THEN** the endpoint resolves the company from the caller's tenant
-
-#### Scenario: A company_id owned by another tenant returns 404
-- **WHEN** an authenticated caller supplies a `company_id` belonging to a different tenant
-- **THEN** the endpoint returns HTTP 404

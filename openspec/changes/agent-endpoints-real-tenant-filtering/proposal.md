@@ -2,70 +2,91 @@
 
 ## Why
 
-Per-tenant client access is settled (`ARCHITECTURE.md` Decision #13, archived
-`per-tenant-client-access`), but only `GET /api/v1/financials` implements it. Every other
-agent-facing HTTP surface is either anonymous or fake-multi-tenant:
+Per-tenant client access is settled (`ARCHITECTURE.md` Decision #13). This change's original
+goal (drafted 2026-07-23) was **one consistent tenant contract across every agent-facing HTTP
+surface**: a single shared resolver, and a uniform anti-enumeration policy (404, not 403) for
+unresolved-tenant callers, across all 6 presentation files.
 
-- `presentation/agents_endpoints.py` has no auth at all on any of its 8 routes.
-- `presentation/pulso_diario_endpoints.py` / `centinela_agents_endpoints.py` read
-  `request.state.tenant_id` (the raw JWT claim, or the literal string `"default-tenant"`)
-  and only interpolate it into response strings — no DB call exists to filter.
-- `presentation/approval_queue_endpoints.py`'s `GET ""` returns **every tenant's drafts**;
-  `POST /enqueue` reads `request.state.tenant_id` but never uses it (the service hardcodes
-  Cliente Cero); `/approve` and `/reject` have no ownership check at all.
-- `presentation/taty_endpoints.py` and `presentation/centinela_endpoints.py` trust a
-  client-supplied `company_id` with no auth and no ownership verification.
+Since the original draft, three parallel sessions on this checkout archived their own changes
+directly into `main` (`openspec/changes/archive/2026-07-23-{approval-queue-tenant-scoping,
+centinela-tenant-scoped-alerts, taty-per-tenant-profiles}`) and each independently added tenant
+scoping to its own file — genuinely, with real disjoint-tenant test coverage. But they did so
+**without a shared contract**, because none of them could see the others' work in progress:
 
-This is the same class of bug `per-tenant-client-access` fixed for financials, now confirmed
-live across the agent surface — and it matches the known governance gap in `AGENTES.md:324`
-("Direct HTTP calls to agents: BYPASS governance").
+- `approval_queue_endpoints.py` calls `core/tenant_context.py::resolve_request_tenant_scope`
+  (a 4-outcome ladder with an operator/`all_tenants` concept) and returns **403** for an
+  unresolved tenant.
+- `centinela_endpoints.py` calls a second, simpler helper, `resolve_caller_tenant` (3-outcome,
+  no operator concept), and returns an empty result for an unresolved tenant.
+- `taty_endpoints.py` resolves tenant inline (its own copy of the 3-branch ladder, predating
+  either shared helper) and returns a structured error, not an HTTP status.
+
+This is exactly the drift `ARCHITECTURE.md` Decision #15 already flagged: *"reconciliar ambos
+helpers en un único contrato queda como follow-up."* Two files
+(`pulso_diario_endpoints.py::/summary`, `centinela_agents_endpoints.py::/generate-draft`) and
+one file's worth of routes (`agents_endpoints.py`'s remaining 7) were untouched by any sibling
+and still have **no auth at all**.
+
+Keeping this change's original scope means finishing what it set out to do: **one canonical
+resolver, one anti-enumeration policy, applied consistently across all 6 files** — not treating
+the siblings' partial, inconsistent coverage as "close enough."
 
 ## What Changes
 
-- Auth-gate (`Depends(get_current_user)`) every route in the six in-scope presentation files.
-- Tenant-scope the routes that touch the DB: approval queue list/enqueue/approve/reject,
-  centinela evaluate/alerts, taty ask — reusing the shared tenant-resolution helper that
-  `approval-queue-tenant-scoping` is introducing in `core/tenant_context.py` (see design.md;
-  this change does not invent a second one).
-- Stop trusting client-supplied `company_id`; derive it from the caller's resolved tenant. A
-  cross-tenant or unknown `company_id` returns **404** (anti-enumeration).
-- Convert the two response-string stubs (`pulso_diario /summary`, `centinela_agents
-  /generate-draft`) to echo the resolved tenant, never the raw JWT claim or
-  `"default-tenant"`.
-- Keep `orchestrator/full-pipeline` as the demo it already honestly is
-  (`"mode": "demo"`, `agents_endpoints.py:469-474`) — just auth-gate it.
-- Unauthenticated callers newly receive 401 on these routes once `AUTH_ENFORCED=true`; the
-  existing staging fallback (`AUTH_ENFORCED=False`, no token) is preserved unchanged.
-
-## BLOCKED ON (prerequisites — implementation deferred)
-
-This session ships **artifacts only**. As of 2026-07-23, four prerequisite changes are all
-in active drafting in parallel worktrees on this checkout, none archived/merged:
-`approval-queue-tenant-scoping` (also introduces the shared `core/tenant_context.py`
-resolution helper this change reuses), `centinela-tenant-scoped-alerts`,
-`taty-per-tenant-profiles`, and `hermes-task-queue-tenant-scoping` (sequencing only, no API
-consumed here). Full seam contracts are in design.md.
-
-Do not start implementation Stages 4-6 (tasks.md) until the hard prerequisites above are
-archived. Stages 1-3 (auth-gate pure-LLM/demo routes; stub conversion) have no seam
-dependency and may proceed independently — see design.md and tasks.md.
+- **Unify the tenant-resolution helpers.** `core/tenant_context.py::resolve_request_tenant_scope`
+  becomes the single canonical resolver (it is the superset — its 4th outcome, operator/
+  `all_tenants`, simply doesn't apply to callers that don't need it). Remove
+  `resolve_caller_tenant`; migrate its two call sites in `centinela_endpoints.py` to
+  `resolve_request_tenant_scope(...).tenant_id`. Migrate `taty_endpoints.py`'s inline
+  3-branch resolution to the same shared call.
+- **Align anti-enumeration policy to 404.** `approval_queue_endpoints.py`'s 3 call sites that
+  currently raise `HTTPException(403, "No tenant resolved for caller")` (enqueue, approve,
+  reject) change to 404 — consistent with the original design's anti-enumeration rationale
+  (a 403 confirms "you're missing permission for something that exists"; a 404 doesn't).
+- Auth-gate (`Depends(get_current_user)`) all 7 remaining routes in `agents_endpoints.py`. No
+  tenant parameter is threaded through — none of these routes touch the database.
+- Auth-gate `pulso_diario_endpoints.py::/summary` and
+  `centinela_agents_endpoints.py::/generate-draft`, and switch both from the raw
+  `request.state.tenant_id` to the now-canonical `resolve_request_tenant_scope`. Responses
+  never contain the literal string `"default-tenant"`.
+- Keep `orchestrator/full-pipeline` as the demo it already honestly is (`"mode": "demo"`,
+  `agents_endpoints.py:469-474`) — just auth-gate it.
+- Update every existing test that asserts the old 403 status code or mocks the removed
+  `resolve_caller_tenant` helper (`test_approval_queue_endpoint_tenant_scoping.py`,
+  `test_centinela_endpoint_tenant_scoping.py`, `test_tenant_context_helpers.py`) to match the
+  unified contract — these are production-deployed, already-passing tests; this change edits
+  already-shipped, tenant-security-critical code, so every touched assertion gets re-verified,
+  not just re-written to pass.
+- Unauthenticated callers newly receive 401 on the 9 previously-anonymous routes once
+  `AUTH_ENFORCED=true`; the existing staging fallback (`AUTH_ENFORCED=False`, no token) is
+  preserved unchanged everywhere.
 
 ## Capabilities
 
 - **NEW**: `agent-endpoint-tenant-scoping`
-- **MODIFIED**: `approval-queue`, `centinela-alerts`
+- **MODIFIED**: `approval-queue` (403→404 policy change), `centinela-alerts` (helper migration,
+  no behavior change)
 
 ## Impact
 
-- Code: `presentation/{agents,pulso_diario,centinela_agents,approval_queue,taty,centinela}_endpoints.py`
-- New tests: one file per in-scope presentation file (see design.md testing strategy)
-- Docs: `AGENTES.md:324` wording, `docs/API_REFERENCE.md` auth requirements
+- Code: `core/tenant_context.py` (remove `resolve_caller_tenant`),
+  `presentation/{agents,pulso_diario,centinela_agents,approval_queue,taty,centinela}_endpoints.py`
+- Existing tests updated (not just added):
+  `test_approval_queue_endpoint_tenant_scoping.py`, `test_centinela_endpoint_tenant_scoping.py`,
+  `test_taty_endpoints_tenant_scoping.py`, `test_tenant_context_helpers.py` (helper tests for
+  `resolve_caller_tenant` removed; superseded by `test_tenant_scope_resolution.py`, which
+  already covers `resolve_request_tenant_scope`)
+- New tests: `test_agents_endpoints_auth.py`, `test_agent_stub_endpoints_tenant.py`
+- Docs: `AGENTES.md:324` wording, `ARCHITECTURE.md` Decision #15 (mark the helper reconciliation
+  done), `docs/API_REFERENCE.md` auth requirements
 
 ## Non-Goals
 
-- `sell_machine_endpoints.py` Hermes bridge routes (no auth today; out of scope, covered by
-  `hermes-task-queue-tenant-scoping`'s own sequencing, not this change's API).
-- `services/operator_task_service.py` (sibling change's scope).
-- Restoring cost-logging/gating for direct HTTP calls to agents (AGENTES.md:324's governance
+- Introducing a *third* resolution mechanism — `resolve_request_tenant_scope` is reused as-is,
+  not redesigned.
+- `sell_machine_endpoints.py` Hermes bridge routes and `services/operator_task_service.py` —
+  covered by the already-archived `hermes-task-queue-tenant-scoping`; that change's own helper
+  usage (`tenant_exists`, `resolve_cliente_cero_tenant_id`) is untouched here.
+- Restoring cost-logging/gating for direct HTTP calls to agents (`AGENTES.md:324`'s governance
   gap is only partially closed by this change — see design.md).
 - Rate limiting, replacing the orchestrator demo with a real pipeline, any DB migration.
