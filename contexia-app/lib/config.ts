@@ -10,4 +10,6 @@ export const API_BASE_URL =
 
 export const API_ENDPOINTS = {
   financials: `${API_BASE_URL}/api/v1/financials`,
+  centinelaAlerts: `${API_BASE_URL}/api/v1/centinela/alerts`,
+  liquidityBridge: `${API_BASE_URL}/api/v1/financials/liquidity-bridge`,
 };
