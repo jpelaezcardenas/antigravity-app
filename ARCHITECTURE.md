@@ -89,6 +89,7 @@ DIAN XML  ─┘                dian_xml_documents)  [Supabase, por tenant]
 - **Granularidad diaria = promesa de venta.** `ventas_ayer`/`gastos_ayer` son exclusivamente del día anterior, no un agregado mensual. Si el backend no tiene la granularidad, se arregla el backend, no el texto.
 - **Multi-tenant**: `TenantContextMiddleware` resuelve `tenant_id` desde JWT; Cliente Cero vía `is_cliente_cero=true`. RLS en las tablas Shadow GL.
 - **CORS**: la env var del backend DEBE llamarse `ALLOWED_ORIGINS` (incluir `https://contexia.online`). Un nombre distinto cae a un default localhost → preflight 400 → la PWA muestra estado de error. (Incidente resuelto 2026-06-30.)
+- **Hermanos de `/financials` (misma política de tenant, mismo Shadow GL)**: `GET /api/v1/centinela/alerts` (Pulso · `ActiveAlerts`) y `GET /api/v1/financials/liquidity-bridge` (Flujo-detalle · `MonthlyLiquidityBridgeCard`) — ambos añadidos en `pwa-tenant-aware-screens` (2026-07-23), resuelven el tenant con el mismo helper (`resolve_caller_tenant_id`) que `/financials`. El puente de liquidez es mensual (no diario) y deriva del mismo `erp_journal_lines`/cuenta `1110`.
 
 ## Stack y dependencias externas
 

@@ -132,9 +132,10 @@
   fix as the incident that produced it; renumbered the existing 4 Búnker exceptions (now
   4th-7th) and fixed all stale ordinal/count references (headers + prose + the "5 pantallas"/"5
   clientes" line in the Fetch autenticado section).
-- [ ] 12.2 `ARCHITECTURE.md` flujo-estrella section: note the two new endpoints if the diagram
-  needs it (only if reviewer flags it as materially incomplete without them) — pending reviewer
-  judgment call.
+- [x] 12.2 `ARCHITECTURE.md` flujo-estrella section: judged the diagram itself scoped correctly
+  to Caja Real (title says so) — didn't redraw it. Added a one-bullet pointer note below it
+  naming the two sibling endpoints, their shared tenant-resolution policy, and the
+  daily-vs-monthly distinction (avoids a stale-diagram trap without diluting its focus).
 
 ## Stage 13. Deploy to Production (MANDATORY — CLOSES THE LOOP)
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
