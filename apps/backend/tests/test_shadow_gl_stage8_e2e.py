@@ -4,8 +4,21 @@ Phase 8 Stages 8-11: E2E Integration Testing & Production Deployment
 End-to-end tests validating the complete CSV ingestion flow.
 """
 
+import os
+
 import pytest
 from typing import Dict, Any
+
+# Acceptance-check test files for TestPhase8Stage8Acceptance below. Deliberately excludes this
+# file's own path — a prior version included it, and each nested `pytest` subprocess re-entering
+# this same test spawned another nested subprocess, recursing without bound until manually killed.
+# 15 (parser) + 6 (uploader) + 10 (error handling) = 31, so the acceptance count never actually
+# needed this file's own tests counted.
+ACCEPTANCE_TEST_FILES = [
+    "apps/backend/tests/test_shadow_gl_siigo_parser.py",
+    "apps/backend/tests/test_shadow_gl_stage4_uploader.py",
+    "apps/backend/tests/test_shadow_gl_stage5_error_handling.py",
+]
 
 
 class TestE2EIntegration:
@@ -178,19 +191,23 @@ class TestPhase8Stage8Acceptance:
         # Should have 10 passed tests
         assert "10 passed" in result.stdout
 
+    def test_acceptance_test_files_exclude_self(self):
+        """✅ Regression guard: ACCEPTANCE_TEST_FILES must never include this file's own path.
+
+        Including it caused test_all_stages_completed to spawn a subprocess that re-runs this
+        same test, which spawns another subprocess, without bound — a real incident, not a
+        hypothetical one."""
+        own_basename = os.path.basename(__file__)
+        assert not any(
+            os.path.basename(f) == own_basename for f in ACCEPTANCE_TEST_FILES
+        )
+
     def test_all_stages_completed(self):
         """✅ All test suites passing (31 total tests)."""
         import subprocess
 
-        test_files = [
-            "apps/backend/tests/test_shadow_gl_siigo_parser.py",
-            "apps/backend/tests/test_shadow_gl_stage4_uploader.py",
-            "apps/backend/tests/test_shadow_gl_stage5_error_handling.py",
-            "apps/backend/tests/test_shadow_gl_stage8_e2e.py",
-        ]
-
         total_passed = 0
-        for test_file in test_files:
+        for test_file in ACCEPTANCE_TEST_FILES:
             result = subprocess.run(
                 ["python", "-m", "pytest", test_file, "-q"],
                 capture_output=True,

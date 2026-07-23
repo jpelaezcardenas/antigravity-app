@@ -111,13 +111,18 @@ class TestRunCreativeLoop:
 
 
 class TestCreateCampaignPackage:
+    FAKE_CLIENTE_CERO_TENANT_ID = "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"
+
     @pytest.mark.asyncio
     async def test_enqueues_a_campaign_package_draft(self):
         fake_decision = AsyncMock()
         with patch(
             "services.sell_machine_service.ApprovalQueueService.enqueue_draft",
             new=AsyncMock(return_value=(True, fake_decision, None)),
-        ) as mock_enqueue:
+        ) as mock_enqueue, patch(
+            "services.sell_machine_service.resolve_cliente_cero_tenant_id",
+            return_value=self.FAKE_CLIENTE_CERO_TENANT_ID,
+        ):
             result = await create_campaign_package(
                 hooks=[_hook(1)], brief="brief", target_segment="asalariados", budget=500000
             )
@@ -127,15 +132,35 @@ class TestCreateCampaignPackage:
         assert kwargs["draft_type"] == "campaign_package"
         assert kwargs["journal_entry"]["hooks"][0]["headline"] == "H1"
         assert kwargs["journal_entry"]["target_segment"] == "asalariados"
+        assert kwargs["tenant_id"] == self.FAKE_CLIENTE_CERO_TENANT_ID
 
     @pytest.mark.asyncio
     async def test_raises_on_enqueue_failure(self):
         with patch(
             "services.sell_machine_service.ApprovalQueueService.enqueue_draft",
             new=AsyncMock(return_value=(False, None, "db error")),
+        ), patch(
+            "services.sell_machine_service.resolve_cliente_cero_tenant_id",
+            return_value=self.FAKE_CLIENTE_CERO_TENANT_ID,
         ):
             with pytest.raises(RuntimeError):
                 await create_campaign_package(hooks=[_hook(1)], brief="b", target_segment="s", budget=None)
+
+    @pytest.mark.asyncio
+    async def test_raises_when_cliente_cero_tenant_unresolved(self):
+        """No silent fallback: if Cliente Cero can't be resolved, enqueue is skipped
+        (never called) and the existing failure contract (RuntimeError) is preserved."""
+        with patch(
+            "services.sell_machine_service.ApprovalQueueService.enqueue_draft",
+            new=AsyncMock(return_value=(True, AsyncMock(), None)),
+        ) as mock_enqueue, patch(
+            "services.sell_machine_service.resolve_cliente_cero_tenant_id",
+            return_value=None,
+        ):
+            with pytest.raises(RuntimeError):
+                await create_campaign_package(hooks=[_hook(1)], brief="b", target_segment="s", budget=None)
+
+        mock_enqueue.assert_not_awaited()
 
 
 class TestListCampaigns:

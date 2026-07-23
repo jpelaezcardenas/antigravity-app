@@ -13,7 +13,6 @@ from typing import Tuple, Dict, Any, List, Optional
 
 from agents.agent_critic import validate_journal_entry
 from core.supabase_client import get_service_supabase
-from core.tenant_context import resolve_cliente_cero_tenant_id
 from models.approval_decisions import ApprovalDecision, ApprovalStatus, VectorizationStatus
 from services.embeddings_service import EmbeddingsService
 
@@ -53,6 +52,8 @@ class ApprovalQueueService:
         draft_type: str,
         journal_entry: Dict[str, Any],
         memo: str = "",
+        *,
+        tenant_id: str,
     ) -> Tuple[bool, Optional[ApprovalDecision], Optional[str]]:
         """
         Enqueue a draft for approval.
@@ -60,6 +61,9 @@ class ApprovalQueueService:
         Journal-entry draft types (tax_correction) are validated by Agent
         Critic first; only balanced entries are persisted. Other draft types
         skip balance validation and are enqueued directly.
+
+        `tenant_id` is required — the caller must resolve it explicitly
+        (never silently defaulted to Cliente Cero inside this service).
 
         Returns:
             (success: bool, decision: Optional[ApprovalDecision], error: Optional[str])
@@ -73,8 +77,10 @@ class ApprovalQueueService:
                     )
                     return False, None, critic_reason
 
+            if not tenant_id:
+                return False, None, "tenant_id is required"
+
             supabase = get_service_supabase()
-            tenant_id = resolve_cliente_cero_tenant_id(supabase)
 
             decision = ApprovalDecision(
                 id=str(uuid.uuid4()),
@@ -129,25 +135,34 @@ class ApprovalQueueService:
         decision_id: str,
         approval_reason: str,
         approved_by: str,
+        *,
+        tenant_id: Optional[str],
     ) -> Tuple[bool, Optional[ApprovalDecision], Optional[str]]:
         """
         Approve a pending draft. Sets status to 'approved' and triggers
         vectorization asynchronously (non-blocking, failure does not roll
         back the approval).
+
+        `tenant_id`, when not None, scopes both the existence check and the
+        update to that tenant — a cross-tenant `decision_id` returns the same
+        "not found" error as a genuinely missing id (never leaks existence).
+        `tenant_id=None` is the unrestricted admin/operator path.
         """
         try:
             supabase = get_service_supabase()
 
-            existing = (
+            select_query = (
                 supabase.table("approval_queue")
                 .select("*")
                 .eq("id", decision_id)
-                .execute()
             )
+            if tenant_id is not None:
+                select_query = select_query.eq("tenant_id", tenant_id)
+            existing = select_query.execute()
             if not existing.data:
                 return False, None, f"Decision {decision_id} not found"
 
-            updated = (
+            update_query = (
                 supabase.table("approval_queue")
                 .update(
                     {
@@ -158,8 +173,10 @@ class ApprovalQueueService:
                     }
                 )
                 .eq("id", decision_id)
-                .execute()
             )
+            if tenant_id is not None:
+                update_query = update_query.eq("tenant_id", tenant_id)
+            updated = update_query.execute()
 
             decision = _row_to_decision(updated.data[0])
 
@@ -184,21 +201,32 @@ class ApprovalQueueService:
         decision_id: str,
         rejection_reason: str,
         rejected_by: str,
+        *,
+        tenant_id: Optional[str],
     ) -> Tuple[bool, Optional[ApprovalDecision], Optional[str]]:
-        """Reject a pending draft."""
+        """
+        Reject a pending draft.
+
+        `tenant_id`, when not None, scopes both the existence check and the
+        update to that tenant — see `approve_draft` for the cross-tenant
+        "not found" contract. `tenant_id=None` is the unrestricted
+        admin/operator path.
+        """
         try:
             supabase = get_service_supabase()
 
-            existing = (
+            select_query = (
                 supabase.table("approval_queue")
                 .select("id")
                 .eq("id", decision_id)
-                .execute()
             )
+            if tenant_id is not None:
+                select_query = select_query.eq("tenant_id", tenant_id)
+            existing = select_query.execute()
             if not existing.data:
                 return False, None, f"Decision {decision_id} not found"
 
-            updated = (
+            update_query = (
                 supabase.table("approval_queue")
                 .update(
                     {
@@ -209,8 +237,10 @@ class ApprovalQueueService:
                     }
                 )
                 .eq("id", decision_id)
-                .execute()
             )
+            if tenant_id is not None:
+                update_query = update_query.eq("tenant_id", tenant_id)
+            updated = update_query.execute()
 
             decision = _row_to_decision(updated.data[0])
 

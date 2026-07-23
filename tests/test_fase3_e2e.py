@@ -17,6 +17,13 @@ from agents.agent_critic import validate_journal_entry
 from services.approval_queue_service import ApprovalQueueService
 from services.embeddings_service import EmbeddingsService
 
+# Real Cliente Cero tenant UUID — matches the pre-tenant-scoping default behavior
+# these tests originally exercised (enqueue_draft used to resolve Cliente Cero
+# internally; approval-queue-tenant-scoping, Section 5). No FK constraint on
+# approval_queue.tenant_id (migration 0001), so this is a plain UUID, not a
+# live-DB dependency.
+_TEST_TENANT_ID = "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"
+
 
 @pytest.mark.asyncio
 async def test_cliente_cero_full_loop():
@@ -82,6 +89,7 @@ async def test_cliente_cero_full_loop():
         draft_id=resolution_draft["draft_id"],
         draft_type=resolution_draft["draft_type"],
         journal_entry={"lines": resolution_draft["lines"], "memo": resolution_draft["memo"]},
+        tenant_id=_TEST_TENANT_ID,
     )
 
     assert enqueue_success is True, f"Enqueue failed: {enqueue_error}"
@@ -95,6 +103,7 @@ async def test_cliente_cero_full_loop():
             decision_id=decision.id,
             approval_reason=approval_reason,
             approved_by="contador@contexia.com",
+            tenant_id=_TEST_TENANT_ID,
         )
     )
 
@@ -189,6 +198,7 @@ async def test_blocked_unbalanced_draft():
         draft_id=unbalanced_draft["draft_id"],
         draft_type=unbalanced_draft["draft_type"],
         journal_entry={"lines": unbalanced_draft["lines"], "memo": unbalanced_draft["memo"]},
+        tenant_id=_TEST_TENANT_ID,
     )
 
     assert enqueue_success is False

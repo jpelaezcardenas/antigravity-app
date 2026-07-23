@@ -7,11 +7,14 @@ POST /api/v1/approval-queue/approve - Approve a draft and trigger vectorization
 POST /api/v1/approval-queue/reject - Reject a draft
 """
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Optional
 from pydantic import BaseModel
 import logging
 
+from core.deps import get_current_user
+from core.supabase_client import get_service_supabase
+from core.tenant_context import resolve_request_tenant_scope
 from services.approval_queue_service import ApprovalQueueService
 
 logger = logging.getLogger(__name__)
@@ -61,6 +64,7 @@ class DraftListItem(BaseModel):
     reason: str
     payload: dict
     created_at: str
+    tenant_id: Optional[str] = None
 
 
 class DraftListResponse(BaseModel):
@@ -71,14 +75,30 @@ class DraftListResponse(BaseModel):
 async def list_drafts(
     status: Optional[str] = Query(default=None),
     draft_type: Optional[str] = Query(default=None),
+    tenant_id: Optional[str] = Query(default=None),
+    user: dict = Depends(get_current_user),
 ):
     """
     List drafts across all draft types. Defaults to no filtering; pass
     `status=pending_approval` to see only items awaiting review.
+
+    Tenant scoping (approval-queue-tenant-scoping):
+    - No resolved scope (authenticated, unwired caller) -> empty list. Never
+      Cliente Cero.
+    - Contexia operator scope (caller resolves to Cliente Cero) -> unfiltered
+      by default, or scoped to the `?tenant_id=` query param if supplied.
+    - Normal B2B client scope -> forced to the caller's own tenant, ignoring
+      any client-supplied `?tenant_id`.
     """
+    scope = resolve_request_tenant_scope(user, get_service_supabase())
+    if scope is None:
+        return DraftListResponse(drafts=[])
+
+    effective_tenant_id = tenant_id if scope.all_tenants else scope.tenant_id
+
     try:
         decisions = await ApprovalQueueService.list_drafts(
-            status=status, draft_type=draft_type
+            status=status, draft_type=draft_type, tenant_id=effective_tenant_id
         )
         return DraftListResponse(
             drafts=[
@@ -90,6 +110,7 @@ async def list_drafts(
                     reason=d.reason,
                     payload=d.payload,
                     created_at=d.created_at.isoformat(),
+                    tenant_id=d.tenant_id,
                 )
                 for d in decisions
             ]
@@ -100,16 +121,22 @@ async def list_drafts(
 
 
 @router.post("/enqueue", response_model=ApprovalResponse)
-async def enqueue_for_approval(http_request: Request, payload: EnqueueRequest):
+async def enqueue_for_approval(
+    payload: EnqueueRequest, user: dict = Depends(get_current_user)
+):
     """
     Enqueue a draft for approval after Agent Critic validation.
 
-    Multi-tenant: Uses tenant_id injected by TenantContextMiddleware from JWT.
+    Tenant scoping (approval-queue-tenant-scoping): the caller's resolved
+    tenant scope stamps the enqueued row. No resolved scope -> 403 (never a
+    silent Cliente Cero fallback).
 
     If Critic validation fails, returns 400 with validation error.
     If validation passes, creates a pending approval decision.
     """
-    tenant_id = getattr(http_request.state, "tenant_id", "default-tenant")
+    scope = resolve_request_tenant_scope(user, get_service_supabase())
+    if scope is None:
+        raise HTTPException(status_code=403, detail="No tenant resolved for caller")
 
     try:
         # Convert request to journal entry dict
@@ -124,6 +151,7 @@ async def enqueue_for_approval(http_request: Request, payload: EnqueueRequest):
             draft_type=payload.draft_type,
             journal_entry=journal_entry,
             memo=payload.memo,
+            tenant_id=scope.tenant_id,
         )
 
         if not success:
@@ -145,17 +173,29 @@ async def enqueue_for_approval(http_request: Request, payload: EnqueueRequest):
 
 
 @router.post("/approve", response_model=ApprovalResponse)
-async def approve_draft(request: ApprovalRequest):
+async def approve_draft(
+    request: ApprovalRequest, user: dict = Depends(get_current_user)
+):
     """
     Approve a draft. Triggers asynchronous vectorization of the approval decision.
 
+    Tenant scoping (approval-queue-tenant-scoping): a normal client scope
+    restricts the approve to that tenant's own rows (cross-tenant decision_id
+    returns "not found"); a Contexia operator scope (all_tenants) is
+    unrestricted. No resolved scope -> 403.
+
     Vectorization failure is non-blocking (approval still succeeds).
     """
+    scope = resolve_request_tenant_scope(user, get_service_supabase())
+    if scope is None:
+        raise HTTPException(status_code=403, detail="No tenant resolved for caller")
+
     try:
         success, decision, error = await ApprovalQueueService.approve_draft(
             decision_id=request.decision_id,
             approval_reason=request.reason,
             approved_by=request.approved_by,
+            tenant_id=None if scope.all_tenants else scope.tenant_id,
         )
 
         if not success:
@@ -176,15 +216,25 @@ async def approve_draft(request: ApprovalRequest):
 
 
 @router.post("/reject", response_model=ApprovalResponse)
-async def reject_draft(request: RejectionRequest):
+async def reject_draft(
+    request: RejectionRequest, user: dict = Depends(get_current_user)
+):
     """
     Reject a draft. Prevents journal entry from being posted.
+
+    Tenant scoping (approval-queue-tenant-scoping): same policy as
+    `POST /approve` — see its docstring.
     """
+    scope = resolve_request_tenant_scope(user, get_service_supabase())
+    if scope is None:
+        raise HTTPException(status_code=403, detail="No tenant resolved for caller")
+
     try:
         success, decision, error = await ApprovalQueueService.reject_draft(
             decision_id=request.decision_id,
             rejection_reason=request.reason,
             rejected_by=request.rejected_by,
+            tenant_id=None if scope.all_tenants else scope.tenant_id,
         )
 
         if not success:

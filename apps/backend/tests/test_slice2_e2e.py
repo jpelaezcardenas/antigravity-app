@@ -151,6 +151,7 @@ class TestSlice2EndToEnd:
             decision_id=decision_id,
             approval_reason="E2E test approval",
             approved_by="e2e@test.local",
+            tenant_id=cliente_cero_tenant_id,
         )
         assert success is True, f"Approval failed: {error}"
 

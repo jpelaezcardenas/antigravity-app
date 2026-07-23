@@ -56,6 +56,24 @@ class TelegramUpdate(BaseModel):
     message: Optional[TelegramMessage] = None
 
 
+def _resolve_tenant_for_company_id(company_id: str) -> Optional[str]:
+    """Translate a Telegram-mapped legacy `company_id` into a tenant uuid.
+
+    Returns the matching `tenants.id`, or `None` if no row matches
+    `tenants.company_id` or if the lookup itself fails (mirrors the
+    try/except-and-log convention used around the `telegram_chat_mappings`
+    query above).
+    """
+    try:
+        result = get_supabase().table("tenants").select("id").eq("company_id", company_id).execute()
+        if not result.data or len(result.data) == 0:
+            return None
+        return result.data[0]["id"]
+    except Exception as e:
+        logger.error(f"❌ Error resolving tenant for company_id={company_id}: {str(e)}", exc_info=True)
+        return None
+
+
 def verify_telegram_signature(request_body: str, signature: str) -> bool:
     """Verifica que el mensaje viene realmente de Telegram."""
     expected_signature = hmac.new(
@@ -146,19 +164,27 @@ async def telegram_webhook(request: Request):
             await send_telegram_message(chat_id, build_taty_onboarding_reply(active_ws, intake))
             return {"ok": True, "taty_mode": "onboarding", "workspace_id": active_ws["id"]}
 
-        # PASO 4: Llamar a Taty
+        # PASO 4: Traducir company_id (registro de Telegram) -> tenant_id (Taty)
+        logger.debug(f"🔵 Resolving tenant for company_id={company_id}")
+        tenant_id = _resolve_tenant_for_company_id(company_id)
+        if not tenant_id:
+            logger.warning(f"❌ No se pudo traducir company_id={company_id} a un tenant")
+            await send_telegram_message(chat_id, "❌ Este chat no está configurado.\nContacta a soporte.")
+            return {"ok": True}
+
+        # PASO 5: Llamar a Taty
         logger.debug("🔵 Getting Taty service")
         taty = get_taty_service()
 
-        logger.debug(f"🔵 Calling taty.ask() for company={company_id}")
+        logger.debug(f"🔵 Calling taty.ask() for tenant={tenant_id}")
         response = taty.ask(
-            company_id=company_id,
+            tenant_id=tenant_id,
             question=user_text,
             channel="telegram",
             user_id=user_id,
         )
 
-        # PASO 5: Preparar respuesta
+        # PASO 6: Preparar respuesta
         logger.debug("🔵 Preparing response")
         answer = response.get("answer", "Error procesando pregunta")
 
@@ -174,7 +200,7 @@ async def telegram_webhook(request: Request):
 
         full_response = f"{answer}{citations_text}{escalation}"
 
-        # PASO 6: Enviar respuesta a Telegram
+        # PASO 7: Enviar respuesta a Telegram
         logger.debug("🔵 Sending response to Telegram")
         await send_telegram_message(chat_id, full_response)
         logger.info(f"✅ Respuesta enviada en {response['latency_ms']}ms")

@@ -174,6 +174,18 @@ services query via `get_supabase()` (anon-key, no per-request JWT reaches Postgr
   bugs.
 - Phase 6 (T26-T28): blocked on Phase 1 actually being correct first.
 
+**Follow-up noted by `approval-queue-tenant-scoping` (2026-07-23):** that change added
+application-layer tenant scoping to all `/api/v1/approval-queue/*` endpoints (explicit
+`tenant_id` on every write, `resolve_request_tenant_scope` on every read/write) and made
+`approval_queue.tenant_id` `NOT NULL` (migration `0033`) — but explicitly left the permissive
+RLS policy cleanup out of scope, deferring it here, to this section's still-open item:
+**drop `approval_queue_anon_all`** (line 117 above) now that (a) both services write via the
+service-role client (Layer 2, above) and (b) `tenant_id` is guaranteed non-null at write time.
+The application-layer defense (explicit `tenant_id` + endpoint auth) is live and sufficient on
+its own for now; dropping the permissive policy is defense-in-depth hygiene, not a correctness
+requirement, and remains this change's responsibility to schedule. See
+`openspec/changes/approval-queue-tenant-scoping/design.md` §"Out of scope".
+
 ---
 
 ## Grouping & Dependencies

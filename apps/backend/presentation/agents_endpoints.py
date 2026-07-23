@@ -46,40 +46,6 @@ class AgentResponse(BaseModel):
 # TIER 1: OpenRouter Free (Non-Sensitive)
 # ============================================
 
-@router.post("/taty/ask")
-async def taty_ask(request: AskRequest):
-    """
-    Taty Contadora: Answer user fiscal questions with RAG, LLM failover, and profile-based routing.
-
-    DEPRECATED: Use POST /api/v1/agents/ask with request body instead.
-    This endpoint is kept for backward compatibility and redirects to the new TatyAgentService.
-    """
-    try:
-        from services.taty_service import get_taty_service
-
-        taty = get_taty_service()
-
-        # Call the new profile-aware service (profile defaults to "taty-v1")
-        response = taty.ask(
-            company_id=request.company_id,
-            question=request.question,
-            channel="api"  # Legacy endpoint channel identifier
-        )
-
-        # Return in the AgentResponse format for backward compatibility
-        return AgentResponse(
-            result=response.get("answer", response.get("result", "")),
-            model_used="glm-5.2",  # Taty profile uses GLM as primary
-            task_type="taty_faq",
-            tier="tier-1",
-            success=True
-        )
-
-    except Exception as e:
-        logger.error(f"Taty Ask failed: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.post("/social/generate-content")
 async def social_generate_content(request: AskRequest):
     """

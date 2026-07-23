@@ -321,7 +321,16 @@ Starting **Phase 5+**, all agent invocations are governed by:
 #### 4. **Chokepoint Instrumentation**
 - **WebSocket invoke_agent()**: Gate → Execute → Log+Cost → Return (backward-compatible)
 - **WebSocket agent_output_listener()**: Stream version; operation_type="stream", tracks line_count
-- **Direct HTTP calls to agents**: ⚠️ **BYPASS governance** (known limitation; future: middleware wrapper)
+- **Direct HTTP calls to agents**: ⚠️ **BYPASS governance** (known limitation; future: middleware wrapper).
+  **Exception (2026-07-23, `hermes-task-queue-tenant-scoping`):** the Hermes operator-task bridge
+  (`/api/v1/sell-machine/tasks/*`, `/campaigns/{id}/dispatch`, `/tasks/{id}/status`,
+  `/tasks/{id}/result`) is no longer fully ungoverned — it now has (a) an optional
+  `HERMES_BRIDGE_TOKEN` bearer-auth gate on those 5 routes (fail-open until the env var is set —
+  see `openspec/changes/hermes-task-queue-tenant-scoping/design.md` Decisions D5/D7), (b)
+  audit-parity logging to `agent_operations` on every successful mutation, with
+  `agent_name="hermes-bridge"`, and (c) write-time tenant validation (`tenant_exists()` /
+  decision-derived `tenant_id`) on every mutation. All other direct-HTTP agent routes remain
+  fully ungoverned per the general bypass note above.
 
 #### 5. **Multi-Tenant Isolation**
 - Row-level security (RLS) on `agent_operations` table
