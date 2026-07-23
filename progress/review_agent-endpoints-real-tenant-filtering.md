@@ -1,6 +1,18 @@
 # Review - agent-endpoints-real-tenant-filtering
 
-**Verdict:** CHANGES_REQUESTED
+**Original verdict:** CHANGES_REQUESTED (commit d05259c)
+
+**Resolution (commit 4de5c55):** both blocking issues fixed directly (not by a fresh reviewer
+pass, given their mechanical nature):
+1. ARCHITECTURE.md's duplicate "16." renumbered to "17"; Decision #15's forward-reference
+   updated from "ver más abajo" to "ver Decisión #17"; verified via
+   `grep -n "^1[4-7]\." ARCHITECTURE.md` showing unique 14/15/16/17.
+2. tasks.md's task 11.2 and the Stage 7 report's `init.sh` addendum (both flagged as
+   uncommitted) are now committed in 4de5c55; `git status` confirmed clean.
+
+No further code, test, or spec changes were needed — the reviewer's independent re-verification
+of the tenant-security implementation itself (6-file migration, helper removal, 403→404,
+zero-regression full-suite diff against an isolated `origin/main` worktree) found no issues.
 
 Reviewed commit: d05259c on feature/agent-endpoints-real-tenant-filtering
 (worktree: .claude/worktrees/agent-endpoints-real-tenant-filtering).
