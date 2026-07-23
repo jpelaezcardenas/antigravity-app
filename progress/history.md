@@ -153,3 +153,20 @@ unresolved-tenant production check (gap task 8 surfaced). APPROVED.
 Docs: fixed 2 stale docstring spots in taty_endpoints.py (task 3 had already done most of this),
 fixed the stale /agents/taty/ask comment in router.py flagged by task 5. ARCHITECTURE.md/AGENTES.md
 needed no changes (genuine zero-hit grep). 23/23 tests still green. Reviewer: APPROVED.
+
+## taty-per-tenant-profiles — Stage 11 (2026-07-23)
+Merged to main via direct push (no classifier block): git push origin
+feature/taty-per-tenant-profiles:main, fast-forward 630b78b..18fd7a1. Rebased onto latest
+origin/main first (picked up hermes-task-queue-tenant-scoping's merge, no file collisions with
+our diff, only feature_list.json/progress/history.md append conflicts). Corrected a stale claim
+during the rebase: chatwoot-hermes-taty-bridge is blocked (Docker/WhatsApp pending), not done —
+its owning session's own feature_list.json update on origin/main was more current than our
+initial task 0.3 assessment.
+Railway deployed the merged state (a sibling session added 3 more unrelated commits right after,
+427c828). Production verified: deleted route 404, unauthenticated 401 (AUTH_ENFORCED=true),
+health 200. Checked Railway logs across ~4h of traffic for any real external caller relying on
+the old unauthenticated /agents/ask — none found, only same-session smoke-test noise. Auth flip
+confirmed safe.
+11.6/11.6b/11.8 (real provisioned-client login, unresolved-tenant session, Telegram Cliente Cero
+chat) require founder-held credentials/access — honestly deferred, not fabricated. Report:
+reports/2026-07-23-deployment.md.

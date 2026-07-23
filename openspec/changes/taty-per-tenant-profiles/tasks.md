@@ -5,9 +5,12 @@
       `main` @ c3efe41)
 - [x] 0.2 Verify branch creation and current branch status (`git branch --show-current` →
       `feature/taty-per-tenant-profiles`)
-- [x] 0.3 Flip `feature_list.json` pointer: mark `chatwoot-hermes-taty-bridge` `done` (Stage 11
-      already committed at c3efe41, owning session will formally archive), add
-      `taty-per-tenant-profiles` `in_progress`, `active` = `taty-per-tenant-profiles`
+- [x] 0.3 Flip `feature_list.json` pointer: initially marked `chatwoot-hermes-taty-bridge` `done`
+      (Stage 11 report committed at c3efe41) — **corrected during the Stage 11 rebase (task 11.2)**:
+      its owning session's own `feature_list.json` update on `origin/main` shows it as `blocked`
+      (Task Groups 1-14 done except 14.3/14.4 — Docker/WhatsApp number pending — not archived),
+      which is more authoritative. Reconciled to `blocked` before merging. Added
+      `taty-per-tenant-profiles` `in_progress`, `active` = `taty-per-tenant-profiles`.
 - [x] 0.4 `bash init.sh` green with the flipped pointer
 
 ## 1. Backend: Service Profile Resolver (TDD)
@@ -185,27 +188,38 @@ Project-specific details:
 - Backend URL: https://antigravity-app-production-175a.up.railway.app
 
 Tasks:
-- [ ] 11.1 `git branch --show-current` (confirm on `feature/taty-per-tenant-profiles`); commit +
-      push branch; open PR against `main` (classifier may block a direct push to main — hand off
-      to founder if so)
-- [ ] 11.2 Rebase-check `taty_service.py` / `telegram_endpoints.py` against latest `main`
-      before merge (parallel sibling sessions may have landed commits)
-- [ ] 11.3 Merge to `main`
-- [ ] 11.4 Railway deploy active (backend change)
-- [ ] 11.5 Check Railway access logs for any pre-deploy `/agents/ask` traffic from an unknown
-      consumer (risk #2 in design.md) before considering the auth flip safe
-- [ ] 11.6 Production verification: log in as a provisioned B2B client (founder supplies
-      Bitwarden credentials) and call `/api/v1/agents/ask` with their session → answer scoped to
-      their own `legal_name`, no "Cliente no configurado"
-- [ ] 11.6b Production verification: call `/api/v1/agents/ask` with a valid, authenticated
+- [x] 11.1 `git branch --show-current` (confirmed `feature/taty-per-tenant-profiles`); pushed
+      branch to origin. Direct push to `main` succeeded (no classifier block) —
+      `git push origin feature/taty-per-tenant-profiles:main`, fast-forward `630b78b..18fd7a1`.
+- [x] 11.2 Rebased onto `origin/main` before pushing — picked up `hermes-task-queue-tenant-scoping`'s
+      merge (no collision on `taty_service.py`/`telegram_endpoints.py`, only `feature_list.json` +
+      `progress/history.md` append conflicts, trivially resolved). Corrected a stale claim during
+      the rebase: `chatwoot-hermes-taty-bridge` is `blocked`, not `done` (per its owning session's
+      more current `feature_list.json` on `origin/main`) — task 0.3's original note was wrong,
+      fixed in the merged history.
+- [x] 11.3 Merged to `main` (direct push, see 11.1). A sibling session
+      (`approval-queue-tenant-scoping`) merged 3 more commits shortly after (`18fd7a1..427c828`,
+      unrelated files) — Railway deployed that combined state.
+- [x] 11.4 Railway deploy active — deployment `5cac29b7` SUCCESS, `/api/v1/health` returns 200.
+- [x] 11.5 Checked Railway logs across both the transient deploy and the ~4h-old prior deployment
+      — no `/agents/ask` traffic from any real external consumer, only same-session smoke-test
+      calls hitting unrelated/mismatched paths. Auth flip confirmed safe.
+      `reports/2026-07-23-deployment.md`
+- [ ] 11.6 **PENDING FOUNDER** — Production verification: log in as a provisioned B2B client
+      (Bitwarden credentials) and call `/api/v1/agents/ask` with their session → answer scoped to
+      their own `legal_name`, no "Cliente no configurado". Not executable by this agent (no
+      plaintext credential handling per its operating constraints).
+- [ ] 11.6b **PENDING FOUNDER** — same constraint as 11.6: call `/api/v1/agents/ask` with a
       session that has no active `user_tenants` membership → `error_code="tenant_not_resolved"`,
-      never Cliente Cero (added per task 8's reviewer: local curl testing couldn't mint this JWT,
-      so this closes that gap against real production auth)
-- [ ] 11.7 Production verification: unauthenticated call to `/api/v1/agents/ask` under
-      `AUTH_ENFORCED=true` on Railway → 401
-- [ ] 11.8 Production verification: Cliente Cero's existing Telegram chat still answers normally
-- [ ] 11.9 Create report:
-      `openspec/changes/taty-per-tenant-profiles/reports/YYYY-MM-DD-deployment.md`
+      never Cliente Cero.
+- [x] 11.7 Production verification: unauthenticated call to `/api/v1/agents/ask` under
+      `AUTH_ENFORCED=true` on Railway → confirmed **401**
+      `{"detail":"Invalid or missing authentication token"}`; deleted route confirmed **404**;
+      `/api/v1/health` confirmed **200**
+- [ ] 11.8 **PENDING FOUNDER** — Production verification: Cliente Cero's existing Telegram chat
+      still answers normally. Requires access to the Telegram account/bot this agent does not have.
+- [x] 11.9 Created report:
+      `openspec/changes/taty-per-tenant-profiles/reports/2026-07-23-deployment.md`
 
 ## 12. Sync Specs and Archive
 
