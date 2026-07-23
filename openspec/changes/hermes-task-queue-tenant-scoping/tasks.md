@@ -7,16 +7,16 @@
 
 ## 1. Backend: Service-Layer Tests (TDD)
 
-- [ ] 1.1 `core/tenant_context.py`: add test(s) for new `tenant_exists(client, tenant_id)` helper
+- [x] 1.1 `core/tenant_context.py`: add test(s) for new `tenant_exists(client, tenant_id)` helper
       (mocked client, exists=True/False cases) — additive file, do not touch
       `resolve_cliente_cero_tenant_id`
-- [ ] 1.2 `tests/test_operator_task_service.py` — `TestCreateTask`: explicit valid `tenant_id` is
+- [x] 1.2 `tests/test_operator_task_service.py` — `TestCreateTask`: explicit valid `tenant_id` is
       stamped directly (Cliente Cero resolver NOT called); unknown `tenant_id` → rejected, no
       insert; omitted `tenant_id` → Cliente Cero fallback + `caplog` WARNING assertion; omitted
       `tenant_id` AND resolver returns `None` → explicit error, no insert
-- [ ] 1.3 `TestListPendingTasks`: assert explicit column projection (not `"*"`); `tenant_id` filter
+- [x] 1.3 `TestListPendingTasks`: assert explicit column projection (not `"*"`); `tenant_id` filter
       applied when passed / absent when omitted
-- [ ] 1.4 `TestDispatchCampaignPackage` — FIRST fix the `_fake_decision()` MagicMock truthiness
+- [x] 1.4 `TestDispatchCampaignPackage` — FIRST fix the `_fake_decision()` MagicMock truthiness
       trap: every existing test must explicitly set `decision.tenant_id = None` unless it's
       testing the real-tenant path (a bare Mock auto-attribute is truthy and would silently start
       exercising the wrong branch otherwise). THEN add: real `decision.tenant_id` → stamped
@@ -25,70 +25,70 @@
 
 ## 2. Backend: Service-Layer Implementation
 
-- [ ] 2.1 `core/tenant_context.py`: add `tenant_exists(client, tenant_id) -> bool`
-- [ ] 2.2 `operator_task_service.create_task()`: add optional `tenant_id` param; validate via
+- [x] 2.1 `core/tenant_context.py`: add `tenant_exists(client, tenant_id) -> bool`
+- [x] 2.2 `operator_task_service.create_task()`: add optional `tenant_id` param; validate via
       `tenant_exists` when provided (reject with `"tenant {id} not found"` on failure — routes
       through the existing `_raise_for_error` 404 mapping); fall back to
       `_resolve_cliente_cero_tenant_id` + `logger.warning(...)` when omitted; explicit error when
       the resolver also returns `None`
-- [ ] 2.3 `operator_task_service.list_pending_tasks()`: add optional `tenant_id` param
+- [x] 2.3 `operator_task_service.list_pending_tasks()`: add optional `tenant_id` param
       (conditional `.eq("tenant_id", ...)`); replace `select("*")` with explicit projection
       `"id, tenant_id, task_type, payload, status, created_at"`
-- [ ] 2.4 `operator_task_service.dispatch_campaign_package()`: derive tenant from
+- [x] 2.4 `operator_task_service.dispatch_campaign_package()`: derive tenant from
       `getattr(decision, "tenant_id", None)`; fall back to `_resolve_cliente_cero_tenant_id` +
       `logger.warning(...)` only when falsy
-- [ ] 2.5 Run 1.1-1.4 tests green
+- [x] 2.5 Run 1.1-1.4 tests green
 
 ## 3. Backend: Endpoint-Layer Tests (TDD)
 
-- [ ] 3.1 `tests/test_operator_task_endpoints.py`: `POST /tasks` with `tenant_id` in body →
+- [x] 3.1 `tests/test_operator_task_endpoints.py`: `POST /tasks` with `tenant_id` in body →
       service called with that value; omitted → service called with `tenant_id=None`
-- [ ] 3.2 `GET /tasks/pending?tenant_id=x` → service called with `tenant_id="x"`
-- [ ] 3.3 New `TestHermesBridgeToken`: `HERMES_BRIDGE_TOKEN` unset → all 5 endpoints behave as
+- [x] 3.2 `GET /tasks/pending?tenant_id=x` → service called with `tenant_id="x"`
+- [x] 3.3 New `TestHermesBridgeToken`: `HERMES_BRIDGE_TOKEN` unset → all 5 endpoints behave as
       today (open); set (monkeypatch settings) → missing header 401, wrong token 401, correct
       `Bearer <token>` → normal success status
-- [ ] 3.4 New `TestAuditRecording`: patch `agent_operations_logger.record` (AsyncMock) → assert
+- [x] 3.4 New `TestAuditRecording`: patch `agent_operations_logger.record` (AsyncMock) → assert
       called once per successful mutating endpoint (`POST /tasks`, `/dispatch`, `/status`,
       `/result`) with `agent_name="hermes-bridge"` and the row's `tenant_id`; assert NOT called
       for `GET /tasks/pending`
 
 ## 4. Backend: Endpoint-Layer Implementation
 
-- [ ] 4.1 `config.py`: add `HERMES_BRIDGE_TOKEN: Optional[str] = None`
-- [ ] 4.2 `sell_machine_endpoints.py`: add `require_hermes_bridge_token` dependency (reads
+- [x] 4.1 `config.py`: add `HERMES_BRIDGE_TOKEN: Optional[str] = None`
+- [x] 4.2 `sell_machine_endpoints.py`: add `require_hermes_bridge_token` dependency (reads
       `settings.HERMES_BRIDGE_TOKEN` at call time, no-op when unset, `hmac.compare_digest` bearer
       check, 401 on mismatch/missing); attach to exactly the 5 operator-task routes only
-- [ ] 4.3 `CreateTaskRequest` gains `tenant_id: Optional[str] = None`; `list_pending_tasks_endpoint`
+- [x] 4.3 `CreateTaskRequest` gains `tenant_id: Optional[str] = None`; `list_pending_tasks_endpoint`
       gains `tenant_id: Optional[str] = Query(default=None)`; both forwarded to the service
-- [ ] 4.4 Convert the 4 mutating endpoints to `async def`; after a successful service call, call
+- [x] 4.4 Convert the 4 mutating endpoints to `async def`; after a successful service call, call
       `agent_operations_logger.record(tenant_id=row["tenant_id"], agent_name="hermes-bridge",
       user_id="machine:hermes", operation_type=<route name>, status="success", duration_ms=<measured>,
       cost=Decimal("0"))` — best-effort, already fails closed internally; do NOT add to the poll
       endpoint
-- [ ] 4.5 Run 3.1-3.4 tests green
+- [x] 4.5 Run 3.1-3.4 tests green
 
 ## 5. Backend: Review and Update Existing Unit Tests (MANDATORY)
 
-- [ ] 5.1 Re-run the full pre-existing `test_operator_task_service.py` and
+- [x] 5.1 Re-run the full pre-existing `test_operator_task_service.py` and
       `test_operator_task_endpoints.py` suites; confirm no test broken by the signature changes
       beyond the intentional `_fake_decision.tenant_id` fix in Task 1.4
-- [ ] 5.2 Grep for any other caller of `create_task`, `list_pending_tasks`, or
+- [x] 5.2 Grep for any other caller of `create_task`, `list_pending_tasks`, or
       `dispatch_campaign_package` in the backend to confirm none break on the new optional params
       (all existing calls should remain valid — new params are additive/optional)
 
 ## 6. Backend: Run Unit Tests and Verify Database State (MANDATORY)
 
-- [ ] 6.1 Capture pre-test baseline: row count of `operator_tasks`, `agent_operations` (no live DB
+- [x] 6.1 Capture pre-test baseline: row count of `operator_tasks`, `agent_operations` (no live DB
       credentials in local `.env` — document the expected credential-gap traceback instead if
       integration tests can't reach Supabase locally)
-- [ ] 6.2 Run targeted tests: `pytest tests/test_operator_task_service.py
+- [x] 6.2 Run targeted tests: `pytest tests/test_operator_task_service.py
       tests/test_operator_task_endpoints.py tests/test_operator_tasks_schema.py -v`
       (schema test skipped locally unless `RUN_OPERATOR_TASKS=1` + service-role key present)
-- [ ] 6.3 Run the broader backend suite; note baseline pre-existing failures vs. any newly
+- [x] 6.3 Run the broader backend suite; note baseline pre-existing failures vs. any newly
       introduced ones
-- [ ] 6.4 Verify no unintended DB mutations (local run should not touch live Supabase without
+- [x] 6.4 Verify no unintended DB mutations (local run should not touch live Supabase without
       credentials)
-- [ ] 6.5 Create report
+- [x] 6.5 Create report
       `openspec/changes/hermes-task-queue-tenant-scoping/reports/YYYY-MM-DD-step-6-unit-test-and-db-verification.md`
 
 ## 7. Backend: Manual Endpoint Testing with curl (MANDATORY — AGENT MUST EXECUTE)

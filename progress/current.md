@@ -39,3 +39,24 @@ Plan:
 - TDD `backend_client.py` (HS256 JWT matching Hermes-operator contract, fail-soft) (Task Group 9)
 - TDD orchestration `process_incoming_message` + health check (Task Group 10)
 - Full suite `pytest apps/chatwoot-bridge/tests -v` green, report written, hand off to reviewer
+
+---
+
+## Sesión activa (2026-07-23)
+
+Task in progress: hermes-task-queue-tenant-scoping — Tasks 1-6 (branch
+`feature/hermes-task-queue-tenant-scoping`)
+
+Plan:
+- `core/tenant_context.py`: additive `tenant_exists(client, tenant_id)` helper (TDD)
+- `operator_task_service.py`: optional `tenant_id` on `create_task`/`list_pending_tasks`,
+  write-time tenant validation, derive tenant from `decision.tenant_id` in
+  `dispatch_campaign_package` (TDD)
+- `sell_machine_endpoints.py`: optional `HERMES_BRIDGE_TOKEN` bearer-auth dependency on the 5
+  operator-task routes, `agent_operations` audit parity on the 4 mutating routes (TDD)
+- Review/fix pre-existing tests broken by the signature/behavior changes (Task 5)
+- Run targeted + full suite, write Step 6 verification report (Task 6)
+
+Status: Tasks 1-6 done, handed to reviewer. Report:
+`progress/impl_hermes-task-queue-tenant-scoping-1-6.md`. Tasks 0, 7-11 (curl testing, docs,
+deploy, review gate, archive) intentionally out of scope for this session.
