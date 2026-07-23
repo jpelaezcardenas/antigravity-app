@@ -93,27 +93,28 @@
 
 ## 7. Backend: Manual Endpoint Testing with curl (MANDATORY — AGENT MUST EXECUTE)
 
-- [ ] 7.1 Start local backend with `SELL_MACHINE_CANONICAL=true`
-- [ ] 7.2 `curl GET /api/v1/sell-machine/tasks/pending` (no token, `HERMES_BRIDGE_TOKEN` unset) →
+- [x] 7.1 Start local backend with `SELL_MACHINE_CANONICAL=true`
+- [x] 7.2 `curl GET /api/v1/sell-machine/tasks/pending` (no token, `HERMES_BRIDGE_TOKEN` unset) →
       verify open behavior preserved (expect a Supabase credential-gap traceback locally — document
       it as proof the route + new projection code path was reached, not a failure)
-- [ ] 7.3 Set `HERMES_BRIDGE_TOKEN` locally, restart server: verify missing-header → 401 and
+- [x] 7.3 Set `HERMES_BRIDGE_TOKEN` locally, restart server: verify missing-header → 401 and
       wrong-token → 401 on all 5 routes (these precede any DB call — fully verifiable locally with
       no Supabase credentials)
-- [ ] 7.4 `curl POST /tasks` with a `tenant_id` in body, correct bearer token → verify request
+- [x] 7.4 `curl POST /tasks` with a `tenant_id` in body, correct bearer token → verify request
       reaches the service layer (expect the same credential-gap traceback past the token check)
-- [ ] 7.5 Document all curl commands + responses in the Step 6 report or a dedicated
+- [x] 7.5 Document all curl commands + responses in the Step 6 report or a dedicated
       `reports/YYYY-MM-DD-step-7-curl-testing.md`
 
 ## 8. Documentation Updates (MANDATORY)
 
-- [ ] 8.1 `AGENTES.md:324`: replace the flat "Direct HTTP calls to agents: BYPASS governance" note
+- [x] 8.1 `AGENTES.md:324`: replace the flat "Direct HTTP calls to agents: BYPASS governance" note
       — bypass remains true for agent HTTP generally, but the Hermes operator-task path now has
       optional machine-token auth + audit parity + write-time tenant validation; link this change
-- [ ] 8.2 `openspec/specs/bunker-pwa-auth/spec.md:38-40`: amend the "unguarded machine-to-machine
+- [x] 8.2 `openspec/specs/bunker-pwa-auth/spec.md:38-40`: amend the "unguarded machine-to-machine
       bridge" note to reference the new optional `HERMES_BRIDGE_TOKEN`
-- [ ] 8.3 `ARCHITECTURE.md`: touch only if a settled-decision line about the bridge needs updating
-      (likely no change needed — verify)
+- [x] 8.3 `ARCHITECTURE.md`: touch only if a settled-decision line about the bridge needs updating
+      (likely no change needed — verify) — verified: no Decisions-list line describes the
+      operator-task/Hermes bridge auth status at this level of detail; no edit made
 
 ## 9. Stage 11. Deploy to Production (MANDATORY — CLOSES THE LOOP)
 
