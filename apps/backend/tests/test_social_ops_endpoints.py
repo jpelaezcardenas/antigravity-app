@@ -92,11 +92,17 @@ class TestLeadReplyApprovalQueueIntegration:
         )
         lead_id = lead_response["lead"]["id"]
 
-        # Mock approval_queue_service.enqueue_draft to capture call
+        # Mock approval_queue_service.enqueue_draft to capture call, and mock the
+        # explicit Cliente Cero tenant resolution done at the call site (no
+        # silent default — see approval-queue-tenant-scoping design.md)
+        fake_cliente_cero_tenant_id = "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"
         with patch(
             "services.social_ops_service.ApprovalQueueService.enqueue_draft",
             new=AsyncMock(return_value=(True, None, None)),
-        ) as mock_enqueue:
+        ) as mock_enqueue, patch(
+            "services.social_ops_service.resolve_cliente_cero_tenant_id",
+            return_value=fake_cliente_cero_tenant_id,
+        ):
             # Draft lead reply (now async)
             draft = await service.draft_lead_reply(
                 lead_id=lead_id,
@@ -112,13 +118,56 @@ class TestLeadReplyApprovalQueueIntegration:
         assert draft["lead_id"] == lead_id
         assert draft["channel"] == "telegram"
 
-        # Verify enqueue_draft was called with correct draft_type
+        # Verify enqueue_draft was called with correct draft_type and the
+        # explicitly resolved Cliente Cero tenant_id
         mock_enqueue.assert_awaited_once()
         call_args = mock_enqueue.await_args
         # Args: draft_id, draft_type, journal_entry (payload), memo=""
         call_kwargs = call_args[1] if call_args[1] else {}
         enqueued_draft_type = call_kwargs.get("draft_type") or (call_args[0][1] if len(call_args[0]) > 1 else None)
         assert enqueued_draft_type == "social_reply"
+        assert call_kwargs.get("tenant_id") == fake_cliente_cero_tenant_id
+
+    @pytest.mark.asyncio
+    async def test_draft_lead_reply_skips_enqueue_when_cliente_cero_unresolved(
+        self,
+    ) -> None:
+        """
+        When Cliente Cero's tenant cannot be resolved, the enqueue is skipped
+        (logged, not silently defaulted) but the lead reply draft is still
+        created and returned.
+        """
+        from services.social_ops_service import SocialOpsService
+        from services.approval_queue_service import ApprovalQueueService
+
+        service = SocialOpsService()
+        lead_response = service.ingest_normalized_event(
+            {
+                "channel": "telegram",
+                "actor_handle": "test_user2",
+                "actor_name": "Test User 2",
+                "text": "Hola, tengo una pregunta sobre DIAN",
+                "source_event_id": "test-event-2",
+            }
+        )
+        lead_id = lead_response["lead"]["id"]
+
+        with patch(
+            "services.social_ops_service.ApprovalQueueService.enqueue_draft",
+            new=AsyncMock(return_value=(True, None, None)),
+        ) as mock_enqueue, patch(
+            "services.social_ops_service.resolve_cliente_cero_tenant_id",
+            return_value=None,
+        ):
+            draft = await service.draft_lead_reply(
+                lead_id=lead_id,
+                channel="telegram",
+                intent="inbound_question",
+                actor_handle="taty",
+            )
+
+        assert draft["id"]
+        mock_enqueue.assert_not_awaited()
 
 
 class TestCalendarioBorradoresEndpoints:

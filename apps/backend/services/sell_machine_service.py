@@ -16,6 +16,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from agents.content_evaluator import evaluate_hook
+from core.supabase_client import get_supabase
+from core.tenant_context import resolve_cliente_cero_tenant_id
 from services.approval_queue_service import ApprovalQueueService
 from services.copywriter_service import generate_hooks, rewrite_hook
 from services.crm_service import get_funnel_snapshot
@@ -107,11 +109,23 @@ async def create_campaign_package(
         "budget_cents": budget,
     }
 
+    tenant_id = resolve_cliente_cero_tenant_id(get_supabase())
+    if not tenant_id:
+        logger.warning(
+            "Skipping approval_queue enqueue for campaign_package draft %s: "
+            "Cliente Cero tenant could not be resolved",
+            draft_id,
+        )
+        raise RuntimeError(
+            "Failed to enqueue campaign package: Cliente Cero tenant could not be resolved"
+        )
+
     success, decision, error = await ApprovalQueueService.enqueue_draft(
         draft_id=draft_id,
         draft_type="campaign_package",
         journal_entry=package,
         memo=brief,
+        tenant_id=tenant_id,
     )
 
     if not success:

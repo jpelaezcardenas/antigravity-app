@@ -45,17 +45,27 @@
 
 ## 3. Internal Service Callers (explicit Cliente Cero, no silent default)
 
-- [ ] 3.1 `apps/backend/services/resolution_agent_service.py:106,157` — pass the
+- [x] 3.1 `apps/backend/services/resolution_agent_service.py:106,157` — pass the
       already-in-scope `tenant_id` through to `enqueue_draft`; update its tests
-- [ ] 3.2 `apps/backend/services/social_ops_service.py:829` — resolve
+      (no dedicated mock of `enqueue_draft` existed for this service — its own test files
+      (`test_resolution_agent.py`, `test_resolution_agent_retry.py`) are `RUN_SHADOW_GL=1`
+      gated live-integration tests that call `generate_draft`/`generate_draft_with_retry`
+      with a real `tenant_id`, so no mock update was needed; confirmed by inspection + a
+      skipped-collection run)
+- [x] 3.2 `apps/backend/services/social_ops_service.py:829` — resolve
       `resolve_cliente_cero_tenant_id(get_supabase())` explicitly at the call site before
       `enqueue_draft`; log + skip if `None`; update `tests/test_social_ops_endpoints.py`
-- [ ] 3.3 `apps/backend/services/sell_machine_service.py:110` — same explicit resolution;
+- [x] 3.3 `apps/backend/services/sell_machine_service.py:110` — same explicit resolution;
       update `tests/test_sell_machine_service.py`
-- [ ] 3.4 Confirm `tests/test_operator_task_service.py` still green (no signature change to
-      `list_drafts`)
-- [ ] 3.5 `grep -rn "enqueue_draft(" apps/backend` — confirm every call site was updated (no
-      stray callers left on the old implicit-Cliente-Cero signature)
+- [x] 3.4 Confirm `tests/test_operator_task_service.py` still green (no signature change to
+      `list_drafts`) — 13/13 passed unchanged
+- [x] 3.5 `grep -rn "enqueue_draft(" apps/backend` — confirm every call site was updated (no
+      stray callers left on the old implicit-Cliente-Cero signature); also grepped
+      `approve_draft(`/`reject_draft(` — the only production callers outside
+      `services/approval_queue_service.py` are `presentation/approval_queue_endpoints.py`
+      (Section 4, out of scope here) and `presentation/social_ops_endpoints.py`, which calls
+      `SocialOpsService.approve_draft`/`reject_draft` — unrelated in-memory methods on a
+      different class, not `ApprovalQueueService`
 
 ## 4. Endpoints (TDD)
 
