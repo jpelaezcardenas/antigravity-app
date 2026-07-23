@@ -1,9 +1,9 @@
 ## 0. Setup: Create Feature Branch (MANDATORY - FIRST STEP)
 
-- [ ] 0.1 Create feature branch `feature/taty-lead-router-tenant-scoping` from
+- [x] 0.1 Create feature branch `feature/taty-lead-router-tenant-scoping` from
       `feature/chatwoot-hermes-taty-bridge` (**not** `main` — `CrmService.whatsapp_intake` only
       exists on that branch today; see design.md's Hard dependency note)
-- [ ] 0.2 Verify branch creation and current branch status (`git status`, `git branch --show-current`)
+- [x] 0.2 Verify branch creation and current branch status (`git status`, `git branch --show-current`)
 
 ## 1. Backend: Extend `whatsapp_intake` with optional `full_name` (TDD)
 
@@ -77,12 +77,12 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 7.1 This change's branch merges into `feature/chatwoot-hermes-taty-bridge` (its base), not
+- [x] 7.1 This change's branch merges into `feature/chatwoot-hermes-taty-bridge` (its base), not
       directly into `main` — it ships to production only when that branch's own Stage 11 (backend
       endpoint → Railway `-175a`) runs, since neither `CRM_CANONICAL` nor `WHATSAPP_CANONICAL` is
       live in production yet regardless
-- [ ] 7.2 Create report:
-      `openspec/changes/taty-lead-router-tenant-scoping/reports/YYYY-MM-DD-deployment.md`, noting
+- [x] 7.2 Create report:
+      `openspec/changes/taty-lead-router-tenant-scoping/reports/2026-07-23-deployment.md`, noting
       the merge target and that production deploy is deferred to the parent branch's own Stage 11
 
 ## 8. Review Gate
