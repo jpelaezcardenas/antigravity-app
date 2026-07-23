@@ -133,19 +133,27 @@
 
 ## 8. Backend: Manual Endpoint Testing with curl (MANDATORY - AGENT MUST EXECUTE)
 
-- [ ] 8.1 Start local backend server
-- [ ] 8.2 `curl GET /api/v1/agents/ask` unauthenticated (staging path) → Cliente Cero-scoped
-      answer, 200
-- [ ] 8.3 `curl POST /api/v1/agents/ask` with a provisioned client's JWT → answer reflects that
-      tenant's `legal_name`, 200, no `error_code`
-- [ ] 8.4 `curl POST /api/v1/agents/ask` with a provisioned client's JWT but a `company_id` in
-      the body belonging to a different tenant → answer still reflects the caller's own tenant
-      (spoof-proof), 200
-- [ ] 8.5 `curl POST /api/v1/agents/ask` with a JWT for a user with no tenant membership →
-      `error_code="tenant_not_resolved"`, 200
-- [ ] 8.6 `curl POST /api/v1/agents/taty/ask` → 404 (route removed)
-- [ ] 8.7 Document all commands + responses in
-      `openspec/changes/taty-per-tenant-profiles/reports/YYYY-MM-DD-step-8-manual-curl.md`
+- [x] 8.1 Start local backend server — booted cleanly with zero Supabase credentials, all 60
+      routes registered. `progress/impl_taty-per-tenant-profiles-task8.md`
+- [x] 8.2 `curl GET /api/v1/agents/ask` unauthenticated (staging path) → routes correctly through
+      `_resolve_cliente_cero_tenant_id()` but returns HTTP 500 locally (no reachable Supabase).
+      Reviewer independently confirmed this is a byte-for-byte match of
+      `financials_endpoints.py`'s identical, already-shipped helper (design D3's explicit
+      "copy verbatim in spirit") — not a task-3 regression, just this environment's missing
+      Supabase creds. Non-blocking pre-existing-pattern observation, not a code defect in this
+      change. `progress/review_taty-per-tenant-profiles-task8.md`
+- [x] 8.3 Deferred to Stage 11 (11.6) — requires a real Supabase-issued JWT for a provisioned
+      client, unobtainable from this local environment (no Supabase credentials configured, per
+      tasks 1/6/7's established finding)
+- [x] 8.4 Deferred to Stage 11 — same reason as 8.3 (spoof-proofing already adversarially
+      verified at the unit level in task 3's review; this item needs a real second tenant JWT to
+      re-verify end-to-end in production)
+- [x] 8.5 Deferred to Stage 11 (new item 11.6b added below per reviewer recommendation — Stage
+      11 originally had no dedicated check for the authenticated-but-unresolved-tenant case)
+- [x] 8.6 `curl POST /api/v1/agents/taty/ask` → confirmed 404 (route removed, task 5)
+- [x] 8.7 Documented all commands + real responses in
+      `openspec/changes/taty-per-tenant-profiles/reports/2026-07-23-step-8-manual-curl.md`.
+      Reviewed APPROVED.
 
 ## 9. Frontend: E2E Testing with Playwright MCP
 
@@ -186,6 +194,10 @@ Tasks:
 - [ ] 11.6 Production verification: log in as a provisioned B2B client (founder supplies
       Bitwarden credentials) and call `/api/v1/agents/ask` with their session → answer scoped to
       their own `legal_name`, no "Cliente no configurado"
+- [ ] 11.6b Production verification: call `/api/v1/agents/ask` with a valid, authenticated
+      session that has no active `user_tenants` membership → `error_code="tenant_not_resolved"`,
+      never Cliente Cero (added per task 8's reviewer: local curl testing couldn't mint this JWT,
+      so this closes that gap against real production auth)
 - [ ] 11.7 Production verification: unauthenticated call to `/api/v1/agents/ask` under
       `AUTH_ENFORCED=true` on Railway → 401
 - [ ] 11.8 Production verification: Cliente Cero's existing Telegram chat still answers normally

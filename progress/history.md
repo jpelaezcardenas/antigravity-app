@@ -140,3 +140,11 @@ Stage 11 (no Supabase creds in this local worktree). Report:
 reports/2026-07-23-step-7-unit-test-and-db-verification.md. Reviewer independently reproduced
 the full failure set byte-for-byte + read 6 tracebacks directly + checked indirect coupling
 via router.py imports. APPROVED.
+
+## taty-per-tenant-profiles — task 8 (2026-07-23)
+Mandatory manual curl testing. Locally testable: 8.2 (unauthenticated staging path, routes
+correctly but 500s due to no local Supabase — confirmed identical to financials_endpoints.py's
+existing pattern, not a regression), 8.6 (deleted route -> 404), 8.7 (malformed body -> 422).
+8.3-8.5 (provisioned-client/spoof/unresolved-tenant JWT scenarios) honestly deferred to Stage 11
+-- no way to mint a real Supabase JWT locally. Reviewer added Stage 11 item 11.6b for the
+unresolved-tenant production check (gap task 8 surfaced). APPROVED.
