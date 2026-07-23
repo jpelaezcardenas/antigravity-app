@@ -20,7 +20,7 @@ import logging
 import json
 
 from core.supabase_client import get_service_supabase
-from core.tenant_context import resolve_cliente_cero_tenant_id
+from core.tenant_context import require_tenant_id
 
 logger = logging.getLogger(__name__)
 
@@ -397,18 +397,25 @@ class CentinelaService:
 
         return alerts
 
-    def save_alerts(self, alerts: List[Dict]) -> List[str]:
-        """Guarda alertas en Supabase y retorna IDs creados"""
+    def save_alerts(self, alerts: List[Dict], tenant_id: str) -> List[str]:
+        """Guarda alertas en Supabase y retorna IDs creados.
+
+        tenant_id is required — Cliente Cero is never an implicit default (see
+        core/tenant_context.py::require_tenant_id and ARCHITECTURE.md Decision
+        #13's Centinela extension). It is authoritative for the whole batch,
+        overriding any per-alert tenant_id key a caller might have set.
+        """
+        tenant_id = require_tenant_id(tenant_id, context="centinela.save_alerts")
+
         if not alerts:
             return []
 
         try:
             supabase = get_service_supabase()
-            tenant_id = resolve_cliente_cero_tenant_id(supabase)
             saved_ids = []
 
             for alert in alerts:
-                row = alert if "tenant_id" in alert else {**alert, "tenant_id": tenant_id}
+                row = {**alert, "tenant_id": tenant_id}
                 result = supabase.table("centinela_alerts").insert(row).execute()
                 if result.data:
                     saved_ids.append(result.data[0]["id"])

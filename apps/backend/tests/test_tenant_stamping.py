@@ -15,6 +15,7 @@ import pytest
 
 from services.approval_queue_service import ApprovalQueueService
 from services.centinela_service import CentinelaService
+from core.tenant_context import TenantResolutionError
 
 
 def _mock_client_with_tenant(tenant_id: str = "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"):
@@ -25,6 +26,11 @@ def _mock_client_with_tenant(tenant_id: str = "e2d30d09-6b96-4ebe-a79a-c6aff7a5d
     return client
 
 
+# NOTE: ApprovalQueueService.enqueue_draft has the identical implicit-Cliente-Cero
+# stamp as CentinelaService.save_alerts did before centinela-tenant-scoped-alerts.
+# This test class is left untouched here — it is the target of a future sibling
+# change (approval-queue-tenant-scoped-writes) that adopts require_tenant_id /
+# resolve_caller_tenant from core/tenant_context.py. See design.md §9.
 class TestEnqueueDraftStampsTenantId:
     @pytest.mark.asyncio
     async def test_stamps_resolved_tenant_id_on_insert(self):
@@ -67,7 +73,11 @@ class TestEnqueueDraftStampsTenantId:
 
 
 class TestSaveAlertsStampsTenantId:
-    def test_stamps_resolved_tenant_id_on_each_alert(self):
+    """save_alerts is now fail-loud: tenant_id is a required parameter and is
+    never resolved from Cliente Cero implicitly (centinela-tenant-scoped-alerts).
+    """
+
+    def test_save_alerts_stamps_required_tenant_id(self):
         client = _mock_client_with_tenant()
         client.table.return_value.insert.return_value.execute.return_value.data = [
             {"id": "alert-1"}
@@ -76,14 +86,31 @@ class TestSaveAlertsStampsTenantId:
         service = CentinelaService()
         with patch("services.centinela_service.get_service_supabase", return_value=client):
             saved_ids = service.save_alerts(
-                [{"rule_id": "R001", "company_id": "ctx-001", "severity": "warning"}]
+                [{"rule_id": "R001", "company_id": "ctx-001", "severity": "warning"}],
+                tenant_id="tenant-medic",
             )
 
         assert saved_ids == ["alert-1"]
         insert_call_args = client.table.return_value.insert.call_args[0][0]
-        assert insert_call_args["tenant_id"] == "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"
+        assert insert_call_args["tenant_id"] == "tenant-medic"
+        # No Cliente Cero lookup should occur — the parameter is authoritative.
+        client.table.return_value.select.assert_not_called()
 
-    def test_does_not_override_an_explicitly_provided_tenant_id(self):
+    def test_save_alerts_raises_without_tenant_id(self):
+        client = _mock_client_with_tenant()
+        service = CentinelaService()
+
+        with patch("services.centinela_service.get_service_supabase", return_value=client):
+            for missing in (None, ""):
+                with pytest.raises(TenantResolutionError):
+                    service.save_alerts(
+                        [{"rule_id": "R001", "company_id": "ctx-001", "severity": "warning"}],
+                        tenant_id=missing,
+                    )
+
+        client.table.return_value.insert.assert_not_called()
+
+    def test_save_alerts_parameter_overrides_per_alert_tenant_id(self):
         client = _mock_client_with_tenant()
         client.table.return_value.insert.return_value.execute.return_value.data = [
             {"id": "alert-1"}
@@ -99,8 +126,9 @@ class TestSaveAlertsStampsTenantId:
                         "severity": "warning",
                         "tenant_id": "other-tenant",
                     }
-                ]
+                ],
+                tenant_id="tenant-medic",
             )
 
         insert_call_args = client.table.return_value.insert.call_args[0][0]
-        assert insert_call_args["tenant_id"] == "other-tenant"
+        assert insert_call_args["tenant_id"] == "tenant-medic"
