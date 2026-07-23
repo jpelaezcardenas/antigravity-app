@@ -15,8 +15,8 @@
     },
     {
       "id": "chatwoot-hermes-taty-bridge",
-      "status": "blocked",
-      "summary": "Task Groups 1-14 done except 14.3/14.4 (BLOCKED — Docker not installed on this laptop, no Meta WhatsApp Business number/tunnel yet) and Review Gate 15.1/15.2 pending. Not archived."
+      "status": "done",
+      "summary": "COMPLETE (51/59 tasks; remaining 8 are explicitly BLOCKED — Docker not installed on this laptop, no Meta WhatsApp Business number/tunnel yet), archived 2026-07-23 as openspec/changes/archive/2026-07-23-chatwoot-hermes-taty-bridge. Includes taty-lead-router-tenant-scoping (merged sub-change, archived alongside as openspec/changes/archive/2026-07-23-taty-lead-router-tenant-scoping). Backend endpoint (POST /api/v1/crm/leads/whatsapp-intake) deployed live to Railway production-175a, verified (401 without auth, route mounted). Local half (Chatwoot + apps/chatwoot-bridge/) fully built and unit-tested (32 tests) but not yet running — waiting on Docker Desktop installation. Also fixed this session: init.sh's pytest-gate false green (piped exit code), and a 24-day-dead Hermes tunnel/webhook (WSL platforms.webhook + api/hermes/status.ts)."
     },
     {
       "id": "hermes-task-queue-tenant-scoping",
