@@ -1,7 +1,8 @@
 """Tests for the background orchestration pipeline process_incoming_message
 (Task Group 10): audio fallback, full text pipeline (intake -> history ->
 Hermes -> reply) in order, Hermes-failure fallback reply, and CRM-failure
-graceful continuation (design.md decisions 5 and 7)."""
+graceful continuation (design.md decisions 5 and 7). A new lead only tags the
+Chatwoot contact — it never triggers the B2B onboarding flow (Task 10.5)."""
 
 from __future__ import annotations
 
@@ -19,8 +20,6 @@ def mocked_clients():
     with patch.object(
         main_module.backend_client, "whatsapp_intake", new=AsyncMock(return_value={"is_new": False})
     ) as intake, patch.object(
-        main_module.backend_client, "trigger_onboarding", new=AsyncMock()
-    ) as onboarding, patch.object(
         main_module.chatwoot_client, "get_recent_messages", new=AsyncMock(return_value=[])
     ) as history, patch.object(
         main_module.chatwoot_client, "send_reply", new=AsyncMock()
@@ -31,7 +30,6 @@ def mocked_clients():
     ) as invoke:
         yield main_module, {
             "intake": intake,
-            "onboarding": onboarding,
             "history": history,
             "send_reply": send_reply,
             "set_attrs": set_attrs,
@@ -78,7 +76,7 @@ class TestFullTextPipeline:
         mocks["send_reply"].assert_awaited_once_with(42, "Respuesta de Taty")
 
     @pytest.mark.asyncio
-    async def test_new_lead_triggers_onboarding_and_sets_contact_attributes(self, mocked_clients):
+    async def test_new_lead_sets_contact_attributes_without_onboarding(self, mocked_clients):
         main_module, mocks = mocked_clients
         mocks["intake"].return_value = {"is_new": True}
 
@@ -90,14 +88,13 @@ class TestFullTextPipeline:
             phone="+573001234567",
         )
 
-        mocks["onboarding"].assert_awaited_once()
         mocks["set_attrs"].assert_awaited_once()
         args, _ = mocks["set_attrs"].call_args
         assert args[0] == 7
         assert args[1]["estado"] == "nuevo"
 
     @pytest.mark.asyncio
-    async def test_returning_contact_does_not_trigger_onboarding(self, mocked_clients):
+    async def test_returning_contact_does_not_set_contact_attributes(self, mocked_clients):
         main_module, mocks = mocked_clients
         mocks["intake"].return_value = {"is_new": False}
 
@@ -109,7 +106,6 @@ class TestFullTextPipeline:
             phone="+573001234567",
         )
 
-        mocks["onboarding"].assert_not_called()
         mocks["set_attrs"].assert_not_called()
 
     @pytest.mark.asyncio
@@ -125,7 +121,6 @@ class TestFullTextPipeline:
             phone="+573001234567",
         )
 
-        mocks["onboarding"].assert_not_called()
         mocks["invoke"].assert_awaited_once()
         mocks["send_reply"].assert_awaited_once_with(42, "Respuesta de Taty")
 

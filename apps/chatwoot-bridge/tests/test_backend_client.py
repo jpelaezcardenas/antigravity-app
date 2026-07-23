@@ -1,6 +1,6 @@
 """Tests for backend_client.py (Task Group 9): tenant JWT signing matching the
-Hermes-operator contract, lead intake, onboarding trigger, fail-soft on any
-failure. All HTTP mocked with respx."""
+Hermes-operator contract, lead intake, fail-soft on any failure. All HTTP
+mocked with respx."""
 
 from __future__ import annotations
 
@@ -91,30 +91,3 @@ class TestWhatsappIntake:
         result = await backend_client.whatsapp_intake("+573001234567")
 
         assert result is None
-
-
-class TestTriggerOnboarding:
-    @respx.mock
-    @pytest.mark.asyncio
-    async def test_posts_to_onboarding_start(self):
-        import backend_client
-
-        route = respx.post(f"{BACKEND_URL}/social-ops/onboarding/start").mock(
-            return_value=Response(200, json={"status": "started"})
-        )
-
-        await backend_client.trigger_onboarding()
-
-        assert route.called
-
-    @respx.mock
-    @pytest.mark.asyncio
-    async def test_failure_is_swallowed_not_raised(self):
-        import backend_client
-
-        respx.post(f"{BACKEND_URL}/social-ops/onboarding/start").mock(
-            side_effect=httpx.ConnectError("refused")
-        )
-
-        # Must not raise.
-        await backend_client.trigger_onboarding()

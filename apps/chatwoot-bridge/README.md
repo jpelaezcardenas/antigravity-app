@@ -14,21 +14,22 @@ Taty's brain is local Hermes, so the inbox/bridge must be local too).
 ```
 Chatwoot (WhatsApp) --webhook--> bridge --HTTP--> Hermes Gateway (taty-v1)
                                     |
-                                    +--HTTP--> Contexia backend (CRM lead intake, onboarding)
+                                    +--HTTP--> Contexia backend (CRM lead intake)
 ```
 
 1. `POST /webhook` receives every Chatwoot event.
 2. Filters for genuine incoming customer messages (not private notes, not
    outgoing/echoed bot replies — loop prevention) and checks the `bot_off`
    label for human-in-the-loop pause.
-3. Background pipeline: CRM lead intake (find-or-create + onboarding trigger
-   for new leads) -> fetch recent conversation history -> call Hermes's
-   OpenAI-compatible `/v1/chat/completions` -> post the reply back to
-   Chatwoot.
+3. Background pipeline: CRM lead intake (find-or-create; new leads get their
+   Chatwoot contact tagged `tipo_lead`/`estado: "nuevo"` — no company
+   onboarding is triggered here, see design.md decision 5) -> fetch recent
+   conversation history -> call Hermes's OpenAI-compatible
+   `/v1/chat/completions` -> post the reply back to Chatwoot.
 4. Audio attachments get a fixed Spanish "please send text" fallback instead
    of a transcription attempt (no GPU on this laptop — phase 2 non-goal).
-5. Any dependency failure (CRM, onboarding, Hermes) degrades gracefully — the
-   customer always gets some reply, never silence (design.md decision 7).
+5. Any dependency failure (CRM, Hermes) degrades gracefully — the customer
+   always gets some reply, never silence (design.md decision 7).
 
 ## Environment variables
 
@@ -94,6 +95,11 @@ uvicorn main:app --port 8090
   `CONTEXIA_API_URL` and `CONTEXIA_JWT_SECRET` — a failed intake call is
   logged but swallowed by design (the conversation still gets an AI reply),
   so look at the bridge's logs, not the webhook response.
+- **New leads aren't getting a company/workspace onboarded automatically**:
+  this is expected, not a bug — the bridge deliberately does not call company
+  onboarding on first WhatsApp contact (design.md decision 5). That flow
+  belongs to a later funnel stage (a closed B2B sale), not a lead's first
+  message.
 
 ## Tests
 

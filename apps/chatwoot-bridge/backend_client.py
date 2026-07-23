@@ -1,5 +1,8 @@
 """Client for the Contexia backend, reused (not duplicated) for CRM lead
-intake and onboarding trigger (design.md decision 5).
+intake (design.md decision 5). The bridge only finds-or-creates the CRM lead
+and tags the Chatwoot contact — it never triggers the B2B/paid-customer
+onboarding flow, which requires company_name/customer_email/payment_reference
+that a fresh B2C WhatsApp lead does not have.
 
 Auth: HS256 JWT signed with the shared CONTEXIA_JWT_SECRET, following the
 exact contract already documented for Hermes operators in
@@ -9,9 +12,9 @@ Contexia's own `create_access_token` uses ("contexia-org-1", see
 apps/backend/core/identity_resolver.py) — so TenantContextMiddleware and
 Supabase RLS need zero backend-side changes (design.md decision 6).
 
-Fail-soft contract (design.md decision 7): whatsapp_intake and
-trigger_onboarding never raise. Any failure (network, non-200) is logged and
-swallowed so a down CRM/onboarding service never blocks the WhatsApp reply.
+Fail-soft contract (design.md decision 7): whatsapp_intake never raises. Any
+failure (network, non-200) is logged and swallowed so a down CRM service
+never blocks the WhatsApp reply.
 """
 
 from __future__ import annotations
@@ -70,20 +73,3 @@ async def whatsapp_intake(phone: str) -> Optional[dict[str, Any]]:
     except Exception:
         logger.exception("whatsapp_intake call failed")
         return None
-
-
-async def trigger_onboarding() -> None:
-    """Kick off the existing onboarding flow for a new WhatsApp lead. Fails
-    soft — logs and swallows any error, never raises."""
-    url = f"{settings.CONTEXIA_API_URL}/social-ops/onboarding/start"
-    try:
-        async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:
-            response = await client.post(url, headers=_headers(), json={})
-        if response.status_code >= 400:
-            logger.error(
-                "trigger_onboarding returned an error: %s %s",
-                response.status_code,
-                response.text,
-            )
-    except Exception:
-        logger.exception("trigger_onboarding call failed")

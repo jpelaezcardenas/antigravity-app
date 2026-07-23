@@ -82,24 +82,31 @@ SHALL log the failure and continue to the Hermes reply step rather than aborting
 - **THEN** the bridge logs the failure and still proceeds to fetch history, invoke Hermes, and
   dispatch a reply
 
-### Requirement: New WhatsApp contacts trigger lead intake and onboarding
+### Requirement: New WhatsApp contacts trigger lead intake and are tagged as new
 When the bridge processes the first processable incoming message for a conversation, it SHALL call
 `POST /api/v1/crm/leads/whatsapp-intake` with the contact's phone number. If the response indicates
-the lead is new (`is_new: true`), the bridge SHALL call the existing
-`POST /api/v1/social-ops/onboarding/start` and SHALL set the Chatwoot contact's custom attributes
+the lead is new (`is_new: true`), the bridge SHALL set the Chatwoot contact's custom attributes
 `tipo_lead` and `estado: "nuevo"`.
 
-#### Scenario: First message from an unknown phone number starts onboarding
+The bridge SHALL NOT call `POST /api/v1/social-ops/onboarding/start` (or any other company/workspace
+onboarding endpoint) from this flow. That endpoint's `OnboardingStartRequest` (`company_name`,
+`customer_email`, `payment_reference`) represents the B2B/paid-customer 21-day workspace onboarding
+that runs after a sale closes — a brand-new `NUEVOS`-stage lead has none of that information yet.
+A fresh WhatsApp lead SHALL simply proceed to a normal qualifying conversation with Taty (via
+Hermes), same as any other B2C channel; company onboarding is a separate, later-stage concern (see
+`design.md` decision 5) out of scope for this bridge.
+
+#### Scenario: First message from an unknown phone number tags the lead as new
 - **WHEN** the bridge processes an incoming message from a WhatsApp contact not previously known to
   the CRM
-- **THEN** `POST /api/v1/crm/leads/whatsapp-intake` returns `is_new: true`, the bridge calls
-  `POST /api/v1/social-ops/onboarding/start`, and sets the Chatwoot contact's `estado` attribute to
-  `"nuevo"`
+- **THEN** `POST /api/v1/crm/leads/whatsapp-intake` returns `is_new: true`, the bridge sets the
+  Chatwoot contact's `estado` attribute to `"nuevo"`, and the bridge does not call
+  `POST /api/v1/social-ops/onboarding/start` or any other onboarding endpoint
 
-#### Scenario: Returning contact does not re-trigger onboarding
+#### Scenario: Returning contact is not re-tagged
 - **WHEN** the bridge processes an incoming message from a WhatsApp contact already known to the CRM
 - **THEN** `POST /api/v1/crm/leads/whatsapp-intake` returns `is_new: false` and the bridge does not
-  call the onboarding endpoint
+  set the contact's custom attributes again nor call any onboarding endpoint
 
 ### Requirement: Audio attachments receive a graceful text-only fallback
 When an incoming message includes an attachment with `file_type == "audio"`, the bridge SHALL NOT

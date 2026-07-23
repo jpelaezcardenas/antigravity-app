@@ -113,6 +113,17 @@
 - [x] 10.3 Implement `GET /` health check including the Hermes `check_models()` log — test coverage
       added in `tests/test_health.py` after a reviewer round-trip (initial pass missed it)
 - [x] 10.4 Run `pytest apps/chatwoot-bridge/tests -v` (full suite) and confirm all pass — 32 passed
+- [x] 10.5 **Design correction (2026-07-23, pre-archive, per CLAUDE.md §7):** remove the
+      `POST /api/v1/social-ops/onboarding/start` call from `process_incoming_message` — it targets
+      the B2B/paid-customer 21-day workspace onboarding endpoint (`company_name`/`customer_email`/
+      `payment_reference` required), not a fresh B2C WhatsApp lead, and always 422s today (silently
+      swallowed by the fail-soft contract). Remove `backend_client.trigger_onboarding()` (dead code
+      once nothing calls it), update `main.py`'s new-lead branch to only call
+      `chatwoot_client.set_contact_attributes`, and update/remove the now-incorrect
+      onboarding-trigger assertions in `tests/test_process_message.py` and
+      `tests/test_backend_client.py`. `design.md` decision 5 and
+      `specs/chatwoot-hermes-bridge/spec.md`'s lead-intake requirement already updated to reflect
+      this. Re-run `pytest apps/chatwoot-bridge/tests -v` and confirm all pass.
 
 ## 11. Local Infrastructure: Chatwoot Docker Compose
 

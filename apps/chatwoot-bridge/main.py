@@ -92,7 +92,6 @@ async def process_incoming_message(
         # Graceful degradation (design.md decision 7): a failed intake call
         # never blocks the reply — just skip the new-lead side effects below.
         if intake_result and intake_result.get("is_new") and contact_id is not None:
-            await backend_client.trigger_onboarding()
             await chatwoot_client.set_contact_attributes(
                 contact_id, {"tipo_lead": "b2c_whatsapp", "estado": "nuevo"}
             )
