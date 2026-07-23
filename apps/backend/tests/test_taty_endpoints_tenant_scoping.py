@@ -1,5 +1,7 @@
 """
-Tests for POST/GET /api/v1/agents/ask tenant resolution (taty-per-tenant-profiles, task 3).
+Tests for POST/GET /api/v1/agents/ask tenant resolution (taty-per-tenant-profiles, task 3;
+migrated onto the canonical `resolve_request_tenant_scope` helper by
+agent-endpoints-real-tenant-filtering, Stage 4).
 
 Before this change, the endpoint had ZERO auth and trusted a client-supplied
 `company_id` to select the profile — any caller could read any tenant's Taty
@@ -17,7 +19,16 @@ Mirrors the direct-function-call pattern of
 `test_financials_endpoint_tenant_scoping.py` — calls the endpoint functions
 directly with hand-built `user` dicts, monkeypatching `get_taty_service()`
 (so this tests the endpoint's resolution logic, not the full `ask()` -> LLM
-flow) and `_resolve_cliente_cero_tenant_id()`.
+flow) and `core.tenant_context.resolve_cliente_cero_tenant_id` (the endpoint's
+own file-local async `_resolve_cliente_cero_tenant_id` was removed in the
+Stage 4 migration onto the shared helper).
+
+Note: `resolve_request_tenant_scope` always calls `resolve_cliente_cero_tenant_id` first
+(to detect the Contexia-operator case), unlike the removed file-local helper, which was
+only invoked for the staging identity. The autouse fixture below stubs it to a value that
+never matches any test's `resolved_tenant_id`, so the operator/all_tenants branch is never
+accidentally taken — the property under test is "the caller never receives Cliente Cero's
+tenant_id", not "the lookup was never invoked".
 """
 
 import asyncio
@@ -59,6 +70,16 @@ def fake_taty(monkeypatch):
     return fake
 
 
+@pytest.fixture(autouse=True)
+def _stub_cliente_cero_lookup(monkeypatch):
+    import core.tenant_context as tenant_context_module
+
+    monkeypatch.setattr(
+        tenant_context_module, "resolve_cliente_cero_tenant_id",
+        lambda client: "unrelated-cliente-cero-id",
+    )
+
+
 class TestAskTatyEndpointTenantScoping:
     def test_resolved_user_is_scoped_to_own_tenant(self, fake_taty):
         user = {
@@ -76,40 +97,23 @@ class TestAskTatyEndpointTenantScoping:
         assert response.error_code is None
 
     def test_staging_identity_falls_back_to_cliente_cero(self, fake_taty, monkeypatch):
-        import presentation.taty_endpoints as endpoints_module
-
-        called = {"cliente_cero": False}
-
-        async def fake_resolve_cliente_cero():
-            called["cliente_cero"] = True
-            return "cliente-cero-tenant-uuid"
+        import core.tenant_context as tenant_context_module
 
         monkeypatch.setattr(
-            endpoints_module, "_resolve_cliente_cero_tenant_id", fake_resolve_cliente_cero
+            tenant_context_module, "resolve_cliente_cero_tenant_id",
+            lambda client: "cliente-cero-tenant-uuid",
         )
 
         request = TatyAskRequest(question="¿Cuál es el UVT 2026?")
         response = run(ask_taty(request=request, user=dict(_STAGING_USER)))
 
-        assert called["cliente_cero"] is True
         assert len(fake_taty.ask_calls) == 1
         assert fake_taty.ask_calls[0]["tenant_id"] == "cliente-cero-tenant-uuid"
         assert response.error_code is None
 
     def test_authenticated_unresolved_caller_gets_error_and_never_calls_cliente_cero(
-        self, fake_taty, monkeypatch
+        self, fake_taty
     ):
-        import presentation.taty_endpoints as endpoints_module
-
-        async def must_not_be_called():
-            raise AssertionError(
-                "Cliente Cero fallback must not be used for an authenticated, unresolved caller"
-            )
-
-        monkeypatch.setattr(
-            endpoints_module, "_resolve_cliente_cero_tenant_id", must_not_be_called
-        )
-
         user = {
             "id": "76680e1f-2943-4235-8501-18b090d59257",
             "email": "growth@contexia.online",

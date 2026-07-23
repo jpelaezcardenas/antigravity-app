@@ -1,10 +1,20 @@
 """
 Tests for POST /api/v1/centinela/evaluate and GET /api/v1/centinela/alerts/{company_id}
-tenant resolution (centinela-tenant-scoped-alerts).
+tenant resolution (centinela-tenant-scoped-alerts, migrated onto the canonical
+`resolve_request_tenant_scope` helper by agent-endpoints-real-tenant-filtering, Stage 4).
 
 Mirrors the pattern established by test_financials_endpoint_tenant_scoping.py:
 monkeypatched service calls + fake user dicts, calling the endpoint functions
 directly (no HTTP client), so these run without a real Supabase connection.
+
+Note: `resolve_request_tenant_scope` always calls `resolve_cliente_cero_tenant_id` first
+(to detect the Contexia-operator case), unlike the removed `resolve_caller_tenant`, which
+only called it for the staging identity. Every test here mocks
+`resolve_cliente_cero_tenant_id` (via the autouse fixture below) to a value that never
+equals the caller's own `resolved_tenant_id`, so the operator/all_tenants branch is never
+accidentally taken. The security property under test is "the caller never receives
+Cliente Cero's tenant_id", not "the lookup was never invoked" — the latter assertion no
+longer holds now that one shared helper covers both cases.
 """
 
 import asyncio
@@ -21,6 +31,22 @@ from presentation.centinela_endpoints import (
 
 def run(coro):
     return asyncio.run(coro)
+
+
+@pytest.fixture(autouse=True)
+def _stub_cliente_cero_lookup(monkeypatch):
+    """Stub the Cliente Cero id lookup `resolve_request_tenant_scope` always performs.
+
+    Defaults to a value that never matches any test's `resolved_tenant_id`, so the
+    operator/all_tenants branch is never accidentally taken. Tests that need a specific
+    Cliente Cero id (the staging-fallback case) re-patch it themselves afterward.
+    """
+    import core.tenant_context as tenant_context_module
+
+    monkeypatch.setattr(
+        tenant_context_module, "resolve_cliente_cero_tenant_id",
+        lambda client: "unrelated-cliente-cero-id",
+    )
 
 
 class TestEvaluateEndpointTenantScoping:
@@ -84,15 +110,8 @@ class TestEvaluateEndpointTenantScoping:
         def must_not_be_called(self, alerts, tenant_id):
             raise AssertionError("save_alerts must not be called for an unresolved tenant")
 
-        def must_not_resolve_cliente_cero(client):
-            raise AssertionError("Cliente Cero fallback must not be used for an authenticated, unresolved caller")
-
         monkeypatch.setattr(
             endpoints_module.CentinelaService, "save_alerts", must_not_be_called
-        )
-        import core.tenant_context as tenant_context_module
-        monkeypatch.setattr(
-            tenant_context_module, "resolve_cliente_cero_tenant_id", must_not_resolve_cliente_cero
         )
 
         user = {
@@ -163,15 +182,8 @@ class TestGetAlertsEndpointTenantScoping:
         def must_not_be_called(self, company_id, tenant_id, limit=20, severity=None):
             raise AssertionError("get_alerts_for_company must not be called for an unresolved tenant")
 
-        def must_not_resolve_cliente_cero(client):
-            raise AssertionError("Cliente Cero fallback must not be used for an authenticated, unresolved caller")
-
         monkeypatch.setattr(
             endpoints_module.CentinelaService, "get_alerts_for_company", must_not_be_called
-        )
-        import core.tenant_context as tenant_context_module
-        monkeypatch.setattr(
-            tenant_context_module, "resolve_cliente_cero_tenant_id", must_not_resolve_cliente_cero
         )
 
         user = {

@@ -13,27 +13,15 @@ from typing import List, Optional
 import logging
 
 from services.taty_service import get_taty_service
-from core.deps import get_current_user, _STAGING_USER
-from core.supabase_client import get_supabase
+from core.deps import get_current_user
+from core.supabase_client import get_service_supabase
+from core.tenant_context import resolve_request_tenant_scope
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
     tags=["taty-contadora"],
 )  # prefix handled by router.py include_router()
-
-
-async def _resolve_cliente_cero_tenant_id() -> str:
-    """Resolve the Cliente Cero tenant ID from Supabase."""
-    supabase = get_supabase()
-    result = (
-        supabase.table("tenants")
-        .select("id")
-        .eq("is_cliente_cero", True)
-        .single()
-        .execute()
-    )
-    return result.data["id"]
 
 
 # ============================================================================
@@ -174,11 +162,9 @@ async def ask_taty(
     Returns: TatyAskResponse with answer, citations, latency, confidence, escalation flag.
     """
     try:
-        resolved_tenant_id = user.get("resolved_tenant_id")
-        if resolved_tenant_id:
-            tenant_id = resolved_tenant_id
-        elif user.get("id") == _STAGING_USER["id"]:
-            tenant_id = await _resolve_cliente_cero_tenant_id()
+        scope = resolve_request_tenant_scope(user, get_service_supabase())
+        if scope:
+            tenant_id = scope.tenant_id
         else:
             return TatyAskResponse(
                 answer="Tu cuenta aún no está vinculada a una empresa en Contexia. Contacta a soporte.",

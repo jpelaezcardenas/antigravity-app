@@ -15,7 +15,7 @@ import logging
 from services.centinela_service import CentinelaService, get_centinela_service
 from core.supabase_client import get_supabase, get_service_supabase
 from core.deps import get_current_user
-from core.tenant_context import resolve_caller_tenant
+from core.tenant_context import resolve_request_tenant_scope
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +117,8 @@ async def evaluate_centinela(
         saved_ids: List[str] = []
         save_skipped_reason: Optional[str] = None
         if request.save_alerts and alerts:
-            tenant_id = resolve_caller_tenant(user, get_service_supabase())
+            scope = resolve_request_tenant_scope(user, get_service_supabase())
+            tenant_id = scope.tenant_id if scope else None
             if tenant_id:
                 saved_ids = centinela.save_alerts(alerts, tenant_id=tenant_id)
             else:
@@ -192,7 +193,8 @@ async def get_company_alerts(
     """
     try:
         logger.info(f"Centinela.get_alerts({company_id}, limit={limit}, severity={severity})")
-        tenant_id = resolve_caller_tenant(user, get_service_supabase())
+        scope = resolve_request_tenant_scope(user, get_service_supabase())
+        tenant_id = scope.tenant_id if scope else None
         if not tenant_id:
             return CentinelaAlertsListResponse(
                 company_id=company_id,

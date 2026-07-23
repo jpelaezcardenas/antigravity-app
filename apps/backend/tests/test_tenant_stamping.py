@@ -26,11 +26,13 @@ def _mock_client_with_tenant(tenant_id: str = "e2d30d09-6b96-4ebe-a79a-c6aff7a5d
     return client
 
 
-# NOTE: ApprovalQueueService.enqueue_draft has the identical implicit-Cliente-Cero
-# stamp as CentinelaService.save_alerts did before centinela-tenant-scoped-alerts.
-# This test class is left untouched here — it is the target of a future sibling
-# change (approval-queue-tenant-scoped-writes) that adopts require_tenant_id /
-# resolve_caller_tenant from core/tenant_context.py. See design.md §9.
+# NOTE: this test class predates approval-queue-tenant-scoping (archived
+# 2026-07-23), which resolved the enqueue_draft-level Cliente-Cero stamp this
+# comment used to describe as future work. enqueue_draft now takes an explicit
+# tenant_id from presentation/approval_queue_endpoints.py via
+# core/tenant_context.py::resolve_request_tenant_scope, not resolve_caller_tenant
+# (removed by agent-endpoints-real-tenant-filtering, Stage 4). Left otherwise
+# untouched — still valid coverage of the lower-level stamping contract.
 class TestEnqueueDraftStampsTenantId:
     @pytest.mark.asyncio
     async def test_stamps_explicitly_passed_tenant_id_on_insert(self):

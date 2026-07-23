@@ -321,7 +321,20 @@ Starting **Phase 5+**, all agent invocations are governed by:
 #### 4. **Chokepoint Instrumentation**
 - **WebSocket invoke_agent()**: Gate → Execute → Log+Cost → Return (backward-compatible)
 - **WebSocket agent_output_listener()**: Stream version; operation_type="stream", tracks line_count
-- **Direct HTTP calls to agents**: ⚠️ **BYPASS governance** (known limitation; future: middleware wrapper).
+- **Direct HTTP calls to agents**: authenticated and tenant-scoped, but still not
+  **cost-governed** (middleware wrapper still future work — the WebSocket chokepoint's Gate →
+  Execute → Log+Cost sequence remains unique to that path).
+  **`agent-endpoints-real-tenant-filtering` (2026-07-23):** every route in
+  `presentation/{agents,pulso_diario,centinela_agents,approval_queue,taty,centinela}_endpoints.py`
+  now requires `Depends(get_current_user)` — closing the previously fully-anonymous
+  `agents_endpoints.py` (7 routes) and the two `request.state.tenant_id`-leaking stubs
+  (`pulso_diario_endpoints.py::/summary`, `centinela_agents_endpoints.py::/generate-draft`).
+  Every DB-touching route across these 6 files now resolves tenant through the single
+  canonical `core/tenant_context.py::resolve_request_tenant_scope` helper (a second,
+  independently-shipped `resolve_caller_tenant` and Taty's own inline resolution ladder were
+  reconciled onto it in the same change) and returns 404 (not 403) for an unresolved tenant on
+  every write/ownership-checked path. None of this restores cost logging or execution
+  gating — that remains the open item below.
   **Exception (2026-07-23, `hermes-task-queue-tenant-scoping`):** the Hermes operator-task bridge
   (`/api/v1/sell-machine/tasks/*`, `/campaigns/{id}/dispatch`, `/tasks/{id}/status`,
   `/tasks/{id}/result`) is no longer fully ungoverned — it now has (a) an optional
@@ -329,8 +342,7 @@ Starting **Phase 5+**, all agent invocations are governed by:
   see `openspec/changes/hermes-task-queue-tenant-scoping/design.md` Decisions D5/D7), (b)
   audit-parity logging to `agent_operations` on every successful mutation, with
   `agent_name="hermes-bridge"`, and (c) write-time tenant validation (`tenant_exists()` /
-  decision-derived `tenant_id`) on every mutation. All other direct-HTTP agent routes remain
-  fully ungoverned per the general bypass note above.
+  decision-derived `tenant_id`) on every mutation.
 
 #### 5. **Multi-Tenant Isolation**
 - Row-level security (RLS) on `agent_operations` table

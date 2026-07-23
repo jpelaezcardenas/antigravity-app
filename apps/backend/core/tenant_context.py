@@ -4,6 +4,14 @@ Extracted from services/operator_task_service.py (hermes-manus-execution-bridge,
 other write paths (approval_queue_service, centinela_service) can stamp the real Cliente Cero
 tenant_id at write time instead of relying on column defaults — see
 hermes-multi-tenant-wrapper/tasks.md, Ground Truth Correction #3.
+
+`resolve_request_tenant_scope` is the single canonical caller-tenant resolver for every
+agent-facing HTTP endpoint (agents_endpoints.py, pulso_diario_endpoints.py,
+centinela_agents_endpoints.py, approval_queue_endpoints.py, taty_endpoints.py,
+centinela_endpoints.py) — see agent-endpoints-real-tenant-filtering, Stage 4. A separate,
+simpler `resolve_caller_tenant` existed briefly and was removed in that same change once it
+was confirmed to be a strict subset of this function's behavior; do not reintroduce a second
+resolution ladder here.
 """
 
 from __future__ import annotations
@@ -41,28 +49,6 @@ def require_tenant_id(tenant_id: Optional[str], *, context: str) -> str:
     if not tenant_id:
         raise TenantResolutionError(f"{context}: tenant_id is required and was not provided")
     return tenant_id
-
-
-def resolve_caller_tenant(user: dict, client) -> Optional[str]:
-    """3-branch caller-tenant resolution, reusable by Centinela, Approval Queue,
-    and the Hermes queue (see design.md §9 of centinela-tenant-scoped-alerts):
-
-      1. user.get("resolved_tenant_id") truthy -> return it.
-      2. user.get("id") == STAGING_USER_ID      -> resolve_cliente_cero_tenant_id(client)
-         (EXPLICIT Cliente Cero, only for the no-auth local/staging identity).
-      3. authenticated, no resolved tenant      -> None. Caller MUST degrade
-         (skip the write / return empty), NEVER fall back to Cliente Cero.
-    """
-    from core.deps import STAGING_USER_ID
-
-    resolved_tenant_id = user.get("resolved_tenant_id")
-    if resolved_tenant_id:
-        return resolved_tenant_id
-
-    if user.get("id") == STAGING_USER_ID:
-        return resolve_cliente_cero_tenant_id(client)
-
-    return None
 
 
 @dataclass(frozen=True)

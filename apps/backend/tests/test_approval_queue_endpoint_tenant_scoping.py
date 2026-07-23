@@ -11,9 +11,13 @@ described in `openspec/changes/approval-queue-tenant-scoping/design.md`'s
 | Endpoint      | scope is None | scope.all_tenants                  | normal client                          |
 |---------------|---------------|-------------------------------------|------------------------------------------|
 | GET ""        | empty list    | optional ?tenant_id filter, else -  | forced tenant_id=scope.tenant_id         |
-| POST /enqueue | 403           | tenant_id=scope.tenant_id (=CC)     | tenant_id=scope.tenant_id                |
-| POST /approve | 403           | tenant_id=None (unrestricted)       | tenant_id=scope.tenant_id                |
-| POST /reject  | 403           | tenant_id=None                      | tenant_id=scope.tenant_id                |
+| POST /enqueue | 404           | tenant_id=scope.tenant_id (=CC)     | tenant_id=scope.tenant_id                |
+| POST /approve | 404           | tenant_id=None (unrestricted)       | tenant_id=scope.tenant_id                |
+| POST /reject  | 404           | tenant_id=None                      | tenant_id=scope.tenant_id                |
+
+Unresolved-scope write rejections return 404, not 403 (agent-endpoints-real-tenant-filtering,
+Stage 5) — a 403 would confirm "there is something here you're not allowed to see"; 404
+doesn't, matching the anti-enumeration posture already used elsewhere in this repo.
 
 Mirrors `test_financials_endpoint_tenant_scoping.py`'s style: direct coroutine
 invocation with fake `user` dicts, no TestClient. Service calls are monkeypatched
@@ -206,7 +210,7 @@ class TestEnqueueScoping:
 
         assert recorded["tenant_id"] == CLIENTE_CERO_ID
 
-    def test_authenticated_unresolved_enqueue_returns_403_never_cliente_cero(self, monkeypatch):
+    def test_authenticated_unresolved_enqueue_returns_404_never_cliente_cero(self, monkeypatch):
         _patch_scope(monkeypatch, None)
 
         async def must_not_be_called(draft_id, draft_type, journal_entry, memo="", *, tenant_id):
@@ -220,7 +224,7 @@ class TestEnqueueScoping:
         with pytest.raises(HTTPException) as exc_info:
             run(enqueue_for_approval(payload=_enqueue_payload(), user=_unresolved_user()))
 
-        assert exc_info.value.status_code == 403
+        assert exc_info.value.status_code == 404
 
 
 class TestApproveRejectScoping:
@@ -257,7 +261,7 @@ class TestApproveRejectScoping:
 
         assert recorded["tenant_id"] is None
 
-    def test_approve_unresolved_returns_403(self, monkeypatch):
+    def test_approve_unresolved_returns_404(self, monkeypatch):
         _patch_scope(monkeypatch, None)
 
         async def must_not_be_called(decision_id, approval_reason, approved_by, *, tenant_id):
@@ -269,7 +273,7 @@ class TestApproveRejectScoping:
         with pytest.raises(HTTPException) as exc_info:
             run(approve_draft(request=request, user=_unresolved_user()))
 
-        assert exc_info.value.status_code == 403
+        assert exc_info.value.status_code == 404
 
     def test_reject_passes_caller_tenant_scope(self, monkeypatch):
         _patch_scope(monkeypatch, TenantScope(tenant_id=CLIENT_TENANT_ID, all_tenants=False))
@@ -303,7 +307,7 @@ class TestApproveRejectScoping:
 
         assert recorded["tenant_id"] is None
 
-    def test_reject_unresolved_returns_403(self, monkeypatch):
+    def test_reject_unresolved_returns_404(self, monkeypatch):
         _patch_scope(monkeypatch, None)
 
         async def must_not_be_called(decision_id, rejection_reason, rejected_by, *, tenant_id):
@@ -315,4 +319,4 @@ class TestApproveRejectScoping:
         with pytest.raises(HTTPException) as exc_info:
             run(reject_draft(request=request, user=_unresolved_user()))
 
-        assert exc_info.value.status_code == 403
+        assert exc_info.value.status_code == 404

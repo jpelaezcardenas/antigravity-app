@@ -128,15 +128,16 @@ async def enqueue_for_approval(
     Enqueue a draft for approval after Agent Critic validation.
 
     Tenant scoping (approval-queue-tenant-scoping): the caller's resolved
-    tenant scope stamps the enqueued row. No resolved scope -> 403 (never a
-    silent Cliente Cero fallback).
+    tenant scope stamps the enqueued row. No resolved scope -> 404 (never a
+    silent Cliente Cero fallback; 404 rather than 403 per
+    agent-endpoints-real-tenant-filtering's anti-enumeration policy).
 
     If Critic validation fails, returns 400 with validation error.
     If validation passes, creates a pending approval decision.
     """
     scope = resolve_request_tenant_scope(user, get_service_supabase())
     if scope is None:
-        raise HTTPException(status_code=403, detail="No tenant resolved for caller")
+        raise HTTPException(status_code=404, detail="No tenant resolved for caller")
 
     try:
         # Convert request to journal entry dict
@@ -182,13 +183,14 @@ async def approve_draft(
     Tenant scoping (approval-queue-tenant-scoping): a normal client scope
     restricts the approve to that tenant's own rows (cross-tenant decision_id
     returns "not found"); a Contexia operator scope (all_tenants) is
-    unrestricted. No resolved scope -> 403.
+    unrestricted. No resolved scope -> 404 (not 403 — see
+    agent-endpoints-real-tenant-filtering).
 
     Vectorization failure is non-blocking (approval still succeeds).
     """
     scope = resolve_request_tenant_scope(user, get_service_supabase())
     if scope is None:
-        raise HTTPException(status_code=403, detail="No tenant resolved for caller")
+        raise HTTPException(status_code=404, detail="No tenant resolved for caller")
 
     try:
         success, decision, error = await ApprovalQueueService.approve_draft(
@@ -227,7 +229,7 @@ async def reject_draft(
     """
     scope = resolve_request_tenant_scope(user, get_service_supabase())
     if scope is None:
-        raise HTTPException(status_code=403, detail="No tenant resolved for caller")
+        raise HTTPException(status_code=404, detail="No tenant resolved for caller")
 
     try:
         success, decision, error = await ApprovalQueueService.reject_draft(

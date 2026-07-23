@@ -6,12 +6,13 @@ Automatically selects a cloud LLM provider via a failover chain
 The user never sees which provider is used.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 import logging
 
 from agents.llm_engine import AllProvidersFailedError
 from agents.secure_llm import get_anonymized_ai_response
+from core.deps import get_current_user
 from core.model_selector import choose_model_for_task, get_task_description
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ class AgentResponse(BaseModel):
 # ============================================
 
 @router.post("/social/generate-content")
-async def social_generate_content(request: AskRequest):
+async def social_generate_content(request: AskRequest, user: dict = Depends(get_current_user)):
     """
     Generate social media content (posts, captions, etc).
 
@@ -94,7 +95,7 @@ Respond in Spanish."""
 # ============================================
 
 @router.post("/pulso/analyze")
-async def pulso_analyze(request: AnalysisRequest):
+async def pulso_analyze(request: AnalysisRequest, user: dict = Depends(get_current_user)):
     """
     Pulso Analysis: Analyze user's daily cash flow and financial status.
 
@@ -147,7 +148,7 @@ Proporciona un análisis detallado en formato JSON."""
 
 
 @router.post("/centinela/monitor")
-async def centinela_monitor(request: AnalysisRequest):
+async def centinela_monitor(request: AnalysisRequest, user: dict = Depends(get_current_user)):
     """
     Centinela Monitoring: Check fiscal threshold status (Renta, IVA).
 
@@ -203,7 +204,7 @@ Proporciona estado actual en JSON."""
 # ============================================
 
 @router.post("/centinela/decide")
-async def centinela_decide(request: AnalysisRequest):
+async def centinela_decide(request: AnalysisRequest, user: dict = Depends(get_current_user)):
     """
     Centinela Decision: CRITICAL fiscal decision (should user file tax return?).
 
@@ -266,7 +267,7 @@ Proporciona decisión en JSON con recomendaciones."""
 
 
 @router.post("/compliance/audit")
-async def compliance_audit(request: AnalysisRequest):
+async def compliance_audit(request: AnalysisRequest, user: dict = Depends(get_current_user)):
     """
     Compliance Audit: Verify user compliance with DIAN regulations.
 
@@ -332,7 +333,7 @@ class FullPipelineRequest(BaseModel):
 
 
 @router.post("/orchestrator/full-pipeline")
-async def full_pipeline(request: FullPipelineRequest):
+async def full_pipeline(request: FullPipelineRequest, user: dict = Depends(get_current_user)):
     """
     POST /api/v1/agents/orchestrator/full-pipeline
 
@@ -458,7 +459,7 @@ async def full_pipeline(request: FullPipelineRequest):
 # ============================================
 
 @router.get("/task-info/{task_type}")
-async def get_task_info(task_type: str):
+async def get_task_info(task_type: str, user: dict = Depends(get_current_user)):
     """
     Debug endpoint: Get info about how a task will be routed.
 

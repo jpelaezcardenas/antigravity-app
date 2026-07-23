@@ -2,13 +2,18 @@
 Centinela Agent Endpoints for E2E Testing and Multi-Tenant Integration
 
 POST /api/v1/agents/centinela/generate-draft - Generate Centinela draft with tenant context
-Supports multi-tenant routing via TenantContextMiddleware
+Tenant-scoped via the canonical `resolve_request_tenant_scope` helper (see
+core/tenant_context.py), not the raw JWT claim TenantContextMiddleware injects.
 """
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Optional
 import logging
+
+from core.deps import get_current_user
+from core.supabase_client import get_service_supabase
+from core.tenant_context import TenantScope, resolve_request_tenant_scope
 
 logger = logging.getLogger(__name__)
 
@@ -30,20 +35,31 @@ class CentinelaGenerateDraftResponse(BaseModel):
 
 @router.post("/generate-draft", response_model=CentinelaGenerateDraftResponse)
 async def generate_centinela_draft(
-    request: Request,
     payload: CentinelaGenerateDraftRequest,
+    user: dict = Depends(get_current_user),
 ) -> CentinelaGenerateDraftResponse:
     """
     Generate Centinela draft for a company.
 
-    Multi-tenant: Uses tenant_id injected by TenantContextMiddleware from JWT.
+    Multi-tenant: resolves the caller's tenant via `resolve_request_tenant_scope` — the same
+    helper `approval_queue_endpoints.py` uses. An authenticated caller with no resolved tenant
+    never falls back to Cliente Cero or the literal "default-tenant" string.
     """
-    tenant_id = getattr(request.state, "tenant_id", "default-tenant")
+    scope = resolve_request_tenant_scope(user, get_service_supabase())
+
+    if scope is None:
+        return CentinelaGenerateDraftResponse(
+            status="tenant_unresolved",
+            tenant_id="",
+            company_id=payload.company_id,
+            draft_id="",
+            message=f"No tenant resolved for caller; cannot draft for {payload.company_id}",
+        )
 
     return CentinelaGenerateDraftResponse(
         status="success",
-        tenant_id=tenant_id,
+        tenant_id=scope.tenant_id,
         company_id=payload.company_id,
-        draft_id=f"draft-{tenant_id}-{payload.company_id}",
-        message=f"Centinela draft generated for {payload.company_id} under tenant {tenant_id}",
+        draft_id=f"draft-{scope.tenant_id}-{payload.company_id}",
+        message=f"Centinela draft generated for {payload.company_id} under tenant {scope.tenant_id}",
     )
