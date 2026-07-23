@@ -66,9 +66,10 @@
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 Project-specific: deploy branch `main`; Frontend `https://contexia.online/app/overview`;
 Backend `https://antigravity-app-production-175a.up.railway.app`.
-- [ ] 11.1 git commit + push to main
-- [ ] 11.2 Vercel build complete (green) + `CACHE_VERSION` bumped
-- [ ] 11.3 Railway deploy active (backend financials change)
+- [x] 11.1 git commit + push to main — commits `6611631`, `547259d`, `d8b74c1`, `08edfaf`, `9442949`
+- [x] 11.2 Vercel build complete (green) + `CACHE_VERSION` bumped — `v14-2026-07-22`
+- [x] 11.3 Railway deploy active (backend financials change) — confirmed via `/api/v1/health` +
+  deployment logs after each redeploy
 - [x] 11.4 Production: a client login sees its own Caja Real; admin sees roster — confirmed live
   by the founder for two distinct clients: Medic ($22,600,000) and CÓDIGO 520 ($290,000), both
   exact matches, no cross-client leak.
