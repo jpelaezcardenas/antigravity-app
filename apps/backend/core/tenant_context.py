@@ -18,3 +18,15 @@ def resolve_cliente_cero_tenant_id(client) -> Optional[str]:
     """
     result = client.table("tenants").select("id").eq("is_cliente_cero", True).single().execute()
     return result.data["id"] if result.data else None
+
+
+def tenant_exists(client, tenant_id: str) -> bool:
+    """True iff a `tenants` row with this id exists.
+
+    Added for hermes-task-queue-tenant-scoping (additive only — does not modify
+    resolve_cliente_cero_tenant_id above, owned by the concurrently active
+    hermes-multi-tenant-wrapper change). Uses `.maybe_single()` (not `.single()`) so a 0-row
+    result returns None instead of raising PGRST116.
+    """
+    result = client.table("tenants").select("id").eq("id", tenant_id).maybe_single().execute()
+    return bool(result and result.data)
