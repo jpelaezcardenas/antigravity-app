@@ -43,12 +43,14 @@
   `list_extensions`: already installed (`installed_version: "1.6.4"`, schema `pg_catalog`). No
   `create extension` step needed; migration can call `cron.schedule` directly (design.md D4
   primary path confirmed — fallback not needed).
-- [ ] 4.2 Write `migrations/0033_rolling_reseed_synthetic_shadow_gl.sql`: one-shot UPDATE re-dating
-  `SYNTH-*-SALE`/`SYNTH-*-EXPENSE` rows to `CURRENT_DATE - 1` (idempotent, excludes `-OPEN`), plus
-  an idempotent daily `cron.schedule` doing the same.
-- [ ] 4.3 Local/staging dry-run of the UPDATE statement against a scratch query (read-only
-  `SELECT` matching the same WHERE clause) to confirm row count matches migration 0028's 10 seeded
-  clients before applying for real in Stage 11.
+- [x] 4.2 Wrote `migrations/0033_rolling_reseed_synthetic_shadow_gl.sql`: one-shot UPDATE
+  re-dating `SYNTH-*-SALE`/`SYNTH-*-EXPENSE` rows to `CURRENT_DATE - 1` (idempotent, excludes
+  `-OPEN`), plus an idempotent daily `cron.schedule` doing the same. Commit `fa61548`.
+- [x] 4.3 Read-only dry-run (PostgREST, since Supabase MCP wasn't available in that subagent's
+  tool list) confirmed 19 matching rows against real production — 9 `-SALE` + 10 `-EXPENSE`
+  (Nia Cano's 2 rows correctly absent per migration 0030; CÓDIGO 520 correctly has no `-SALE`,
+  only `-EXPENSE`, per 0028's own conditional). Migration file exists on disk only — not applied
+  to production; that happens in Stage 13 (deploy).
 
 ## Stage 5. Backend: review and full unit-test + DB verification (MANDATORY)
 - [ ] 5.1 Capture pre-test baseline: row counts for `centinela_alerts` and `erp_journal_lines` per
