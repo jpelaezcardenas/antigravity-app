@@ -476,31 +476,38 @@ class TestCreateEmptyTaxProfile:
 
 class TestFindOrCreateLead:
     def test_returns_existing_lead_id_when_phone_matches(self):
-        mock_client = MagicMock()
-        mock_client.table.return_value.select.return_value.eq.return_value.execute.return_value.data = [
-            {"id": "existing-lead-1"}
-        ]
-        with patch("services.taty_lead_router.get_service_supabase", return_value=mock_client):
+        mock_service = MagicMock()
+        mock_service.whatsapp_intake.return_value = {
+            "lead_id": "existing-lead-1",
+            "is_new": False,
+            "stage": "PROSPECTOS",
+        }
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ):
             lead_id = find_or_create_lead("573001234567")
 
+        mock_service.whatsapp_intake.assert_called_once_with(
+            "573001234567", full_name=None
+        )
         assert lead_id == "existing-lead-1"
 
     def test_creates_a_new_nuevos_lead_when_no_match(self):
-        mock_client = MagicMock()
-        mock_client.table.return_value.select.return_value.eq.return_value.execute.return_value.data = []
-        mock_client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value.data = {
-            "id": "tenant-1"
+        mock_service = MagicMock()
+        mock_service.whatsapp_intake.return_value = {
+            "lead_id": "new-lead-1",
+            "is_new": True,
+            "stage": "NUEVOS",
         }
-        mock_client.table.return_value.insert.return_value.execute.return_value.data = [
-            {"id": "new-lead-1"}
-        ]
-        with patch("services.taty_lead_router.get_service_supabase", return_value=mock_client):
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ):
             lead_id = find_or_create_lead("573009999999", full_name="Nuevo Lead")
 
+        mock_service.whatsapp_intake.assert_called_once_with(
+            "573009999999", full_name="Nuevo Lead"
+        )
         assert lead_id == "new-lead-1"
-        insert_args = mock_client.table.return_value.insert.call_args[0][0]
-        assert insert_args["stage"] == "NUEVOS"
-        assert insert_args["whatsapp_phone"] == "573009999999"
 
 
 class TestGenerateWompiLink:

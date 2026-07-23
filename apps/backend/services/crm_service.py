@@ -384,11 +384,16 @@ class CrmService:
             "summary": {"total_leads": len(leads)},
         }
 
-    def whatsapp_intake(self, whatsapp_phone: str) -> Dict[str, Any]:
+    def whatsapp_intake(self, whatsapp_phone: str, full_name: Optional[str] = None) -> Dict[str, Any]:
         """Find-or-create a crm_leads row by WhatsApp phone number (chatwoot-hermes-taty-bridge,
         Task Group 1) — the entry point the Chatwoot bridge calls on every inbound WhatsApp
         message so Taty's conversations always map to a lead. Reuses the Cliente Cero
-        tenant-scoping pattern from b2c_pipeline/advance_lead."""
+        tenant-scoping pattern from b2c_pipeline/advance_lead.
+
+        full_name is only used on the insert (create) path — falling back to whatsapp_phone
+        when omitted, matching taty_lead_router.find_or_create_lead's prior behavior — and is
+        never applied when an existing row is found (taty-lead-router-tenant-scoping,
+        design.md Decision 2)."""
         normalized_phone = _normalize_whatsapp_phone(whatsapp_phone)
 
         client = get_service_supabase()
@@ -408,7 +413,14 @@ class CrmService:
 
         inserted = (
             client.table("crm_leads")
-            .insert({"tenant_id": tenant_id, "whatsapp_phone": normalized_phone, "stage": "NUEVOS"})
+            .insert(
+                {
+                    "tenant_id": tenant_id,
+                    "whatsapp_phone": normalized_phone,
+                    "full_name": full_name or whatsapp_phone,
+                    "stage": "NUEVOS",
+                }
+            )
             .execute()
         )
         new_row = (inserted.data or [{}])[0]

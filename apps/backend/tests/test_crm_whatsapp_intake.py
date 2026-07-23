@@ -66,6 +66,80 @@ class TestWhatsappIntakeService:
         assert insert_payload["tenant_id"] == "cc-tenant"
         assert insert_payload["whatsapp_phone"] == "+573001234567"
 
+    def test_new_phone_with_full_name_creates_lead_with_that_name(self):
+        client = _fake_client()
+        leads_table = MagicMock()
+        leads_table.select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = (
+            MagicMock(data=None)
+        )
+        leads_table.insert.return_value.execute.return_value = MagicMock(
+            data=[{"id": "new-lead-id", "stage": "NUEVOS"}]
+        )
+
+        original_side_effect = client.table.side_effect
+
+        def routed(name):
+            if name == "crm_leads":
+                return leads_table
+            return original_side_effect(name)
+
+        client.table.side_effect = routed
+
+        with patch("services.crm_service.get_service_supabase", return_value=client):
+            result = CrmService().whatsapp_intake("+573001234567", full_name="Some Name")
+
+        assert result == {"lead_id": "new-lead-id", "is_new": True, "stage": "NUEVOS"}
+        insert_payload = leads_table.insert.call_args[0][0]
+        assert insert_payload["full_name"] == "Some Name"
+
+    def test_new_phone_without_full_name_falls_back_to_phone(self):
+        client = _fake_client()
+        leads_table = MagicMock()
+        leads_table.select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = (
+            MagicMock(data=None)
+        )
+        leads_table.insert.return_value.execute.return_value = MagicMock(
+            data=[{"id": "new-lead-id", "stage": "NUEVOS"}]
+        )
+
+        original_side_effect = client.table.side_effect
+
+        def routed(name):
+            if name == "crm_leads":
+                return leads_table
+            return original_side_effect(name)
+
+        client.table.side_effect = routed
+
+        with patch("services.crm_service.get_service_supabase", return_value=client):
+            result = CrmService().whatsapp_intake("+573001234567")
+
+        assert result == {"lead_id": "new-lead-id", "is_new": True, "stage": "NUEVOS"}
+        insert_payload = leads_table.insert.call_args[0][0]
+        assert insert_payload["full_name"] == "+573001234567"
+
+    def test_known_phone_lookup_ignores_full_name_argument(self):
+        client = _fake_client()
+        leads_table = MagicMock()
+        leads_table.select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = (
+            MagicMock(data={"id": "existing-lead-id", "stage": "PROSPECTOS"})
+        )
+
+        original_side_effect = client.table.side_effect
+
+        def routed(name):
+            if name == "crm_leads":
+                return leads_table
+            return original_side_effect(name)
+
+        client.table.side_effect = routed
+
+        with patch("services.crm_service.get_service_supabase", return_value=client):
+            result = CrmService().whatsapp_intake("+573001234567", full_name="Ignored Name")
+
+        assert result == {"lead_id": "existing-lead-id", "is_new": False, "stage": "PROSPECTOS"}
+        leads_table.insert.assert_not_called()
+
     def test_known_phone_is_found_not_duplicated(self):
         client = _fake_client()
         leads_table = MagicMock()
