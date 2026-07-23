@@ -16,24 +16,26 @@
   by the unmodified regression suite.
 
 ## Stage 2. Backend: tenant-scoped alerts route (TDD)
-- [ ] 2.1 Failing tests first — `tests/test_centinela_alerts_tenant_scoping.py`: own-tenant
+- [x] 2.1 Failing tests first — `tests/test_centinela_alerts_tenant_scoping.py`: own-tenant
   alerts; two-tenant isolation; staging → Cliente Cero; authenticated-unresolved → empty (Cliente
-  Cero resolver never invoked, mirrors the assertion pattern in
-  `test_financials_endpoint_tenant_scoping.py`); legacy `/alerts/{company_id}` route unaffected.
-- [ ] 2.2 Implement `GET /api/v1/centinela/alerts` in `presentation/centinela_endpoints.py` using
-  the Stage 1 resolver — no demo fallback (spec `centinela-alerts`).
-- [ ] 2.3 Green: targeted suite (new file + `test_centinela_alerts_get.py` unchanged).
+  Cero resolver never invoked); no-rows → honest empty list. Commit `95945f0`.
+- [x] 2.2 Implemented `GET /api/v1/centinela/alerts` in `presentation/centinela_endpoints.py`
+  using the Stage 1 resolver — no demo fallback (spec `centinela-alerts`).
+- [x] 2.3 Green: 5/5 new tests + `test_centinela_alerts_get.py` unchanged (3/4 pass; the 4th,
+  `test_endpoint_returns_200_and_shape`, fails on a pre-existing `starlette`/`httpx`
+  `TestClient` version mismatch in this environment, confirmed via `git stash` to predate this
+  change — not caused by or fixable within this task).
 
 ## Stage 3. Backend: liquidity bridge endpoint (TDD)
-- [ ] 3.1 Failing tests first — `tests/test_financials_liquidity_bridge.py`: bridge math on
-  hermetic throwaway tenants (reuse `insert_test_entry` from `test_financials_aggregation.py`);
+- [x] 3.1 Failing tests first — `tests/test_financials_liquidity_bridge.py`: bridge math on
+  hermetic throwaway tenants (reused `insert_test_entry` from `test_financials_aggregation.py`);
   `final_balance` equals the equivalent `caja_real`; empty tenant; tenant isolation; month
-  boundary.
-- [ ] 3.2 `compute_liquidity_bridge(tenant_id, year, month)` in `services/financials_service.py`,
+  boundary. Commit `3c809fb`.
+- [x] 3.2 `compute_liquidity_bridge(tenant_id, year, month)` in `services/financials_service.py`,
   reusing `_compute_caja_real_balance`.
-- [ ] 3.3 `GET /api/v1/financials/liquidity-bridge` in `presentation/financials_endpoints.py`,
+- [x] 3.3 `GET /api/v1/financials/liquidity-bridge` in `presentation/financials_endpoints.py`,
   same resolver as Stage 1.
-- [ ] 3.4 Green: targeted suite (new file + `test_financials_aggregation.py` +
+- [x] 3.4 Green: 5/5 new tests + `test_financials_aggregation.py` +
   `test_financials_endpoint_tenant_scoping.py` unchanged).
 
 ## Stage 4. Backend: rolling reseed of synthetic Shadow GL
