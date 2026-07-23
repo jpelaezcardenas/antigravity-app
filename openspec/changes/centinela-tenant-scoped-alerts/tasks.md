@@ -6,15 +6,20 @@
 > works through the stages below in order, TDD per stage (failing test first).
 
 ## Stage 0. Setup (MANDATORY — FIRST STEP)
-- [ ] 0.1 Create feature branch `feature/centinela-tenant-scoped-alerts` from up-to-date `main`
-  (already created for this artifacts-only session; re-verify at implementation start).
-- [ ] 0.2 Verify `git branch --show-current` before starting work and before every commit
-  (multiple parallel sessions may exist in this checkout).
-- [ ] 0.3 Flip `centinela-tenant-scoped-alerts` to `in_progress` in `feature_list.json` (only once
-  the prior active change is `done`/`blocked`) and re-run `./init.sh`.
+- [x] 0.1 Feature branch `feature/centinela-tenant-scoped-alerts` — implemented in an isolated
+  `git worktree` (`antigravity-app-centinela-impl`), not the shared main checkout, after a real
+  cross-session race there during the artifacts commit (recovered via cherry-pick; see prior
+  session notes). `./init.sh` green throughout.
+- [x] 0.2 Verified `git branch --show-current` before each commit.
+- [ ] 0.3 **Not flipped** — `feature_list.json`'s `active` slot is occupied by
+  `hermes-task-queue-tenant-scoping` (`in_progress`), owned by a concurrent session. Implementation
+  proceeded in the isolated worktree without touching the shared `feature_list.json`'s `active`
+  pointer, per explicit founder instruction ("implementar ahora" while leaving the slot alone).
+  This stays `pending` in `feature_list.json` until the founder reconciles the one-change-at-a-time
+  invariant across concurrent sessions.
 
-## Stage 1. `core/tenant_context.py` helpers (TDD)
-- [ ] 1.1 Failing tests in new `apps/backend/tests/test_tenant_context_helpers.py`:
+## Stage 1. `core/tenant_context.py` helpers (TDD) — DONE (commit `5964bc3`)
+- [x] 1.1 Failing tests in new `apps/backend/tests/test_tenant_context_helpers.py`:
   - `test_require_tenant_id_returns_value` — passthrough for a valid tenant_id string.
   - `test_require_tenant_id_raises_on_none` — `TenantResolutionError`; message contains the
     `context` argument.
@@ -26,13 +31,13 @@
   - `test_resolve_caller_tenant_unresolved_returns_none_never_cliente_cero` — non-staging
     authenticated user with no tenant → returns `None`; mock client raises `AssertionError` if its
     `table()` is touched.
-- [ ] 1.2 Implement `TenantResolutionError`, `require_tenant_id`, `resolve_caller_tenant` in
+- [x] 1.2 Implement `TenantResolutionError`, `require_tenant_id`, `resolve_caller_tenant` in
   `core/tenant_context.py`; add `STAGING_USER_ID = _STAGING_USER["id"]` in `core/deps.py`
   (no other change to `deps.py` — JWT/JWKS verification untouched).
-- [ ] 1.3 Green: `pytest apps/backend/tests/test_tenant_context_helpers.py -v`.
+- [x] 1.3 Green: 6/6 passed.
 
-## Stage 2. `CentinelaService.save_alerts` — fail-loud tenant guard (TDD)
-- [ ] 2.1 Rewrite `apps/backend/tests/test_tenant_stamping.py`'s `TestSaveAlertsStampsTenantId`
+## Stage 2. `CentinelaService.save_alerts` — fail-loud tenant guard (TDD) — DONE (commit `52b1494`)
+- [x] 2.1 Rewrite `apps/backend/tests/test_tenant_stamping.py`'s `TestSaveAlertsStampsTenantId`
   class (failing first):
   - `test_save_alerts_stamps_required_tenant_id` (replaces
     `test_stamps_resolved_tenant_id_on_each_alert`) — every inserted row's `tenant_id` equals the
@@ -44,35 +49,43 @@
     key is overwritten by the parameter.
   - Leave `TestEnqueueDraftStampsTenantId` untouched; add a comment marking it as the target of the
     sibling `approval-queue-tenant-scoped-writes` change (see design.md §9) — not in scope here.
-- [ ] 2.2 Implement: `save_alerts(self, alerts, tenant_id: str)` — guard runs before the
+- [x] 2.2 Implement: `save_alerts(self, alerts, tenant_id: str)` — guard runs before the
   try/except; unconditional `{**alert, "tenant_id": tenant_id}` stamping; remove the old
   per-alert-key-wins branch; `resolve_cliente_cero_tenant_id()` call removed from this method.
-- [ ] 2.3 Green: `pytest apps/backend/tests/test_tenant_stamping.py -v`.
+- [x] 2.3 Green: 5/5 passed (both `TestSaveAlertsStampsTenantId` and untouched
+  `TestEnqueueDraftStampsTenantId`).
 
-## Stage 3. `get_alerts_for_company` — tenant-scoped reads (TDD)
-- [ ] 3.1 Update `apps/backend/tests/test_centinela_alerts_get.py` (failing first): add
+## Stage 3. `get_alerts_for_company` — tenant-scoped reads (TDD) — DONE (commit `a4160ca`)
+- [x] 3.1 Update `apps/backend/tests/test_centinela_alerts_get.py` (failing first): add
   `tenant_id=` to all existing calls; assert `.eq("tenant_id", ...)` appears in the mock query
   chain; add `test_get_alerts_raises_without_tenant_id` (`TenantResolutionError` before any client
   access).
-- [ ] 3.2 Implement: `get_alerts_for_company(self, company_id, tenant_id, limit=20, severity=None)`
+- [x] 3.2 Implement: `get_alerts_for_company(self, company_id, tenant_id, limit=20, severity=None)`
   — guard + `.eq("tenant_id", tenant_id)` added to the query; demo-profile fallback unchanged.
-- [ ] 3.3 Green: `pytest apps/backend/tests/test_centinela_alerts_get.py -v`.
+- [x] 3.3 Green: 4/4 service-level tests passed. **Deviation noted**:
+  `TestGetAlertsEndpoint::test_endpoint_returns_200_and_shape` (HTTP-level smoke test via
+  `TestClient`) fails in this environment — confirmed pre-existing via `git stash` comparison
+  against the unmodified baseline (`httpx`/`starlette` `TestClient` version incompatibility,
+  unrelated to this change). See Stage 10 report.
 
-## Stage 4. Resolution poller stamping (TDD)
-- [ ] 4.1 Update `apps/backend/tests/test_centinela_resolution_poller.py` (failing first): update
+## Stage 4. Resolution poller stamping (TDD) — DONE (commit `f035b24`)
+- [x] 4.1 Update `apps/backend/tests/test_centinela_resolution_poller.py` (failing first): update
   `_alert_payload` call sites for the new `(company_id, tenant_id, discrepancy)` arity; add
   `test_alert_payload_includes_tenant_id` and `test_poll_raises_on_empty_tenant_id`
-  (`TenantResolutionError`).
-- [ ] 4.2 Implement: `_alert_payload(company_id, tenant_id, discrepancy)` includes
+  (`TenantResolutionError`). **Deviation**: the file's pre-existing `autouse=True` fixture was
+  module-level, which broke the new pure-mock tests (tried to connect to real Supabase) — nested
+  it inside `TestPollShadowGlDiscrepancies` instead of leaving it module-scoped.
+- [x] 4.2 Implement: `_alert_payload(company_id, tenant_id, discrepancy)` includes
   `"tenant_id": tenant_id`; `poll_shadow_gl_discrepancies(tenant_id)` calls `require_tenant_id` at
   the top.
-- [ ] 4.3 Fix arity fallout in `tests/test_slice2_e2e.py` and `tests/test_maestro_agent_protocol.py`
-  (mechanical — pass `tenant_id` at their existing call sites).
-- [ ] 4.4 Green: `pytest apps/backend/tests/test_centinela_resolution_poller.py
-  apps/backend/tests/test_slice2_e2e.py apps/backend/tests/test_maestro_agent_protocol.py -v`.
+- [x] 4.3 No arity fallout found in `tests/test_slice2_e2e.py` /
+  `tests/test_maestro_agent_protocol.py` — `poll_shadow_gl_discrepancies(tenant_id)`'s external
+  signature is unchanged (only its internal call to `_alert_payload` gained a parameter), so no
+  caller needed updating. Verified by running both files: 9 passed, 1 skipped (unrelated gate).
+- [x] 4.4 Green: 2 passed, 2 correctly skipped (no `RUN_SHADOW_GL=1`).
 
-## Stage 5. Endpoint auth + 3-branch wiring (TDD)
-- [ ] 5.1 New `apps/backend/tests/test_centinela_endpoint_tenant_scoping.py`, mock tier (mirrors
+## Stage 5. Endpoint auth + 3-branch wiring (TDD) — DONE (commit `401b51d`)
+- [x] 5.1 New `apps/backend/tests/test_centinela_endpoint_tenant_scoping.py`, mock tier (mirrors
   `test_financials_endpoint_tenant_scoping.py`'s monkeypatched-resolver style; direct function
   calls with fake user dicts — failing first):
   - `test_post_evaluate_saves_with_resolved_tenant`
@@ -83,72 +96,77 @@
   - `test_post_evaluate_respects_save_alerts_false` (regression: no save even with resolved tenant)
   - `test_get_alerts_filters_by_caller_tenant`
   - `test_get_alerts_authenticated_unresolved_returns_empty_never_cliente_cero`
-- [ ] 5.2 Implement: both endpoints in `presentation/centinela_endpoints.py` gain
+- [x] 5.2 Implement: both endpoints in `presentation/centinela_endpoints.py` gain
   `user: dict = Depends(get_current_user)`; tenant resolved via `resolve_caller_tenant` before
   calling into the service (not inside the generic try/except); add
   `CentinelaEvaluateResponse.save_skipped_reason: Optional[str]`.
-- [ ] 5.3 Green: `pytest apps/backend/tests/test_centinela_endpoint_tenant_scoping.py -v`.
+- [x] 5.3 Green: 6/6 passed.
 
-## Stage 6. Pulso Diario / Radar reader fixes (TDD)
-- [ ] 6.1 Update `apps/backend/tests/test_radar.py` (failing first): assert the alerts query
-  includes `.eq("tenant_id", tenant_id)`.
-- [ ] 6.2 Implement: `radar_service.py` adds the tenant filter (tenant already in hand at that call
-  site).
-- [ ] 6.3 New/updated test for `pulso_diario_service.py` (failing first, in `test_slice2_e2e.py` or
-  a new `test_pulso_diario_tenant_fix.py`): asserts the query resolves
-  `tenants.id → tenants.company_id` before filtering, AND filters by `tenant_id`.
-- [ ] 6.4 Implement: `pulso_diario_service.py`'s alert-count query fixed (was
-  `.eq("company_id", tenant_id)` — a bug that always matched nothing); now resolves the real
-  `company_id` and filters both columns.
-- [ ] 6.5 Green: `pytest apps/backend/tests/test_radar.py <pulso-diario-test-file> -v`.
+## Stage 6. Pulso Diario / Radar reader fixes (TDD) — DONE (commit `b90d3ea`)
+- [x] 6.1 **Deviation**: `test_radar.py` is entirely integration-gated (`RUN_SHADOW_GL`), no
+  mock-level tests existed to update in place. Instead: extracted a small pure function
+  `_count_centinela_alerts_this_month(supabase, tenant_id, month_start, today)` out of
+  `calculate_risk_score`'s inline factor-3 block, and wrote a new
+  `test_radar_alert_count_tenant_scoping.py` (2 pure-mock tests, no Supabase needed) asserting
+  `.eq("tenant_id", ...)` alongside the existing `.eq("company_id", ...)`.
+- [x] 6.2 Implement: `radar_service.py`'s alert-count query now filters by tenant_id (company_id
+  resolution was already correct).
+- [x] 6.3 **Deviation**: same pattern for `pulso_diario_service.py` — extracted
+  `_count_alerts_generated(supabase, tenant_id, date)`, new
+  `test_pulso_diario_alert_count_tenant_scoping.py` (2 pure-mock tests) asserting company_id
+  resolution + tenant_id filter, and a regression guard against the old bug's exact broken filter.
+- [x] 6.4 Implement: fixed the real bug — was `.eq("company_id", tenant_id)` (tenant UUID passed
+  into the text company_id column, always matched nothing, so `alerts_generated` was silently
+  always 0). Now resolves `tenants.company_id` first (same pattern as
+  `centinela_resolution_service._resolve_company_id`) and filters both columns.
+- [x] 6.5 Green: 4/4 new tests passed. Confirmed `test_radar.py` / `test_pulso_diario.py` (the
+  pre-existing gated integration files) still collect and skip cleanly (10 skipped, 0 errors).
 
-## Stage 7. Integration scoping tests (env-gated)
-- [ ] 7.1 New hermetic two-tenant fixture in
-  `test_centinela_endpoint_tenant_scoping.py` (or a companion file), following the
-  `test_financials_endpoint_tenant_scoping.py` pattern (disposable `tenants` rows, teardown
-  deletes `centinela_alerts` then `tenants`), gated
-  `@pytest.mark.skipif(not (os.getenv("RUN_CENTINELA_TENANT") and
-  os.getenv("SUPABASE_SERVICE_ROLE_KEY")), reason=...)`.
-- [ ] 7.2 `test_two_tenants_alerts_do_not_leak` — alert saved under tenant A with a shared
-  `company_id`; tenant B's read is empty; tenant A's read shows it.
-- [ ] 7.3 `test_saved_alert_row_has_correct_tenant_id` — DB row's `tenant_id` equals tenant A's
-  UUID, not Cliente Cero's.
-- [ ] 7.4 Run once with `RUN_CENTINELA_TENANT=1` if `SUPABASE_SERVICE_ROLE_KEY` is available
-  locally; otherwise document the skip explicitly in the Stage 10 report (local `.env` currently
-  has no service-role key).
+## Stage 7. Integration scoping tests (env-gated) — DONE (commit `34a6ec1`)
+- [x] 7.1 New hermetic two-tenant fixture in a new file,
+  `tests/test_centinela_tenant_scoping_integration.py` (companion file, not appended to the
+  endpoint-scoping test file, to keep the mock and integration tiers cleanly separate), gated
+  `@pytest.mark.skipif(not (os.environ.get("RUN_CENTINELA_TENANT") == "1" and
+  os.environ.get("SUPABASE_SERVICE_ROLE_KEY")), reason=...)`.
+- [x] 7.2 `test_two_tenants_alerts_do_not_leak` — written.
+- [x] 7.3 `test_saved_alert_row_has_correct_tenant_id` — written.
+- [x] 7.4 **Not run** — local `.env` has no `SUPABASE_SERVICE_ROLE_KEY` (confirmed by direct
+  check). Documented in the Stage 10 report; file confirmed to collect and skip cleanly
+  (2 skipped, 0 errors).
 
-## Stage 8. Migration 0033 — proposed backfill (write only, do NOT apply)
-- [ ] 8.1 Create `apps/backend/migrations/0033_rescope_centinela_alerts_tenant.sql` per design.md
-  §7 (header `-- STATUS: PROPOSED — DO NOT APPLY without founder approval`, audit query, ambiguity
-  check, idempotent `UPDATE`, verify query).
-- [ ] 8.2 **Explicit gate: do not run this migration against production or any live database in
-  this task.** Applying it is a separate founder decision (may be run manually in the Supabase SQL
-  editor, per the established pattern for data-mutating migrations in this repo).
+## Stage 8. Migration 0033 — proposed backfill (write only, do NOT apply) — DONE (commit `cfaad63`)
+- [x] 8.1 Created `apps/backend/migrations/0033_rescope_centinela_alerts_tenant.sql` per design.md
+  §7 (PROPOSED header, audit query, ambiguity check, verify query). **Extra safety beyond plan**:
+  the actual `UPDATE` (Step 1) is additionally commented out in the file itself, not just guarded
+  by the header comment — confirmed no automated runner in this repo scans
+  `apps/backend/migrations/` to auto-apply files, so this is inert either way, but the comment-out
+  is defense-in-depth.
+- [x] 8.2 Not applied. No live database was touched.
 
-## Stage 9. Review and Update Existing Unit Tests (MANDATORY)
-- [ ] 9.1 Sweep the full `apps/backend/tests/` tree for any remaining references to the old
-  `save_alerts(alerts)` / `get_alerts_for_company(company_id, ...)` / `_alert_payload(company_id,
-  discrepancy)` signatures and update them.
-- [ ] 9.2 Full targeted run: `pytest apps/backend/tests/test_tenant_context_helpers.py
-  apps/backend/tests/test_tenant_stamping.py apps/backend/tests/test_centinela_alerts_get.py
-  apps/backend/tests/test_centinela_resolution_poller.py
-  apps/backend/tests/test_centinela_endpoint_tenant_scoping.py apps/backend/tests/test_radar.py
-  apps/backend/tests/test_slice2_e2e.py apps/backend/tests/test_maestro_agent_protocol.py -v`
-  — confirm no regressions.
+## Stage 9. Review and Update Existing Unit Tests (MANDATORY) — DONE
+- [x] 9.1 Swept `apps/backend/` via `grep` for `get_alerts_for_company(`, `.save_alerts(`,
+  `_alert_payload(` — all call sites found already use the new signatures (endpoint, service,
+  resolution service, and all test files). No stale references found.
+- [x] 9.2 Full targeted run (superset of the planned command, including the new Stage 6/7 test
+  files): 36 passed, 15 skipped (all env-gated), 1 failed (pre-existing, unrelated — see Stage 10
+  report). No regressions.
 
-## Stage 10. Run Unit Tests and Verify Database State (MANDATORY)
-- [ ] 10.1 Capture pre-test baseline: `centinela_alerts` row count total and per-tenant (Cliente
-  Cero vs. others) via a read-only query.
-- [ ] 10.2 Run the Stage 9.2 targeted suite; record pass/fail/skipped counts and runtime.
-- [ ] 10.3 Run the broader backend suite (`pytest apps/backend -q`) and record the summary.
-- [ ] 10.4 Re-check `centinela_alerts` counts post-run; restore any state mutated by
-  non-hermetic tests (the Stage 7 fixture already self-cleans; verify no residual rows).
-- [ ] 10.5 Create report:
-  `openspec/changes/centinela-tenant-scoped-alerts/reports/YYYY-MM-DD-step-10-unit-test-and-db-verification.md`
-  (template per `docs/openspec-tasks-mandatory-steps.md`), explicitly calling out the Pulso
-  alert-count change (0 → real numbers, §6 of design.md) so it isn't read as a regression.
-- [ ] 10.6 Mark this stage complete only after the report exists and tests pass (or documented
-  exceptions, e.g. Stage 7 skipped locally for lack of `SUPABASE_SERVICE_ROLE_KEY`).
+## Stage 10. Run Unit Tests and Verify Database State (MANDATORY) — DONE
+- [x] 10.1 No live Supabase connection available locally — N/A, documented in the report (nothing
+  to baseline since no live writes occur without `SUPABASE_SERVICE_ROLE_KEY`).
+- [x] 10.2 Targeted suite run and recorded: 36 passed / 15 skipped / 1 failed, ~14s.
+- [x] 10.3 Full backend suite run and recorded (excluding 3 files with pre-existing, unrelated
+  `ModuleNotFoundError: apps` collection errors): 612 passed, 40 failed, 111 skipped, 13 errors,
+  ~100s. Every failure/error manually reviewed and confirmed pre-existing/unrelated (grepped for
+  references to this change's modules).
+- [x] 10.4 N/A — no live DB state was mutated (all real-Supabase tests are env-gated and were
+  skipped).
+- [x] 10.5 Report created:
+  `openspec/changes/centinela-tenant-scoped-alerts/reports/2026-07-23-step-10-unit-test-and-db-verification.md`,
+  explicitly calling out the Pulso alert-count fix (0 → real numbers) plus an in-session git
+  incident (accidental file revert + cross-session stash-pop conflict, both caught and resolved
+  without data loss) for full transparency.
+- [x] 10.6 Complete — report exists, tests pass modulo documented pre-existing exceptions.
 
 ## Stage 11-A. Manual Endpoint Testing with curl (MANDATORY — AGENT MUST EXECUTE)
 - [ ] 11a.1 Start the backend locally; confirm `AUTH_ENFORCED` value.
