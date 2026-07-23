@@ -137,7 +137,7 @@ New response field: `CentinelaEvaluateResponse.save_skipped_reason: Optional[str
   number, which is called out explicitly in the deployment report so it isn't mistaken for a
   regression.
 
-## 7. Migration `0033_rescope_centinela_alerts_tenant.sql` — proposed only
+## 7. Migration `0034_rescope_centinela_alerts_tenant.sql` — proposed only
 
 Written and verifiable by query in this change; **application is a separate founder decision**,
 flagged with a header comment. Rationale for not auto-applying: it mutates ~40 existing production
@@ -207,7 +207,7 @@ WHERE  a.tenant_id IS DISTINCT FROM t.id;
   dashboard or report reading `pulso_diario_service`'s alert count will show non-zero values for
   the first time. Flagged explicitly in the Stage 10 DB-verification report so it isn't mistaken
   for a new regression during review.
-- **Historical alerts stay invisible until the founder applies 0033.** Until then, B2B tenants see
+- **Historical alerts stay invisible until the founder applies 0034 (renamed from 0033 — numbering collision fix).** Until then, B2B tenants see
   empty alert history for anything generated before this change shipped — the fail-safe direction
   (nothing leaks) is preserved; it's a visibility gap, not a security gap.
 - **Why the parameter always wins in `save_alerts` (§2) is itself a trade-off**, not a free

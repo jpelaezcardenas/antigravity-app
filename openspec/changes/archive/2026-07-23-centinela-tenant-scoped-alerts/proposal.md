@@ -41,7 +41,7 @@ Queue and Hermes queue write paths, which share the identical implicit-Cliente-C
   `pulso_diario_service.py`'s tenant-as-company_id bug is corrected alongside the tenant filter.
 - **Resolution poller**: `centinela_resolution_service._alert_payload` stamps the `tenant_id` it
   already receives as a parameter (currently dropped before the insert).
-- **Proposed-only backfill**: migration `0033_rescope_centinela_alerts_tenant.sql` re-stamps the
+- **Proposed-only backfill**: migration `0034_rescope_centinela_alerts_tenant.sql` re-stamps the
   ~40 existing mis-scoped rows via `company_id → tenants.company_id` mapping. Written and verified
   by query, but marked "DO NOT APPLY without founder approval" — applying it is a separate,
   explicit decision.
@@ -61,4 +61,4 @@ Queue and Hermes queue write paths, which share the identical implicit-Cliente-C
   `require_tenant_id`/`resolve_caller_tenant` as a reusable contract for those sibling changes to
   adopt later. Also out of scope: cleaning up the currently-ineffective RLS allow-all policies on
   `centinela_alerts`; the wizard's `auditoria-sombra` flow (calls `evaluate()` but never persists,
-  so it's unaffected); applying the 0033 backfill (founder decision, separate from this change).
+  so it's unaffected); applying the 0034 backfill (renamed from 0033 — numbering collision fix) (founder decision, separate from this change).

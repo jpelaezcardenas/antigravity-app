@@ -134,8 +134,8 @@
   check). Documented in the Stage 10 report; file confirmed to collect and skip cleanly
   (2 skipped, 0 errors).
 
-## Stage 8. Migration 0033 — proposed backfill (write only, do NOT apply) — DONE (commit `cfaad63`)
-- [x] 8.1 Created `apps/backend/migrations/0033_rescope_centinela_alerts_tenant.sql` per design.md
+## Stage 8. Migration 0034 (renamed from 0033 — numbering collision fix) — proposed backfill (write only, do NOT apply) — DONE (commit `cfaad63`)
+- [x] 8.1 Created `apps/backend/migrations/0034_rescope_centinela_alerts_tenant.sql` per design.md
   §7 (PROPOSED header, audit query, ambiguity check, verify query). **Extra safety beyond plan**:
   the actual `UPDATE` (Step 1) is additionally commented out in the file itself, not just guarded
   by the header comment — confirmed no automated runner in this repo scans
