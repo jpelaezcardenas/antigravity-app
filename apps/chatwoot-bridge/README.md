@@ -52,19 +52,44 @@ empty strings and fail closed (no hardcoded fallback secret is ever used).
 | `PORT` | Port the bridge listens on (default `8090`) |
 | `LOCAL_WHISPER_URL` | Reserved, unused today (phase 2 — voice transcription) |
 
-## Local startup sequence
+## Chatwoot one-time setup (first run only)
 
 ```bash
-# 1. Chatwoot stack (docker-compose.chatwoot.yml, repo root)
-docker compose -f docker-compose.chatwoot.yml up -d
+# From repo root
+cp .env.chatwoot.example .env.chatwoot
+# Fill in CHATWOOT_DB_PASSWORD (any strong password) and
+# CHATWOOT_SECRET_KEY_BASE (generate with: openssl rand -hex 64)
 
-# 2. Hermes Gateway, with the taty-v1 profile explicitly active
-wsl -d hermes-ws -- hermes -p taty-v1 gateway run
+docker compose --env-file .env.chatwoot -f docker-compose.chatwoot.yml up -d postgres redis
+# Wait for both to report healthy, then prepare the database schema:
+docker compose --env-file .env.chatwoot -f docker-compose.chatwoot.yml run --rm chatwoot-web \
+  bundle exec rails db:chatwoot_prepare
+
+docker compose --env-file .env.chatwoot -f docker-compose.chatwoot.yml up -d
+# Open http://localhost:3020, complete the admin account + WhatsApp Cloud API
+# inbox setup wizard, then generate a CHATWOOT_API_TOKEN
+# (Profile Settings -> Access Token) for the bridge's .env below.
+```
+
+## Local startup sequence (subsequent runs)
+
+```bash
+# 1. Chatwoot stack (already initialized above)
+docker compose --env-file .env.chatwoot -f docker-compose.chatwoot.yml up -d
+
+# 2. Hermes Gateway — this laptop currently runs it as a WSL systemd user
+#    service (Ubuntu distro, `hermes-gateway-contexia.service`, profile
+#    `contexia`), not a manually-run `taty-v1` process. To serve `taty-v1`
+#    specifically instead, either point HERMES_MODEL at whichever profile IS
+#    active (`curl -H "Authorization: Bearer $HERMES_API_KEY" http://127.0.0.1:8642/v1/models`
+#    shows the current one), or switch the active profile:
+wsl -d Ubuntu -- systemctl --user stop hermes-gateway-contexia.service
+wsl -d Ubuntu -- hermes -p taty-v1 gateway run
 
 # 3. The bridge itself
 cd apps/chatwoot-bridge
 pip install -r requirements.txt
-cp .env.example .env   # then fill in the secrets
+cp .env.example .env   # then fill in the secrets, including CHATWOOT_API_TOKEN from the wizard above
 uvicorn main:app --port 8090
 ```
 

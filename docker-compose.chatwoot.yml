@@ -1,0 +1,95 @@
+# Chatwoot local infrastructure (WhatsApp inbox for Taty).
+# Self-hosted, laptop-local only — ARCHITECTURE.md decision #1 (data sovereignty).
+# See openspec/changes/chatwoot-hermes-taty-bridge/design.md for the full architecture.
+#
+# One-time setup and startup sequence: see apps/chatwoot-bridge/README.md.
+
+name: contexia-chatwoot
+
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: chatwoot
+      POSTGRES_PASSWORD: ${CHATWOOT_DB_PASSWORD:?Set CHATWOOT_DB_PASSWORD in .env.chatwoot}
+      POSTGRES_DB: chatwoot
+    volumes:
+      - chatwoot_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatwoot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - chatwoot_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  chatwoot-web:
+    image: chatwoot/chatwoot:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${CHATWOOT_PORT:-3020}:3000"
+    environment:
+      RAILS_ENV: production
+      NODE_ENV: production
+      INSTALLATION_ENV: docker
+      SECRET_KEY_BASE: ${CHATWOOT_SECRET_KEY_BASE:?Set CHATWOOT_SECRET_KEY_BASE in .env.chatwoot — generate with: openssl rand -hex 64}
+      FRONTEND_URL: http://localhost:${CHATWOOT_PORT:-3020}
+      DEFAULT_LOCALE: es
+      POSTGRES_HOST: postgres
+      POSTGRES_USERNAME: chatwoot
+      POSTGRES_PASSWORD: ${CHATWOOT_DB_PASSWORD:?Set CHATWOOT_DB_PASSWORD in .env.chatwoot}
+      POSTGRES_DATABASE: chatwoot
+      REDIS_URL: redis://redis:6379
+      RAILS_LOG_TO_STDOUT: "true"
+      ENABLE_ACCOUNT_SIGNUP: "false"
+    volumes:
+      - chatwoot_storage:/app/storage
+    command: ["bundle", "exec", "rails", "s", "-p", "3000", "-b", "0.0.0.0"]
+
+  chatwoot-worker:
+    image: chatwoot/chatwoot:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      RAILS_ENV: production
+      NODE_ENV: production
+      INSTALLATION_ENV: docker
+      SECRET_KEY_BASE: ${CHATWOOT_SECRET_KEY_BASE:?Set CHATWOOT_SECRET_KEY_BASE in .env.chatwoot — generate with: openssl rand -hex 64}
+      FRONTEND_URL: http://localhost:${CHATWOOT_PORT:-3020}
+      POSTGRES_HOST: postgres
+      POSTGRES_USERNAME: chatwoot
+      POSTGRES_PASSWORD: ${CHATWOOT_DB_PASSWORD:?Set CHATWOOT_DB_PASSWORD in .env.chatwoot}
+      POSTGRES_DATABASE: chatwoot
+      REDIS_URL: redis://redis:6379
+      RAILS_LOG_TO_STDOUT: "true"
+    volumes:
+      - chatwoot_storage:/app/storage
+    command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
+
+volumes:
+  chatwoot_postgres:
+    name: contexia_chatwoot_postgres
+  chatwoot_redis:
+    name: contexia_chatwoot_redis
+  chatwoot_storage:
+    name: contexia_chatwoot_storage

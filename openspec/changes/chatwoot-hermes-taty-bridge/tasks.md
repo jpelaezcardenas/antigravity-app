@@ -127,42 +127,47 @@
 
 ## 11. Local Infrastructure: Chatwoot Docker Compose
 
-- [ ] 11.1 Create `docker-compose.chatwoot.yml` at repo root: `postgres` (plain `postgres:15` per
+- [x] 11.1 Create `docker-compose.chatwoot.yml` at repo root: `postgres` (plain `postgres:15` per
       design.md open question), `redis`, `chatwoot-web` (`${CHATWOOT_PORT:-3020}:3000`),
       `chatwoot-worker` (sidekiq), named volumes (`chatwoot_postgres`, `chatwoot_redis`,
-      `chatwoot_storage`)
-- [ ] 11.2 Document the one-time `rails db:chatwoot_prepare` init command and `SECRET_KEY_BASE`
-      generation in `apps/chatwoot-bridge/README.md`
-- [ ] 11.3 Bring the stack up locally (`docker compose -f docker-compose.chatwoot.yml up -d`),
-      complete the Chatwoot setup wizard, create the WhatsApp Cloud API inbox, generate a
-      `CHATWOOT_API_TOKEN`
+      `chatwoot_storage`). Also added `.env.chatwoot.example` (secrets template, `.gitignore`d real
+      file) since the compose file requires `CHATWOOT_DB_PASSWORD`/`CHATWOOT_SECRET_KEY_BASE`.
+- [x] 11.2 Documented the one-time `rails db:chatwoot_prepare` init command and `SECRET_KEY_BASE`
+      generation in `apps/chatwoot-bridge/README.md` (new "Chatwoot one-time setup" section). Also
+      corrected a stale instruction in the same README that referenced a non-existent `hermes-ws`
+      WSL distro — the actual gateway runs under the `Ubuntu` distro as a systemd user service
+      (discovered during the earlier tunnel/webhook investigation this session).
+- [ ] 11.3 **BLOCKED — Docker is not installed on this laptop** (confirmed: not found natively on
+      Windows, not found in WSL Ubuntu either — `docker --version` fails in both). This contradicts
+      CLAUDE.md's stated environment ("Windows 11 with WSL2 / Docker Desktop"). Cannot bring the
+      stack up, complete the Chatwoot setup wizard, or generate a real `CHATWOOT_API_TOKEN` until
+      Docker Desktop is installed. Task 12 (manual curl against a live Chatwoot) is transitively
+      blocked by this too. Flagged to the user; not silently skipped or faked.
 
 ## 12. Bridge: Manual Endpoint Testing with curl (MANDATORY - AGENT MUST EXECUTE)
 
-- [ ] 12.1 Start the bridge locally (`uvicorn main:app --port 8090`) against the running Chatwoot +
-      Hermes Gateway (verify `taty-v1` is the active profile via
-      `curl -H "Authorization: Bearer $HERMES_API_KEY" http://127.0.0.1:8642/v1/models`)
-- [ ] 12.2 `curl http://127.0.0.1:8090/` → verify 200 health response
-- [ ] 12.3 `curl -X POST http://127.0.0.1:8090/webhook` with a simulated Chatwoot
-      `message_created`/`incoming` payload and correct `WEBHOOK_TOKEN` → verify
-      `{"status":"processing_started"}` and that an outgoing reply lands in the Chatwoot conversation
-      (check via Chatwoot API)
-- [ ] 12.4 `curl -X POST http://127.0.0.1:8090/webhook` with an `outgoing` payload → verify
-      `{"status":"skipped"}` and no reply is sent
-- [ ] 12.5 Add the `bot_off` label to the test conversation via Chatwoot API, repeat 12.3 → verify
-      `{"status":"paused",...}` and no Hermes call (check bridge logs), then remove the label
-- [ ] 12.6 `curl -X POST http://127.0.0.1:8090/webhook` without the correct `WEBHOOK_TOKEN` → verify
-      401
-- [ ] 12.7 Document all curl commands and responses in
-      `openspec/changes/chatwoot-hermes-taty-bridge/reports/YYYY-MM-DD-step-12-curl-verification.md`
-- [ ] 12.8 Clean up test conversation/lead data created during manual testing
+**Partially blocked by 11.3 (Docker not installed)** — everything not requiring a live Chatwoot was
+executed; see `reports/2026-07-23-step-12-curl-verification.md` for full detail.
+
+- [x] 12.1 Started the bridge locally against the real, running Hermes Gateway (`HERMES_MODEL`
+      pointed at whichever profile is actually active today — `contexia`, confirmed via
+      `GET /v1/models` — since `taty-v1` is a configurable value, not hardcoded)
+- [x] 12.2 `curl http://127.0.0.1:8090/` → 200, confirmed real Hermes connectivity
+- [ ] 12.3 **BLOCKED** — needs a live Chatwoot conversation to verify (see 11.3)
+- [x] 12.4 `outgoing` payload → `{"status":"skipped"}`, verified
+- [ ] 12.5 **BLOCKED** — needs the real Chatwoot API to toggle `bot_off` (see 11.3)
+- [x] 12.6 Missing/wrong `WEBHOOK_TOKEN` → 401, verified (both cases)
+- [x] 12.7 Documented in
+      `openspec/changes/chatwoot-hermes-taty-bridge/reports/2026-07-23-step-12-curl-verification.md`
+- [ ] 12.8 **N/A** — no real Chatwoot conversation/lead was created this session (see report)
 
 ## 13. Documentation
 
-- [ ] 13.1 Add a row for Chatwoot + `apps/chatwoot-bridge` to the containers table in
-      `ARCHITECTURE.md` (living-doc rule, same change), noting the local-only deploy target
-- [ ] 13.2 Write `apps/chatwoot-bridge/README.md`: env var reference, local startup sequence, port
-      map, troubleshooting (wrong Hermes profile, webhook token mismatch)
+- [x] 13.1 Added a row for Chatwoot + `apps/chatwoot-bridge` to the containers table in
+      `ARCHITECTURE.md`, noting the local-only deploy target and the Docker-not-installed blocker
+- [x] 13.2 `apps/chatwoot-bridge/README.md`: env var reference, local startup sequence (including
+      the Chatwoot one-time setup added this session), port map, troubleshooting (wrong Hermes
+      profile, webhook token mismatch) — all present
 
 ## 14. Stage 11. Deploy to Production (MANDATORY - CLOSES THE LOOP)
 

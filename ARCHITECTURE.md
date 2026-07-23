@@ -57,6 +57,7 @@ flowchart TB
 | **Datos** | Auth + Postgres + pgvector; tablas Shadow GL | Supabase (`kpynymwghfwshvcvevxq`) | Supabase cloud |
 | **Hermes** | Orquestador/scheduler de agentes + memoria aplicada | Nous Research native | **Local / WSL** (soberanía de datos) |
 | **GBrain** | Segundo cerebro: hybrid search (vector+keyword+expansión) + grafo de conocimiento auto-wired sobre `contexia-brain`; MCP server para Claude Code/Codex/Hermes | TypeScript/Bun (github.com/jpelaezcardenas/garrytan-gbrain), `gbrain-autopilot.service` (systemd) | **Local / WSL** (mismo host que Hermes) — proceso local, almacenamiento en esquema dedicado `gbrain` en el mismo proyecto Supabase (`kpynymwghfwshvcvevxq`) |
+| **Chatwoot + bridge** | Inbox de WhatsApp (Meta Cloud API) para Taty, auto-hospedado; `apps/chatwoot-bridge/` (FastAPI) traduce eventos de Chatwoot ↔ Hermes Gateway (`taty-v1`), con pausa HITL vía etiqueta `bot_off` | Chatwoot (Docker Compose, `docker-compose.chatwoot.yml`) + FastAPI/Python 3.11 | **Local / laptop** (mismo host que Hermes, soberanía de datos) — nunca Vercel/Railway; requiere Docker Desktop (no instalado a la fecha, ver `openspec/changes/chatwoot-hermes-taty-bridge/`) |
 
 **Fuente canónica vs artefacto de build:** `contexia-app/` es la fuente de la PWA; la carpeta `app/` (raíz) es un **artefacto generado** (`npm run build` → sync `out/` → `app/`). **Nunca editar `app/` a mano.** (Ver CLAUDE.md §9.)
 

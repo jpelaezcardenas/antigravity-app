@@ -39,6 +39,8 @@ MANIFEST
 # Sensitive files
 .env.local
 .env
+.env.chatwoot
+apps/chatwoot-bridge/.env
 cookies.json
 scripts/keeper-populate-vault.cmd
 load-env.ps1
