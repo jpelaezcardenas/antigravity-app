@@ -251,5 +251,6 @@ Project-specific details:
 
 ## 11. Archive
 
-- [ ] 11.1 Confirm all sections above are `[x]` and Stage 10 verification is documented
-- [ ] 11.2 Archive via `openspec-archive-change` skill
+- [x] 11.1 Confirmed all sections above are `[x]` and Stage 10 verification is documented
+- [x] 11.2 Archived via `openspec-archive-change` skill to
+      `openspec/changes/archive/2026-07-23-approval-queue-tenant-scoping/`
