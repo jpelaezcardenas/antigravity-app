@@ -78,7 +78,9 @@ above passing. Root-caused live with the founder:
    `{"caja_real":2260000000,...}` with that exact real token. 502s seen for ~90s after each Railway
    redeploy were the normal container-boot window, not failures (confirmed via `/api/v1/health` and
    deployment logs once fully up).
-5. **Founder confirmed live in their own browser**: Medic → "$22.600.000" (matches exactly).
+5. **Founder confirmed live in their own browser, two different clients**: Medic → "$22.600.000"
+   and CÓDIGO 520 → "$290.000" (both exact matches, both distinct — tenant isolation proven
+   end-to-end in production, not just server-side).
 
 ## Data Changes (production Supabase, `kpynymwghfwshvcvevxq`)
 - Migrations `0027`–`0031` applied.
@@ -113,12 +115,11 @@ above passing. Root-caused live with the founder:
 - [x] Production: new frontend code confirmed live (SW cache version, new chunk, correct error text)
 - [x] Production: backend confirmed live and responding correctly (clean 401 pre-fix, then 200 with
   real tenant-scoped data post-fix)
-- [x] Founder's own live browser login confirmed correct: Medic → "$22.600.000" (exact match)
+- [x] Founder's own live browser login confirmed correct for TWO distinct clients: Medic →
+  "$22.600.000", CÓDIGO 520 → "$290.000" (both exact matches, no cross-client leak)
 - [x] Deployment report created (this file)
 
-**Remaining before archive:** founder to confirm CÓDIGO 520's login also shows its own distinct
-(low, ~$290,000) figure — not yet confirmed at report time. Accountant's own admin login still
-needs her email (open item, not blocking).
+**Remaining (not blocking archive):** accountant's own admin login still needs her email.
 
 ---
 

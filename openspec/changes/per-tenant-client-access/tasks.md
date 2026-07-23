@@ -69,8 +69,9 @@ Backend `https://antigravity-app-production-175a.up.railway.app`.
 - [ ] 11.1 git commit + push to main
 - [ ] 11.2 Vercel build complete (green) + `CACHE_VERSION` bumped
 - [ ] 11.3 Railway deploy active (backend financials change)
-- [x] 11.4 Production: a client login sees its own Caja Real; admin sees roster — Medic confirmed
-  live by the founder ($22,600,000, exact match); CÓDIGO 520 confirmation pending.
+- [x] 11.4 Production: a client login sees its own Caja Real; admin sees roster — confirmed live
+  by the founder for two distinct clients: Medic ($22,600,000) and CÓDIGO 520 ($290,000), both
+  exact matches, no cross-client leak.
 - [x] 11.5 Report: `openspec/changes/per-tenant-client-access/reports/2026-07-22-deployment.md`
 - [x] 11.6 **Critical follow-up (found during 11.4 live testing):** every real client login was
   silently 401'ing — Supabase signs session tokens asymmetrically (ES256 + JWKS), not the legacy
