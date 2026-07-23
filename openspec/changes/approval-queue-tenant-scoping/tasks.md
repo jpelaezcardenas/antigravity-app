@@ -197,13 +197,17 @@
 
 ## 9. Update Technical Documentation (MANDATORY)
 
-- [ ] 9.1 Update `ARCHITECTURE.md` Decision #13 (or add a note) — approval queue is now
-      tenant-scoped; Contexia operator = caller resolved to Cliente Cero's tenant
-- [ ] 9.2 Sync `specs/approval-queue/spec.md` into main `openspec/specs/` (via
-      `openspec-sync-specs` skill) before archiving
-- [ ] 9.3 Note the deferred follow-ups from `design.md` (RLS policy cleanup owned by
+- [x] 9.1 Update `ARCHITECTURE.md` Decision #13 (or add a note) — approval queue is now
+      tenant-scoped; Contexia operator = caller resolved to Cliente Cero's tenant (added
+      Decisión #14, extending #13)
+- [x] 9.2 Sync `specs/approval-queue/spec.md` into main `openspec/specs/` (via
+      `openspec-sync-specs` skill) before archiving (manually merged, per the skill's own
+      "ADDED Requirements" rule, into the pre-existing `openspec/specs/approval-queue/spec.md`)
+- [x] 9.3 Note the deferred follow-ups from `design.md` (RLS policy cleanup owned by
       `hermes-multi-tenant-wrapper`; financials refactor to reuse the shared helper) somewhere
-      trackable (e.g. a TODO in `hermes-multi-tenant-wrapper/tasks.md` or a new backlog note)
+      trackable (added a follow-up note in `hermes-multi-tenant-wrapper/tasks.md` after Ground
+      Truth Correction #3 for the RLS cleanup; the financials refactor follow-up was already
+      documented in this change's `design.md` §"Out of scope", judged sufficient)
 
 ## 10. Deploy to Production (MANDATORY — CLOSES THE LOOP)
 
