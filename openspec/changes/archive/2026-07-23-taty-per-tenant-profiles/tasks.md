@@ -223,10 +223,22 @@ Tasks:
 
 ## 12. Sync Specs and Archive
 
-- [ ] 12.1 `openspec-sync-specs` — sync `taty-fiscal-assistant` delta spec into main
-      `openspec/specs/`
-- [ ] 12.2 Reviewer gate: `APPROVED` verdict in `progress/review_<id>.md` against
-      `ARCHITECTURE.md`, `docs/backend-standards.md`, `DEPLOYMENT_STAGE/CHECKPOINTS.md`, and
-      `.antigravity/GROUND_TRUTH.md` (régimen-omission wording)
-- [ ] 12.3 Archive change to `openspec/changes/archive/YYYY-MM-DD-taty-per-tenant-profiles/`
-- [ ] 12.4 `feature_list.json`: mark `taty-per-tenant-profiles` `done`
+- [x] 12.1 `openspec-sync-specs` — synced `taty-fiscal-assistant` delta spec into main
+      `openspec/specs/taty-fiscal-assistant/spec.md`
+- [x] 12.2 Reviewer gate: **APPROVED** (whole-change, final) in
+      `progress/review_taty-per-tenant-profiles-final.md` — independently reverified 23/23
+      tests, zero remaining functional `AGENT_PROFILES`/`taty_intent_router` references, live
+      production 404/401 checks, GROUND_TRUTH compliance, and ARCHITECTURE.md consistency.
+      Explicit archive-timing recommendation: **archive now**, since 11.6/11.6b/11.8 are
+      founder-credential dependencies (not agent diligence gaps — this agent correctly refuses
+      to fabricate results or handle plaintext credentials per its operating constraints), the
+      security-critical Stage 11 surface is independently verified live, and this change is
+      currently occupying the sole `feature_list.json` in-progress slot, blocking an already
+      merged-and-tested sibling change (`centinela-tenant-scoped-alerts`) from starting its own
+      Stage 13. Conditions attached and honored: 11.6/11.6b/11.8 stay unchecked (not force-passed);
+      spec sync committed; a durable, separately-trackable founder-follow-up record created
+      (see feature_list.json + progress/history.md "FOUNDER ACTION REQUIRED", plus a spawned
+      background-task chip); ARCHITECTURE.md Decision #16 added.
+- [x] 12.3 Archived change to `openspec/changes/archive/2026-07-23-taty-per-tenant-profiles/`
+- [x] 12.4 `feature_list.json`: marked `taty-per-tenant-profiles` `done`, with the 3
+      founder-pending checks called out explicitly in its summary (not silently dropped)

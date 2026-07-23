@@ -170,3 +170,33 @@ confirmed safe.
 11.6/11.6b/11.8 (real provisioned-client login, unresolved-tenant session, Telegram Cliente Cero
 chat) require founder-held credentials/access — honestly deferred, not fabricated. Report:
 reports/2026-07-23-deployment.md.
+
+## taty-per-tenant-profiles — Stage 12: sync specs + archive (2026-07-23)
+
+Synced `taty-fiscal-assistant` delta spec into `openspec/specs/`. Final whole-change reviewer
+gate: APPROVED, recommended archiving now rather than holding (`progress/review_taty-per-tenant-profiles-final.md`)
+— this change was the sole `in_progress` entry in `feature_list.json`, blocking the already
+merged-and-tested sibling change `centinela-tenant-scoped-alerts` from starting. Added
+ARCHITECTURE.md Decision #16 (Taty follows the Decision #13 tenant-scoping pattern). Archived
+to `openspec/changes/archive/2026-07-23-taty-per-tenant-profiles/`.
+
+### ⚠️ FOUNDER ACTION REQUIRED (not executed by any agent — credential-gated)
+
+Three Stage 11 production spot-checks remain unverified because they require the founder's
+Bitwarden credentials for a real provisioned B2B client login, and access to Cliente Cero's
+Telegram bot — neither of which any agent in this repo handles or should handle in plaintext:
+
+1. **11.6** — Log in as a real provisioned B2B client (10 exist, see `b2b_clients`) and call
+   `GET/POST /api/v1/agents/ask` with their session. Expect: an answer scoped to their own
+   `legal_name`, no "Cliente no configurado", no `error_code`.
+2. **11.6b** — Call `/api/v1/agents/ask` with an authenticated session that has no active
+   `user_tenants` membership. Expect: `error_code="tenant_not_resolved"`, never Cliente Cero's
+   data.
+3. **11.8** — Send a message in Cliente Cero's existing Telegram chat. Expect: Taty still
+   answers normally (the webhook now translates `telegram_chat_mappings.company_id` →
+   `tenants.id` before calling `ask()` — this exercises that translation for real).
+
+The security-critical part (auth enforcement itself) is independently verified live in
+production already — these are follow-up UAT-style spot-checks on top of that, not a gap in
+the security boundary. Report at
+`openspec/changes/archive/2026-07-23-taty-per-tenant-profiles/reports/2026-07-23-deployment.md`.
