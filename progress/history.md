@@ -130,3 +130,13 @@ ask() rename / AGENT_PROFILES deletion / taty_intent_router deletion. Reviewer i
 re-ran every grep + classification, confirmed genuine. Found 2 pre-existing unrelated
 TestClient/httpx-starlette incompatibility failures (test_centinela_alerts_get.py,
 test_secure_llm.py) for task 7 awareness.
+
+## taty-per-tenant-profiles — task 7 (2026-07-23)
+Mandatory full-suite + DB verification. 23/23 targeted tests green. Broader suite:
+648 passed / 25 failed / 13 errors, none traceable to this change's diff (missing local Supabase
+creds, httpx/starlette TestClient incompatibility, Windows-encoding Siigo bug, unrelated
+feature-flag/env/float-tolerance bugs — all pre-existing). Live DB verification deferred to
+Stage 11 (no Supabase creds in this local worktree). Report:
+reports/2026-07-23-step-7-unit-test-and-db-verification.md. Reviewer independently reproduced
+the full failure set byte-for-byte + read 6 tracebacks directly + checked indirect coupling
+via router.py imports. APPROVED.
