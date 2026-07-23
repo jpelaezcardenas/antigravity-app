@@ -21,6 +21,14 @@ pytestmark = pytest.mark.skipif(
     reason="Set RUN_APPROVAL_QUEUE_DB=1 to run Approval Queue persistence tests against Supabase",
 )
 
+# Fixed test tenant used by the generic (non-scoping-focused) persistence tests below.
+# `approval_queue.tenant_id` has no FK constraint (migration 0001), so any UUID is
+# valid; this mirrors the real Cliente Cero tenant ID used elsewhere in the suite
+# (e.g. test_tenant_stamping.py) to match the pre-tenant-scoping behavior these
+# tests originally exercised (enqueue_draft used to default to Cliente Cero
+# internally; approval-queue-tenant-scoping, Section 5).
+_TEST_TENANT_ID = "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"
+
 
 @pytest.fixture(scope="module")
 def supabase():
@@ -63,6 +71,7 @@ class TestEnqueuePersistence:
             draft_id=draft_id,
             draft_type="tax_correction",
             journal_entry=_balanced_journal_entry(),
+            tenant_id=_TEST_TENANT_ID,
         )
         assert success is True
         assert error is None
@@ -87,6 +96,7 @@ class TestEnqueuePersistence:
             draft_id=draft_id,
             draft_type="tax_correction",
             journal_entry=_unbalanced_journal_entry(),
+            tenant_id=_TEST_TENANT_ID,
         )
         assert success is False
         assert decision is None
@@ -102,6 +112,7 @@ class TestEnqueuePersistence:
             draft_id=draft_id,
             draft_type="risk_review",
             journal_entry={"risk_score": 92, "forecast_30d_minor": -500000},
+            tenant_id=_TEST_TENANT_ID,
         )
         assert success is True
         assert error is None
@@ -116,11 +127,13 @@ class TestListDrafts:
             draft_id=str(uuid.uuid4()),
             draft_type="tax_correction",
             journal_entry=_balanced_journal_entry(),
+            tenant_id=_TEST_TENANT_ID,
         )
         _, risk_decision, _ = await ApprovalQueueService.enqueue_draft(
             draft_id=str(uuid.uuid4()),
             draft_type="risk_review",
             journal_entry={"risk_score": 91},
+            tenant_id=_TEST_TENANT_ID,
         )
         _cleanup.append(tax_decision.id)
         _cleanup.append(risk_decision.id)
@@ -136,11 +149,13 @@ class TestListDrafts:
             draft_id=str(uuid.uuid4()),
             draft_type="tax_correction",
             journal_entry=_balanced_journal_entry(),
+            tenant_id=_TEST_TENANT_ID,
         )
         _, risk_decision, _ = await ApprovalQueueService.enqueue_draft(
             draft_id=str(uuid.uuid4()),
             draft_type="risk_review",
             journal_entry={"risk_score": 91},
+            tenant_id=_TEST_TENANT_ID,
         )
         _cleanup.append(tax_decision.id)
         _cleanup.append(risk_decision.id)
@@ -156,12 +171,14 @@ class TestListDrafts:
             draft_id=str(uuid.uuid4()),
             draft_type="tax_correction",
             journal_entry=_balanced_journal_entry(),
+            tenant_id=_TEST_TENANT_ID,
         )
         _cleanup.append(decision.id)
         await ApprovalQueueService.approve_draft(
             decision_id=decision.id,
             approval_reason="ok",
             approved_by="contador@contexia.com",
+            tenant_id=_TEST_TENANT_ID,
         )
 
         rows = await ApprovalQueueService.list_drafts(status="pending_approval")
@@ -177,6 +194,7 @@ class TestApproveRejectPersistence:
             draft_id=draft_id,
             draft_type="tax_correction",
             journal_entry=_balanced_journal_entry(),
+            tenant_id=_TEST_TENANT_ID,
         )
         _cleanup.append(decision.id)
 
@@ -184,6 +202,7 @@ class TestApproveRejectPersistence:
             decision_id=decision.id,
             approval_reason="Matches DIAN invoice, contador confirmed",
             approved_by="contador@contexia.com",
+            tenant_id=_TEST_TENANT_ID,
         )
         assert success is True
         assert error is None
@@ -206,6 +225,7 @@ class TestApproveRejectPersistence:
             draft_id=draft_id,
             draft_type="tax_correction",
             journal_entry=_balanced_journal_entry(),
+            tenant_id=_TEST_TENANT_ID,
         )
         _cleanup.append(decision.id)
 
@@ -213,6 +233,7 @@ class TestApproveRejectPersistence:
             decision_id=decision.id,
             rejection_reason="Needs more documentation",
             rejected_by="contador@contexia.com",
+            tenant_id=_TEST_TENANT_ID,
         )
         assert success is True
         assert rejected.status.value == "rejected"
@@ -229,10 +250,14 @@ class TestApproveRejectPersistence:
 
     @pytest.mark.asyncio
     async def test_approve_unknown_decision_id_fails(self, supabase, _cleanup) -> None:
+        # Unrestricted (tenant_id=None) admin path: even without a tenant filter,
+        # a genuinely unknown decision_id must still fail — this test is about the
+        # "not found" behavior itself, not tenant scoping.
         success, decision, error = await ApprovalQueueService.approve_draft(
             decision_id=str(uuid.uuid4()),
             approval_reason="x",
             approved_by="contador@contexia.com",
+            tenant_id=None,
         )
         assert success is False
         assert decision is None

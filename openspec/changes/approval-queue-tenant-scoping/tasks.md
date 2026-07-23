@@ -113,9 +113,9 @@
 
 ## 5. Review and Update Existing Unit Tests (MANDATORY)
 
-- [ ] 5.1 Re-read every test file touched in Sections 2–4 end to end; confirm no test asserts
+- [x] 5.1 Re-read every test file touched in Sections 2–4 end to end; confirm no test asserts
       the old implicit-Cliente-Cero behavior
-- [ ] 5.2 `grep -rn "resolve_cliente_cero_tenant_id" apps/backend/tests` — confirm each match
+- [x] 5.2 `grep -rn "resolve_cliente_cero_tenant_id" apps/backend/tests` — confirm each match
       is an intentional explicit-resolution test, not a leftover assumption
 
 ## 6. Run Unit Tests and Verify Database State (MANDATORY)
