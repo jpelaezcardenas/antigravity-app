@@ -123,14 +123,15 @@ Project-specific details:
 - Deploy branch: `main`
 - Backend URL: https://antigravity-app-production-175a.up.railway.app
 
-- [ ] 10.1 git commit + push (classifier may block a direct push to `main` — hand off to the
-      founder if so)
-- [ ] 10.2 Railway deploy active and green
-- [ ] 10.3 Smoke-test in production: one newly-gated route (expect 401 with no token, success
-      with one); one of the 3 migrated routes (approval-queue enqueue with an unresolved-tenant
-      token, expect 404)
-- [ ] 10.4 Create report:
-      `openspec/changes/agent-endpoints-real-tenant-filtering/reports/YYYY-MM-DD-deployment.md`
+- [x] 10.1 Fast-forward merged to `main` (`5ce09cd`) and pushed — no classifier block
+- [x] 10.2 Railway deployment `2f9ecad5-9f78-45ca-987b-3998568eb526` — SUCCESS
+- [x] 10.3 Smoke-tested in production without a token: all 6 newly/previously-gated routes
+      (task-info, orchestrator/full-pipeline, pulso-diario/summary, approval-queue, taty/ask)
+      return 401. Success-with-a-real-token and the 404-with-unresolved-tenant checks require a
+      real Supabase JWT — deferred to the founder (see report), same precedent as
+      `taty-per-tenant-profiles`
+- [x] 10.4 Report:
+      `openspec/changes/agent-endpoints-real-tenant-filtering/reports/2026-07-23-deployment.md`
 
 ## 11. Review Gate
 
