@@ -109,11 +109,21 @@
   cleanly (12 routes generated, no errors).
 
 ## Stage 11. Frontend: E2E with a real client (MANDATORY where applicable)
-- [ ] 11.1 Local `npm run dev` against the deployed backend (post Stage-11-deploy) or a temporary
-  staging pointer: verify all three states (loading/ready/empty-or-error) render for ActiveAlerts
-  and the Liquidity Bridge without crashing the screen.
-- [ ] 11.2 Confirm `CashTodayCard` no longer shows `$42.850.000` under any simulated error
-  condition.
+- [x] 11.1 Ran `contexia-app` (`next dev`, port 3002) against a local backend
+  (`apps/backend`, port 8080, real Supabase/Cliente Cero data) in this worktree. Verified all
+  three cards' ready states with real live data: Caja Real $3.520.000, 20 real
+  `SHADOW_GL_DISCREPANCY` alerts, Liquidity Bridge (Saldo Inicial/Final $3.520.000, current
+  month has no movements yet). **Found and fixed a real bug in the process**: React duplicate-key
+  warnings in `ActiveAlerts` because many live alerts share one `rule_id` — fixed by always
+  appending the array index to the key (commit `89c7774`), verified via DOM inspection (exactly
+  20 distinct alert cards, no duplication/omission) after the fix. Then stopped the backend
+  process and reloaded — confirmed loading skeletons transition correctly to error/unavailable
+  states for all three cards, none crash the screen.
+- [x] 11.2 Confirmed live: with the backend down, `CashTodayCard` renders "No pudimos actualizar
+  tu Caja Real. Intenta de nuevo en un momento." — never `$42.850.000` or any other mock figure.
+  `ActiveAlerts` correctly renders nothing (section disappears) and
+  `MonthlyLiquidityBridgeCard` renders "Datos no disponibles por el momento." — neither falls
+  back to mock data.
 
 ## Stage 12. Docs
 - [ ] 12.1 `contexia-app/CLAUDE.md`: add `ActiveAlerts` and `MonthlyLiquidityBridgeCard` to
