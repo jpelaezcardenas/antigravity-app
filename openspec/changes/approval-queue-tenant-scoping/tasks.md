@@ -189,11 +189,14 @@
       END IF;`, guard idiom matches `0001_add_tenant_id_columns.sql`/`0003_enable_rls_policies.sql`'s
       `information_schema.columns` pattern, all statements semicolon-terminated (see
       `progress/impl_section8_migration_file.md` for full detail)
-- [ ] 8.3 **Ask the founder for explicit confirmation before applying to the live database**
-      (schema change on a production table)
-- [ ] 8.4 Apply migration 0033 to Supabase project `kpynymwghfwshvcvevxq` (only after 8.3)
-- [ ] 8.5 Re-run the Task 0.3 / 6.1 verification query — confirm 6 rows, all Cliente Cero,
-      column is NOT NULL with no default
+- [x] 8.3 **Ask the founder for explicit confirmation before applying to the live database**
+      (schema change on a production table) — confirmed via AskUserQuestion, 2026-07-23
+- [x] 8.4 Apply migration 0033 to Supabase project `kpynymwghfwshvcvevxq` — applied via
+      `apply_migration` MCP tool, 2026-07-23, `{"success":true}`
+- [x] 8.5 Re-run the Task 0.3 / 6.1 verification query — confirmed: `SELECT count(*) FROM
+      approval_queue WHERE tenant_id IS NULL` → 0; `information_schema.columns` for
+      `approval_queue.tenant_id` → `column_default: null, is_nullable: "NO"`. Matches design.md's
+      expected post-migration state exactly.
 
 ## 9. Update Technical Documentation (MANDATORY)
 
