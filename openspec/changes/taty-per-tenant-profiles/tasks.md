@@ -165,13 +165,16 @@
 
 ## 10. Update Technical Documentation (MANDATORY)
 
-- [ ] 10.1 Update `apps/backend/presentation/taty_endpoints.py` docstrings/examples to drop
-      `ctx-001`-as-request-param examples and reflect auth + `tenant_id` resolution
-- [ ] 10.2 Update `ARCHITECTURE.md` / `AGENTES.md` only if either names `taty_intent_router` or
-      the old hardcoded-profile mechanism (check during execution; do not touch bilingual
-      founder summary carve-out unnecessarily)
-- [ ] 10.3 Confirm no symlink references broke (per CLAUDE.md §6) — this change adds no new
-      `ai-specs`-sourced artifacts
+- [x] 10.1 Update `apps/backend/presentation/taty_endpoints.py` docstrings/examples to drop
+      `ctx-001`-as-request-param examples and reflect auth + `tenant_id` resolution — 2 stale
+      spots fixed (query example path, JSON-only example → realistic curl w/ Authorization
+      header); task 3 had already done the bulk of this. Also fixed a stale `/agents/taty/ask`
+      comment in `router.py` (flagged by task 5). Reviewed APPROVED.
+      `progress/impl_taty-per-tenant-profiles-task10.md`, `progress/review_taty-per-tenant-profiles-task10.md`
+- [x] 10.2 Update `ARCHITECTURE.md` / `AGENTES.md` — genuine no-op, zero grep hits for
+      `taty_intent_router`/`AGENT_PROFILES`/legacy client keys in either file
+- [x] 10.3 Confirmed no symlink references broke — this change adds no new `ai-specs`-sourced
+      artifacts (diff is entirely `apps/backend/`, `openspec/`, `progress/`)
 
 ## 11. Stage 11. Deploy to Production (MANDATORY - CLOSES THE LOOP)
 

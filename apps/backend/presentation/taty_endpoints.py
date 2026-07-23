@@ -135,10 +135,13 @@ async def ask_taty(
 
     **Query Alternative** (for dashboard GET):
     ```
-    GET /api/v1/agents/taty/ask?question=¿Cuál es el UVT?
+    GET /api/v1/agents/ask?question=¿Cuál es el UVT?
     ```
 
     **Headers:**
+    - Authorization: Bearer <token> — required in production (AUTH_ENFORCED=True);
+      identifies the caller so their tenant can be resolved (see "Auth / tenant
+      resolution" below)
     - X-Hermes-Profile: Profile name (e.g., "taty-v1") for Hermes-based LLM routing
 
     **Auth / tenant resolution (per-tenant-client-access, taty-per-tenant-profiles):**
@@ -161,11 +164,11 @@ async def ask_taty(
     - Flags for human review if needed
 
     **Example:**
-    ```json
-    {
-      "question": "¿Cuál es el UVT para 2026?",
-      "channel": "dashboard"
-    }
+    ```bash
+    curl -H "Authorization: Bearer <token>" \
+      -X POST https://antigravity-app-production-175a.up.railway.app/api/v1/agents/ask \
+      -H "Content-Type: application/json" \
+      -d '{"question": "¿Cuál es el UVT para 2026?", "channel": "dashboard"}'
     ```
 
     Returns: TatyAskResponse with answer, citations, latency, confidence, escalation flag.

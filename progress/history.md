@@ -148,3 +148,8 @@ existing pattern, not a regression), 8.6 (deleted route -> 404), 8.7 (malformed 
 8.3-8.5 (provisioned-client/spoof/unresolved-tenant JWT scenarios) honestly deferred to Stage 11
 -- no way to mint a real Supabase JWT locally. Reviewer added Stage 11 item 11.6b for the
 unresolved-tenant production check (gap task 8 surfaced). APPROVED.
+
+## taty-per-tenant-profiles — task 10 (2026-07-23)
+Docs: fixed 2 stale docstring spots in taty_endpoints.py (task 3 had already done most of this),
+fixed the stale /agents/taty/ask comment in router.py flagged by task 5. ARCHITECTURE.md/AGENTES.md
+needed no changes (genuine zero-hit grep). 23/23 tests still green. Reviewer: APPROVED.
