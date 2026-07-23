@@ -1,4 +1,7 @@
--- Migration 0033: Rolling reseed of synthetic Shadow GL "yesterday" rows
+-- Migration 0035: Rolling reseed of synthetic Shadow GL "yesterday" rows
+-- (renumbered from 0033 on 2026-07-23 during merge reconciliation — 0033/0034 were
+-- claimed by approval-queue-tenant-scoping and centinela-tenant-scoped-alerts, which
+-- landed on main while this change was in progress on an isolated worktree)
 -- Date: 2026-07-23
 -- The synthetic per-client Shadow GL seed (migration 0028) dated its `SYNTH-*-SALE` and
 -- `SYNTH-*-EXPENSE` rows to `CURRENT_DATE - 1` at seed time (2026-07-20) and that date is now
@@ -49,4 +52,4 @@ SELECT cron.schedule(
   $cron$
 );
 
-SELECT '✅ 0033 rolling_reseed_synthetic_shadow_gl complete' AS status;
+SELECT '✅ 0035 rolling_reseed_synthetic_shadow_gl complete' AS status;

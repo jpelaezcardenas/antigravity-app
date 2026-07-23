@@ -11,6 +11,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "apps" / "backend"))
 
 from services.approval_queue_service import ApprovalQueueService
 
+# Real Cliente Cero tenant UUID — matches the pre-tenant-scoping default behavior
+# these tests originally exercised (enqueue_draft used to resolve Cliente Cero
+# internally; approval-queue-tenant-scoping, Section 5). No FK constraint on
+# approval_queue.tenant_id (migration 0001), so this is a plain UUID, not a
+# live-DB dependency.
+_TEST_TENANT_ID = "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"
+
 
 @pytest.mark.asyncio
 async def test_balanced_draft_enqueued():
@@ -25,6 +32,7 @@ async def test_balanced_draft_enqueued():
             ],
             "memo": "DIAN correction",
         },
+        tenant_id=_TEST_TENANT_ID,
     )
 
     assert success is True
@@ -46,6 +54,7 @@ async def test_unbalanced_draft_rejected():
             ],
             "memo": "Wrong amount",
         },
+        tenant_id=_TEST_TENANT_ID,
     )
 
     assert success is False
@@ -66,6 +75,7 @@ async def test_draft_approved_after_enqueue():
                 {"account": "2105", "debit": 0, "credit": 500000},
             ],
         },
+        tenant_id=_TEST_TENANT_ID,
     )
 
     assert enqueue_success is True
@@ -77,6 +87,7 @@ async def test_draft_approved_after_enqueue():
             decision_id=decision.id,
             approval_reason="Contexia's own invoice, matches DIAN",
             approved_by="contador@contexia.com",
+            tenant_id=_TEST_TENANT_ID,
         )
     )
 

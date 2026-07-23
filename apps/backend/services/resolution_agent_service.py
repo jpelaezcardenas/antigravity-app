@@ -107,6 +107,7 @@ async def generate_draft(
         draft_id=f"tax_correction_{cufe}",
         draft_type="tax_correction",
         journal_entry={"lines": correction_lines, "memo": f"Auto-generated from discrepancy {cufe}"},
+        tenant_id=tenant_id,
     )
 
     if not success:
@@ -158,6 +159,7 @@ async def generate_draft_with_retry(
             draft_id=f"tax_correction_{cufe}_attempt{attempt}",
             draft_type="tax_correction",
             journal_entry={"lines": correction_lines, "memo": f"Auto-generated from discrepancy {cufe} (attempt {attempt + 1})"},
+            tenant_id=tenant_id,
         )
 
         if success:

@@ -16,12 +16,32 @@
     {
       "id": "chatwoot-hermes-taty-bridge",
       "status": "blocked",
-      "summary": "Task Groups 1-14 done except 14.3/14.4 (BLOCKED — Docker not installed, no Meta WhatsApp Business number/tunnel yet) and Review Gate pending. Not archived. Paused while this worktree works pwa-tenant-aware-screens; other parallel sessions may resume it independently."
+      "summary": "Task Groups 1-14 done except 14.3/14.4 (BLOCKED — Docker not installed on this laptop, no Meta WhatsApp Business number/tunnel yet) and Review Gate 15.1/15.2 pending. Not archived."
     },
     {
       "id": "pwa-tenant-aware-screens",
       "status": "in_progress",
-      "summary": "Next wave of tenant-aware data-bound PWA screens: Pulso ActiveAlerts + Flujo-detalle Monthly Liquidity Bridge, tenant-scoped backend endpoints, rolling reseed of synthetic Shadow GL, CashTodayCard error-state honesty fix. openspec/changes/pwa-tenant-aware-screens/."
+      "summary": "Next wave of tenant-aware data-bound PWA screens: Pulso ActiveAlerts + Flujo-detalle Monthly Liquidity Bridge, tenant-scoped backend endpoints, rolling reseed of synthetic Shadow GL, CashTodayCard error-state honesty fix. Reconciled onto the canonical resolve_request_tenant_scope() helper (agent-endpoints-real-tenant-filtering landed on main mid-implementation) — centinela_endpoints.py's new GET /alerts route now uses it instead of a parallel resolver; migration renumbered 0033->0035 (collision with approval-queue-tenant-scoping's 0033). openspec/changes/pwa-tenant-aware-screens/."
+    },
+    {
+      "id": "hermes-task-queue-tenant-scoping",
+      "status": "done",
+      "summary": "COMPLETE (Tasks 0-11), archived 2026-07-23 as openspec/changes/archive/2026-07-23-hermes-task-queue-tenant-scoping. operator_tasks queue tenant-scoped (create_task/dispatch_campaign_package accept/derive real tenant_id, logged Cliente Cero fallback; list_pending_tasks contractually includes tenant_id via explicit projection); HTTP bridge governance mitigated via env-gated HERMES_BRIDGE_TOKEN (fail-open, founder must still activate it — see design.md D7), agent_operations audit parity, write-time tenant validation. Deployed live to Railway production-175a, verified via curl + Supabase MCP, DB state restored."
+    },
+    {
+      "id": "taty-per-tenant-profiles",
+      "status": "done",
+      "summary": "COMPLETE (Tasks 0-12), archived 2026-07-23 as openspec/changes/archive/2026-07-23-taty-per-tenant-profiles. Taty's hardcoded 3-client AGENT_PROFILES dict replaced with dynamic per-tenant profile resolution from `tenants`; /api/v1/agents/ask was unauthenticated with a spoofable company_id — now Depends(get_current_user) + the per-tenant-client-access resolution pattern (own tenant / staging->Cliente Cero / unresolved->in-band error, never Cliente Cero). Dead taty_intent_router.py and the deprecated /agents/taty/ask route removed. Deployed live to Railway production-175a; verified: deleted route 404, unauthenticated 401, health 200, no unknown external caller relying on the old open endpoint. FOUNDER ACTION REQUIRED (not yet executed — this agent does not handle plaintext credentials): 11.6/11.6b — log in as a real provisioned B2B client and confirm /api/v1/agents/ask answers scoped to their own tenant, and confirm an authenticated session with no tenant membership gets error_code=tenant_not_resolved (never Cliente Cero); 11.8 — confirm Cliente Cero's Telegram chat still answers. See openspec/changes/archive/2026-07-23-taty-per-tenant-profiles/reports/2026-07-23-deployment.md."
+    },
+    {
+      "id": "approval-queue-tenant-scoping",
+      "status": "done",
+      "summary": "COMPLETE (52/54 tasks, remaining 2 were archive self-references), archived 2026-07-23 as openspec/changes/archive/2026-07-23-approval-queue-tenant-scoping. Approval Queue enqueue/list/approve/reject scoped to the caller's resolved tenant (per-tenant-client-access pattern); Cliente Cero-resolved caller = operator sees all tenants. Migration 0033 (tenant_id NOT NULL) applied live. Deployed to Railway production-175a, verified via curl + Supabase MCP (founder's login confirmed wired to Cliente Cero)."
+    },
+    {
+      "id": "centinela-tenant-scoped-alerts",
+      "status": "pending",
+      "summary": "CentinelaService.save_alerts() silently stamped Cliente Cero tenant on every alert (no caller passed tenant_id) — cross-tenant leak. Fixed: fail-loud require_tenant_id/resolve_caller_tenant helpers in core/tenant_context.py (additive alongside resolve_request_tenant_scope/TenantScope from approval-queue-tenant-scoping — reconciling into one shared contract is a follow-up, not done in this change), 3-branch caller resolution on both Centinela endpoints (financials pattern), tenant-scoped reads, Pulso/Radar reader fixes, proposed-only backfill migration 0033 (not applied). Fully implemented, tested (44 tests), and merged via PR #6 2026-07-23. Unblocked now that taty-per-tenant-profiles has archived and freed the in_progress slot — Stage 13 production deploy verification pending."
     }
   ]
 }

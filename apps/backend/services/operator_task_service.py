@@ -15,7 +15,7 @@ import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
 from core.supabase_client import get_service_supabase
-from core.tenant_context import resolve_cliente_cero_tenant_id
+from core.tenant_context import resolve_cliente_cero_tenant_id, tenant_exists
 from services.approval_queue_service import ApprovalQueueService
 
 logger = logging.getLogger(__name__)
@@ -33,10 +33,17 @@ def _resolve_cliente_cero_tenant_id(client) -> Optional[str]:
     return resolve_cliente_cero_tenant_id(client)
 
 
-def create_task(task_type: str, payload: Dict[str, Any]) -> Result:
+def create_task(
+    task_type: str, payload: Dict[str, Any], tenant_id: Optional[str] = None
+) -> Result:
     """Create a read-only operator task directly. Side-effecting task types are rejected —
     they may only be created via `dispatch_campaign_package`, which enforces the approved-draft
-    precondition itself."""
+    precondition itself.
+
+    When `tenant_id` is supplied, it is validated against the `tenants` table and used directly
+    (no Cliente Cero involvement). When omitted, falls back to the Cliente Cero tenant and logs
+    a warning recording that an explicit tenant was not supplied. If the resolver also returns
+    None (no Cliente Cero tenant configured), the task is rejected."""
     if task_type in SIDE_EFFECTING_TASK_TYPES:
         return False, None, (
             f"task_type '{task_type}' is side-effecting and cannot be created directly; "
@@ -47,10 +54,27 @@ def create_task(task_type: str, payload: Dict[str, Any]) -> Result:
 
     try:
         client = get_service_supabase()
-        tenant_id = _resolve_cliente_cero_tenant_id(client)
+
+        if tenant_id is not None:
+            if not tenant_exists(client, tenant_id):
+                return False, None, f"tenant {tenant_id} not found"
+            resolved_tenant_id = tenant_id
+        else:
+            resolved_tenant_id = _resolve_cliente_cero_tenant_id(client)
+            logger.warning(
+                "create_task: no tenant_id supplied; falling back to Cliente Cero tenant %s "
+                "(task_type=%s)",
+                resolved_tenant_id,
+                task_type,
+            )
+            if resolved_tenant_id is None:
+                return False, None, (
+                    "no tenant_id supplied and no Cliente Cero tenant configured"
+                )
+
         row = {
             "id": str(uuid.uuid4()),
-            "tenant_id": tenant_id,
+            "tenant_id": resolved_tenant_id,
             "task_type": task_type,
             "payload": payload,
         }
@@ -61,16 +85,20 @@ def create_task(task_type: str, payload: Dict[str, Any]) -> Result:
         return False, None, str(e)
 
 
-def list_pending_tasks() -> List[Dict[str, Any]]:
-    """List all operator_tasks rows with status='pending', oldest first."""
+def list_pending_tasks(tenant_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    """List all operator_tasks rows with status='pending', oldest first, optionally filtered by
+    tenant_id. Uses an explicit column projection (rather than `select("*")`) so `tenant_id`
+    (and the rest of the Hermes-facing contract) can never silently vanish if the table gains
+    columns Hermes shouldn't see."""
     client = get_service_supabase()
-    result = (
+    query = (
         client.table("operator_tasks")
-        .select("*")
+        .select("id, tenant_id, task_type, payload, status, created_at")
         .eq("status", "pending")
-        .order("created_at")
-        .execute()
     )
+    if tenant_id:
+        query = query.eq("tenant_id", tenant_id)
+    result = query.order("created_at").execute()
     return result.data
 
 
@@ -161,7 +189,15 @@ async def dispatch_campaign_package(decision_id: str) -> Result:
 
     try:
         client = get_service_supabase()
-        tenant_id = _resolve_cliente_cero_tenant_id(client)
+        tenant_id = getattr(decision, "tenant_id", None)
+        if not tenant_id:
+            tenant_id = _resolve_cliente_cero_tenant_id(client)
+            logger.warning(
+                "dispatch_campaign_package: decision %s has no tenant_id; falling back to "
+                "Cliente Cero tenant %s",
+                decision_id,
+                tenant_id,
+            )
         task_type = "run_ads_ab" if decision.payload.get("budget_cents") else "post_content"
         row = {
             "id": str(uuid.uuid4()),

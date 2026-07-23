@@ -13,6 +13,7 @@ import logging
 from typing import Any, Dict, List
 
 from core.supabase_client import get_supabase
+from core.tenant_context import require_tenant_id
 
 logger = logging.getLogger(__name__)
 
@@ -52,11 +53,12 @@ def _existing_alert_cufes(supabase: Any, company_id: str) -> set[str]:
     return {row["evidence"]["cufe"] for row in result.data if row.get("evidence", {}).get("cufe")}
 
 
-def _alert_payload(company_id: str, discrepancy: Dict[str, Any]) -> Dict[str, Any]:
+def _alert_payload(company_id: str, tenant_id: str, discrepancy: Dict[str, Any]) -> Dict[str, Any]:
     cufe = discrepancy["cufe"]
     status = discrepancy["status"]
     return {
         "company_id": company_id,
+        "tenant_id": tenant_id,
         "rule_id": SHADOW_GL_DISCREPANCY_RULE_ID,
         "rule_name": "Shadow GL Discrepancy",
         "severity": "high" if status == "missing_in_erp" else "medium",
@@ -87,6 +89,7 @@ async def poll_shadow_gl_discrepancies(tenant_id: str) -> List[str]:
     Returns:
         List of newly created `centinela_alerts` row ids.
     """
+    tenant_id = require_tenant_id(tenant_id, context="centinela.poll_shadow_gl")
     supabase = get_supabase()
 
     discrepancies = (
@@ -111,7 +114,7 @@ async def poll_shadow_gl_discrepancies(tenant_id: str) -> List[str]:
 
         inserted = (
             supabase.table("centinela_alerts")
-            .insert(_alert_payload(company_id, discrepancy))
+            .insert(_alert_payload(company_id, tenant_id, discrepancy))
             .execute()
         )
         created_ids.append(inserted.data[0]["id"])

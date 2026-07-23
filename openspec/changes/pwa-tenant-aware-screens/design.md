@@ -20,15 +20,35 @@ of inventing a second policy.
    dev/staging) → Cliente Cero.
 3. Otherwise (authenticated, no resolved tenant) → `None`.
 
-Extracted to `core/tenant_context.py::resolve_caller_tenant_id(user: dict) -> str | None`,
-re-exporting the existing `resolve_cliente_cero_tenant_id()` helper it depends on.
-`financials_endpoints.get_financials` is refactored to call it — behavior-preserving; the existing
-`tests/test_financials_endpoint_tenant_scoping.py` suite is the regression guard (must stay green
-unmodified).
+**As originally implemented** (Stage 1): extracted to a new shared
+`core/tenant_context.py::resolve_caller_tenant_id(user: dict) -> str | None`, reused by both new
+endpoints. **Reconciled 2026-07-23** after `agent-endpoints-real-tenant-filtering` landed on `main`
+mid-implementation and established `core/tenant_context.py::resolve_request_tenant_scope(user,
+client) -> TenantScope | None` as *the* single canonical resolver for the 6 agent-facing endpoint
+files (including `centinela_endpoints.py`) — with an explicit "do not reintroduce a second
+resolution ladder" note in that module's docstring. Merging Stage 1's separate helper as-is would
+have done exactly that. Final shape:
+- `presentation/financials_endpoints.py` keeps a **local, private** `_resolve_caller_tenant_id`
+  (not in the shared module) — `/financials` was never part of the 6-file canonical-resolver
+  rollout, and this policy is a strict 3-branch subset of `resolve_request_tenant_scope`'s 4
+  branches (no operator/`all_tenants` case), so duplicating the ~10 lines locally keeps this
+  already-shipped, tenant-security-relevant endpoint's behavior byte-identical rather than
+  changing it to gain code reuse. Both `get_financials` and the new `get_liquidity_bridge` call it.
+- `presentation/centinela_endpoints.py`'s new `GET /alerts` route uses
+  `resolve_request_tenant_scope` directly, matching the file's own pre-existing `POST /evaluate`
+  and `GET /alerts/{company_id}` routes — no new resolver introduced there.
+- `core/tenant_context.py` itself is untouched by this change (no merge risk to the 5 sibling
+  changes that also depend on it).
 
-**Why not duplicate the three lines into each new endpoint?** Three independent copies of "what
-does an unresolved authenticated caller see" is exactly the kind of drift that produced the
-Cliente-Cero-leak class of bug `per-tenant-client-access` closed. One helper, three call sites.
+`tests/test_financials_endpoint_tenant_scoping.py` is unmodified and remains the regression guard
+for `/financials`; `tests/test_centinela_alerts_tenant_scoping.py` was adapted to mock
+`resolve_cliente_cero_tenant_id` (the lookup `resolve_request_tenant_scope` always performs),
+mirroring `tests/test_centinela_endpoint_tenant_scoping.py`'s established pattern.
+
+**Why not duplicate the three lines into each new endpoint originally?** Three independent copies
+of "what does an unresolved authenticated caller see" is exactly the kind of drift that produced
+the Cliente-Cero-leak class of bug `per-tenant-client-access` closed. The reconciliation keeps that
+principle: one canonical resolver per file-group, not a copy per route.
 
 ### D2 — New alerts route, existing route untouched
 

@@ -5,6 +5,21 @@
 **Auth:** Bearer token (Supabase JWT)  
 **Response Format:** JSON
 
+> **Note (2026-07-23):** the route paths and payload shapes below predate several tenant-scoping
+> changes and no longer match the real implementation 1:1 (e.g. `agents_endpoints.py`'s actual
+> mount is `/api/v1/agents/*` with routes like `/social/generate-content`, `/pulso/analyze`,
+> `/orchestrator/full-pipeline`, not the conceptual `/agents` shown in §5; Approval Queue's real
+> request/response bodies are `EnqueueRequest`/`ApprovalRequest`/`RejectionRequest`, not the
+> preview shown in §9). A full resync is out of scope for this note — flagging so the drift
+> isn't silently trusted. What IS current as of `agent-endpoints-real-tenant-filtering`
+> (2026-07-23): **every** route under `presentation/{agents,pulso_diario,centinela_agents,
+> approval_queue,taty,centinela}_endpoints.py` requires a valid bearer token
+> (`Depends(get_current_user)`) — a request with none gets `401` once `AUTH_ENFORCED=true` in
+> production. Every DB-touching route among those resolves the caller's own tenant via one
+> shared helper (`core/tenant_context.py::resolve_request_tenant_scope`); an authenticated
+> caller whose tenant doesn't resolve gets an empty/degraded result on reads and **`404`** (not
+> `403`) on writes or ownership-checked lookups — never Cliente Cero's data.
+
 ---
 
 ## 1. CENTINELA FISCAL (`/centinela`)

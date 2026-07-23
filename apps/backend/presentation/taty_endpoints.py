@@ -7,12 +7,15 @@ Exposes Taty fiscal advisor service to:
 - Future: WhatsApp, email, etc.
 """
 
-from fastapi import APIRouter, Query, HTTPException, status, Header, Body
+from fastapi import APIRouter, Query, HTTPException, status, Header, Body, Depends
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import logging
 
 from services.taty_service import get_taty_service
+from core.deps import get_current_user
+from core.supabase_client import get_service_supabase
+from core.tenant_context import resolve_request_tenant_scope
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +30,14 @@ router = APIRouter(
 
 class TatyAskRequest(BaseModel):
     """Request to Taty for a fiscal question."""
-    company_id: str = Field(
-        ...,
-        description="Client identifier (e.g., 'ctx-001', 'ferez-001')"
+    company_id: Optional[str] = Field(
+        None,
+        description=(
+            "Deprecated and ignored for tenant resolution. The caller's tenant is "
+            "resolved from the authenticated session (see get_current_user), never "
+            "from this field. Kept optional so existing external callers that still "
+            "send it don't get a 422."
+        ),
     )
     question: str = Field(
         ...,
@@ -89,6 +97,10 @@ class TatyAskResponse(BaseModel):
         None,
         description="Backward compat alias for 'answer'"
     )
+    error_code: Optional[str] = Field(
+        None,
+        description="Set when the request could not be answered normally, e.g. 'tenant_not_resolved'"
+    )
 
 
 # ============================================================================
@@ -103,18 +115,34 @@ class TatyAskResponse(BaseModel):
 )
 async def ask_taty(
     request: TatyAskRequest = Body(...),
-    x_hermes_profile: Optional[str] = Header(None)
+    x_hermes_profile: Optional[str] = Header(None),
+    user: dict = Depends(get_current_user),
 ) -> TatyAskResponse:
     """
     Ask Taty Contadora a fiscal question.
 
     **Query Alternative** (for dashboard GET):
     ```
-    GET /api/v1/agents/taty/ask?company_id=ctx-001&question=¿Cuál es el UVT?
+    GET /api/v1/agents/ask?question=¿Cuál es el UVT?
     ```
 
     **Headers:**
+    - Authorization: Bearer <token> — required in production (AUTH_ENFORCED=True);
+      identifies the caller so their tenant can be resolved (see "Auth / tenant
+      resolution" below)
     - X-Hermes-Profile: Profile name (e.g., "taty-v1") for Hermes-based LLM routing
+
+    **Auth / tenant resolution (per-tenant-client-access, taty-per-tenant-profiles):**
+    - Authenticated caller with a resolved tenant -> answers scoped to THEIR OWN
+      tenant. Any `company_id` in the request body is ignored for resolution —
+      it can never be used to read another tenant's profile.
+    - Unauthenticated/local-dev caller (AUTH_ENFORCED=False, no token — the
+      permissive staging identity) -> Cliente Cero, preserving existing
+      dashboard/local-dev behavior.
+    - Authenticated caller whose tenant did NOT resolve -> an in-band
+      `error_code="tenant_not_resolved"` response. Never falls back to
+      Cliente Cero here — that would leak Contexia's own data to an unwired
+      client login.
 
     **Behavior:**
     - Anonymizes PII before sending to LLM (SOSP rule)
@@ -124,25 +152,37 @@ async def ask_taty(
     - Flags for human review if needed
 
     **Example:**
-    ```json
-    {
-      "company_id": "ctx-001",
-      "question": "¿Cuál es el UVT para 2026?",
-      "channel": "dashboard"
-    }
+    ```bash
+    curl -H "Authorization: Bearer <token>" \
+      -X POST https://antigravity-app-production-175a.up.railway.app/api/v1/agents/ask \
+      -H "Content-Type: application/json" \
+      -d '{"question": "¿Cuál es el UVT para 2026?", "channel": "dashboard"}'
     ```
 
     Returns: TatyAskResponse with answer, citations, latency, confidence, escalation flag.
     """
     try:
-        logger.info(f"Taty.ask() from {request.channel}: company_id={request.company_id}, profile={x_hermes_profile}")
+        scope = resolve_request_tenant_scope(user, get_service_supabase())
+        if scope:
+            tenant_id = scope.tenant_id
+        else:
+            return TatyAskResponse(
+                answer="Tu cuenta aún no está vinculada a una empresa en Contexia. Contacta a soporte.",
+                citations=[],
+                latency_ms=0,
+                confidence=0.0,
+                requires_human_review=True,
+                error_code="tenant_not_resolved",
+            )
+
+        logger.info(f"Taty.ask() from {request.channel}: tenant_id={tenant_id}, profile={x_hermes_profile}")
 
         # Get Taty service
         taty = get_taty_service()
 
         # Call service with optional profile from Hermes
         response = taty.ask(
-            company_id=request.company_id,
+            tenant_id=tenant_id,
             question=request.question,
             channel=request.channel,
             conversation_id=request.conversation_id,
@@ -170,13 +210,22 @@ async def ask_taty(
     summary="Ask Taty a fiscal question (GET)",
 )
 async def ask_taty_get(
-    company_id: str = Query(..., description="Client ID"),
     question: str = Query(..., description="Fiscal question"),
     channel: str = Query("dashboard", description="Channel"),
     conversation_id: Optional[str] = Query(None),
     user_id: Optional[str] = Query(None),
+    company_id: Optional[str] = Query(
+        None,
+        description="Deprecated and ignored for tenant resolution — see TatyAskRequest.company_id",
+    ),
+    x_hermes_profile: Optional[str] = Header(None),
+    user: dict = Depends(get_current_user),
 ) -> TatyAskResponse:
-    """GET alternative for dashboard integration (CORS-friendly)."""
+    """GET alternative for dashboard integration (CORS-friendly).
+
+    Shares the same auth + tenant-resolution logic as the POST handler
+    (`ask_taty`) — it just builds the request body from query params.
+    """
     request = TatyAskRequest(
         company_id=company_id,
         question=question,
@@ -184,7 +233,7 @@ async def ask_taty_get(
         conversation_id=conversation_id,
         user_id=user_id,
     )
-    return await ask_taty(request)
+    return await ask_taty(request, x_hermes_profile=x_hermes_profile, user=user)
 
 
 @router.get(

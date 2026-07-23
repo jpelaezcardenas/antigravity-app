@@ -88,9 +88,13 @@ Pregunta In-Scope (Fiscal/DIAN):
 ### **BLOQUE 3: Centinela Rules Engine (20 min)**
 
 #### Test 3.1: Evaluación Automática (via API)
+
+**Requiere auth en producción (centinela-tenant-scoped-alerts):** este endpoint ya no es
+anónimo — sin `Authorization: Bearer <token>` responde `401` (`AUTH_ENFORCED=True` en Railway).
 ```
 curl -X POST https://antigravity-app-production-175a.up.railway.app/api/v1/centinela/evaluate \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
   -d '{
     "company_id": "ctx-001",
     "data": {

@@ -11,12 +11,17 @@ they share the router prefix and the flag is already live in production (design.
 
 from __future__ import annotations
 
+import hmac
+import time
+from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Header, Query
 from pydantic import BaseModel, Field
 
+from config import settings
 from core.deps import get_current_user
+from services.agent_operations_logger import agent_operations_logger
 from services.copywriter_service import generate_hooks
 from services.operator_task_service import (
     create_task,
@@ -34,6 +39,21 @@ from services.sell_machine_service import (
 )
 
 router = APIRouter(tags=["sell-machine"])
+
+
+def require_hermes_bridge_token(authorization: Optional[str] = Header(default=None)) -> None:
+    """Optional machine-token guard for the 5 operator-task bridge routes
+    (hermes-task-queue-tenant-scoping, design.md D5). Reads `settings.HERMES_BRIDGE_TOKEN` at
+    call time (not import time) so it stays testable via monkeypatch and picks up env changes
+    without a process restart in tests. No-op when unset — preserves today's open behavior."""
+    expected = settings.HERMES_BRIDGE_TOKEN
+    if not expected:
+        return
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="missing or malformed Authorization header")
+    token = authorization.removeprefix("Bearer ").strip()
+    if not hmac.compare_digest(token, expected):
+        raise HTTPException(status_code=401, detail="invalid bridge token")
 
 
 class GenerateHooksRequest(BaseModel):
@@ -127,29 +147,54 @@ def telemetry_report_endpoint():
     return get_telemetry_report()
 
 
-@router.get("/tasks/pending")
-def list_pending_tasks_endpoint():
-    return list_pending_tasks()
+@router.get("/tasks/pending", dependencies=[Depends(require_hermes_bridge_token)])
+def list_pending_tasks_endpoint(tenant_id: Optional[str] = Query(default=None)):
+    return list_pending_tasks(tenant_id=tenant_id)
 
 
 class CreateTaskRequest(BaseModel):
     task_type: str
     payload: Dict[str, Any] = Field(default_factory=dict)
+    tenant_id: Optional[str] = None
 
 
-@router.post("/tasks")
-def create_task_endpoint(payload: CreateTaskRequest):
-    success, row, error = create_task(task_type=payload.task_type, payload=payload.payload)
+@router.post("/tasks", dependencies=[Depends(require_hermes_bridge_token)])
+async def create_task_endpoint(payload: CreateTaskRequest):
+    started = time.monotonic()
+    success, row, error = create_task(
+        task_type=payload.task_type, payload=payload.payload, tenant_id=payload.tenant_id
+    )
     if not success:
         _raise_for_error(error)
+    duration_ms = int((time.monotonic() - started) * 1000)
+    await agent_operations_logger.record(
+        tenant_id=row["tenant_id"],
+        agent_name="hermes-bridge",
+        user_id="machine:hermes",
+        operation_type="create_task",
+        status="success",
+        duration_ms=duration_ms,
+        cost=Decimal("0"),
+    )
     return row
 
 
-@router.post("/campaigns/{decision_id}/dispatch")
+@router.post("/campaigns/{decision_id}/dispatch", dependencies=[Depends(require_hermes_bridge_token)])
 async def dispatch_campaign_endpoint(decision_id: str):
+    started = time.monotonic()
     success, row, error = await dispatch_campaign_package(decision_id)
     if not success:
         _raise_for_error(error)
+    duration_ms = int((time.monotonic() - started) * 1000)
+    await agent_operations_logger.record(
+        tenant_id=row["tenant_id"],
+        agent_name="hermes-bridge",
+        user_id="machine:hermes",
+        operation_type="dispatch_campaign",
+        status="success",
+        duration_ms=duration_ms,
+        cost=Decimal("0"),
+    )
     return row
 
 
@@ -157,13 +202,24 @@ class TaskStatusRequest(BaseModel):
     status: str
 
 
-@router.post("/tasks/{task_id}/status")
-def task_status_endpoint(task_id: str, payload: TaskStatusRequest):
+@router.post("/tasks/{task_id}/status", dependencies=[Depends(require_hermes_bridge_token)])
+async def task_status_endpoint(task_id: str, payload: TaskStatusRequest):
     if payload.status != "dispatched":
         raise HTTPException(status_code=400, detail="only the 'dispatched' transition is supported here")
+    started = time.monotonic()
     success, row, error = mark_dispatched(task_id)
     if not success:
         _raise_for_error(error)
+    duration_ms = int((time.monotonic() - started) * 1000)
+    await agent_operations_logger.record(
+        tenant_id=row["tenant_id"],
+        agent_name="hermes-bridge",
+        user_id="machine:hermes",
+        operation_type="mark_dispatched",
+        status="success",
+        duration_ms=duration_ms,
+        cost=Decimal("0"),
+    )
     return row
 
 
@@ -172,9 +228,20 @@ class TaskResultRequest(BaseModel):
     result: Dict[str, Any] = Field(default_factory=dict)
 
 
-@router.post("/tasks/{task_id}/result")
-def task_result_endpoint(task_id: str, payload: TaskResultRequest):
+@router.post("/tasks/{task_id}/result", dependencies=[Depends(require_hermes_bridge_token)])
+async def task_result_endpoint(task_id: str, payload: TaskResultRequest):
+    started = time.monotonic()
     success, row, error = report_result(task_id, status=payload.status, result=payload.result)
     if not success:
         _raise_for_error(error)
+    duration_ms = int((time.monotonic() - started) * 1000)
+    await agent_operations_logger.record(
+        tenant_id=row["tenant_id"],
+        agent_name="hermes-bridge",
+        user_id="machine:hermes",
+        operation_type="report_result",
+        status="success",
+        duration_ms=duration_ms,
+        cost=Decimal("0"),
+    )
     return row

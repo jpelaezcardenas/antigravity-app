@@ -13,6 +13,7 @@ from uuid import uuid4
 
 from channels.telegram import normalize_telegram_update
 from core.supabase_client import get_supabase
+from core.tenant_context import resolve_cliente_cero_tenant_id
 from services.approval_queue_service import ApprovalQueueService
 
 logger = logging.getLogger(__name__)
@@ -826,12 +827,21 @@ class SocialOpsService:
         self._mirror_supabase("social_reply_drafts", draft)
 
         # Task 4.5: Enqueue to approval_queue with draft_type='social_reply'
-        await ApprovalQueueService.enqueue_draft(
-            draft_id=draft["id"],
-            draft_type="social_reply",
-            journal_entry=draft,
-            memo=f"Lead reply from {lead.get('display_name', lead.get('actor_handle'))}",
-        )
+        tenant_id = resolve_cliente_cero_tenant_id(get_supabase())
+        if not tenant_id:
+            logger.warning(
+                "Skipping approval_queue enqueue for social_reply draft %s: "
+                "Cliente Cero tenant could not be resolved",
+                draft["id"],
+            )
+        else:
+            await ApprovalQueueService.enqueue_draft(
+                draft_id=draft["id"],
+                draft_type="social_reply",
+                journal_entry=draft,
+                memo=f"Lead reply from {lead.get('display_name', lead.get('actor_handle'))}",
+                tenant_id=tenant_id,
+            )
 
         return deepcopy(draft)
 

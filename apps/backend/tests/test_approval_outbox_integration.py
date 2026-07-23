@@ -20,6 +20,11 @@ pytestmark = pytest.mark.skipif(
     reason="Set RUN_APPROVAL_QUEUE_DB=1 to run approval→outbox integration tests",
 )
 
+# See test_approval_queue_persistence.py for rationale (real Cliente Cero UUID,
+# no FK constraint on approval_queue.tenant_id — approval-queue-tenant-scoping,
+# Section 5).
+_TEST_TENANT_ID = "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"
+
 
 @pytest.fixture(scope="module")
 def supabase():
@@ -61,6 +66,7 @@ class TestApprovalToOutbox:
             draft_id=draft_id,
             draft_type="tax_correction",
             journal_entry=_balanced_journal_entry(),
+            tenant_id=_TEST_TENANT_ID,
         )
         assert success is True
         _cleanup["decisions"].append(decision.id)
@@ -70,6 +76,7 @@ class TestApprovalToOutbox:
             decision_id=decision.id,
             approval_reason="test approval for outbox",
             approved_by="test@example.com",
+            tenant_id=_TEST_TENANT_ID,
         )
         assert success is True
 
@@ -105,6 +112,7 @@ class TestApprovalToOutbox:
             draft_id=draft_id,
             draft_type="tax_correction",
             journal_entry=_balanced_journal_entry(),
+            tenant_id=_TEST_TENANT_ID,
         )
         assert success is True
         _cleanup["decisions"].append(decision.id)
@@ -115,6 +123,7 @@ class TestApprovalToOutbox:
             decision_id=decision.id,
             approval_reason="test approval timing",
             approved_by="test@example.com",
+            tenant_id=_TEST_TENANT_ID,
         )
         elapsed = time.time() - start
 
@@ -145,6 +154,7 @@ class TestApprovalToOutbox:
             draft_id=draft_id,
             draft_type="risk_review",
             journal_entry={"risk_score": 92},
+            tenant_id=_TEST_TENANT_ID,
         )
         assert success is True
         _cleanup["decisions"].append(decision.id)
@@ -154,6 +164,7 @@ class TestApprovalToOutbox:
             decision_id=decision.id,
             approval_reason="risk approved",
             approved_by="test@example.com",
+            tenant_id=_TEST_TENANT_ID,
         )
         assert success is True
 

@@ -234,15 +234,25 @@ Test scenario where company triggers multiple rules to verify risk_level calcula
 ```bash
 # Run against staging
 STAGING_URL="https://antigravity-app-production-175a.up.railway.app"
+AUTH_TOKEN="<bearer token — required in production since AUTH_ENFORCED=True; see below>"
 
 # Test each rule
 for rule in R001 R002 R003 R004 R005 R006 R007 R008 R009 R010; do
   echo "Testing $rule..."
   curl -X POST "$STAGING_URL/api/v1/centinela/evaluate" \
     -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $AUTH_TOKEN" \
     -d "{...rule payload...}" | jq '.alerts[] | select(.rule_id == "'$rule'")'
 done
 ```
+
+**Auth required in production (centinela-tenant-scoped-alerts):** both `POST
+/centinela/evaluate` and `GET /centinela/alerts/{company_id}` now require an authenticated
+caller (`Depends(get_current_user)`) so that saved/read alerts are scoped to the caller's own
+tenant rather than leaking across clients. A tokenless request against
+`$STAGING_URL` (production, `AUTH_ENFORCED=True`) returns `401`. Running these curls locally
+without a token still works as before (`AUTH_ENFORCED=False` locally resolves the no-auth
+staging identity to Cliente Cero) — only the production target needs `$AUTH_TOKEN`.
 
 ---
 
@@ -251,3 +261,9 @@ done
 - For integration tests, set save_alerts=true and verify Supabase alerts table
 - Response times should be < 2 seconds per evaluation (currently <1s local)
 - Implement batch testing (10+ companies) to verify database performance
+- **Tenant scoping (centinela-tenant-scoped-alerts):** saved alerts are now stamped with the
+  caller's own resolved tenant (never a silent Cliente Cero default); `save_alerts=true`
+  integration tests should use an authenticated request so alerts land under a real tenant, not
+  fail with a `TenantResolutionError` on the backend. `GET /centinela/alerts/{company_id}` filters
+  by the caller's tenant too — verify with two different clients' tokens to confirm no cross-tenant
+  leak, mirroring `tests/test_centinela_tenant_scoping_integration.py`.

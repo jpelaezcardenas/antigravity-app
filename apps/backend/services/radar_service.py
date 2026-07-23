@@ -24,6 +24,38 @@ from core.supabase_client import get_supabase
 logger = logging.getLogger(__name__)
 
 
+def _count_centinela_alerts_this_month(supabase, tenant_id: str, month_start, today) -> int:
+    """Count this tenant's SHADOW_GL_DISCREPANCY alerts this month.
+
+    Resolves tenant_id -> tenants.company_id (centinela_alerts is keyed on the
+    text company_id, not the tenant uuid) AND filters by tenant_id, so one
+    tenant's Radar score is never inflated by another tenant's alerts sharing
+    the same company_id (centinela-tenant-scoped-alerts).
+    """
+    tenant_row = (
+        supabase.table("tenants")
+        .select("company_id")
+        .eq("id", tenant_id)
+        .single()
+        .execute()
+    )
+    company_id = tenant_row.data.get("company_id")
+    if not company_id:
+        return 0
+
+    alerts_this_month = (
+        supabase.table("centinela_alerts")
+        .select("id")
+        .eq("company_id", company_id)
+        .eq("tenant_id", tenant_id)
+        .eq("rule_id", "SHADOW_GL_DISCREPANCY")
+        .gte("created_at", month_start.isoformat() + "Z")
+        .lt("created_at", (today + timedelta(days=1)).isoformat() + "Z")
+        .execute()
+    )
+    return len(alerts_this_month.data)
+
+
 async def calculate_risk_score(tenant_id: str, date: Optional[str] = None) -> int:
     """
     Calculate a deterministic risk score (0-100) for a tenant based on Shadow GL history.
@@ -112,30 +144,8 @@ async def calculate_risk_score(tenant_id: str, date: Optional[str] = None) -> in
         today = datetime.utcnow()
         month_start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-        # Resolve tenant_id to company_id for centinela_alerts lookup
-        tenant_row = (
-            supabase.table("tenants")
-            .select("company_id")
-            .eq("id", tenant_id)
-            .single()
-            .execute()
-        )
-        company_id = tenant_row.data.get("company_id")
-
-        if company_id:
-            alerts_this_month = (
-                supabase.table("centinela_alerts")
-                .select("id")
-                .eq("company_id", company_id)
-                .eq("rule_id", "SHADOW_GL_DISCREPANCY")
-                .gte("created_at", month_start.isoformat() + "Z")
-                .lt("created_at", (today + timedelta(days=1)).isoformat() + "Z")
-                .execute()
-            )
-            alert_count = len(alerts_this_month.data)
-            factor_alerts = min(20, alert_count * 4)
-        else:
-            factor_alerts = 0.0
+        alert_count = _count_centinela_alerts_this_month(supabase, tenant_id, month_start, today)
+        factor_alerts = min(20, alert_count * 4)
     except Exception as e:
         logger.warning(f"Error calculating alert frequency for tenant {tenant_id}: {e}")
         factor_alerts = 0.0

@@ -16,6 +16,39 @@ from core.supabase_client import get_supabase
 logger = logging.getLogger(__name__)
 
 
+def _count_alerts_generated(supabase, tenant_id: str, date: str) -> int:
+    """Count this tenant's SHADOW_GL_DISCREPANCY alerts for the given date.
+
+    Resolves tenant_id -> tenants.company_id (centinela_alerts is keyed on the
+    text company_id, not the tenant uuid — the previous `.eq("company_id",
+    tenant_id)` filter always matched nothing) AND filters by tenant_id, so
+    the count can't be inflated by another tenant sharing the same
+    company_id (centinela-tenant-scoped-alerts).
+    """
+    tenant_row = (
+        supabase.table("tenants")
+        .select("company_id")
+        .eq("id", tenant_id)
+        .single()
+        .execute()
+    )
+    company_id = tenant_row.data.get("company_id")
+    if not company_id:
+        return 0
+
+    alerts = (
+        supabase.table("centinela_alerts")
+        .select("id")
+        .eq("company_id", company_id)
+        .eq("tenant_id", tenant_id)
+        .eq("rule_id", "SHADOW_GL_DISCREPANCY")
+        .gte("created_at", f"{date}T00:00:00Z")
+        .lt("created_at", f"{date}T23:59:59Z")
+        .execute()
+    )
+    return len(alerts.data)
+
+
 async def get_daily_summary(tenant_id: str, date: Optional[str] = None) -> Dict[str, Any]:
     """
     Get Pulso Diario summary for a given date (default: today).
@@ -79,16 +112,7 @@ async def get_daily_summary(tenant_id: str, date: Optional[str] = None) -> Dict[
         discrepancies_by_status[status] = discrepancies_by_status.get(status, 0) + 1
 
     # Query Centinela alerts for the date (Shadow GL discrepancy rule)
-    alerts = (
-        supabase.table("centinela_alerts")
-        .select("id")
-        .eq("company_id", tenant_id)  # Note: centinela_alerts uses company_id, not tenant_id
-        .eq("rule_id", "SHADOW_GL_DISCREPANCY")
-        .gte("created_at", f"{date}T00:00:00Z")
-        .lt("created_at", f"{date}T23:59:59Z")
-        .execute()
-    )
-    alerts_generated = len(alerts.data)
+    alerts_generated = _count_alerts_generated(supabase, tenant_id, date)
 
     # Calculate ERP posted total (sum of debit amounts from journal lines)
     if erp_entry_count > 0:

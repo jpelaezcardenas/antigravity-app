@@ -98,6 +98,10 @@ _STAGING_USER = {
     "resolved_tenant_id": None,
 }
 
+# Public alias so other modules (core/tenant_context.py) can recognize the
+# no-auth staging identity without importing the private _STAGING_USER dict.
+STAGING_USER_ID = _STAGING_USER["id"]
+
 
 def _extract_bearer_token(authorization: Optional[str]) -> Optional[str]:
     """Return the bearer token from an Authorization header, or None."""

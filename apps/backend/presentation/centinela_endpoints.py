@@ -12,10 +12,10 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import logging
 
-from services.centinela_service import get_centinela_service
-from core.supabase_client import get_supabase
+from services.centinela_service import CentinelaService, get_centinela_service
+from core.supabase_client import get_supabase, get_service_supabase
 from core.deps import get_current_user
-from core.tenant_context import resolve_caller_tenant_id
+from core.tenant_context import resolve_request_tenant_scope
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +80,10 @@ class CentinelaEvaluateResponse(BaseModel):
         default_factory=list,
         description="IDs of saved alerts in Supabase"
     )
+    save_skipped_reason: Optional[str] = Field(
+        None,
+        description="Set when alerts were evaluated but not persisted, e.g. 'tenant_unresolved'"
+    )
 
 
 @router.post(
@@ -88,8 +92,19 @@ class CentinelaEvaluateResponse(BaseModel):
     summary="Evaluate company against Centinela rules"
 )
 @router.options("/evaluate")  # Enable CORS preflight
-async def evaluate_centinela(request: CentinelaEvaluateRequest) -> CentinelaEvaluateResponse:
-    """Evaluate company financial data against Centinela rules."""
+async def evaluate_centinela(
+    request: CentinelaEvaluateRequest,
+    user: dict = Depends(get_current_user),
+) -> CentinelaEvaluateResponse:
+    """Evaluate company financial data against Centinela rules.
+
+    Tenant resolution (centinela-tenant-scoped-alerts, mirrors financials_endpoints):
+    - Authenticated caller with a resolved tenant -> alerts saved under it.
+    - No-auth staging identity (AUTH_ENFORCED=False) -> explicit Cliente Cero.
+    - Authenticated caller with NO resolved tenant -> evaluation still runs
+      (pure, no side effects), but nothing is persisted; save_skipped_reason
+      reports why. Never falls back to Cliente Cero for this caller.
+    """
     try:
         logger.info(f"Centinela.evaluate() for company_id={request.company_id}")
 
@@ -99,9 +114,15 @@ async def evaluate_centinela(request: CentinelaEvaluateRequest) -> CentinelaEval
             data=request.financial_data
         )
 
-        saved_ids = []
+        saved_ids: List[str] = []
+        save_skipped_reason: Optional[str] = None
         if request.save_alerts and alerts:
-            saved_ids = centinela.save_alerts(alerts)
+            scope = resolve_request_tenant_scope(user, get_service_supabase())
+            tenant_id = scope.tenant_id if scope else None
+            if tenant_id:
+                saved_ids = centinela.save_alerts(alerts, tenant_id=tenant_id)
+            else:
+                save_skipped_reason = "tenant_unresolved"
 
         critical_count = sum(1 for a in alerts if a["severity"] == "critical")
         warning_count = sum(1 for a in alerts if a["severity"] == "warning")
@@ -131,6 +152,7 @@ async def evaluate_centinela(request: CentinelaEvaluateRequest) -> CentinelaEval
             warning_count=warning_count,
             risk_level=risk_level,
             saved_alert_ids=saved_ids,
+            save_skipped_reason=save_skipped_reason,
         )
 
     except Exception as e:
@@ -161,13 +183,32 @@ async def get_company_alerts(
     company_id: str,
     limit: int = 20,
     severity: Optional[str] = None,
+    user: dict = Depends(get_current_user),
 ) -> CentinelaAlertsListResponse:
-    """Return active Centinela alerts for a company, most recent first."""
+    """Return active Centinela alerts for a company, most recent first.
+
+    Tenant resolution mirrors POST /evaluate: an authenticated caller with no
+    resolved tenant gets an empty result (source="none"), never Cliente
+    Cero's alerts.
+    """
     try:
         logger.info(f"Centinela.get_alerts({company_id}, limit={limit}, severity={severity})")
+        scope = resolve_request_tenant_scope(user, get_service_supabase())
+        tenant_id = scope.tenant_id if scope else None
+        if not tenant_id:
+            return CentinelaAlertsListResponse(
+                company_id=company_id,
+                alerts=[],
+                alert_count=0,
+                critical_count=0,
+                warning_count=0,
+                risk_level="low",
+                source="none",
+            )
+
         centinela = get_centinela_service()
         raw_alerts = centinela.get_alerts_for_company(
-            company_id=company_id, limit=limit, severity=severity
+            company_id=company_id, tenant_id=tenant_id, limit=limit, severity=severity
         )
 
         # Detect source: if rule_id pattern + no created_at → demo fallback
@@ -245,8 +286,12 @@ async def get_my_alerts(
     """Return active Centinela alerts for the caller's resolved tenant, most recent
     first — no path param, no demo fallback (pwa-tenant-aware-screens D2).
 
-    Tenant resolution (same shared policy as GET /api/v1/financials, via
-    `core.tenant_context.resolve_caller_tenant_id`):
+    Tenant resolution uses the canonical `resolve_request_tenant_scope` (same helper
+    `POST /evaluate` and `GET /alerts/{company_id}` above already use — see
+    agent-endpoints-real-tenant-filtering, Stage 4). The `all_tenants` operator case is
+    intentionally ignored here (matches `get_company_alerts`'s existing behavior in this
+    same file): this feed only ever returns the resolved `tenant_id`'s own alerts, never
+    every tenant's, even for the Cliente Cero/operator identity.
     - Authenticated caller with a resolved tenant -> that caller's own alerts only.
     - Unauthenticated/local-dev caller (AUTH_ENFORCED=False, no token) -> Cliente Cero.
     - Authenticated caller whose tenant did NOT resolve -> an empty response. Never
@@ -254,11 +299,12 @@ async def get_my_alerts(
       unrelated logged-in client.
     """
     try:
-        tenant_id = await resolve_caller_tenant_id(user)
+        supabase = get_supabase()
+        scope = resolve_request_tenant_scope(user, supabase)
+        tenant_id = scope.tenant_id if scope else None
         if tenant_id is None:
             return _empty_alerts_scoped_response()
 
-        supabase = get_supabase()
         result = (
             supabase.table("centinela_alerts")
             .select("*")

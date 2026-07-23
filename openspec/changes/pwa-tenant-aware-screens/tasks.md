@@ -142,9 +142,35 @@ See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 Project-specific: deploy branch `main`; Frontend `https://contexia.online/app/overview` (+
 `/app/flujo-detalle`); Backend `https://antigravity-app-production-175a.up.railway.app`.
 
+- [x] 13.0 **Reconciliation (found before 13.1)**: `origin/main` had moved substantially since
+  this worktree branched — 5 sibling tenant-scoping changes landed
+  (`centinela-tenant-scoped-alerts`, `approval-queue-tenant-scoping`,
+  `hermes-task-queue-tenant-scoping`, `taty-per-tenant-profiles`,
+  `agent-endpoints-real-tenant-filtering`), the last of which established
+  `resolve_request_tenant_scope` as the single canonical tenant resolver for
+  `centinela_endpoints.py` (among 5 other files) and explicitly deprecated a second resolver.
+  `git merge origin/main` had zero textual conflicts but would have silently reintroduced that
+  exact anti-pattern via this change's own `resolve_caller_tenant_id`, and its migration
+  `0033_rolling_reseed_synthetic_shadow_gl.sql` collided with main's own new `0033`/`0034`.
+  Founder confirmed (AskUserQuestion) to reconcile before merging. Fixed: merged `origin/main`
+  (3 real conflicts: `core/tenant_context.py`, `centinela_endpoints.py`, `feature_list.json`,
+  all resolved by hand); renumbered the migration to `0035`; removed
+  `resolve_caller_tenant_id`/`_default_cliente_cero_resolver` from the shared
+  `core/tenant_context.py` entirely (zero net change to that file vs `origin/main`); moved an
+  equivalent, behavior-identical resolver locally into `financials_endpoints.py` (private,
+  matches the original reviewed behavior exactly — `/financials` was never in scope for the
+  6-file canonical-resolver rollout); rewrote the new `GET /centinela/alerts` route to use
+  `resolve_request_tenant_scope`, matching its sibling routes in the same file; deleted
+  `tests/test_tenant_context_resolver.py` (tested the now-removed shared helper); adapted
+  `tests/test_centinela_alerts_tenant_scoping.py`'s two Cliente-Cero-fallback tests to mock
+  `resolve_cliente_cero_tenant_id` instead, mirroring `test_centinela_endpoint_tenant_scoping.py`'s
+  established pattern. Full targeted suite (40 tests across 8 files) green; full backend suite
+  694 passed / 40 pre-existing-and-unrelated failures (same exact list as before the merge,
+  confirmed via `git diff main...HEAD` file-overlap check) / 112 skipped. See `design.md` D1 for
+  the reconciled design.
 - [ ] 13.1 `git branch --show-current` check, then merge `feature/pwa-tenant-aware-screens` → main
   (or open a PR per repo convention), push.
-- [ ] 13.2 Apply migration `0033_*.sql` to Supabase (`kpynymwghfwshvcvevxq`) via Supabase MCP
+- [ ] 13.2 Apply migration `0035_*.sql` to Supabase (`kpynymwghfwshvcvevxq`) via Supabase MCP
   `apply_migration`; verify with a `SELECT` that SYNTH sale/expense rows are dated yesterday and
   the cron job (`cron.job` table) exists and is scheduled.
 - [ ] 13.3 Bump `contexia-app/public/sw.js` `CACHE_VERSION` (`v14-2026-07-22` → next), then

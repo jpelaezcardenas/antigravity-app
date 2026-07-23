@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import date
+from typing import Optional
 from services.financials_service import compute_pulso_daily_snapshot, compute_liquidity_bridge
 from core.supabase_client import get_supabase
-from core.deps import get_current_user
-from core.tenant_context import resolve_caller_tenant_id
+from core.deps import get_current_user, _STAGING_USER
 
 router = APIRouter()
 
@@ -11,11 +11,8 @@ router = APIRouter()
 async def _resolve_cliente_cero_tenant_id() -> str:
     """Resolve the Cliente Cero tenant ID from Supabase.
 
-    Kept as a module-level, monkeypatchable function (rather than inlining
-    `core.tenant_context.resolve_cliente_cero_tenant_id` directly) purely for backward
-    compatibility with `tests/test_financials_endpoint_tenant_scoping.py`, which patches this
-    exact attribute — see `core/tenant_context.py::resolve_caller_tenant_id`'s
-    `cliente_cero_resolver` parameter (pwa-tenant-aware-screens Stage 1 / design.md D1).
+    Kept as a module-level, monkeypatchable function so
+    `tests/test_financials_endpoint_tenant_scoping.py` can patch this exact attribute.
     """
     supabase = get_supabase()
     result = (
@@ -26,6 +23,37 @@ async def _resolve_cliente_cero_tenant_id() -> str:
         .execute()
     )
     return result.data["id"]
+
+
+async def _resolve_caller_tenant_id(user: dict) -> Optional[str]:
+    """Resolve which tenant the caller should see data for.
+
+    Local to this module (not `core.tenant_context`) — deliberately kept separate from
+    the canonical `resolve_request_tenant_scope()` that the 6 agent-facing endpoint files
+    use (see `core/tenant_context.py`'s module docstring, agent-endpoints-real-tenant-
+    filtering Stage 4): `/financials` predates and was never in scope for that
+    consolidation, and this policy is a strict 3-branch subset (no operator/all_tenants
+    case) of what `resolve_request_tenant_scope` offers, so duplicating it here — rather
+    than importing the canonical resolver and ignoring half its contract — keeps this
+    file's existing, already-reviewed behavior byte-identical instead of risking a
+    behavior change to a shipped, tenant-security-relevant endpoint.
+
+    1. Authenticated caller with a resolved tenant (`user["resolved_tenant_id"]`) -> that
+       caller's own tenant.
+    2. Unauthenticated/local-dev caller (`AUTH_ENFORCED=False`, no token — the permissive
+       staging identity, `core.deps._STAGING_USER`) -> Cliente Cero.
+    3. Authenticated caller whose tenant did NOT resolve -> `None`. Callers MUST treat
+       `None` as "render an empty/zeroed response" — NEVER fall back to Cliente Cero here,
+       that would leak Contexia's own financials to an unrelated logged-in client.
+    """
+    resolved_tenant_id = user.get("resolved_tenant_id")
+    if resolved_tenant_id:
+        return resolved_tenant_id
+
+    if user.get("id") == _STAGING_USER["id"]:
+        return await _resolve_cliente_cero_tenant_id()
+
+    return None
 
 
 def _empty_snapshot() -> dict:
@@ -63,8 +91,7 @@ async def get_financials(user: dict = Depends(get_current_user)):
     Caja Real as of today, plus ventas/gastos for yesterday specifically (not a
     monthly aggregate) — daily granularity is the product's core promise.
 
-    Tenant resolution (per-tenant-client-access; policy now shared via
-    `core.tenant_context.resolve_caller_tenant_id`, pwa-tenant-aware-screens Stage 1):
+    Tenant resolution (per-tenant-client-access; see `_resolve_caller_tenant_id` above):
     - Authenticated caller with a resolved tenant (per-client login, wired via
       user_tenants) -> that caller's own tenant. This is what makes each B2B
       client see THEIR OWN Caja Real, not Contexia's.
@@ -85,9 +112,7 @@ async def get_financials(user: dict = Depends(get_current_user)):
     }
     """
     try:
-        tenant_id = await resolve_caller_tenant_id(
-            user, cliente_cero_resolver=_resolve_cliente_cero_tenant_id
-        )
+        tenant_id = await _resolve_caller_tenant_id(user)
         if tenant_id is None:
             return _empty_snapshot()
 
@@ -111,9 +136,9 @@ async def get_liquidity_bridge(user: dict = Depends(get_current_user)):
     inflows/outflows, plus the resulting final balance (pwa-tenant-aware-screens Stage 3 /
     design.md D3, spec `pulso-financials-api`).
 
-    Tenant resolution: same shared policy as `GET /api/v1/financials`
-    (`core.tenant_context.resolve_caller_tenant_id`) — own resolved tenant, Cliente Cero only
-    for the staging identity, empty for an authenticated caller with no resolved tenant.
+    Tenant resolution: same policy as `GET /api/v1/financials` (`_resolve_caller_tenant_id`
+    above) — own resolved tenant, Cliente Cero only for the staging identity, empty for an
+    authenticated caller with no resolved tenant.
 
     Response (all amounts in COP minor units — cents):
     {
@@ -126,9 +151,7 @@ async def get_liquidity_bridge(user: dict = Depends(get_current_user)):
     }
     """
     try:
-        tenant_id = await resolve_caller_tenant_id(
-            user, cliente_cero_resolver=_resolve_cliente_cero_tenant_id
-        )
+        tenant_id = await _resolve_caller_tenant_id(user)
         if tenant_id is None:
             return _empty_liquidity_bridge()
 

@@ -7,11 +7,15 @@ The new route is additive alongside the existing `GET /centinela/alerts/{company
   2. Two different tenants never see each other's alerts.
   3. The unauthenticated/local-dev staging identity still falls back to Cliente Cero.
   4. An authenticated caller with NO resolved tenant gets an empty response — NOT
-     Cliente Cero (no leak) — and the Cliente Cero resolver is never invoked.
+     Cliente Cero (no leak).
   5. A resolved tenant with zero rows gets an honest empty list, not a demo fallback.
-  6. The legacy `/alerts/{company_id}` route is unaffected.
+  6. The legacy `/alerts/{company_id}` route is unaffected (covered by
+     test_centinela_endpoint_tenant_scoping.py, not duplicated here).
 
 Uses the same hermetic, throwaway-tenant pattern as test_financials_endpoint_tenant_scoping.py.
+Reconciled 2026-07-23 onto the canonical `resolve_request_tenant_scope` resolver (see
+core/tenant_context.py's module docstring) after agent-endpoints-real-tenant-filtering
+landed on main mid-implementation of this change.
 """
 
 import asyncio
@@ -137,16 +141,22 @@ class TestCentinelaAlertsEndpointTenantScoping:
 
     def test_staging_identity_falls_back_to_cliente_cero(self, monkeypatch):
         """Unauthenticated/local-dev caller (AUTH_ENFORCED=False, no token) still
-        resolves to Cliente Cero — back-compat for the existing overview + local dev."""
+        resolves to Cliente Cero — back-compat for the existing overview + local dev.
+
+        Mocks `core.tenant_context.resolve_cliente_cero_tenant_id`, the lookup the
+        canonical `resolve_request_tenant_scope` (used by `get_my_alerts` since the
+        pwa-tenant-aware-screens/agent-endpoints-real-tenant-filtering reconciliation)
+        always performs — mirrors the pattern in test_centinela_endpoint_tenant_scoping.py.
+        """
         import core.tenant_context as tenant_context_module
 
         called = {"cliente_cero": False}
 
-        async def fake_default_resolver():
+        def fake_resolver(client):
             called["cliente_cero"] = True
             return "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"
 
-        monkeypatch.setattr(tenant_context_module, "_default_cliente_cero_resolver", fake_default_resolver)
+        monkeypatch.setattr(tenant_context_module, "resolve_cliente_cero_tenant_id", fake_resolver)
 
         response = run(get_my_alerts(user=dict(_STAGING_USER)))
 
@@ -155,14 +165,17 @@ class TestCentinelaAlertsEndpointTenantScoping:
 
     def test_authenticated_unresolved_tenant_returns_empty_never_cliente_cero(self, monkeypatch):
         """An authenticated caller (not the staging identity) with NO resolved
-        tenant must get an empty response, and Cliente Cero resolution must
-        NEVER be invoked — that would leak Contexia's alerts to an unwired login."""
+        tenant must get an empty response — never Cliente Cero's alerts. Stubs the
+        Cliente Cero lookup to an id that never matches any test tenant (per the
+        established pattern), since `resolve_request_tenant_scope` always performs
+        that lookup now — the security property under test is "the caller never
+        receives Cliente Cero's tenant_id", not "the lookup was never invoked"."""
         import core.tenant_context as tenant_context_module
 
-        async def must_not_be_called():
-            raise AssertionError("Cliente Cero fallback must not be used for an authenticated, unresolved caller")
-
-        monkeypatch.setattr(tenant_context_module, "_default_cliente_cero_resolver", must_not_be_called)
+        monkeypatch.setattr(
+            tenant_context_module, "resolve_cliente_cero_tenant_id",
+            lambda client: "unrelated-cliente-cero-id",
+        )
 
         user = {"id": "76680e1f-2943-4235-8501-18b090d59257", "email": "growth@contexia.online", "resolved_user_id": None, "resolved_tenant_id": None}
         response = run(get_my_alerts(user=user))
