@@ -38,6 +38,12 @@ The system SHALL add `Depends(get_current_user)` to `crm_endpoints.py` and
 `GET /campaigns`) — leaving the Hermes↔backend machine-to-machine bridge endpoints
 (`/tasks/*`, `/campaigns/{id}/dispatch`, `/creative-loop/run`, `/telemetry/report`) unguarded,
 since Hermes has no browser session. This SHALL NOT change behavior while `AUTH_ENFORCED=False`.
+**Amendment (`hermes-task-queue-tenant-scoping`, 2026-07-23):** `/tasks/*` and
+`/campaigns/{id}/dispatch` specifically now support a separate, optional
+`HERMES_BRIDGE_TOKEN` bearer-token gate (distinct from `get_current_user`/`AUTH_ENFORCED`) — see
+`openspec/changes/hermes-task-queue-tenant-scoping/design.md` D5/D7. Unset (the default) means
+identical open behavior to before this change. `/creative-loop/run` and `/telemetry/report` are
+unaffected and remain fully unguarded — out of scope for that change.
 
 #### Scenario: An authenticated request succeeds once enforcement is on
 - **WHEN** `AUTH_ENFORCED=True` and a request includes a valid bearer token (either scheme)
@@ -48,8 +54,17 @@ since Hermes has no browser session. This SHALL NOT change behavior while `AUTH_
 - **THEN** the request is rejected with `401`
 
 #### Scenario: The Hermes bridge is unaffected
-- **WHEN** Hermes calls `GET /sell-machine/tasks/pending` (no bearer token)
+- **WHEN** Hermes calls `GET /sell-machine/tasks/pending` (no bearer token) and
+  `HERMES_BRIDGE_TOKEN` is unset (the default)
 - **THEN** the request is unaffected by this change, regardless of `AUTH_ENFORCED`
+
+#### Scenario: The Hermes bridge token gate, once configured, is independent of AUTH_ENFORCED
+- **WHEN** `HERMES_BRIDGE_TOKEN` is set and Hermes calls one of the 5 operator-task routes
+  (`/tasks/pending`, `POST /tasks`, `/campaigns/{id}/dispatch`, `/tasks/{id}/status`,
+  `/tasks/{id}/result`) with a missing, malformed, or incorrect `Authorization: Bearer <token>`
+  header
+- **THEN** the request is rejected with `401`, independent of `AUTH_ENFORCED` and of
+  `get_current_user` (see `hermes-task-queue-tenant-scoping`)
 
 ### Requirement: login.html supports real self-service sign-up and password reset, Google-only SSO
 The system SHALL remove the "Sign in with Microsoft" option from `login.html`, keeping only Google
