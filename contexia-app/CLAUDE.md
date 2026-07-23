@@ -4,7 +4,8 @@ Demo mock visual de la app Contexia. Stack: Next.js 16 App Router + React 19 + T
 
 ## Reglas duras
 
-- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real; Búnker → Social Content Ops; Búnker → Onboarding; Búnker → CRM/Ventas; Búnker → Sell Machine) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real es solo lectura; Social Content Ops, Onboarding, CRM/Ventas B2C, y Sell Machine escriben; CRM/Ventas B2B es de solo lectura — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
+- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real, Alertas Activas; Flujo-detalle → Puente de Liquidez; Búnker → Social Content Ops; Búnker → Onboarding; Búnker → CRM/Ventas; Búnker → Sell Machine) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real, Alertas Activas y Puente de Liquidez son solo lectura; Social Content Ops, Onboarding, CRM/Ventas B2C, y Sell Machine escriben; CRM/Ventas B2B es de solo lectura — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
+- **Regla dura — nunca mock como fallback de error**: ninguna pantalla data-bound puede, ante un fetch fallido, mostrar datos de `lib/mock/*` presentados como si fueran reales. El estado de error debe ser explícito y honesto (discreto, sin banner alarmante) — nunca datos inventados bajo un estado "ready"/"listo". Incidente que originó esta regla: `CashTodayCard` caía silenciosamente a `pulsoMock.cash` en error, marcado como `"ready"` — corregido en `pwa-tenant-aware-screens` (ver abajo).
 - **Fuente de verdad visual**: el export de Stitch y los screenshots `screen.png` del ZIP `stitch_contexia_evolution_cfo_as_a_service`. No rediseñar pantallas que Stitch ya definió.
 - **Sin CDN**: nada de React/Tailwind/Babel por unpkg. Las únicas URLs externas son Google Fonts (Inter, JetBrains Mono, Material Symbols) cargadas desde [app/layout.tsx](app/layout.tsx).
 - **Sin librerías nuevas** salvo que sea estrictamente necesario. Stack mínimo.
@@ -13,7 +14,7 @@ Demo mock visual de la app Contexia. Stack: Next.js 16 App Router + React 19 + T
 
 ## Pantallas data-bound
 
-`CashTodayCard` (Pulso/Overview) es la primera y única pantalla data-bound hoy.
+`CashTodayCard` (Pulso/Overview) es la primera pantalla data-bound (de 7 hoy).
 Es un `"use client"` componente que se autoabastece (no recibe props de datos):
 `useEffect` + `fetchFinancials()` (`lib/api-client.ts`) en mount, con estados
 `loading` / `error` / `empty` / `ready` explícitos en el render — nunca queda en
@@ -29,13 +30,49 @@ blanco ni revienta si el backend no responde.
   componente promete, hay que arreglar el backend, no el texto.
 - **Unidades**: el backend devuelve COP en centavos (minor units); `formatCop`
   espera COP completos — dividir entre 100 al mapear la respuesta.
-- **Mocks**: el resto de cards de Pulso (Health, Alerts, Note) y todas las demás
-  pantallas (Fiscal, Radar, Patrimonio, Flujo-detalle) siguen en mocks.
+- **Mocks**: el resto de cards de Pulso (Health, Note) siguen en mocks (Alerts
+  pasó a data-bound, ver abajo), igual que Fiscal, Radar, Patrimonio, y el resto
+  de cards de Flujo-detalle (solo el Puente de Liquidez es data-bound).
 
-### Búnker → Social Content Ops (segunda excepción data-bound)
+### Pulso/Overview → Alertas Activas (segunda excepción data-bound, `pwa-tenant-aware-screens`)
+
+`ActiveAlerts` (Pulso/Overview) sigue el mismo patrón self-feeding que
+`CashTodayCard`: `"use client"` + `useEffect` + `fetchCentinelaAlerts()`
+(`lib/api-client.ts`) en mount, sin prop `alerts`. Estados: `loading` (skeleton)
+/ `ready` (alertas reales) / vacío-o-error → no renderiza nada (misma sección
+oculta que ya existía cuando `alerts.length === 0`) — nunca cae a
+`pulsoMock.alerts`.
+
+- **Backend**: `GET /api/v1/centinela/alerts` (nuevo, distinto del legado
+  `GET /centinela/alerts/{company_id}` que sigue usando Hermes) — tenant-scoped,
+  sin demo fallback.
+- **Claves de React**: el backend puede devolver múltiples alertas con el mismo
+  `rule_id` (una regla dispara una vez por documento afectado — confirmado en
+  vivo con 20 alertas reales compartiendo `SHADOW_GL_DISCREPANCY`). La key
+  SIEMPRE debe incluir el índice del array (`` `${rule_id}-${index}` ``) — nunca
+  asumir que un campo del backend es único sin verificarlo contra datos reales.
+
+### Flujo-detalle → Puente de Liquidez (tercera excepción data-bound, `pwa-tenant-aware-screens`)
+
+`MonthlyLiquidityBridgeCard` (Flujo-detalle) es self-feeding igual que las
+anteriores: `fetchLiquidityBridge()` (`lib/api-client.ts`). Estados: `loading`
+/ `ready` (÷100 → `formatCop`) / `unavailable` (fetch falla o `status: "empty"`)
+→ "Datos no disponibles por el momento.", nunca `flujoDetalleMock.liquidityBridge`.
+La página (`app/flujo-detalle/page.tsx`) sigue siendo Server Component — solo
+la card es cliente; las otras tres cards de la pantalla (`FlowCompositionCard`,
+`FinancialHealthStatusGrid`, `StructuralInsightCard`) siguen en mock — el Shadow
+GL no tiene la clasificación (operación/inversión/financiación) que esas cards
+prometen.
+
+- **Backend**: `GET /api/v1/financials/liquidity-bridge` (nuevo), mismo
+  resolver de tenant que `/financials`. `final_balance` coincide exactamente
+  con `caja_real` de `/financials` para el último día del mes — verificado en
+  tests y en vivo.
+
+### Búnker → Social Content Ops (cuarta excepción data-bound)
 
 `components/bunker/social-ops/SocialContentOpsSection.tsx` (+ `IdeasTab`,
-`CalendarioTab`, `BorradoresTab`, `MetricasTab`) es la segunda pantalla
+`CalendarioTab`, `BorradoresTab`, `MetricasTab`) es la cuarta pantalla
 data-bound. A diferencia de `CashTodayCard` (solo lectura), esta sí escribe:
 crea eventos, diagnostica leads, genera borradores IA, aprueba/rechaza
 (HITL). Backend real ya desplegado (`apps/backend/presentation/
@@ -53,9 +90,9 @@ Social Ops en producción).
 - **HITL intacto**: todo borrador queda en `pending_approval`; el tab
   Aprobaciones es el único gate que libera una acción outbound.
 
-### Búnker → Onboarding (tercera excepción data-bound)
+### Búnker → Onboarding (quinta excepción data-bound)
 
-`components/bunker/onboarding/OnboardingSection.tsx` es la tercera pantalla
+`components/bunker/onboarding/OnboardingSection.tsx` es la quinta pantalla
 data-bound, mismo backend canónico que Social Content Ops (`SOCIAL_OPS_CANONICAL`,
 ya activo). Igual que Social Content Ops, escribe (inicia onboarding, envía intake,
 crea seed drafts), no es solo lectura.
@@ -70,9 +107,9 @@ crea seed drafts), no es solo lectura.
   (S1/S2/S3 + Go-Live).
 - **HITL intacto**: seed drafts quedan en `pending_approval`, igual que el resto.
 
-### Búnker → CRM/Ventas B2B + B2C (cuarta excepción data-bound)
+### Búnker → CRM/Ventas B2B + B2C (sexta excepción data-bound)
 
-`components/bunker/CrmVentasSection.tsx` (tab shell) is the fourth data-bound screen, with two
+`components/bunker/CrmVentasSection.tsx` (tab shell) is the sixth data-bound screen, with two
 live tabs sharing the same backend (`apps/backend/presentation/crm_endpoints.py`, gated by
 `CRM_CANONICAL` — default `false`, activated after the production smoke-test, same playbook as
 `SOCIAL_OPS_CANONICAL`):
@@ -98,9 +135,9 @@ live tabs sharing the same backend (`apps/backend/presentation/crm_endpoints.py`
 - **Unidades**: el backend devuelve `amount_cents` (COP en centavos); dividir entre 100 con
   `formatCop` al renderizar, igual que Caja Real.
 
-### Búnker → Sell Machine (quinta excepción data-bound)
+### Búnker → Sell Machine (séptima excepción data-bound)
 
-`components/bunker/sell-machine/SellMachineSection.tsx` es la quinta pantalla data-bound, gateada
+`components/bunker/sell-machine/SellMachineSection.tsx` es la séptima pantalla data-bound, gateada
 por `SELL_MACHINE_CANONICAL` (mismo playbook que `SOCIAL_OPS_CANONICAL`/`CRM_CANONICAL`). Es el
 loop creativo del Sell Machine: un agente Copywriter genera hooks de marketing, un agente Content
 Critic (evaluator-optimizer) los filtra contra la marca de Contexia (nunca framear a Contexia como
@@ -131,13 +168,15 @@ El login real de la PWA/Búnker **ya existía antes de este change** y no vive e
 (`/app/bunker` requiere `app_metadata.role=admin`). Ninguno de los dos se toca desde
 `contexia-app`.
 
-Lo que sí faltaba: las 5 pantallas data-bound llaman al backend en Railway **directamente**
-(bypaseando el dominio de Vercel y por lo tanto `middleware.ts`), sin adjuntar nunca ese token.
-`lib/authenticated-fetch.ts` cierra ese hueco — adjunta `Authorization: Bearer` leyendo el mismo
-`localStorage["token"]` que `login.html` ya llena, usado internamente por los 5 clientes tipados
-de arriba (sus firmas exportadas no cambian). Es deliberadamente mínimo: no redirige ni limpia
-sesión en un 401 — eso ya lo hace `middleware.ts` del lado servidor, más robusto que cualquier
-cosa que este helper pudiera duplicar del lado cliente.
+Lo que sí faltaba (al momento de `bunker-pwa-auth-enforcement`): las pantallas data-bound llaman
+al backend en Railway **directamente** (bypaseando el dominio de Vercel y por lo tanto
+`middleware.ts`), sin adjuntar nunca ese token. `lib/authenticated-fetch.ts` cierra ese hueco —
+adjunta `Authorization: Bearer` leyendo el mismo `localStorage["token"]` que `login.html` ya
+llena, usado internamente por todos los clientes tipados de arriba (`api-client.ts`,
+`social-ops-api.ts`, `crm-api.ts`, `sell-machine-api.ts` — sus firmas exportadas no cambian
+cuando se agregan nuevas funciones). Es deliberadamente mínimo: no redirige ni limpia sesión en
+un 401 — eso ya lo hace `middleware.ts` del lado servidor, más robusto que cualquier cosa que
+este helper pudiera duplicar del lado cliente.
 
 ## Reglas de interactividad (mock-first, pero viva)
 

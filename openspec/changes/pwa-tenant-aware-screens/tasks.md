@@ -126,12 +126,15 @@
   back to mock data.
 
 ## Stage 12. Docs
-- [ ] 12.1 `contexia-app/CLAUDE.md`: add `ActiveAlerts` and `MonthlyLiquidityBridgeCard` to
-  "Pantallas data-bound"; add the hard rule "data-bound cards never fall back to mock data for
-  authenticated users — error states must be honest" (citing the `CashTodayCard` fix as the
-  precedent this closes).
+- [x] 12.1 `contexia-app/CLAUDE.md`: added `ActiveAlerts` (Pulso/Overview, 2nd exception) and
+  `MonthlyLiquidityBridgeCard` (Flujo-detalle, 3rd exception) as their own documented data-bound
+  sections; added the hard rule "nunca mock como fallback de error" citing the `CashTodayCard`
+  fix as the incident that produced it; renumbered the existing 4 Búnker exceptions (now
+  4th-7th) and fixed all stale ordinal/count references (headers + prose + the "5 pantallas"/"5
+  clientes" line in the Fetch autenticado section).
 - [ ] 12.2 `ARCHITECTURE.md` flujo-estrella section: note the two new endpoints if the diagram
-  needs it (only if reviewer flags it as materially incomplete without them).
+  needs it (only if reviewer flags it as materially incomplete without them) — pending reviewer
+  judgment call.
 
 ## Stage 13. Deploy to Production (MANDATORY — CLOSES THE LOOP)
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
