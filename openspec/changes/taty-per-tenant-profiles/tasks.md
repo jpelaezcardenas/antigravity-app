@@ -26,13 +26,22 @@
 
 ## 2. Backend: `ask()` Rename, KB Keying, Régimen Omission (TDD)
 
-- [ ] 2.1 Write failing tests: `regimen=None` omits régimen clause from built prompt (scenario
+- [x] 2.1 Write failing tests: `regimen=None` omits régimen clause from built prompt (scenario
       "Taty never asserts an unverified tax regime"); tenant with no chunks retrieves
       `__global__` DIAN corpus (design D7); Cliente Cero tenant → `retrieve_similar` called with
-      `client_id="ctx-001"` (design D7)
-- [ ] 2.2 Rename `ask(company_id, ...)` → `ask(tenant_id, ...)`; `_retrieve_chunks` uses
-      `profile["kb_client_id"]`; `_build_prompt` omits régimen clause when `None`
-- [ ] 2.3 Tests from 2.1 green
+      `client_id="ctx-001"` (design D7) — `test_taty_ask_tenant_scoping.py`,
+      `progress/impl_taty-per-tenant-profiles-task2.md`
+- [x] 2.2 Rename `ask(company_id, ...)` → `ask(tenant_id, ...)`; `_retrieve_chunks` uses
+      `profile["kb_client_id"]`; `_build_prompt` omits régimen clause when `None`;
+      `_get_agent_profile` deleted (task 1's transitional delegator, no longer needed) —
+      reviewed APPROVED, `progress/review_taty-per-tenant-profiles-task2.md`
+- [x] 2.3 Tests from 2.1 green (13/13, incl. task 1's 7). ⚠️ 3 live callers now raise TypeError
+      until tasks 3/4/5 land (expected per design D5, all fixed within this same OpenSpec
+      change): `agents_endpoints.py:63` (task 5 deletes this route), `taty_endpoints.py:144`
+      (task 3), `telegram_endpoints.py:154` (task 4). Reviewer also flagged: full
+      `RUN_TESTS=1 init.sh` suite is red due to a pre-existing, unrelated issue in
+      `test_shadow_gl_stage8_e2e.py` (predates this branch) — tracked for task 7 DB-verification
+      step, not caused by this change.
 
 ## 3. Backend: Endpoint Auth + Tenant Resolution (TDD)
 

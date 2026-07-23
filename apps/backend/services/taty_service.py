@@ -114,7 +114,7 @@ class TatyAgentService:
 
     def ask(
         self,
-        company_id: str,
+        tenant_id: str,
         question: str,
         channel: str = "dashboard",
         conversation_id: Optional[str] = None,
@@ -125,7 +125,7 @@ class TatyAgentService:
         Answer a fiscal question with RAG, LLM, and client-specific config.
 
         Args:
-            company_id: Client identifier
+            tenant_id: Tenant identifier (uuid, resolved from the caller's session)
             question: User's fiscal question
             channel: "telegram", "dashboard", "whatsapp"
             conversation_id: For multi-turn conversations
@@ -144,11 +144,13 @@ class TatyAgentService:
         start_time = time.time()
 
         try:
-            # 1. Load agent profile for this company
-            profile = self._get_agent_profile(company_id)
+            # 1. Load tenant profile
+            profile = self._get_tenant_profile(tenant_id)
             if not profile:
-                logger.warning(f"No agent profile for company_id={company_id}")
-                return self._error_response("Cliente no configurado", start_time)
+                logger.warning(f"No tenant profile for tenant_id={tenant_id}")
+                return self._error_response(
+                    "Cliente no configurado", start_time, error_code="tenant_not_found"
+                )
 
             # 2. Retrieve relevant chunks from knowledge sources
             chunks, sources_used = self._retrieve_chunks(question, profile)
@@ -188,7 +190,7 @@ class TatyAgentService:
 
             # 10. Log conversation
             self._log_conversation(
-                company_id=company_id,
+                tenant_id=tenant_id,
                 conversation_id=conversation_id,
                 user_id=user_id,
                 channel=channel,
@@ -210,17 +212,6 @@ class TatyAgentService:
         except Exception as e:
             logger.error(f"Error in Taty.ask(): {str(e)}", exc_info=True)
             return self._error_response(f"Error: {str(e)}", start_time)
-
-    def _get_agent_profile(self, company_id: str) -> Optional[Dict]:
-        """Load agent profile for company.
-
-        Deviation from the task-1 plan (noted per implementer instructions):
-        `AGENT_PROFILES` no longer exists (deleted in this task), so this now
-        delegates to `_get_tenant_profile` to keep `ask()` and the module
-        coherent/importable until task 2 rewires `ask()` to call
-        `_get_tenant_profile` directly and this method is removed.
-        """
-        return self._get_tenant_profile(company_id)
 
     def _get_tenant_profile(self, tenant_id: str) -> Optional[Dict]:
         """Resolve a Taty client profile from the `tenants` table.
@@ -282,7 +273,7 @@ class TatyAgentService:
         Returns:
             (chunks, sources_used) where chunks have shape {source, content/text, ...}
         """
-        client_id = profile.get("company_id", "__global__")
+        client_id = profile["kb_client_id"]
         results = retrieve_similar(query=question, client_id=client_id, top_k=5)
 
         # Normalize chunk shape: kb_seeding uses 'content', legacy used 'text'
@@ -313,11 +304,20 @@ class TatyAgentService:
         return chunks, sources_used
 
     def _build_prompt(self, question: str, chunks: List[Dict], profile: Dict) -> str:
-        """Build RAG prompt with question + context."""
+        """Build RAG prompt with question + context.
+
+        `regimen` is only interpolated when the profile actually resolved one.
+        Taty must never assert an unverified tax regime for a real client (see
+        .antigravity/GROUND_TRUTH.md and design.md D1) — when `regimen` is
+        `None`, the clause is omitted entirely rather than rendered as
+        "Régimen None" or left as a dangling label.
+        """
         context = "\n".join([f"- {c['source']}: {c['text']}" for c in chunks])
+        regimen = profile.get("regimen")
+        regimen_clause = f" (Régimen {regimen})" if regimen else ""
 
         if context:
-            return f"""Eres Taty, una asesora fiscal para {profile['nombre_empresa']} (Régimen {profile['regimen']}).
+            return f"""Eres Taty, una asesora fiscal para {profile['nombre_empresa']}{regimen_clause}.
 
 Contexto fiscal (fuentes oficiales):
 {context}
@@ -374,7 +374,7 @@ Si no tienes información suficiente, di "No tengo información suficiente para 
 
     def _log_conversation(
         self,
-        company_id: str,
+        tenant_id: str,
         conversation_id: Optional[str],
         user_id: Optional[str],
         channel: str,
@@ -391,7 +391,7 @@ Si no tienes información suficiente, di "No tengo información suficiente para 
         """
         log_entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "company_id": company_id,
+            "tenant_id": tenant_id,
             "channel": channel,
             "latency_ms": latency_ms,
             "requires_human_review": requires_human_review,

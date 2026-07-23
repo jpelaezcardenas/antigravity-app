@@ -94,4 +94,9 @@ replacing hardcoded AGENT_PROFILES. `_error_response` extended with optional `er
 7 new tests green (test_taty_tenant_profiles.py). Reviewer: APPROVED.
 Deviation: `_get_agent_profile` kept as transitional delegator — task 2 removes it when `ask()`
 is rewired to take `tenant_id` directly.
->>>>>>> f72bdc5 (feat(taty-per-tenant-profiles): dynamic tenant profile resolver (task 1))
+## taty-per-tenant-profiles — task 2 (2026-07-23)
+ask(company_id) -> ask(tenant_id) hard rename; _get_agent_profile deleted; _retrieve_chunks keys
+off profile["kb_client_id"]; _build_prompt omits régimen clause when None (GROUND_TRUTH
+compliance). 6 new tests green (test_taty_ask_tenant_scoping.py), task 1's 7 still green.
+3 live callers now broken by design (fixed in tasks 3/4/5, same change). Reviewer: APPROVED.
+Reviewer flagged unrelated pre-existing full-suite issue in test_shadow_gl_stage8_e2e.py for task 7.
