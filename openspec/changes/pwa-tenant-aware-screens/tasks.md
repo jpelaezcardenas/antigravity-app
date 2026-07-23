@@ -74,30 +74,34 @@
   `openspec/changes/pwa-tenant-aware-screens/reports/2026-07-XX-step-6-curl-verification.md`.
 
 ## Stage 7. Frontend: data clients
-- [ ] 7.1 `lib/config.ts`: add `API_ENDPOINTS.centinelaAlerts`, `API_ENDPOINTS.liquidityBridge`.
-- [ ] 7.2 `lib/api-client.ts`: `CentinelaAlertsResponse`/`LiquidityBridgeSnapshot` types +
+- [x] 7.1 `lib/config.ts`: added `API_ENDPOINTS.centinelaAlerts`, `API_ENDPOINTS.liquidityBridge`.
+  Commit `db4cdc6`, reviewed/approved.
+- [x] 7.2 `lib/api-client.ts`: `CentinelaAlertsResponse`/`LiquidityBridgeSnapshot` types +
   `fetchCentinelaAlerts()`/`fetchLiquidityBridge()`, same `ApiError` handling as
-  `fetchFinancials`.
+  `fetchFinancials`. Shapes verified field-for-field against real backend responses.
 
 ## Stage 8. Frontend: ActiveAlerts becomes data-bound
-- [ ] 8.1 `components/pulso/ActiveAlerts.tsx`: `"use client"`, drop `alerts` prop, `useEffect` +
+- [x] 8.1 `components/pulso/ActiveAlerts.tsx`: `"use client"`, drop `alerts` prop, `useEffect` +
   `fetchCentinelaAlerts()`, loading skeleton / ready / (empty-or-error → render `null`, per spec).
-- [ ] 8.2 `app/app/(shell)/overview/page.tsx`: render `<ActiveAlerts />` with no props.
-- [ ] 8.3 `npx tsc --noEmit` clean.
+  Commit `d8d6747`.
+- [x] 8.2 `app/app/(shell)/overview/page.tsx`: renders `<ActiveAlerts />` with no props.
+- [x] 8.3 `npx tsc --noEmit` clean.
 
 ## Stage 9. Frontend: MonthlyLiquidityBridgeCard becomes data-bound
-- [ ] 9.1 `components/flujo-detalle/MonthlyLiquidityBridgeCard.tsx`: `"use client"`, drop `bridge`
+- [x] 9.1 `components/flujo-detalle/MonthlyLiquidityBridgeCard.tsx`: `"use client"`, drop `bridge`
   prop, `useEffect` + `fetchLiquidityBridge()`, loading / ready (÷100 → `formatCop`) / unavailable
-  states.
-- [ ] 9.2 `app/flujo-detalle/page.tsx`: render `<MonthlyLiquidityBridgeCard />` with no props
+  states. Commit `095a771`.
+- [x] 9.2 `app/flujo-detalle/page.tsx`: renders `<MonthlyLiquidityBridgeCard />` with no props
   (page itself stays a Server Component — only the card is client).
-- [ ] 9.3 `npx tsc --noEmit` clean.
+- [x] 9.3 `npx tsc --noEmit` clean.
 
 ## Stage 10. Frontend: CashTodayCard honesty fix
-- [ ] 10.1 `components/pulso/CashTodayCard.tsx`: replace the `.catch` → `pulsoMock.cash` + `ready`
+- [x] 10.1 `components/pulso/CashTodayCard.tsx`: replaced the `.catch` → `pulsoMock.cash` + `ready`
   fallback with an explicit `"error"` status branch and its own discrete render (spec
-  `pulso-overview-live-data`, scenario "Error state renders honestly").
-- [ ] 10.2 `npx tsc --noEmit && npm run build` clean (full `contexia-app` build).
+  `pulso-overview-live-data`, scenario "Error state renders honestly"). Commit `014b740`.
+- [x] 10.2 `npx tsc --noEmit && npm run build` clean (full `contexia-app` build) — run by the
+  leader after Stages 7-10 landed together, confirming the three concurrent changes compose
+  cleanly (12 routes generated, no errors).
 
 ## Stage 11. Frontend: E2E with a real client (MANDATORY where applicable)
 - [ ] 11.1 Local `npm run dev` against the deployed backend (post Stage-11-deploy) or a temporary
