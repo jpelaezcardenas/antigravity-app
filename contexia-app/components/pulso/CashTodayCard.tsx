@@ -5,7 +5,6 @@ import Link from "next/link";
 import type { CashToday } from "@/lib/types/contexia";
 import { formatCop } from "@/lib/format";
 import { fetchFinancials, type FinancialsSnapshot } from "@/lib/api-client";
-import { pulsoMock } from "@/lib/mock/pulso";
 
 const DETAIL_HREF = "/app/flujo-detalle";
 
@@ -23,7 +22,7 @@ function toCashToday(snapshot: FinancialsSnapshot): CashToday {
 
 export function CashTodayCard() {
   const [cash, setCash] = useState<CashToday | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "empty">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "empty" | "error">("loading");
 
   useEffect(() => {
     let cancelled = false;
@@ -40,12 +39,11 @@ export function CashTodayCard() {
       })
       .catch((error) => {
         if (cancelled) return;
-        // Spec "degrades gracefully": on any fetch failure fall back to the
-        // baked-in placeholder figures — the end user must never see an error
-        // banner here (same fail-safe contract as the retired injected script).
-        console.warn("[CashTodayCard] financials fetch failed, using fallback", error);
-        setCash(pulsoMock.cash);
-        setStatus("ready");
+        // Spec "degrades gracefully": on any fetch failure render an
+        // unobtrusive error state — never fall back to a mock value
+        // presented as if it were real, live data.
+        console.warn("[CashTodayCard] financials fetch failed", error);
+        setStatus("error");
       });
 
     return () => {
@@ -61,6 +59,19 @@ export function CashTodayCard() {
         </h2>
         <div className="h-9 w-48 bg-white/10 rounded mb-1" />
         <div className="h-5 w-64 bg-white/10 rounded mt-2" />
+      </section>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <section className="bg-surface-elevated rounded-xl p-6 border border-white/10 relative overflow-hidden">
+        <h2 className="font-body-md text-body-md text-white mb-2">
+          Caja Real de Hoy
+        </h2>
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          No pudimos actualizar tu Caja Real. Intenta de nuevo en un momento.
+        </p>
       </section>
     );
   }
