@@ -14,12 +14,38 @@ import uuid
 import pytest
 
 from core.supabase_client import get_supabase
+from core.tenant_context import TenantResolutionError
 from services.centinela_resolution_service import (
     SHADOW_GL_DISCREPANCY_RULE_ID,
+    _alert_payload,
     poll_shadow_gl_discrepancies,
 )
 
-pytestmark = pytest.mark.skipif(
+
+class TestAlertPayloadIncludesTenantId:
+    """Pure unit tests — no Supabase, always run."""
+
+    def test_alert_payload_includes_tenant_id(self):
+        discrepancy = {
+            "cufe": "test-cufe-123",
+            "status": "missing_in_erp",
+            "dian_total_minor": 11900000,
+            "erp_total_minor": 0,
+            "variance_minor": 11900000,
+        }
+        payload = _alert_payload("ctx-001", "tenant-medic", discrepancy)
+        assert payload["tenant_id"] == "tenant-medic"
+        assert payload["company_id"] == "ctx-001"
+
+    @pytest.mark.asyncio
+    async def test_poll_raises_on_empty_tenant_id(self):
+        with pytest.raises(TenantResolutionError):
+            await poll_shadow_gl_discrepancies(None)
+        with pytest.raises(TenantResolutionError):
+            await poll_shadow_gl_discrepancies("")
+
+
+_run_shadow_gl = pytest.mark.skipif(
     os.environ.get("RUN_SHADOW_GL") != "1",
     reason="Set RUN_SHADOW_GL=1 to run Centinela resolution poller tests against Supabase",
 )
@@ -43,43 +69,45 @@ def _invoice_xml(cufe: str, total: str = "119000.00", tax: str = "19000.00") -> 
 </Invoice>"""
 
 
-@pytest.fixture(scope="module")
-def supabase():
-    return get_supabase()
-
-
-@pytest.fixture(scope="module")
-def cliente_cero_tenant_id(supabase) -> str:
-    result = (
-        supabase.table("tenants")
-        .select("id")
-        .eq("is_cliente_cero", True)
-        .single()
-        .execute()
-    )
-    return result.data["id"]
-
-
-@pytest.fixture
-def fresh_cufe() -> str:
-    return f"test-poller-cufe-{uuid.uuid4()}"
-
-
-@pytest.fixture(autouse=True)
-def _cleanup(supabase, cliente_cero_tenant_id):
-    created_cufes: list[str] = []
-    yield created_cufes
-    for cufe in created_cufes:
-        supabase.table("dian_xml_documents").delete().eq(
-            "tenant_id", cliente_cero_tenant_id
-        ).eq("cufe", cufe).execute()
-        supabase.table("centinela_alerts").delete().eq(
-            "rule_id", SHADOW_GL_DISCREPANCY_RULE_ID
-        ).contains("evidence", {"cufe": cufe}).execute()
-    supabase.rpc("refresh_shadow_gl_discrepancies").execute()
-
-
+@_run_shadow_gl
 class TestPollShadowGlDiscrepancies:
+    # Fixtures nested in the class so their setup (which requires a real
+    # Supabase connection) never runs for other test classes in this module —
+    # a module-level autouse fixture would run for TestAlertPayloadIncludesTenantId
+    # too, even though skipif prevents the class body itself from executing.
+
+    @pytest.fixture(scope="class")
+    def supabase(self):
+        return get_supabase()
+
+    @pytest.fixture(scope="class")
+    def cliente_cero_tenant_id(self, supabase) -> str:
+        result = (
+            supabase.table("tenants")
+            .select("id")
+            .eq("is_cliente_cero", True)
+            .single()
+            .execute()
+        )
+        return result.data["id"]
+
+    @pytest.fixture
+    def fresh_cufe(self) -> str:
+        return f"test-poller-cufe-{uuid.uuid4()}"
+
+    @pytest.fixture(autouse=True)
+    def _cleanup(self, supabase, cliente_cero_tenant_id):
+        created_cufes: list[str] = []
+        yield created_cufes
+        for cufe in created_cufes:
+            supabase.table("dian_xml_documents").delete().eq(
+                "tenant_id", cliente_cero_tenant_id
+            ).eq("cufe", cufe).execute()
+            supabase.table("centinela_alerts").delete().eq(
+                "rule_id", SHADOW_GL_DISCREPANCY_RULE_ID
+            ).contains("evidence", {"cufe": cufe}).execute()
+        supabase.rpc("refresh_shadow_gl_discrepancies").execute()
+
     @pytest.mark.asyncio
     async def test_poll_creates_alert_for_missing_in_erp_discrepancy(
         self, supabase, cliente_cero_tenant_id, fresh_cufe, _cleanup

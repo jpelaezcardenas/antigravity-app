@@ -3,6 +3,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 from services.centinela_service import CentinelaService, get_centinela_service
+from core.tenant_context import TenantResolutionError
 
 
 class TestGetAlertsForCompany:
@@ -12,7 +13,7 @@ class TestGetAlertsForCompany:
             "services.centinela_service.get_service_supabase",
             side_effect=Exception("supabase not configured"),
         ):
-            alerts = service.get_alerts_for_company("ctx-001", limit=20)
+            alerts = service.get_alerts_for_company("ctx-001", tenant_id="tenant-medic", limit=20)
         # Demo profile is engineered to trigger multiple rules
         assert len(alerts) > 0
         assert all("rule_id" in a for a in alerts)
@@ -24,7 +25,9 @@ class TestGetAlertsForCompany:
             "services.centinela_service.get_service_supabase",
             side_effect=Exception("offline"),
         ):
-            critical = service.get_alerts_for_company("ctx-001", severity="critical")
+            critical = service.get_alerts_for_company(
+                "ctx-001", tenant_id="tenant-medic", severity="critical"
+            )
         assert all(a["severity"] == "critical" for a in critical)
 
     def test_returns_supabase_data_when_available(self):
@@ -56,8 +59,19 @@ class TestGetAlertsForCompany:
             "services.centinela_service.get_service_supabase",
             return_value=mock_supabase,
         ):
-            alerts = service.get_alerts_for_company("ctx-001")
+            alerts = service.get_alerts_for_company("ctx-001", tenant_id="tenant-medic")
         assert alerts == mock_data
+        # Both company_id and tenant_id must be part of the filter chain.
+        mock_query.eq.assert_any_call("company_id", "ctx-001")
+        mock_query.eq.assert_any_call("tenant_id", "tenant-medic")
+
+    def test_get_alerts_raises_without_tenant_id(self):
+        service = CentinelaService()
+        with patch("services.centinela_service.get_service_supabase") as mock_get_client:
+            for missing in (None, ""):
+                with pytest.raises(TenantResolutionError):
+                    service.get_alerts_for_company("ctx-001", tenant_id=missing)
+            mock_get_client.assert_not_called()
 
 
 class TestGetAlertsEndpoint:
