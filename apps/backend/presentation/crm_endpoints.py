@@ -113,6 +113,17 @@ def advance_lead(lead_id: str, payload: AdvanceLeadRequest):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+class WhatsappIntakeRequest(BaseModel):
+    whatsapp_phone: str = Field(..., min_length=1)
+
+
+@router.post("/leads/whatsapp-intake")
+def whatsapp_intake(payload: WhatsappIntakeRequest):
+    """Find-or-create a crm_leads row by WhatsApp phone number (chatwoot-hermes-taty-bridge,
+    Task Group 1) — called by the Chatwoot bridge on every inbound WhatsApp message."""
+    return get_crm_service().whatsapp_intake(payload.whatsapp_phone)
+
+
 @router.get("/leads/{lead_id}/tax-profile")
 def get_lead_tax_profile(lead_id: str):
     return get_crm_service().get_tax_profile(lead_id)

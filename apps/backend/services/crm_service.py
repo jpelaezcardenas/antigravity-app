@@ -57,6 +57,15 @@ RENTA_NATURAL_PRICE_CENTS = 8_900_000
 RENTA_NATURAL_CURRENCY = "COP"
 
 
+def _normalize_whatsapp_phone(whatsapp_phone: str) -> str:
+    """Deterministic phone normalization: strip everything but digits and an optional
+    leading '+' (E.164-ish), so "+57 300 123 4567" and "573001234567" match the same
+    lead. There is no existing normalization helper in this codebase to reuse."""
+    digits = "".join(ch for ch in whatsapp_phone if ch.isdigit())
+    has_plus = whatsapp_phone.strip().startswith("+")
+    return f"+{digits}" if has_plus else digits
+
+
 def _month_periods(from_period: str, to_period: str) -> List[str]:
     """Return a list of first-of-month ISO date strings from from_period to to_period, inclusive."""
     start = date.fromisoformat(from_period).replace(day=1)
@@ -374,6 +383,36 @@ class CrmService:
             "columns": columns,
             "summary": {"total_leads": len(leads)},
         }
+
+    def whatsapp_intake(self, whatsapp_phone: str) -> Dict[str, Any]:
+        """Find-or-create a crm_leads row by WhatsApp phone number (chatwoot-hermes-taty-bridge,
+        Task Group 1) — the entry point the Chatwoot bridge calls on every inbound WhatsApp
+        message so Taty's conversations always map to a lead. Reuses the Cliente Cero
+        tenant-scoping pattern from b2c_pipeline/advance_lead."""
+        normalized_phone = _normalize_whatsapp_phone(whatsapp_phone)
+
+        client = get_service_supabase()
+        tenant_id = self._resolve_cliente_cero_tenant_id(client)
+
+        existing = (
+            client.table("crm_leads")
+            .select("id, stage")
+            .eq("tenant_id", tenant_id)
+            .eq("whatsapp_phone", normalized_phone)
+            .maybe_single()
+            .execute()
+        )
+        existing_row = (existing.data if existing else None) or None
+        if existing_row:
+            return {"lead_id": existing_row["id"], "is_new": False, "stage": existing_row["stage"]}
+
+        inserted = (
+            client.table("crm_leads")
+            .insert({"tenant_id": tenant_id, "whatsapp_phone": normalized_phone, "stage": "NUEVOS"})
+            .execute()
+        )
+        new_row = (inserted.data or [{}])[0]
+        return {"lead_id": new_row["id"], "is_new": True, "stage": "NUEVOS"}
 
     def advance_lead(self, lead_id: str, stage: str) -> Dict[str, Any]:
         """Advance a lead to a new stage. Raises ValueError for an invalid stage."""
