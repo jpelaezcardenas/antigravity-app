@@ -192,12 +192,13 @@
   No DB state to restore — no write ever succeeded. Both spawned uvicorn processes terminated via
   `taskkill //F`, confirmed via `netstat` (ports free).
 
-## Stage 12. Update Technical Documentation (MANDATORY)
-- [ ] 12.1 Update the tokenless curl examples in `specs/T5-CENTINELA-E2E-TESTS.md` and the
-  `specs/E2E-TESTING-*` docs that hit `/centinela/evaluate` / `/centinela/alerts` to include an
-  auth header (or an explicit "requires `AUTH_ENFORCED=False`" note for local runs).
-- [ ] 12.2 Extend `ARCHITECTURE.md` **Decisión #13** (append, do not create a new numbered
-  decision — same principle, new surface) with:
+## Stage 12. Update Technical Documentation (MANDATORY) — DONE
+- [x] 12.1 Updated `specs/T5-CENTINELA-E2E-TESTS.md` (auth-header note + `$AUTH_TOKEN` in the
+  staging test-execution script, plus a tenant-scoping note) and
+  `specs/E2E-TESTING-FAST-TRACK.md` (auth-header note + `Authorization: Bearer $AUTH_TOKEN` on
+  the one literal curl command hitting `/centinela/evaluate`). `specs/E2E-TESTING-CHECKLIST-QUICK.md`
+  reviewed — contains only checklist bullets, no literal tokenless curl commands to correct.
+- [x] 12.2 Extended `ARCHITECTURE.md` **Decisión #13** (appended, no new numbered decision) with:
 
   > **Extensión (centinela-tenant-scoped-alerts):** el mismo patrón de 3 ramas aplica a Centinela —
   > `POST /api/v1/centinela/evaluate` y `GET /api/v1/centinela/alerts/{company_id}` resuelven el
