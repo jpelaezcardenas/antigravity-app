@@ -2,13 +2,21 @@ from fastapi import APIRouter, HTTPException, Depends
 from datetime import date
 from services.financials_service import compute_pulso_daily_snapshot
 from core.supabase_client import get_supabase
-from core.deps import get_current_user, _STAGING_USER
+from core.deps import get_current_user
+from core.tenant_context import resolve_caller_tenant_id
 
 router = APIRouter()
 
 
 async def _resolve_cliente_cero_tenant_id() -> str:
-    """Resolve the Cliente Cero tenant ID from Supabase."""
+    """Resolve the Cliente Cero tenant ID from Supabase.
+
+    Kept as a module-level, monkeypatchable function (rather than inlining
+    `core.tenant_context.resolve_cliente_cero_tenant_id` directly) purely for backward
+    compatibility with `tests/test_financials_endpoint_tenant_scoping.py`, which patches this
+    exact attribute — see `core/tenant_context.py::resolve_caller_tenant_id`'s
+    `cliente_cero_resolver` parameter (pwa-tenant-aware-screens Stage 1 / design.md D1).
+    """
     supabase = get_supabase()
     result = (
         supabase.table("tenants")
@@ -41,7 +49,8 @@ async def get_financials(user: dict = Depends(get_current_user)):
     Caja Real as of today, plus ventas/gastos for yesterday specifically (not a
     monthly aggregate) — daily granularity is the product's core promise.
 
-    Tenant resolution (per-tenant-client-access):
+    Tenant resolution (per-tenant-client-access; policy now shared via
+    `core.tenant_context.resolve_caller_tenant_id`, pwa-tenant-aware-screens Stage 1):
     - Authenticated caller with a resolved tenant (per-client login, wired via
       user_tenants) -> that caller's own tenant. This is what makes each B2B
       client see THEIR OWN Caja Real, not Contexia's.
@@ -62,12 +71,10 @@ async def get_financials(user: dict = Depends(get_current_user)):
     }
     """
     try:
-        resolved_tenant_id = user.get("resolved_tenant_id")
-        if resolved_tenant_id:
-            tenant_id = resolved_tenant_id
-        elif user.get("id") == _STAGING_USER["id"]:
-            tenant_id = await _resolve_cliente_cero_tenant_id()
-        else:
+        tenant_id = await resolve_caller_tenant_id(
+            user, cliente_cero_resolver=_resolve_cliente_cero_tenant_id
+        )
+        if tenant_id is None:
             return _empty_snapshot()
 
         today = date.today()
