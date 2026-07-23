@@ -20,14 +20,36 @@ import logging
 import time
 import json
 
+import uuid
+
 from agents.llm_engine import get_llm_engine
 from agents.anonymizer import Anonymizer
+from core.supabase_client import get_supabase
 from services.kb_seeding_service import retrieve_similar, ensure_dian_loaded
 
 logger = logging.getLogger(__name__)
 
 # Load DIAN seed into the KB store at module import (idempotent, no-op if already loaded)
 ensure_dian_loaded()
+
+
+# Template for profile fields NOT sourced from the `tenants` table.
+# `regimen` is intentionally None — Taty must never assert an unverified tax
+# regime for a real client (see .antigravity/GROUND_TRUTH.md and design.md D1).
+DEFAULT_PROFILE: Dict = {
+    "tono": "Profesional, clara y accesible, orientada a founders y equipos financieros de PyMEs",
+    "fuentes_habilitadas": ["dian_normograma"],
+    "escalamiento_criterios": [
+        "planificación fiscal específica",
+        "interpretación legal",
+        "cambio de régimen",
+        "situaciones no estandarizadas",
+        "comercio exterior",
+        "retenciones complejas",
+        "situaciones complejas",
+    ],
+    "regimen": None,
+}
 
 
 class TatyAgentService:
@@ -82,49 +104,6 @@ class TatyAgentService:
                     "source": "Contexia - Índice Braille"
                 },
             ]
-        }
-    }
-
-    # MVP agent profiles (hardcoded; later: load from Supabase)
-    AGENT_PROFILES = {
-        "ctx-001": {
-            "company_id": "ctx-001",
-            "nit": "9.867.082-4",
-            "nombre_empresa": "Contexia",
-            "sector": "Servicios Digitales",
-            "regimen": "Régimen Común",
-            "tono": "Profesional y accesible, orientado a founders y CFOs",
-            "fuentes_habilitadas": ["dian_normograma", "contexia_fiscal"],
-            "escalamiento_criterios": [
-                "planificación fiscal específica",
-                "interpretación legal",
-                "cambio de régimen",
-                "situaciones no estandarizadas"
-            ]
-        },
-        "ferez-001": {
-            "company_id": "ferez-001",
-            "nit": "900.123.456-7",
-            "nombre_empresa": "FEREZ SAS",
-            "sector": "Comercio",
-            "regimen": "Régimen Común",
-            "tono": "Corporativo y preciso",
-            "fuentes_habilitadas": ["dian_normograma"],
-            "escalamiento_criterios": [
-                "comercio exterior",
-                "retenciones complejas",
-                "cambio de régimen"
-            ]
-        },
-        "martinez-001": {
-            "company_id": "martinez-001",
-            "nit": "800.456.789-0",
-            "nombre_empresa": "Importaciones Martinez",
-            "sector": "Comercio",
-            "regimen": "Régimen Común",
-            "tono": "Accesible, pequeña/mediana empresa",
-            "fuentes_habilitadas": ["dian_normograma"],
-            "escalamiento_criterios": ["situaciones complejas"]
         }
     }
 
@@ -233,10 +212,62 @@ class TatyAgentService:
             return self._error_response(f"Error: {str(e)}", start_time)
 
     def _get_agent_profile(self, company_id: str) -> Optional[Dict]:
-        """Load agent profile for company (MVP: hardcoded; later: Supabase)."""
-        profile = self.AGENT_PROFILES.get(company_id)
-        if profile:
-            logger.debug(f"Loaded agent profile for {company_id}")
+        """Load agent profile for company.
+
+        Deviation from the task-1 plan (noted per implementer instructions):
+        `AGENT_PROFILES` no longer exists (deleted in this task), so this now
+        delegates to `_get_tenant_profile` to keep `ask()` and the module
+        coherent/importable until task 2 rewires `ask()` to call
+        `_get_tenant_profile` directly and this method is removed.
+        """
+        return self._get_tenant_profile(company_id)
+
+    def _get_tenant_profile(self, tenant_id: str) -> Optional[Dict]:
+        """Resolve a Taty client profile from the `tenants` table.
+
+        Merges identity fields (`legal_name`, `nit`) from the tenant row onto
+        `DEFAULT_PROFILE` (tone, enabled sources, escalation criteria). Returns
+        None (never raises) when the tenant does not exist or `tenant_id` is not
+        a valid uuid (e.g. a retired legacy demo key like "ferez-001").
+        """
+        try:
+            uuid.UUID(str(tenant_id))
+        except (ValueError, TypeError, AttributeError):
+            logger.warning(f"_get_tenant_profile called with a non-uuid key: {tenant_id!r}")
+            return None
+
+        try:
+            result = (
+                get_supabase()
+                .table("tenants")
+                .select("id, nit, legal_name, is_cliente_cero, company_id")
+                .eq("id", tenant_id)
+                .execute()
+            )
+        except Exception as e:
+            logger.error(f"Error resolving tenant profile for {tenant_id}: {e}", exc_info=True)
+            return None
+
+        rows = result.data or []
+        if not rows:
+            logger.warning(f"No tenant found for tenant_id={tenant_id}")
+            return None
+
+        row = rows[0]
+        fuentes_habilitadas = list(DEFAULT_PROFILE["fuentes_habilitadas"])
+        if row.get("is_cliente_cero"):
+            fuentes_habilitadas.append("contexia_fiscal")
+
+        profile = {
+            **DEFAULT_PROFILE,
+            "fuentes_habilitadas": fuentes_habilitadas,
+            "tenant_id": row["id"],
+            "nit": row.get("nit"),
+            "nombre_empresa": row.get("legal_name"),
+            "company_id": row.get("company_id"),
+            "kb_client_id": row.get("company_id") or row["id"],
+        }
+        logger.debug(f"Loaded tenant profile for tenant_id={tenant_id}")
         return profile
 
     def _retrieve_chunks(
@@ -369,10 +400,17 @@ Si no tienes información suficiente, di "No tengo información suficiente para 
         }
         logger.info(f"Taty conversation: {json.dumps(log_entry)}")
 
-    def _error_response(self, error: str, start_time: float) -> Dict:
-        """Format error response."""
+    def _error_response(
+        self, error: str, start_time: float, error_code: Optional[str] = None
+    ) -> Dict:
+        """Format error response.
+
+        `error_code` is optional and only included in the returned dict when
+        provided, so existing callers that don't pass it keep the exact same
+        response shape (backward compatible within this file).
+        """
         latency_ms = int((time.time() - start_time) * 1000)
-        return {
+        response = {
             "answer": error,
             "citations": [],
             "latency_ms": latency_ms,
@@ -380,6 +418,9 @@ Si no tienes información suficiente, di "No tengo información suficiente para 
             "requires_human_review": True,
             "result": error,  # Backward compat
         }
+        if error_code is not None:
+            response["error_code"] = error_code
+        return response
 
 
 # Singleton instance

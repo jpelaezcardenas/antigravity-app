@@ -12,14 +12,17 @@
 
 ## 1. Backend: Service Profile Resolver (TDD)
 
-- [ ] 1.1 Write failing tests in `apps/backend/tests/test_taty_tenant_profiles.py`:
+- [x] 1.1 Write failing tests in `apps/backend/tests/test_taty_tenant_profiles.py`:
       provisioned tenant → scoped profile (spec scenario 1); unknown tenant uuid →
       `error_code="tenant_not_found"` (scenario 2); legacy key `"ferez-001"` → graceful
-      `tenant_not_found`, no exception (scenario 3)
-- [ ] 1.2 Implement `DEFAULT_PROFILE`, `_get_tenant_profile(tenant_id)`, delete
+      `tenant_not_found`, no exception (scenario 3) — `progress/impl_taty-per-tenant-profiles-task1.md`
+- [x] 1.2 Implement `DEFAULT_PROFILE`, `_get_tenant_profile(tenant_id)`, delete
       `AGENT_PROFILES`, extend `_error_response(error_code=...)` in
-      `apps/backend/services/taty_service.py`
-- [ ] 1.3 Tests from 1.1 green
+      `apps/backend/services/taty_service.py` — reviewed APPROVED,
+      `progress/review_taty-per-tenant-profiles-task1.md`. Note: `_get_agent_profile` kept as a
+      transitional delegator to `_get_tenant_profile` (not yet deleted) — task 2 rewires `ask()`
+      to call `_get_tenant_profile` directly and removes `_get_agent_profile`.
+- [x] 1.3 Tests from 1.1 green (7 passed)
 
 ## 2. Backend: `ask()` Rename, KB Keying, Régimen Omission (TDD)
 

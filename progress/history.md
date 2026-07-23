@@ -85,3 +85,13 @@ punta a punta:
   — ese directorio nunca existió en el repo.
 
 **Estado:** ninguna tarea en curso. `feature_list.json.active = null`.
+
+---
+
+## taty-per-tenant-profiles — task 1 (2026-07-23)
+Service profile resolver: DEFAULT_PROFILE + `_get_tenant_profile(tenant_id)` in taty_service.py,
+replacing hardcoded AGENT_PROFILES. `_error_response` extended with optional `error_code`.
+7 new tests green (test_taty_tenant_profiles.py). Reviewer: APPROVED.
+Deviation: `_get_agent_profile` kept as transitional delegator — task 2 removes it when `ask()`
+is rewired to take `tenant_id` directly.
+>>>>>>> f72bdc5 (feat(taty-per-tenant-profiles): dynamic tenant profile resolver (task 1))
