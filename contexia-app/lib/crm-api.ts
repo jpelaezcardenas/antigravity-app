@@ -13,6 +13,10 @@ export interface B2bClient {
   name: string;
   status: "activo" | "inactivo";
   monthly_fee_cents: number | null;
+  email?: string | null;
+  phone?: string | null;
+  contact_name?: string | null;
+  provision_status?: "not_provisioned" | "provisioned" | "pending_email";
 }
 
 export interface B2bClientsResponse {
@@ -62,6 +66,69 @@ export function getB2bPaymentsGrid(
 ): Promise<B2bPaymentsResponse> {
   const params = new URLSearchParams({ from_period: fromPeriod, to_period: toPeriod });
   return api<B2bPaymentsResponse>(`/crm/b2b/payments?${params.toString()}`);
+}
+
+// B2B roster feeding (alta / baja / pago / contacto) — per-tenant-client-access, Phase B.
+// The founder + accountant maintain the roster from the Búnker; each write mirrors a
+// CrmService method (create_b2b_client / set_b2b_client_status / upsert_b2b_payment /
+// update_b2b_client_contact) in apps/backend/services/crm_service.py.
+
+export interface CreateB2bClientInput {
+  name: string;
+  email?: string;
+  phone?: string;
+  contact_name?: string;
+  monthly_fee_cents?: number;
+}
+
+export function createB2bClient(input: CreateB2bClientInput): Promise<B2bClient> {
+  return api<B2bClient>("/crm/b2b/clients", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function setB2bClientStatus(
+  clientId: string,
+  status: "activo" | "inactivo"
+): Promise<B2bClient> {
+  return api<B2bClient>(`/crm/b2b/clients/${clientId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export interface B2bPaymentRecord {
+  client_id: string;
+  period: string;
+  amount_cents: number;
+}
+
+export function upsertB2bPayment(
+  clientId: string,
+  period: string,
+  amountCents: number
+): Promise<B2bPaymentRecord> {
+  return api<B2bPaymentRecord>(`/crm/b2b/clients/${clientId}/payments`, {
+    method: "PUT",
+    body: JSON.stringify({ period, amount_cents: amountCents }),
+  });
+}
+
+export interface UpdateB2bClientContactInput {
+  email?: string;
+  phone?: string;
+  contact_name?: string;
+}
+
+export function updateB2bClientContact(
+  clientId: string,
+  patch: UpdateB2bClientContactInput
+): Promise<B2bClient> {
+  return api<B2bClient>(`/crm/b2b/clients/${clientId}/contact`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
 }
 
 // B2C Renta Natural lead funnel (Change B: crm-b2c-sell-machine-cockpit)

@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import logging
 import os
+import secrets
+import uuid
 from copy import deepcopy
 from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -103,7 +105,10 @@ class CrmService:
                 tenant_id = self._resolve_cliente_cero_tenant_id(client)
                 result = (
                     client.table("b2b_clients")
-                    .select("id, name, status, monthly_fee_cents")
+                    .select(
+                        "id, name, status, monthly_fee_cents, email, phone, "
+                        "contact_name, provision_status"
+                    )
                     .eq("tenant_id", tenant_id)
                     .order("name")
                     .execute()
@@ -127,7 +132,7 @@ class CrmService:
                 tenant_id = self._resolve_cliente_cero_tenant_id(client)
                 clients_result = (
                     client.table("b2b_clients")
-                    .select("id, name, status")
+                    .select("id, name, status, email, phone, contact_name, provision_status")
                     .eq("tenant_id", tenant_id)
                     .order("name")
                     .execute()
@@ -183,6 +188,158 @@ class CrmService:
             },
         }
 
+
+    def create_b2b_client(
+        self,
+        name: str,
+        email: Optional[str] = None,
+        phone: Optional[str] = None,
+        contact_name: Optional[str] = None,
+        monthly_fee_cents: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Alta: add a client to the roster with its OWN tenant (per-tenant-client-access),
+        so its future Shadow GL data never mixes with Cliente Cero's. If an email is given,
+        best-effort provisions a PWA login (never blocks the alta itself on that failure —
+        the roster row is the source of truth; a failed login can be retried later)."""
+        client = get_service_supabase()
+        cliente_cero_id = self._resolve_cliente_cero_tenant_id(client)
+
+        nit = f"SYN-{uuid.uuid4().hex[:12].upper()}"
+        tenant_result = (
+            client.table("tenants")
+            .insert({"nit": nit, "legal_name": name, "is_cliente_cero": False})
+            .execute()
+        )
+        client_tenant_id = tenant_result.data[0]["id"]
+
+        row = {
+            "tenant_id": cliente_cero_id,
+            "client_tenant_id": client_tenant_id,
+            "name": name,
+            "status": "activo",
+            "email": email,
+            "phone": phone,
+            "contact_name": contact_name,
+            "monthly_fee_cents": monthly_fee_cents,
+            "provision_status": "not_provisioned" if email else "pending_email",
+        }
+        inserted = client.table("b2b_clients").insert(row).execute()
+        b2b_client = inserted.data[0]
+
+        if email:
+            try:
+                self._provision_b2b_client_login(
+                    client, b2b_client["id"], client_tenant_id, name, email, nit
+                )
+                b2b_client["provision_status"] = "provisioned"
+            except Exception as exc:  # best-effort — alta itself already succeeded
+                logger.warning("CRM alta: login provisioning failed for %r: %s", name, exc)
+
+        return b2b_client
+
+    def _provision_b2b_client_login(
+        self, client, b2b_client_id: str, tenant_id: str, name: str, email: str, nit: str
+    ) -> str:
+        """Creates a Supabase Auth login for a client and wires it to the client's OWN
+        tenant. No email is sent — the temporary password is generated but not
+        persisted anywhere; distribution is the founder's responsibility (same policy
+        as the bulk provisioning migration, 0029)."""
+        admin_result = client.auth.admin.create_user(
+            {
+                "email": email,
+                "email_confirm": True,
+                "password": secrets.token_urlsafe(12),
+                "app_metadata": {"role": "cliente", "roles": ["cliente"]},
+            }
+        )
+        user_id = admin_result.user.id
+
+        client.table("usuarios").upsert(
+            {
+                "id": user_id,
+                "email": email,
+                "nombre_empresa": name,
+                "nit": nit,
+                "plan": "starter",
+                "password_hash": secrets.token_hex(32),
+            }
+        ).execute()
+        client.table("user_tenants").insert(
+            {"user_id": user_id, "tenant_id": tenant_id, "is_owner": True, "is_active": True}
+        ).execute()
+        client.table("user_roles").insert(
+            {"user_id": user_id, "tenant_id": tenant_id, "role": "viewer"}
+        ).execute()
+        client.table("b2b_clients").update(
+            {"login_user_id": user_id, "provision_status": "provisioned"}
+        ).eq("id", b2b_client_id).execute()
+
+        return user_id
+
+    def set_b2b_client_status(self, client_id: str, status: str) -> Dict[str, Any]:
+        """Baja/reactivar: flips b2b_clients.status and, in lockstep, activates or
+        deactivates the client's login membership (user_tenants.is_active) — a baja
+        revokes tenant access without deleting the account or its history."""
+        if status not in ("activo", "inactivo"):
+            raise ValueError(f"Invalid status: {status!r}. Must be 'activo' or 'inactivo'.")
+
+        client = get_service_supabase()
+        result = client.table("b2b_clients").update({"status": status}).eq("id", client_id).execute()
+        row = (result.data or [{}])[0]
+
+        client_tenant_id = row.get("client_tenant_id")
+        if client_tenant_id:
+            client.table("user_tenants").update({"is_active": status == "activo"}).eq(
+                "tenant_id", client_tenant_id
+            ).execute()
+
+        return row
+
+    def upsert_b2b_payment(self, client_id: str, period: str, amount_cents: int) -> Dict[str, Any]:
+        """Pago: upsert one (client, calendar month) row — idempotent, matching the
+        uq_b2b_payments_client_period constraint (re-recording the same month corrects it,
+        it doesn't duplicate it)."""
+        client = get_service_supabase()
+        client_row = (
+            client.table("b2b_clients").select("tenant_id").eq("id", client_id).single().execute()
+        )
+        tenant_id = client_row.data["tenant_id"]
+
+        period_first_of_month = date.fromisoformat(period).replace(day=1).isoformat()
+        result = (
+            client.table("b2b_payments")
+            .upsert(
+                {
+                    "tenant_id": tenant_id,
+                    "client_id": client_id,
+                    "period": period_first_of_month,
+                    "amount_cents": amount_cents,
+                },
+                on_conflict="client_id,period",
+            )
+            .execute()
+        )
+        return (result.data or [{}])[0]
+
+    def update_b2b_client_contact(
+        self,
+        client_id: str,
+        email: Optional[str] = None,
+        phone: Optional[str] = None,
+        contact_name: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Edit contact fields captured for the roster (name/phone/contact person).
+        Does NOT provision or re-provision a login — that's create_b2b_client's job."""
+        client = get_service_supabase()
+        patch = {
+            k: v
+            for k, v in {"email": email, "phone": phone, "contact_name": contact_name}.items()
+            if v is not None
+        }
+        if not patch:
+            raise ValueError("No contact fields provided to update.")
+        result = client.table("b2b_clients").update(patch).eq("id", client_id).execute()
+        return (result.data or [{}])[0]
 
     def b2c_pipeline(self) -> Dict[str, Any]:
         """B2C Renta Natural lead funnel, board-shaped (prefers Supabase when configured)."""

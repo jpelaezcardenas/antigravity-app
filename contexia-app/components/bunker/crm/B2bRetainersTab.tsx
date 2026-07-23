@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getB2bPaymentsGrid, type B2bPaymentsResponse } from "@/lib/crm-api";
+import {
+  getB2bPaymentsGrid,
+  createB2bClient,
+  setB2bClientStatus,
+  upsertB2bPayment,
+  updateB2bClientContact,
+  type B2bPaymentsResponse,
+  type B2bClient,
+} from "@/lib/crm-api";
 import { formatCop } from "@/lib/format";
 
 const MONTH_LABELS: Record<string, string> = {
@@ -24,10 +32,27 @@ function periodLabel(period: string): string {
   return MONTH_LABELS[month] ?? period;
 }
 
+const PROVISION_LABELS: Record<string, string> = {
+  provisioned: "Login activo",
+  pending_email: "Falta correo",
+  not_provisioned: "Sin login",
+};
+
 export function B2bRetainersTab() {
   const [data, setData] = useState<B2bPaymentsResponse | null>(null);
+  const [clientsById, setClientsById] = useState<Record<string, B2bClient>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const [showAltaForm, setShowAltaForm] = useState(false);
+  const [altaName, setAltaName] = useState("");
+  const [altaEmail, setAltaEmail] = useState("");
+  const [altaPhone, setAltaPhone] = useState("");
+  const [altaFeeCop, setAltaFeeCop] = useState("");
+
+  const [editingCell, setEditingCell] = useState<{ clientId: string; period: string } | null>(null);
+  const [editingValue, setEditingValue] = useState("");
 
   const load = async () => {
     setError("");
@@ -35,6 +60,11 @@ export function B2bRetainersTab() {
     try {
       const res = await getB2bPaymentsGrid();
       setData(res);
+      const byId: Record<string, B2bClient> = {};
+      res.grid.clients.forEach((c) => {
+        byId[c.id] = c as B2bClient;
+      });
+      setClientsById(byId);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo cargar la grilla de pagos B2B");
     } finally {
@@ -46,6 +76,68 @@ export function B2bRetainersTab() {
     load();
   }, []);
 
+  const handleAlta = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!altaName.trim()) return;
+    setError("");
+    setBusyId("alta");
+    try {
+      await createB2bClient({
+        name: altaName.trim(),
+        email: altaEmail.trim() || undefined,
+        phone: altaPhone.trim() || undefined,
+        monthly_fee_cents: altaFeeCop ? Math.round(Number(altaFeeCop) * 100) : undefined,
+      });
+      setAltaName("");
+      setAltaEmail("");
+      setAltaPhone("");
+      setAltaFeeCop("");
+      setShowAltaForm(false);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo crear el cliente");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const toggleStatus = async (client: B2bClient) => {
+    const nextStatus = client.status === "activo" ? "inactivo" : "activo";
+    setError("");
+    setBusyId(client.id);
+    try {
+      await setB2bClientStatus(client.id, nextStatus);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo cambiar el estado del cliente");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const startEditingCell = (clientId: string, period: string, currentCents: number) => {
+    setEditingCell({ clientId, period });
+    setEditingValue(currentCents > 0 ? String(currentCents / 100) : "");
+  };
+
+  const commitCellEdit = async () => {
+    if (!editingCell) return;
+    const { clientId, period } = editingCell;
+    const amountCents = editingValue.trim() ? Math.round(Number(editingValue) * 100) : 0;
+    setEditingCell(null);
+    if (Number.isNaN(amountCents)) return;
+    setError("");
+    setBusyId(clientId);
+    try {
+      await upsertB2bPayment(clientId, period, amountCents);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo registrar el pago");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="rounded-xl border border-outline-variant/30 bg-surface-container p-6 text-on-surface-variant">
@@ -54,18 +146,10 @@ export function B2bRetainersTab() {
     );
   }
 
-  if (error) {
+  if (!data) {
     return (
       <div className="rounded-xl border border-status-critical/40 bg-status-critical/10 p-4 text-status-critical text-sm">
-        {error}
-      </div>
-    );
-  }
-
-  if (!data || data.grid.clients.length === 0) {
-    return (
-      <div className="rounded-xl border border-outline-variant/30 bg-surface-container p-6 text-on-surface-variant">
-        Sin clientes B2B registrados todavía.
+        {error || "No se pudo cargar la grilla de pagos B2B"}
       </div>
     );
   }
@@ -74,6 +158,12 @@ export function B2bRetainersTab() {
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="rounded-xl border border-status-critical/40 bg-status-critical/10 p-3 text-status-critical text-sm">
+          {error}
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-on-surface-variant">
@@ -83,81 +173,188 @@ export function B2bRetainersTab() {
             Fuente: <span className="text-on-surface">{source}</span>
           </p>
         </div>
-        <div className="rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-right">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">
-            Total del periodo
-          </p>
-          <p className="font-headline-sm text-headline-sm text-primary-container font-bold">
-            {formatCop(totals.grand_total / 100)}
-          </p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setShowAltaForm((v) => !v)}
+            className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary-container hover:bg-primary/20"
+          >
+            {showAltaForm ? "Cancelar" : "+ Nuevo cliente"}
+          </button>
+          <div className="rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-right">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">
+              Total del periodo
+            </p>
+            <p className="font-headline-sm text-headline-sm text-primary-container font-bold">
+              {formatCop(totals.grand_total / 100)}
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-outline-variant/20 bg-white/5">
-        <table className="w-full min-w-[640px] border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-outline-variant/30 text-left text-on-surface-variant">
-              <th className="px-4 py-3 font-semibold">Cliente</th>
-              <th className="px-4 py-3 font-semibold">Estado</th>
-              {grid.periods.map((period) => (
-                <th key={period} className="px-4 py-3 text-right font-semibold">
-                  {periodLabel(period)}
-                </th>
-              ))}
-              <th className="px-4 py-3 text-right font-semibold">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {grid.clients.map((client) => (
-              <tr key={client.id} className="border-b border-outline-variant/10 last:border-0">
-                <td className="px-4 py-3 text-on-surface font-medium">{client.name}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                      client.status === "activo"
-                        ? "bg-status-success/10 text-status-success"
-                        : "bg-outline-variant/20 text-on-surface-variant"
-                    }`}
-                  >
-                    {client.status}
-                  </span>
-                </td>
-                {grid.periods.map((period) => {
-                  const amount = grid.cells[client.id]?.[period] ?? 0;
-                  return (
-                    <td
-                      key={period}
-                      className={`px-4 py-3 text-right ${
-                        amount > 0 ? "text-on-surface" : "text-on-surface-variant/50"
-                      }`}
-                    >
-                      {amount > 0 ? formatCop(amount / 100) : "—"}
+      {showAltaForm && (
+        <form
+          onSubmit={handleAlta}
+          className="grid grid-cols-1 gap-3 rounded-2xl border border-outline-variant/20 bg-white/5 p-4 sm:grid-cols-4"
+        >
+          <input
+            required
+            placeholder="Nombre del cliente"
+            value={altaName}
+            onChange={(e) => setAltaName(e.target.value)}
+            className="rounded-lg border border-outline-variant/30 bg-transparent px-3 py-2 text-sm text-on-surface"
+          />
+          <input
+            type="email"
+            placeholder="Correo (opcional — sin correo no hay login)"
+            value={altaEmail}
+            onChange={(e) => setAltaEmail(e.target.value)}
+            className="rounded-lg border border-outline-variant/30 bg-transparent px-3 py-2 text-sm text-on-surface"
+          />
+          <input
+            placeholder="Teléfono"
+            value={altaPhone}
+            onChange={(e) => setAltaPhone(e.target.value)}
+            className="rounded-lg border border-outline-variant/30 bg-transparent px-3 py-2 text-sm text-on-surface"
+          />
+          <input
+            type="number"
+            min="0"
+            placeholder="Retainer mensual (COP)"
+            value={altaFeeCop}
+            onChange={(e) => setAltaFeeCop(e.target.value)}
+            className="rounded-lg border border-outline-variant/30 bg-transparent px-3 py-2 text-sm text-on-surface"
+          />
+          <button
+            type="submit"
+            disabled={busyId === "alta"}
+            className="sm:col-span-4 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
+          >
+            {busyId === "alta" ? "Creando…" : "Crear cliente"}
+          </button>
+        </form>
+      )}
+
+      {grid.clients.length === 0 ? (
+        <div className="rounded-xl border border-outline-variant/30 bg-surface-container p-6 text-on-surface-variant">
+          Sin clientes B2B registrados todavía.
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border border-outline-variant/20 bg-white/5">
+          <table className="w-full min-w-[820px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-outline-variant/30 text-left text-on-surface-variant">
+                <th className="px-4 py-3 font-semibold">Cliente</th>
+                <th className="px-4 py-3 font-semibold">Contacto</th>
+                <th className="px-4 py-3 font-semibold">Login</th>
+                <th className="px-4 py-3 font-semibold">Estado</th>
+                {grid.periods.map((period) => (
+                  <th key={period} className="px-4 py-3 text-right font-semibold">
+                    {periodLabel(period)}
+                  </th>
+                ))}
+                <th className="px-4 py-3 text-right font-semibold">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {grid.clients.map((client) => {
+                const full = clientsById[client.id];
+                return (
+                  <tr key={client.id} className="border-b border-outline-variant/10 last:border-0">
+                    <td className="px-4 py-3 text-on-surface font-medium">{client.name}</td>
+                    <td className="px-4 py-3 text-xs text-on-surface-variant">
+                      {full?.email || "—"}
+                      {full?.phone ? ` · ${full.phone}` : ""}
                     </td>
-                  );
-                })}
+                    <td className="px-4 py-3 text-xs">
+                      <span
+                        className={
+                          full?.provision_status === "provisioned"
+                            ? "text-status-success"
+                            : "text-on-surface-variant/70"
+                        }
+                      >
+                        {PROVISION_LABELS[full?.provision_status ?? "not_provisioned"]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        disabled={busyId === client.id}
+                        onClick={() => toggleStatus({ ...client, status: client.status } as B2bClient)}
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase disabled:opacity-50 ${
+                          client.status === "activo"
+                            ? "bg-status-success/10 text-status-success"
+                            : "bg-outline-variant/20 text-on-surface-variant"
+                        }`}
+                        title={client.status === "activo" ? "Dar de baja" : "Reactivar"}
+                      >
+                        {client.status}
+                      </button>
+                    </td>
+                    {grid.periods.map((period) => {
+                      const amount = grid.cells[client.id]?.[period] ?? 0;
+                      const isEditing =
+                        editingCell?.clientId === client.id && editingCell.period === period;
+                      return (
+                        <td
+                          key={period}
+                          className={`px-4 py-3 text-right ${
+                            amount > 0 ? "text-on-surface" : "text-on-surface-variant/50"
+                          }`}
+                        >
+                          {isEditing ? (
+                            <input
+                              autoFocus
+                              type="number"
+                              min="0"
+                              value={editingValue}
+                              onChange={(e) => setEditingValue(e.target.value)}
+                              onBlur={commitCellEdit}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") commitCellEdit();
+                                if (e.key === "Escape") setEditingCell(null);
+                              }}
+                              className="w-24 rounded border border-primary/40 bg-transparent px-1 py-0.5 text-right text-xs text-on-surface"
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => startEditingCell(client.id, period, amount)}
+                              className="hover:underline"
+                              title="Click para registrar/editar el pago"
+                            >
+                              {amount > 0 ? formatCop(amount / 100) : "—"}
+                            </button>
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td className="px-4 py-3 text-right font-bold text-primary-container">
+                      {formatCop((totals.by_client[client.id] ?? 0) / 100)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-outline-variant/30 bg-white/5">
+                <td className="px-4 py-3 font-bold text-on-surface" colSpan={4}>
+                  Total
+                </td>
+                {grid.periods.map((period) => (
+                  <td key={period} className="px-4 py-3 text-right font-bold text-on-surface">
+                    {formatCop((totals.by_period[period] ?? 0) / 100)}
+                  </td>
+                ))}
                 <td className="px-4 py-3 text-right font-bold text-primary-container">
-                  {formatCop((totals.by_client[client.id] ?? 0) / 100)}
+                  {formatCop(totals.grand_total / 100)}
                 </td>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="border-t border-outline-variant/30 bg-white/5">
-              <td className="px-4 py-3 font-bold text-on-surface" colSpan={2}>
-                Total
-              </td>
-              {grid.periods.map((period) => (
-                <td key={period} className="px-4 py-3 text-right font-bold text-on-surface">
-                  {formatCop((totals.by_period[period] ?? 0) / 100)}
-                </td>
-              ))}
-              <td className="px-4 py-3 text-right font-bold text-primary-container">
-                {formatCop(totals.grand_total / 100)}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+            </tfoot>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

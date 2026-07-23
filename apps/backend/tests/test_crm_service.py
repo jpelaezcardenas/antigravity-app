@@ -23,9 +23,14 @@ class TestListB2bClients:
         result = get_crm_service().list_b2b_clients()
 
         assert result["source"] in ("supabase", "demo_fallback")
+        # 9 original retainer clients (Nia Cano removed — never an actual client, see
+        # migration 0030) + CÓDIGO 520 (per-tenant-client-access: a new, not-yet-paying
+        # prospect added to the roster) = 10.
         assert len(result["items"]) == 10
         names = {item["name"] for item in result["items"]}
         assert "Medic" in names
+        assert "CÓDIGO 520" in names
+        assert "Nia Cano" not in names
         assert any("lvaro" in name for name in names)  # Repuestos Don Álvaro (accent-safe match)
 
 
@@ -46,10 +51,12 @@ class TestB2bPaymentsGrid:
 
         result = get_crm_service().b2b_payments_grid(from_period="2026-01-01", to_period="2026-06-30")
 
+        # Nia Cano (600,000 in March) removed from the roster entirely — see migration 0030,
+        # she was never an actual Contexia client. CÓDIGO 520 (new, not-yet-paying) contributes
+        # 0 to this sum by design.
         expected_cop = (
             1_200_000 * 5
             + 2_000_000 * 6
-            + 600_000
             + 600_000 * 6
             + 2_000_000 * 3
             + 890_000 * 4

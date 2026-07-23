@@ -77,9 +77,12 @@ live tabs sharing the same backend (`apps/backend/presentation/crm_endpoints.py`
 `CRM_CANONICAL` — default `false`, activated after the production smoke-test, same playbook as
 `SOCIAL_OPS_CANONICAL`):
 
-- **"B2B / Retainers"** (`components/bunker/crm/B2bRetainersTab.tsx`) — **read-only**, like
-  `CashTodayCard`: the real roster of Contexia's B2B retainer clients (monthly retainers, formerly
-  a manual Excel) and the Jan–Jun payment grid, sourced from Supabase.
+- **"B2B / Retainers"** (`components/bunker/crm/B2bRetainersTab.tsx`) — **reads and writes**
+  (per-tenant-client-access, Phase B): the real roster of Contexia's B2B retainer clients (monthly
+  retainers, formerly a manual Excel) and the Jan–Jun payment grid, sourced from Supabase. Was
+  read-only through `crm-b2b-retainers-cockpit`; now the founder + accountant feed the roster
+  directly from this tab — alta (new client, own tenant + best-effort login provisioning), baja/
+  reactivar (toggle the status badge), and pago (click a grid cell to record/correct one month).
 - **"B2C / Renta Natural"** (`components/bunker/crm/B2cKanbanTab.tsx`) — **reads and writes**, like
   Social Content Ops: a 4-stage Kanban funnel (Nuevos → Prospectos → Por Aprobar → Listos
   Contadora) for the Renta Natural 2026 lead pipeline. Writes: advancing a lead's stage, and the
