@@ -7,11 +7,13 @@
 - [x] 0.2 `./init.sh` green in the new worktree.
 
 ## Stage 1. Backend: shared tenant resolver (TDD)
-- [ ] 1.1 Extract `resolve_caller_tenant_id(user) -> str | None` into `core/tenant_context.py`
-  from `financials_endpoints.get_financials`'s inline policy (design.md D1). Existing
-  `tests/test_financials_endpoint_tenant_scoping.py` MUST stay green, unmodified, as the
-  regression guard for this refactor.
-- [ ] 1.2 Refactor `get_financials` to call the extracted helper. No behavior change.
+- [x] 1.1 Extracted `resolve_caller_tenant_id(user, cliente_cero_resolver=None) -> str | None`
+  into `core/tenant_context.py` (optional injectable resolver, needed to preserve the existing
+  regression test's monkeypatch seam — see `progress/impl_stage1.md`). Existing
+  `tests/test_financials_endpoint_tenant_scoping.py` stayed green, unmodified (39/39 targeted
+  tests passing). Commit `7403968`.
+- [x] 1.2 Refactored `get_financials` to call the extracted helper. No behavior change, verified
+  by the unmodified regression suite.
 
 ## Stage 2. Backend: tenant-scoped alerts route (TDD)
 - [ ] 2.1 Failing tests first — `tests/test_centinela_alerts_tenant_scoping.py`: own-tenant
@@ -35,8 +37,10 @@
   `test_financials_endpoint_tenant_scoping.py` unchanged).
 
 ## Stage 4. Backend: rolling reseed of synthetic Shadow GL
-- [ ] 4.1 Verify `pg_cron` extension availability on the Supabase project (`list_extensions` via
-  Supabase MCP) before finalizing the migration (design.md D4 precondition).
+- [x] 4.1 Verified `pg_cron` extension on project `kpynymwghfwshvcvevxq` via Supabase MCP
+  `list_extensions`: already installed (`installed_version: "1.6.4"`, schema `pg_catalog`). No
+  `create extension` step needed; migration can call `cron.schedule` directly (design.md D4
+  primary path confirmed — fallback not needed).
 - [ ] 4.2 Write `migrations/0033_rolling_reseed_synthetic_shadow_gl.sql`: one-shot UPDATE re-dating
   `SYNTH-*-SALE`/`SYNTH-*-EXPENSE` rows to `CURRENT_DATE - 1` (idempotent, excludes `-OPEN`), plus
   an idempotent daily `cron.schedule` doing the same.
