@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Hermes can discover pending operator tasks
 The system SHALL expose `GET /api/v1/sell-machine/tasks/pending`, returning `operator_tasks` rows
@@ -117,6 +117,8 @@ best-effort entry in `agent_operations` identifying the operation as originating
 - **WHEN** Hermes calls `POST /api/v1/sell-machine/tasks/{id}/result` for a task still
   `status='pending'`
 - **THEN** the request is rejected with a 409 error
+
+## ADDED Requirements
 
 ### Requirement: Operator-task bridge endpoints support optional machine bearer authentication
 The system SHALL support an env-configured `HERMES_BRIDGE_TOKEN`. When unset, the 5 operator-task

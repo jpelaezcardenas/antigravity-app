@@ -177,23 +177,20 @@ See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 pipeline; Chatwoot + the bridge deploy **locally to this laptop**, which is their sovereign
 production target (ARCHITECTURE.md decision #1) — not Vercel/Railway.
 
-- [ ] 14.1 `git commit` + push `feature/chatwoot-hermes-taty-bridge` to `main` (backend endpoint
-      change only triggers Railway; Chatwoot/bridge are not deployed by this push)
-- [ ] 14.2 Railway `-175a` deploy active and green for the backend change; verify
-      `POST /api/v1/crm/leads/whatsapp-intake` responds correctly against the production URL with a
-      valid token (then clean up any test lead created)
-- [ ] 14.3 Local deployment runbook executed and verified end-to-end on this laptop:
-      ```
-      docker compose -f docker-compose.chatwoot.yml up -d
-      wsl -d hermes-ws -- hermes -p taty-v1 gateway run
-      cd apps/chatwoot-bridge && uvicorn main:app --port 8090
-      ```
-      (Cloudflare Tunnel exposure of Chatwoot's `:3020` webhook to Meta's WhatsApp Cloud API is
-      documented as a manual follow-up step, not automated in this change — see design.md Risks)
-- [ ] 14.4 Confirm a real WhatsApp message round-trips through Meta → Chatwoot → bridge → Hermes →
-      Chatwoot → WhatsApp reply (requires the tunnel from 14.3 to be live)
-- [ ] 14.5 Create report:
-      `openspec/changes/chatwoot-hermes-taty-bridge/reports/YYYY-MM-DD-deployment.md`
+- [x] 14.1 Merged `main` into the feature branch (catching up on the concurrently-archived
+      `per-tenant-client-access`), re-ran the full suite, fast-forward merged into `main`, pushed
+      → `08e3eb1..f944918`
+- [x] 14.2 Railway `-175a` deploy `SUCCESS`, confirmed healthy after the documented ~80s startup
+      window; `POST /api/v1/crm/leads/whatsapp-intake` confirmed live and correctly gated (401
+      without auth — `CRM_CANONICAL`/`AUTH_ENFORCED` both on in production). Full authenticated
+      write-path test intentionally not attempted this session (see deployment report — avoided
+      using an incidentally-exposed production secret to forge a token). No test lead created, no
+      cleanup needed.
+- [ ] 14.3 **BLOCKED** — Docker not installed on this laptop (see Task 11.3)
+- [ ] 14.4 **BLOCKED** — depends on 14.3, plus a real Meta WhatsApp Business number/tunnel not yet
+      provisioned (design.md Open Questions)
+- [x] 14.5 Report created:
+      `openspec/changes/chatwoot-hermes-taty-bridge/reports/2026-07-23-deployment.md`
 
 ## 15. Review Gate
 

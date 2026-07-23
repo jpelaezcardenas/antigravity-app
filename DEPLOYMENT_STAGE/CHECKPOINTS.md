@@ -147,6 +147,18 @@ Sesión 2: CHECKPOINTS agrega "[ ] .env.example tiene todas las vars nuevas"
 Sesión 3+: Todos incluyen .env.example en sus tasks
 ```
 
+**Regla añadida (2026-07-23, `hermes-task-queue-tenant-scoping`):** `RUN_TESTS=1 bash init.sh`
+corre el backend suite SIN filtrar, y reportará `[FAIL]` para cualquier cambio mientras existan
+~40 fallas pre-existentes no relacionadas (Shadow GL CSV, approval-rules docs/migration checks,
+wizard, centinela, secure-LLM, model-selector) y un bug de subprocesos pytest anidados sin
+terminar en `tests/test_shadow_gl_stage8_e2e.py` (ver task_id spawneado para su fix). Hasta que
+esas fallas se resuelvan o `init.sh` evolucione a comparar contra un baseline en vez de exigir
+exit-code 0 absoluto:
+- [ ] Nuevo checkpoint: el reviewer DEBE correr los tests del cambio en aislamiento
+      (`pytest tests/test_<módulos-tocados>.py -v`) Y el suite completo, y confirmar por nombre
+      que cualquier falla del suite completo ya existía antes de esta rama (no solo confiar en el
+      exit code de `init.sh`) antes de marcar Stage 6/10 como verde.
+
 ---
 
 ## Preguntas para Auto-Revisar
