@@ -27,30 +27,39 @@ def _mock_client_with_tenant(tenant_id: str = "e2d30d09-6b96-4ebe-a79a-c6aff7a5d
 
 class TestEnqueueDraftStampsTenantId:
     @pytest.mark.asyncio
-    async def test_stamps_resolved_tenant_id_on_insert(self):
-        client = _mock_client_with_tenant()
+    async def test_stamps_explicitly_passed_tenant_id_on_insert(self):
+        """enqueue_draft no longer resolves Cliente Cero itself — it stamps
+        whatever tenant_id the caller explicitly passes in."""
+        client = MagicMock()
         client.table.return_value.insert.return_value.execute.return_value.data = [{}]
+
+        explicit_tenant_id = "a1b2c3d4-0000-0000-0000-000000000001"
 
         with patch(
             "services.approval_queue_service.get_service_supabase", return_value=client
-        ):
+        ), patch(
+            "core.tenant_context.resolve_cliente_cero_tenant_id"
+        ) as mock_resolve:
             success, decision, error = await ApprovalQueueService.enqueue_draft(
                 draft_id="draft-1",
                 draft_type="risk_review",
                 journal_entry={"risk_score": 91},
+                tenant_id=explicit_tenant_id,
             )
 
         assert success is True
         assert error is None
-        assert decision.tenant_id == "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"
+        assert decision.tenant_id == explicit_tenant_id
 
         insert_call_args = client.table.return_value.insert.call_args[0][0]
-        assert insert_call_args["tenant_id"] == "e2d30d09-6b96-4ebe-a79a-c6aff7a5df34"
+        assert insert_call_args["tenant_id"] == explicit_tenant_id
+
+        # The service must no longer resolve Cliente Cero internally.
+        mock_resolve.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_no_cliente_cero_row_stamps_none_without_crashing(self):
+    async def test_missing_tenant_id_returns_error_not_silent_insert(self):
         client = MagicMock()
-        client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value.data = None
         client.table.return_value.insert.return_value.execute.return_value.data = [{}]
 
         with patch(
@@ -60,10 +69,14 @@ class TestEnqueueDraftStampsTenantId:
                 draft_id="draft-2",
                 draft_type="risk_review",
                 journal_entry={"risk_score": 50},
+                tenant_id=None,
             )
 
-        assert success is True
-        assert decision.tenant_id is None
+        assert success is False
+        assert decision is None
+        assert error == "tenant_id is required"
+
+        client.table.return_value.insert.assert_not_called()
 
 
 class TestSaveAlertsStampsTenantId:

@@ -26,22 +26,22 @@
 
 ## 2. Service Layer (TDD)
 
-- [ ] 2.1 Rewrite `apps/backend/tests/test_tenant_stamping.py::TestEnqueueDraftStampsTenantId`:
+- [x] 2.1 Rewrite `apps/backend/tests/test_tenant_stamping.py::TestEnqueueDraftStampsTenantId`:
   - `test_stamps_explicitly_passed_tenant_id_on_insert`
   - `test_missing_tenant_id_returns_error_not_silent_insert`
   - (leave `TestSaveAlertsStampsTenantId` — centinela — untouched)
-- [ ] 2.2 Add scoping tests (same file or new `test_approval_queue_service_scoping.py`):
+- [x] 2.2 Add scoping tests (same file or new `test_approval_queue_service_scoping.py`):
   - `test_approve_with_tenant_scope_filters_select_and_update_by_tenant`
   - `test_approve_cross_tenant_returns_not_found`
   - `test_approve_with_none_scope_is_unrestricted`
   - `test_reject_with_tenant_scope_filters_by_tenant`
-- [ ] 2.3 Run 2.1/2.2 — confirm they fail against current code
-- [ ] 2.4 Apply `apps/backend/services/approval_queue_service.py` changes per `design.md`:
+- [x] 2.3 Run 2.1/2.2 — confirm they fail against current code
+- [x] 2.4 Apply `apps/backend/services/approval_queue_service.py` changes per `design.md`:
       `enqueue_draft` requires `tenant_id` kw (no internal Cliente Cero resolution, guard
       returns error on falsy value); `approve_draft`/`reject_draft` require `tenant_id:
       Optional[str]` kw, add `.eq("tenant_id", ...)` to both the existence-select and the
       update when not None; remove the `core.tenant_context` import
-- [ ] 2.5 Run 2.1/2.2 — confirm green
+- [x] 2.5 Run 2.1/2.2 — confirm green
 
 ## 3. Internal Service Callers (explicit Cliente Cero, no silent default)
 
