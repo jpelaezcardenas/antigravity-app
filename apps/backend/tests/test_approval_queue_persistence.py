@@ -237,3 +237,76 @@ class TestApproveRejectPersistence:
         assert success is False
         assert decision is None
         assert error is not None
+
+
+@pytest.fixture
+def two_test_tenants(supabase):
+    """Two hermetic, throwaway tenants (approval-queue-tenant-scoping, Task 4.5).
+
+    Mirrors the pattern in test_financials_endpoint_tenant_scoping.py's
+    `two_test_tenants` fixture.
+    """
+    tenant_ids = []
+    for label in ("A", "B"):
+        nit = f"TEST-AQ-SCOPE-{label}-{uuid.uuid4().hex[:10]}"
+        inserted = (
+            supabase.table("tenants")
+            .insert({"nit": nit, "legal_name": f"Hermetic AQ Tenant {label} (pytest)", "is_cliente_cero": False})
+            .execute()
+        )
+        tenant_ids.append(inserted.data[0]["id"])
+
+    yield tenant_ids
+
+    for tenant_id in tenant_ids:
+        supabase.table("tenants").delete().eq("id", tenant_id).execute()
+
+
+class TestTenantScopedRoundTrip:
+    """Task 4.5: a real Supabase round trip proving tenant isolation end to end —
+    enqueue under tenant A is invisible to (and unreachable by) a caller scoped
+    to tenant B, and reachable by a caller scoped to tenant A itself."""
+
+    @pytest.mark.asyncio
+    async def test_two_tenant_round_trip_is_isolated(
+        self, supabase, _cleanup, two_test_tenants
+    ) -> None:
+        tenant_a, tenant_b = two_test_tenants
+        draft_id = str(uuid.uuid4())
+
+        success, decision, error = await ApprovalQueueService.enqueue_draft(
+            draft_id=draft_id,
+            draft_type="risk_review",
+            journal_entry={"risk_score": 77},
+            tenant_id=tenant_a,
+        )
+        assert success is True
+        assert error is None
+        _cleanup.append(decision.id)
+
+        # Tenant-B-scoped list excludes tenant A's draft.
+        tenant_b_rows = await ApprovalQueueService.list_drafts(tenant_id=tenant_b)
+        assert decision.id not in {row.id for row in tenant_b_rows}
+
+        # Tenant-B-scoped approve returns "not found" — never reveals the row
+        # exists under a different tenant.
+        b_success, b_decision, b_error = await ApprovalQueueService.approve_draft(
+            decision_id=decision.id,
+            approval_reason="cross-tenant attempt",
+            approved_by="b@other-tenant.co",
+            tenant_id=tenant_b,
+        )
+        assert b_success is False
+        assert b_decision is None
+        assert b_error == f"Decision {decision.id} not found"
+
+        # Tenant-A-scoped approve succeeds.
+        a_success, a_decision, a_error = await ApprovalQueueService.approve_draft(
+            decision_id=decision.id,
+            approval_reason="own-tenant approval",
+            approved_by="a@own-tenant.co",
+            tenant_id=tenant_a,
+        )
+        assert a_success is True
+        assert a_error is None
+        assert a_decision.status.value == "approved"

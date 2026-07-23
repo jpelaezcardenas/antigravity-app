@@ -69,7 +69,7 @@
 
 ## 4. Endpoints (TDD)
 
-- [ ] 4.1 Write `apps/backend/tests/test_approval_queue_endpoint_tenant_scoping.py`
+- [x] 4.1 Write `apps/backend/tests/test_approval_queue_endpoint_tenant_scoping.py`
       (financials-style: direct coroutine calls with fake `user` dicts):
   - `test_enqueue_stamps_callers_resolved_tenant`
   - `test_client_list_is_scoped_to_own_tenant`
@@ -83,18 +83,33 @@
   - `test_approve_passes_caller_tenant_scope`
   - `test_admin_approve_passes_unrestricted_scope`
   - `test_list_response_includes_tenant_id_field`
-- [ ] 4.2 Run 4.1 — confirm failures
-- [ ] 4.3 Implement `apps/backend/presentation/approval_queue_endpoints.py` changes per
+  - (plus `test_approve_unresolved_returns_403`, `test_reject_passes_caller_tenant_scope`,
+    `test_admin_reject_passes_unrestricted_scope`, `test_reject_unresolved_returns_403` for
+    full 403/scope symmetry between approve and reject)
+- [x] 4.2 Run 4.1 — confirm failures (14/14 failed, all `AttributeError:
+      module 'presentation.approval_queue_endpoints' has no attribute
+      'resolve_request_tenant_scope'` — endpoints not yet implemented)
+- [x] 4.3 Implement `apps/backend/presentation/approval_queue_endpoints.py` changes per
       `design.md`: `Depends(get_current_user)` on all 4 routes, scope resolution, `?tenant_id`
       admin filter, `DraftListItem.tenant_id`, delete the dead `request.state` read
-- [ ] 4.4 Run 4.1 — confirm green
-- [ ] 4.5 Extend the DB-gated `apps/backend/tests/test_approval_queue_persistence.py` with a
+- [x] 4.4 Run 4.1 — confirm green (14/14 passed)
+- [x] 4.5 Extend the DB-gated `apps/backend/tests/test_approval_queue_persistence.py` with a
       hermetic two-tenant round trip (borrow the throwaway-tenant fixture pattern from
       `test_financials_endpoint_tenant_scoping.py`): enqueue under tenant A, assert a
       tenant-B-scoped list excludes it, tenant-B-scoped approve returns not-found,
-      tenant-A-scoped approve succeeds
-- [ ] 4.6 Check `tests/e2e/test_multi_tenant_flow.py` (repo root) for unauthenticated
-      approval-queue calls; update or env-gate as needed
+      tenant-A-scoped approve succeeds. Gated by the file's existing
+      `RUN_APPROVAL_QUEUE_DB=1` skipif — collects and skips cleanly with no env vars set
+      locally (confirmed: `10 skipped`)
+- [x] 4.6 Checked `tests/e2e/test_multi_tenant_flow.py` (repo root) — one approval-queue call
+      (`TestHermesOperators::test_approval_queue_with_tenant_context`), unauthenticated payload
+      missing `draft_type`/`lines`. FastAPI/pydantic rejects the body with 422 before the
+      handler (and its new tenant-scope check) ever runs, so the existing
+      `assert response.status_code in [200, 201, 404, 422]` still holds — no code change
+      needed. Could not execute the file to confirm empirically: the entire file's
+      `TestClient` fixture errors in this environment on an unrelated, pre-existing
+      httpx/starlette version mismatch (`Client.__init__() got an unexpected keyword
+      argument 'app'`), reproduced on an unrelated test in the same file
+      (`TestTenantContextMiddleware`) — confirmed not caused by this change.
 
 ## 5. Review and Update Existing Unit Tests (MANDATORY)
 
