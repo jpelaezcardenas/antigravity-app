@@ -13,7 +13,7 @@ export default function OverviewPage() {
         <CashTodayCard />
         <HealthQuadrant kpis={pulsoMock.health} />
         <StructuralBreakdownCTA />
-        <ActiveAlerts alerts={pulsoMock.alerts} />
+        <ActiveAlerts />
       </div>
       {/* Mobile logout: the desktop "Cerrar Sesión" button is hidden below md */}
       <a

@@ -1,7 +1,70 @@
-import type { ActiveAlert } from "@/lib/types/contexia";
-import { SEVERITY_ICON_STYLES } from "@/lib/styles/statusStyles";
+"use client";
 
-export function ActiveAlerts({ alerts }: { alerts: ActiveAlert[] }) {
+import { useEffect, useState } from "react";
+import type { ActiveAlert, AlertSeverity } from "@/lib/types/contexia";
+import { SEVERITY_ICON_STYLES } from "@/lib/styles/statusStyles";
+import { fetchCentinelaAlerts, type CentinelaAlert } from "@/lib/api-client";
+
+const SEVERITY_ICON: Record<AlertSeverity, string> = {
+  warning: "schedule",
+  critical: "rule_folder",
+};
+
+function toSeverity(backendSeverity: string): AlertSeverity {
+  return backendSeverity === "critical" ? "critical" : "warning";
+}
+
+function toActiveAlert(alert: CentinelaAlert, index: number): ActiveAlert {
+  const severity = toSeverity(alert.severity);
+  return {
+    id: alert.rule_id || `alert-${index}`,
+    icon: SEVERITY_ICON[severity],
+    severity,
+    message: alert.description ? `${alert.title} — ${alert.description}` : alert.title,
+  };
+}
+
+function AlertsSkeleton() {
+  return (
+    <section className="flex flex-col gap-3 animate-pulse">
+      <div className="h-6 w-40 bg-white/10 rounded mb-1" />
+      <div className="bg-surface-elevated rounded-xl p-4 border border-white/10 h-16" />
+      <div className="bg-surface-elevated rounded-xl p-4 border border-white/10 h-16" />
+    </section>
+  );
+}
+
+export function ActiveAlerts() {
+  const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
+  const [status, setStatus] = useState<"loading" | "ready">("loading");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchCentinelaAlerts()
+      .then((response) => {
+        if (cancelled) return;
+        setAlerts(response.alerts.map(toActiveAlert));
+        setStatus("ready");
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        // Honest empty-on-error — no fallback to pulsoMock.alerts (spec
+        // "No alerts or a fetch error renders nothing, not a mock or a crash").
+        console.warn("[ActiveAlerts] centinela alerts fetch failed", error);
+        setAlerts([]);
+        setStatus("ready");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (status === "loading") {
+    return <AlertsSkeleton />;
+  }
+
   if (alerts.length === 0) return null;
 
   return (
