@@ -221,28 +221,33 @@ Project-specific details:
 - Frontend URL: https://contexia.online/app/bunker
 - Backend URL: https://antigravity-app-production-175a.up.railway.app
 
-- [ ] 10.1 Merge `feature/approval-queue-tenant-scoping` → `main`; verify
-      `git branch --show-current` before every commit (parallel sessions active in the shared
-      checkout — this change was developed in an isolated worktree specifically to avoid
-      collisions)
-- [ ] 10.2 git push to `main` (hand to the founder if the security classifier blocks the push)
-- [ ] 10.3 Vercel build green (frontend untouched by this change, verify no regression)
-- [ ] 10.4 Railway deploy active on `antigravity-app-production-175a`
-- [ ] 10.5 Production verification:
-  - `GET /api/v1/approval-queue` with no token → **401** (confirms `AUTH_ENFORCED=true` live)
-  - Founder logs into the Búnker → Sell Machine tab: list loads, drafts show `tenant_id` =
-    Cliente Cero UUID, approve/reject still work — **this is the riskiest assumption
-    (founder's login must resolve to Cliente Cero via `user_tenants`); if it 403s, the fix is
-    a `user_tenants` row, not code**
-  - A provisioned client login (migration 0029/0032 users) → `GET /approval-queue` returns
-    only that tenant's rows (currently: empty)
-  - Trigger one internal enqueue path (e.g. a sell-machine or social-ops flow) → new row
-    carries the real Cliente Cero UUID, not zeros/NULL
-  - Supabase: `SELECT count(*) FROM approval_queue WHERE tenant_id IS NULL` → 0; column
-    reports NOT NULL, no default
-  - Railway logs: no NOT NULL violations or 500s on approval-queue routes
-- [ ] 10.6 Create report:
-      `openspec/changes/approval-queue-tenant-scoping/reports/YYYY-MM-DD-deployment.md`
+- [x] 10.1 Merged `worktree-approval-queue-tenant-scoping` → `main` (two catch-up merges for
+      concurrent parallel-session pushes: `hermes-task-queue-tenant-scoping` and
+      `taty-per-tenant-profiles`, both purely additive, tests re-verified green after each);
+      `git branch --show-current` checked before every commit throughout
+- [x] 10.2 `git push origin HEAD:main` succeeded (commit `9008215`, 2026-07-23T11:19Z) — no
+      classifier block encountered
+- [x] 10.3 Frontend untouched by this change (no `contexia-app/` files modified) — no Vercel
+      regression risk; not independently re-verified since nothing frontend-facing shipped
+- [x] 10.4 Railway deploy `5cac29b7` on `antigravity-app-production-175a` → **SUCCESS**
+- [x] 10.5 Production verification (full detail in the Stage 11 report):
+  - `GET /api/v1/approval-queue` with no token → **401** — confirmed via curl ✅
+  - Founder's login resolves to Cliente Cero (riskiest assumption) → **confirmed via read-only
+    query**: `jpelaezcardenas@gmail.com` has an active, `is_owner=true` `user_tenants`
+    membership in Cliente Cero's tenant — not re-verified by clicking through the Búnker UI
+    (no credentials handled), but the underlying DB fact the UI check would prove is confirmed
+    directly ✅
+  - Provisioned client login sees only its own tenant → **not independently re-exercised
+    live** (no test client session created against production); covered by Sections 2/4's
+    tests and the identical, already-verified-live `per-tenant-client-access` pattern
+  - Internal enqueue path stamps real tenant → **not triggered live** in this pass; covered by
+    Section 3's tests confirming explicit resolution at each call site
+  - Supabase: `SELECT count(*), count(*) FILTER (WHERE tenant_id IS NULL) FROM approval_queue`
+    → `6, 0` ✅; column confirmed NOT NULL, no default ✅
+  - Railway logs: clean — `"Approval queue router registered successfully"`, no NOT NULL
+    violations, no 500s on approval-queue routes ✅
+- [x] 10.6 Report created:
+      `openspec/changes/approval-queue-tenant-scoping/reports/2026-07-23-deployment.md`
 
 ## 11. Archive
 
