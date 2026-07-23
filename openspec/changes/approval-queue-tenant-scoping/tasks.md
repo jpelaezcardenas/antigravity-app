@@ -12,17 +12,17 @@
 
 ## 1. Tenant Scope Helper (TDD)
 
-- [ ] 1.1 Write `apps/backend/tests/test_tenant_scope_resolution.py` (mocked client, mirrors
+- [x] 1.1 Write `apps/backend/tests/test_tenant_scope_resolution.py` (mocked client, mirrors
       `test_tenant_stamping.py` style):
   - `test_client_with_resolved_tenant_gets_own_scope_not_all_tenants`
   - `test_cliente_cero_member_gets_all_tenants_scope`
   - `test_staging_identity_gets_cliente_cero_all_tenants_scope`
   - `test_authenticated_unresolved_returns_none`
   - `test_missing_cliente_cero_row_still_resolves_client_tenant`
-- [ ] 1.2 Run the new tests — confirm they fail (no implementation yet)
-- [ ] 1.3 Implement `TenantScope` dataclass + `resolve_request_tenant_scope(user, client)` in
+- [x] 1.2 Run the new tests — confirm they fail (no implementation yet)
+- [x] 1.3 Implement `TenantScope` dataclass + `resolve_request_tenant_scope(user, client)` in
       `apps/backend/core/tenant_context.py` per `design.md`
-- [ ] 1.4 Run 1.1's tests — confirm green
+- [x] 1.4 Run 1.1's tests — confirm green
 
 ## 2. Service Layer (TDD)
 
