@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
+from typing import List, Optional
 import secrets
 import logging
 import os
@@ -65,6 +65,12 @@ class Settings(BaseSettings):
     # Sell Machine creative swarm (change sell-machine-creative-swarm) — default off, flip
     # after Stage 11 prod smoke-test, same playbook as SOCIAL_OPS_CANONICAL.
     SELL_MACHINE_CANONICAL: bool = False
+
+    # Hermes bridge machine-token auth (change hermes-task-queue-tenant-scoping) — optional
+    # bearer token gating the 5 operator-task routes in sell_machine_endpoints.py. Unset (None)
+    # by default: routes remain open exactly as before this change (fail-open, deliberate — see
+    # design.md D5/D7). Activation requires coordinating the Hermes-side poller first.
+    HERMES_BRIDGE_TOKEN: Optional[str] = None
 
     # Taty WhatsApp sales router (change taty-whatsapp-sales-router) — new channel surface,
     # default off, dark-deployed and flipped after Stage 11 prod smoke-test with a simulated
