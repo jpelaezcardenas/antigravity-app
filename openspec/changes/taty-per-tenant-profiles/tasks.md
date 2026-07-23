@@ -66,14 +66,17 @@
 
 ## 4. Backend: Telegram Tenant Translation (TDD)
 
-- [ ] 4.1 Write failing tests: mapped `company_id` resolving to a tenant → `ask(tenant_id=...)`
+- [x] 4.1 Write failing tests: mapped `company_id` resolving to a tenant → `ask(tenant_id=...)`
       called with the translated uuid (scenario "Mapped chat resolves and answers"); unmapped
       `company_id` → existing "no configurado" reply sent, `ask()` never invoked (scenario
-      "Unmapped or untranslatable chat is rejected before calling Taty")
-- [ ] 4.2 Add `_resolve_tenant_for_company_id(company_id)` helper and use it before the
+      "Unmapped or untranslatable chat is rejected before calling Taty") —
+      `progress/impl_taty-per-tenant-profiles-task4.md`
+- [x] 4.2 Add `_resolve_tenant_for_company_id(company_id)` helper and use it before the
       `taty.ask(...)` call site in `apps/backend/presentation/telegram_endpoints.py` (Social Ops
-      onboarding branch, which reads the same mapping, is untouched)
-- [ ] 4.3 Tests from 4.1 green
+      onboarding branch, which reads the same mapping, is untouched — reviewer confirmed). Fixed
+      the call site flagged broken by task 2's report. Reviewed APPROVED.
+      `progress/review_taty-per-tenant-profiles-task4.md`
+- [x] 4.3 Tests from 4.1 green (5/5, 23/23 with tasks 1-3)
 
 ## 5. Backend: Retirements
 

@@ -109,3 +109,10 @@ resolution (was previously used, unverified, to read any profile). GET delegates
 single resolution path. 5 new tests, 18/18 green with tasks 1-2. Reviewer ran an adversarial
 bypass trace by hand (missing/malformed auth, staging+spoofed body, resolved+spoofed body,
 authenticated-unresolved) — no leak path found. APPROVED.
+
+## taty-per-tenant-profiles — task 4 (2026-07-23)
+Fixed the Telegram webhook's broken ask(company_id=...) call (task 2's regression). New
+_resolve_tenant_for_company_id(company_id) translates telegram_chat_mappings.company_id ->
+tenants.id before calling taty.ask(tenant_id=...); untranslatable id sends the existing "no
+configurado" reply and never calls ask(). Social Ops onboarding branch (same mapping table)
+untouched. 5 new tests, 23/23 green with tasks 1-3. Reviewer: APPROVED.
