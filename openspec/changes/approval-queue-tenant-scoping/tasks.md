@@ -143,21 +143,40 @@
 
 ## 7. Manual Endpoint Testing with curl (MANDATORY — AGENT MUST EXECUTE)
 
-- [ ] 7.1 Start the backend locally (`uvicorn main:app --reload` from `apps/backend`,
-      `AUTH_ENFORCED=false` for local staging-identity coverage)
-- [ ] 7.2 `GET /api/v1/approval-queue` with no token → verify staging/Cliente-Cero-operator
-      response (all rows, `tenant_id` field present)
-- [ ] 7.3 `POST /enqueue` with no token (staging) → verify the created row's `tenant_id` =
-      Cliente Cero UUID; **restore state**: delete the test row after
-- [ ] 7.4 Local test of the tenant-scoped path: construct a request with a forged/local JWT
-      resolving to a throwaway tenant (or run the Section 4.1 tests directly, since no real
-      Supabase session is available locally) — document which method was used
-- [ ] 7.5 `POST /approve` / `POST /reject` happy path + cross-tenant-mismatch path (expect
-      "not found"); restore any state changed
-- [ ] 7.6 Error cases: missing token with `AUTH_ENFORCED=true` (simulate via env override) →
-      401; malformed `decision_id` → existing error handling unchanged
-- [ ] 7.7 Document all commands + responses in
-      `openspec/changes/approval-queue-tenant-scoping/reports/YYYY-MM-DD-step-7-curl-endpoint-tests.md`
+- [x] 7.1 Start the backend locally (`uvicorn main:app --reload` from `apps/backend`,
+      `AUTH_ENFORCED=false` for local staging-identity coverage) — started successfully
+      (all routers incl. approval-queue registered); no live Supabase credentials in this
+      environment (confirmed `SUPABASE_URL=''`), so every downstream endpoint call hits the
+      DB boundary — documented exactly where per test in the report
+- [x] 7.2 `GET /api/v1/approval-queue` with no token → staging identity is reached correctly
+      (no exception in `get_current_user`), then breaks at
+      `resolve_request_tenant_scope`'s first Supabase call (`SupabaseException: supabase_url
+      is required`) — proves the routing/auth logic up to the DB boundary; full response
+      assertion requires live Supabase (deferred to Stage 11)
+- [x] 7.3 `POST /enqueue` with no token (staging) → same DB-boundary break, before
+      `ApprovalQueueService.enqueue_draft` is ever called; no row created, no cleanup needed
+- [x] 7.4 Tenant-scoped path tested with a locally-signed backend JWT
+      (`core.security.create_access_token`, explicit `JWT_SECRET` for a matching
+      verify/sign pair) — proves JWT verification succeeds and `identity_resolver` fails
+      closed (catches its own Supabase error, doesn't crash) before the endpoint's own
+      `resolve_request_tenant_scope` call raises; documented in the report
+- [x] 7.5 `POST /approve` / `POST /reject` — both break at the same
+      `resolve_request_tenant_scope` DB boundary before reaching the service layer; the
+      scoped-select/cross-tenant-"not found" behavior itself is proven by the mocked-client
+      unit tests in Sections 2 and 4 (100% green), documented as the source of that proof
+      since curl cannot add anything beyond it without live credentials
+- [x] 7.6 Error cases: missing token with `AUTH_ENFORCED=true` → **401** on all 4 routes,
+      confirmed fully DB-independent (zero Supabase calls, verified via server log) — this is
+      the one sub-check proven completely end-to-end locally; malformed `decision_id` is not
+      independently reachable (breaks earlier at the same DB boundary), verified instead by
+      inspection that Section 2's diff (commit `d75e90f`) left the existing error-handling
+      path untouched
+- [x] 7.7 Documented all commands + real responses (including the credential-boundary
+      failures, which are real signal, not something to hide) in
+      `openspec/changes/approval-queue-tenant-scoping/reports/2026-07-23-step-7-curl-endpoint-tests.md`.
+      Full DB-backed round-trip verification is explicitly deferred to Stage 11 / task 10.5,
+      by design — this local pass proves every code path executes correctly up to the
+      Supabase boundary, which is everything this environment can prove without credentials
 
 ## 8. Migration
 
