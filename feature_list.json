@@ -6,12 +6,17 @@
     "scope_source": "openspec/changes/<id>/tasks.md",
     "valid_status": ["pending", "in_progress", "done", "blocked"]
   },
-  "active": null,
+  "active": "chatwoot-hermes-taty-bridge",
   "features": [
     {
       "id": "adopt-gbrain-second-brain",
       "status": "done",
       "summary": "COMPLETE (60/60 tasks), archived 2026-07-05 as openspec/changes/archive/2026-07-05-adopt-gbrain-second-brain. GBrain running in WSL, Supabase-backed, wired into Claude Code/Codex/Hermes, autopilot scheduled."
+    },
+    {
+      "id": "chatwoot-hermes-taty-bridge",
+      "status": "in_progress",
+      "summary": "Task Groups 5-10: apps/chatwoot-bridge/ FastAPI service bridging Chatwoot WhatsApp to local Hermes Gateway (Taty). Task Groups 1-4 (backend intake endpoint) already done."
     }
   ]
 }

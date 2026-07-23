@@ -23,3 +23,19 @@
 
 **Estado:** ninguna tarea en curso. Esperando siguiente dirección del fundador.
 **Bloqueos:** —
+
+---
+
+## Sesión activa (2026-07-22)
+
+Task in progress: chatwoot-hermes-taty-bridge — Task Groups 5-10 (bridge scaffold + webhook
+filtering/HITL + Chatwoot client + Hermes client + backend client + orchestration)
+
+Plan:
+- Scaffold `apps/chatwoot-bridge/` (config.py, schemas.py, main.py, clients, tests/)
+- TDD `POST /webhook` full HITL truth table (Task Group 6)
+- TDD `chatwoot_client.py` (history/reply/contact attrs, respx-mocked) (Task Group 7)
+- TDD `hermes_client.py` (OpenAI-compatible chat completions, fail-soft) (Task Group 8)
+- TDD `backend_client.py` (HS256 JWT matching Hermes-operator contract, fail-soft) (Task Group 9)
+- TDD orchestration `process_incoming_message` + health check (Task Group 10)
+- Full suite `pytest apps/chatwoot-bridge/tests -v` green, report written, hand off to reviewer

@@ -54,64 +54,65 @@
 
 ## 5. Bridge: Project Scaffold
 
-- [ ] 5.1 Create `apps/chatwoot-bridge/` with `main.py`, `config.py`, `schemas.py`,
+- [x] 5.1 Create `apps/chatwoot-bridge/` with `main.py`, `config.py`, `schemas.py`,
       `chatwoot_client.py`, `hermes_client.py`, `backend_client.py`, `tests/`, `requirements.txt`,
       `.env.example`, `README.md`
-- [ ] 5.2 `config.py`: pydantic-settings `Settings` class reading all env vars from design.md
+- [x] 5.2 `config.py`: pydantic-settings `Settings` class reading all env vars from design.md
       (`CHATWOOT_URL`, `CHATWOOT_API_TOKEN`, `CHATWOOT_ACCOUNT_ID`, `HERMES_GATEWAY_URL`,
       `HERMES_MODEL`, `HERMES_API_KEY`, `CONTEXIA_API_URL`, `CONTEXIA_JWT_SECRET`, `PAUSE_LABEL`,
       `MAX_HISTORY`, `WEBHOOK_TOKEN`, `PORT`), all empty-by-default (fail closed, no hardcoded
       secrets)
-- [ ] 5.3 `requirements.txt`: `fastapi`, `uvicorn`, `httpx`, `pydantic-settings`, `python-jose`;
+- [x] 5.3 `requirements.txt`: `fastapi`, `uvicorn`, `httpx`, `pydantic-settings`, `python-jose`;
       dev: `pytest`, `pytest-asyncio`, `respx`
 
 ## 6. Bridge: Webhook Filtering & HITL (TDD)
 
-- [ ] 6.1 Write failing tests in `apps/chatwoot-bridge/tests/test_webhook_filter.py` covering the
+- [x] 6.1 Write failing tests in `apps/chatwoot-bridge/tests/test_webhook_filter.py` covering the
       full truth table from `specs/chatwoot-hermes-bridge/spec.md`: incoming+not-private (process),
       outgoing (skip), private (skip), non-`message_created` event (skip), missing/invalid
       `WEBHOOK_TOKEN` (401), `bot_off` label present (paused, no Hermes call)
-- [ ] 6.2 Implement `POST /webhook` in `main.py`: token check → event/type/private filter →
+- [x] 6.2 Implement `POST /webhook` in `main.py`: token check → event/type/private filter →
       `bot_off` label check → schedule `BackgroundTasks` processing
-- [ ] 6.3 Run `pytest apps/chatwoot-bridge/tests/test_webhook_filter.py -v` and confirm all pass
+- [x] 6.3 Run `pytest apps/chatwoot-bridge/tests/test_webhook_filter.py -v` and confirm all pass
 
 ## 7. Bridge: Chatwoot Client (history fetch + reply dispatch + contact attributes)
 
-- [ ] 7.1 Write failing tests in `apps/chatwoot-bridge/tests/test_chatwoot_client.py` (respx-mocked
+- [x] 7.1 Write failing tests in `apps/chatwoot-bridge/tests/test_chatwoot_client.py` (respx-mocked
       HTTP) for: fetch last `MAX_HISTORY` messages mapped to `{role, content}`, post outgoing
       reply, set contact custom attributes
-- [ ] 7.2 Implement `chatwoot_client.py`: `get_recent_messages`, `send_reply`,
+- [x] 7.2 Implement `chatwoot_client.py`: `get_recent_messages`, `send_reply`,
       `set_contact_attributes`, using a shared `httpx.AsyncClient(follow_redirects=True,
       timeout=60.0)` (covers Active Storage 302s)
-- [ ] 7.3 Run tests and confirm pass
+- [x] 7.3 Run tests and confirm pass
 
 ## 8. Bridge: Hermes Client (OpenAI-compatible chat completions)
 
-- [ ] 8.1 Write failing tests in `apps/chatwoot-bridge/tests/test_hermes_client.py` (respx-mocked):
+- [x] 8.1 Write failing tests in `apps/chatwoot-bridge/tests/test_hermes_client.py` (respx-mocked):
       correct request shape (`model: "taty-v1"`, `messages`, `stream: false`, bearer auth), 60s
       timeout triggers fallback path, non-200 triggers fallback path, `GET /v1/models` startup check
-- [ ] 8.2 Implement `hermes_client.py`: `invoke_chat_completion(history, message) -> str`,
+- [x] 8.2 Implement `hermes_client.py`: `invoke_chat_completion(history, message) -> str`,
       `check_models() -> dict | None` for the startup log
-- [ ] 8.3 Run tests and confirm pass
+- [x] 8.3 Run tests and confirm pass
 
 ## 9. Bridge: Backend Client (lead intake + onboarding trigger)
 
-- [ ] 9.1 Write failing tests in `apps/chatwoot-bridge/tests/test_backend_client.py` (respx-mocked):
+- [x] 9.1 Write failing tests in `apps/chatwoot-bridge/tests/test_backend_client.py` (respx-mocked):
       JWT is signed with `tenant_id` claim, intake call maps response correctly, onboarding trigger
       only fires when `is_new: true`, failures are caught and logged (not raised)
-- [ ] 9.2 Implement `backend_client.py`: `sign_tenant_jwt()`, `whatsapp_intake(phone) -> dict`,
+- [x] 9.2 Implement `backend_client.py`: `sign_tenant_jwt()`, `whatsapp_intake(phone) -> dict`,
       `trigger_onboarding()`, all wrapped to degrade gracefully per design.md decision 7
-- [ ] 9.3 Run tests and confirm pass
+- [x] 9.3 Run tests and confirm pass
 
 ## 10. Bridge: Orchestration (audio fallback + full pipeline)
 
-- [ ] 10.1 Write failing tests in `apps/chatwoot-bridge/tests/test_process_message.py`: audio
+- [x] 10.1 Write failing tests in `apps/chatwoot-bridge/tests/test_process_message.py`: audio
       attachment → fixed fallback reply, no Hermes call; text message → full pipeline
       (intake → history → Hermes → reply) called in order; Hermes failure → fallback reply sent
-- [ ] 10.2 Implement the background `process_incoming_message` orchestration in `main.py` wiring
+- [x] 10.2 Implement the background `process_incoming_message` orchestration in `main.py` wiring
       steps 7–9 together per design.md decisions 5 and 7
-- [ ] 10.3 Implement `GET /` health check including the Hermes `check_models()` log
-- [ ] 10.4 Run `pytest apps/chatwoot-bridge/tests -v` (full suite) and confirm all pass
+- [x] 10.3 Implement `GET /` health check including the Hermes `check_models()` log — test coverage
+      added in `tests/test_health.py` after a reviewer round-trip (initial pass missed it)
+- [x] 10.4 Run `pytest apps/chatwoot-bridge/tests -v` (full suite) and confirm all pass — 32 passed
 
 ## 11. Local Infrastructure: Chatwoot Docker Compose
 
