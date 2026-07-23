@@ -116,3 +116,17 @@ _resolve_tenant_for_company_id(company_id) translates telegram_chat_mappings.com
 tenants.id before calling taty.ask(tenant_id=...); untranslatable id sends the existing "no
 configurado" reply and never calls ask(). Social Ops onboarding branch (same mapping table)
 untouched. 5 new tests, 23/23 green with tasks 1-3. Reviewer: APPROVED.
+
+## taty-per-tenant-profiles — task 5 (2026-07-23)
+Retirements: deleted deprecated POST /api/v1/agents/taty/ask route (AskRequest model kept,
+shared with unrelated social_generate_content route); deleted taty_intent_router.py + its test
+(dead code, zero live callers, per design D4). Grep-clean, 89/89 agents/taty tests pass,
+23/23 tenant-scoping regression suite green. Reviewer: APPROVED. Flagged stale comment in
+router.py for task 10.
+
+## taty-per-tenant-profiles — task 6 (2026-07-23)
+Mandatory existing-test audit: negative result, zero pre-existing tests affected by tasks 1-5's
+ask() rename / AGENT_PROFILES deletion / taty_intent_router deletion. Reviewer independently
+re-ran every grep + classification, confirmed genuine. Found 2 pre-existing unrelated
+TestClient/httpx-starlette incompatibility failures (test_centinela_alerts_get.py,
+test_secure_llm.py) for task 7 awareness.

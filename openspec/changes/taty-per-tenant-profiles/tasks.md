@@ -80,23 +80,32 @@
 
 ## 5. Backend: Retirements
 
-- [ ] 5.1 Delete deprecated `POST /api/v1/agents/taty/ask` route (lines only — rest of
+- [x] 5.1 Delete deprecated `POST /api/v1/agents/taty/ask` route (lines only — rest of
       `apps/backend/presentation/agents_endpoints.py` untouched); confirm 404 (scenario
-      "Deprecated wrapper route is gone")
-- [ ] 5.2 Delete `apps/backend/services/taty_intent_router.py` and
+      "Deprecated wrapper route is gone") — `AskRequest` model kept (shared with
+      `social_generate_content`, unrelated live route). `progress/impl_taty-per-tenant-profiles-task5.md`
+- [x] 5.2 Delete `apps/backend/services/taty_intent_router.py` and
       `apps/backend/tests/test_taty_intent_router.py` (scenario "No unreferenced intent router
-      remains")
-- [ ] 5.3 Grep-verify no dangling imports of `taty_intent_router` or the deleted route anywhere
-      in `apps/backend`
+      remains") — reviewed APPROVED, `progress/review_taty-per-tenant-profiles-task5.md`
+- [x] 5.3 Grep-verify no dangling imports of `taty_intent_router` or the deleted route anywhere
+      in `apps/backend` (only comment-only historical mentions remain in whatsapp_endpoints.py /
+      taty_lead_router.py, out of scope). Note: `router.py` has one stale comment naming
+      `/agents/taty/ask` — non-functional, flagged for task 10 docs cleanup.
 
 ## 6. Backend: Review and Update Existing Unit Tests (MANDATORY)
 
-- [ ] 6.1 Grep `apps/backend/tests` for `AGENT_PROFILES`, `company_id.*taty`, `taty.*ask`,
-      `ctx-001`, `ferez-001`, `martinez-001` and audit every hit (expected candidates:
-      `test_agent_pipeline.py`, `test_secure_llm.py`, `test_tenant_stamping.py`,
-      `test_centinela_alerts_get.py` — confirm actual scope during execution)
-- [ ] 6.2 Update each affected test to the new `tenant_id` signature / mocks; do not weaken
-      assertions to force a pass
+- [x] 6.1 Grep `apps/backend/tests` for `AGENT_PROFILES`, `company_id.*taty`, `taty.*ask`,
+      `ctx-001`, `ferez-001`, `martinez-001` and audit every hit — `progress/impl_taty-per-tenant-profiles-task6.md`.
+      Result: **negative** — zero pre-existing test files (outside tasks 1-4's own new files)
+      call `TatyAgentService.ask()`/`_get_agent_profile`/`AGENT_PROFILES`. All `ctx-001` hits in
+      `test_agent_pipeline.py`, `test_centinela_alerts_get.py`, `test_identity_resolver.py`,
+      `test_secure_llm.py`, `test_tenant_stamping.py` are unrelated `company_id` values on other
+      services (CentinelaService, IdentityResolver, Social Ops, Pulso). Reviewed APPROVED
+      (independently re-ran every grep + targeted tests). `progress/review_taty-per-tenant-profiles-task6.md`
+- [x] 6.2 No changes needed (valid negative result). Found + flagged for task 7: 2 pre-existing
+      TestClient-construction failures (`test_centinela_alerts_get.py`, `test_secure_llm.py`) —
+      httpx/starlette version incompatibility, unrelated to this change (neither file touches
+      anything tasks 1-5 modified).
 
 ## 7. Backend: Run Unit Tests and Verify Database State (MANDATORY)
 
