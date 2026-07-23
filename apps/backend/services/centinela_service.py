@@ -429,21 +429,29 @@ class CentinelaService:
     def get_alerts_for_company(
         self,
         company_id: str,
+        tenant_id: str,
         limit: int = 20,
         severity: Optional[str] = None,
     ) -> List[Dict]:
         """
-        Retrieve persisted alerts for a company, most recent first.
+        Retrieve persisted alerts for a company, scoped to the caller's tenant,
+        most recent first.
+
+        tenant_id is required (see core/tenant_context.py::require_tenant_id) —
+        an unresolved tenant must never see another tenant's alerts.
 
         Falls back to evaluating against a synthetic demo profile if Supabase
         unavailable, so the Pulso feed always has signal during MVP.
         """
+        tenant_id = require_tenant_id(tenant_id, context="centinela.get_alerts_for_company")
+
         try:
             supabase = get_service_supabase()
             query = (
                 supabase.table("centinela_alerts")
                 .select("*")
                 .eq("company_id", company_id)
+                .eq("tenant_id", tenant_id)
                 .order("created_at", desc=True)
                 .limit(limit)
             )
