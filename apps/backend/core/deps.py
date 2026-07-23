@@ -1,8 +1,10 @@
 """Dependency injection for FastAPI endpoints."""
 
+import time
 from fastapi import Header, HTTPException, status
 from typing import Optional
 
+import requests
 from jose import JWTError, jwt
 
 from config import settings
@@ -10,12 +12,70 @@ from core.security import verify_token
 from core.identity_resolver import identity_resolver
 
 
+# Cache for Supabase's JWKS (public signing keys) — Supabase now signs Auth session
+# tokens with an asymmetric key (ES256, rotated rarely) rather than the legacy shared
+# HS256 secret. Keys almost never change, so an in-process cache with a generous TTL
+# avoids a network round-trip per request; a kid the cache doesn't know about forces
+# one refetch (handles key rotation without a restart).
+_JWKS_CACHE: dict = {"keys": [], "fetched_at": 0.0}
+_JWKS_CACHE_TTL_SECONDS = 3600
+
+
+def _fetch_supabase_jwks(force: bool = False) -> list:
+    """Fetch (and cache) Supabase's public JWKS for verifying asymmetric-signed tokens.
+    Never raises — returns whatever is cached (possibly empty) on any failure, so a
+    transient network issue degrades to "token not recognized" rather than a 500."""
+    now = time.time()
+    if not force and _JWKS_CACHE["keys"] and (now - _JWKS_CACHE["fetched_at"]) < _JWKS_CACHE_TTL_SECONDS:
+        return _JWKS_CACHE["keys"]
+    if not settings.SUPABASE_URL:
+        return _JWKS_CACHE["keys"]
+    try:
+        response = requests.get(
+            f"{settings.SUPABASE_URL}/auth/v1/.well-known/jwks.json", timeout=5
+        )
+        response.raise_for_status()
+        keys = response.json().get("keys", [])
+        _JWKS_CACHE["keys"] = keys
+        _JWKS_CACHE["fetched_at"] = now
+        return keys
+    except Exception:
+        return _JWKS_CACHE["keys"]
+
+
 def _verify_supabase_token(token: str) -> Optional[dict]:
-    """Verifies a Supabase Auth-issued JWT (HS256, SUPABASE_JWT_SECRET) — the same token
-    login.html already stores in localStorage["token"] and middleware.ts already validates
-    at the Vercel edge (bunker-pwa-auth-enforcement). Returns None (never raises) if the
-    secret isn't configured or the token doesn't verify, so callers can fall through
-    cleanly to the existing 401/staging-user behavior."""
+    """Verifies a Supabase Auth-issued JWT — the same token login.html already stores in
+    localStorage["token"] and middleware.ts already validates at the Vercel edge
+    (bunker-pwa-auth-enforcement). Returns None (never raises) on any failure, so callers
+    fall through cleanly to the existing 401/staging-user behavior.
+
+    Supabase's current default is to sign session tokens asymmetrically (observed: ES256,
+    a `kid` in the header, verified via the project's JWKS endpoint) — the legacy shared
+    HS256 secret (SUPABASE_JWT_SECRET) cannot verify those at all (wrong algorithm family
+    entirely, not just a wrong key). This checks the token's own header to route to the
+    right verification path, so it also still accepts a legacy HS256 token/secret."""
+    try:
+        header = jwt.get_unverified_header(token)
+    except JWTError:
+        return None
+
+    alg = header.get("alg")
+    kid = header.get("kid")
+
+    if alg and alg != "HS256" and kid:
+        keys = _fetch_supabase_jwks()
+        matching_key = next((k for k in keys if k.get("kid") == kid), None)
+        if matching_key is None:
+            # Unknown kid could mean key rotation — refetch once before giving up.
+            keys = _fetch_supabase_jwks(force=True)
+            matching_key = next((k for k in keys if k.get("kid") == kid), None)
+        if matching_key is None:
+            return None
+        try:
+            return jwt.decode(token, matching_key, algorithms=[alg], audience="authenticated")
+        except JWTError:
+            return None
+
     if not settings.SUPABASE_JWT_SECRET:
         return None
     try:
