@@ -3,4 +3,4 @@
 :HL["https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap","style"]
 :HL["/assets/img/logo_official.png?v=2026070205","image"]
 :HL["/assets/img/profiles/tatiana_full.png","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"app","param":null,"prefetchHints":0,"slots":{"children":{"name":"(shell)","param":null,"prefetchHints":0,"slots":{"children":{"name":"overview","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}}}},"staleTime":300,"buildId":"FizUkSZ5BWTPZIWHJ-awE"}
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"app","param":null,"prefetchHints":0,"slots":{"children":{"name":"(shell)","param":null,"prefetchHints":0,"slots":{"children":{"name":"overview","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}}}},"staleTime":300,"buildId":"6MCpvX8FQ6Lwa4J0EBVKT"}
