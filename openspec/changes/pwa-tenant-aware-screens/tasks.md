@@ -170,13 +170,18 @@ Project-specific: deploy branch `main`; Frontend `https://contexia.online/app/ov
   the reconciled design.
 - [ ] 13.1 `git branch --show-current` check, then merge `feature/pwa-tenant-aware-screens` → main
   (or open a PR per repo convention), push.
-- [ ] 13.2 Apply migration `0035_*.sql` to Supabase (`kpynymwghfwshvcvevxq`) via Supabase MCP
-  `apply_migration`; verify with a `SELECT` that SYNTH sale/expense rows are dated yesterday and
-  the cron job (`cron.job` table) exists and is scheduled.
-- [ ] 13.3 Bump `contexia-app/public/sw.js` `CACHE_VERSION` (`v14-2026-07-22` → next), then
-  `cd contexia-app && npm run build`, sync `out/` → repo-root build artifact per the reconciliation
-  procedure in `CLAUDE.md` §9 / the `2026-07-22-per-tenant-client-access` deployment report. Never
-  hand-edit the artifact.
+- [x] 13.2 Applied migration `0035_*.sql` to Supabase (`kpynymwghfwshvcvevxq`) via Supabase MCP
+  `apply_migration` (success). Verified via `SELECT`: all 19 SYNTH sale/expense rows re-dated
+  `2026-07-27` (= `CURRENT_DATE - 1`, was `2026-07-20`); `cron.job` shows `reseed-synth-shadow-gl`
+  active, schedule `10 5 * * *`.
+- [x] 13.3 Bumped `contexia-app/public/sw.js` `CACHE_VERSION` (`v14-2026-07-22` → `v15-2026-07-27`),
+  `cd contexia-app && npm run build`, synced `out/` → repo-root build artifact. **Investigated the
+  mapping carefully before syncing** (past incident precedent, CLAUDE.md §9): `vercel.json`'s
+  `outputDirectory: "."` + rewrites confirmed `_next/`, `sw.js`, `manifest.webmanifest`, `icons/`,
+  `flujo-detalle*`, `crear-empresa-wizard*` live at repo ROOT (not under `app/`) — only the route
+  pages (`app/overview.html` etc.) go under `app/`. `app-admin/`, `.antigravity/`, wizard, and
+  `assets/`'s non-contexia-app content (css/theme.css, wizard bundle) confirmed untouched by a
+  copy-overwrite-only sync (no deletion). Commit `270a859`.
 - [ ] 13.4 Vercel build green; Railway deploy active (confirm via `/api/v1/health` + deployment
   logs).
 - [ ] 13.5 Production endpoint check: `GET /api/v1/centinela/alerts` and
