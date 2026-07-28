@@ -87,8 +87,14 @@ See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
 ## 8. Review Gate
 
-- [ ] 8.1 `reviewer` agent validates against `specs/taty-whatsapp-sales-router/spec.md`'s modified
-      requirement, `design.md`'s decisions, no hardcoded secrets, English-only, no scope creep into
-      `route_lead_message`/`route_lead_document`
-- [ ] 8.2 `RUN_TESTS=1 bash init.sh` green before marking ready to archive (only after merging into
-      `feature/chatwoot-hermes-taty-bridge`)
+- [x] 8.1 `reviewer` agent validated (`progress/review_taty-lead-router-tenant-scoping-final.md`):
+      initial verdict CHANGES_REQUESTED on one item — `tasks.md`/deployment report were uncommitted
+      at review time — resolved by commit `e82b37f`. Spec compliance, no hardcoded secrets,
+      English-only, no scope creep into `route_lead_message`/`route_lead_document` all confirmed
+      PASS on fresh code re-read, independent of the report's claims.
+- [x] 8.2 `RUN_TESTS=1 bash init.sh` — the review that surfaced this task also discovered init.sh's
+      own pytest-gate had a false-green bug (piped exit code swallowed by `tail`), fixed separately
+      this session (see `chatwoot-hermes-taty-bridge` tasks.md). Re-verified in that change's final
+      review gate: `init.sh` now correctly reports `[FAIL]` due to ~40 pre-existing, unrelated
+      backend failures (none touching `crm_service.py`/`taty_lead_router.py`/
+      `whatsapp_endpoints.py`), not a false `[OK]`.

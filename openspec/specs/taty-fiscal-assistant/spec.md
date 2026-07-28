@@ -33,7 +33,10 @@ tenant whose regime is not actually known.
 session (never from a client-supplied `company_id`) and SHALL NOT answer using another tenant's
 profile. The endpoint MAY fall back to Cliente Cero only for the unauthenticated/staging
 identity; an authenticated caller whose tenant is unresolved SHALL receive a clear in-band error,
-never Cliente Cero.
+never Cliente Cero. Tenant resolution SHALL go through the single canonical
+`core/tenant_context.py::resolve_request_tenant_scope` helper — the endpoint's original
+file-local inline resolution ladder (and its dedicated async Cliente Cero lookup) was removed
+once that shared helper existed; the observable contract below is unchanged by that migration.
 
 #### Scenario: Authenticated client is scoped to their own tenant
 - **WHEN** an authenticated user with a resolved tenant calls `/api/v1/agents/ask`

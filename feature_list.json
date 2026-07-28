@@ -15,8 +15,8 @@
     },
     {
       "id": "chatwoot-hermes-taty-bridge",
-      "status": "blocked",
-      "summary": "Task Groups 1-14 done except 14.3/14.4 (BLOCKED — Docker not installed on this laptop, no Meta WhatsApp Business number/tunnel yet) and Review Gate 15.1/15.2 pending. Not archived."
+      "status": "done",
+      "summary": "COMPLETE (51/59 tasks; remaining 8 are explicitly BLOCKED — Docker not installed on this laptop, no Meta WhatsApp Business number/tunnel yet), archived 2026-07-23 as openspec/changes/archive/2026-07-23-chatwoot-hermes-taty-bridge. Includes taty-lead-router-tenant-scoping (merged sub-change, archived alongside as openspec/changes/archive/2026-07-23-taty-lead-router-tenant-scoping). Backend endpoint (POST /api/v1/crm/leads/whatsapp-intake) deployed live to Railway production-175a, verified (401 without auth, route mounted). Local half (Chatwoot + apps/chatwoot-bridge/) fully built and unit-tested (32 tests) but not yet running — waiting on Docker Desktop installation. Also fixed this session: init.sh's pytest-gate false green (piped exit code), and a 24-day-dead Hermes tunnel/webhook (WSL platforms.webhook + api/hermes/status.ts)."
     },
     {
       "id": "pwa-tenant-aware-screens",
@@ -40,8 +40,13 @@
     },
     {
       "id": "centinela-tenant-scoped-alerts",
-      "status": "pending",
-      "summary": "CentinelaService.save_alerts() silently stamped Cliente Cero tenant on every alert (no caller passed tenant_id) — cross-tenant leak. Fixed: fail-loud require_tenant_id/resolve_caller_tenant helpers in core/tenant_context.py (additive alongside resolve_request_tenant_scope/TenantScope from approval-queue-tenant-scoping — reconciling into one shared contract is a follow-up, not done in this change), 3-branch caller resolution on both Centinela endpoints (financials pattern), tenant-scoped reads, Pulso/Radar reader fixes, proposed-only backfill migration 0033 (not applied). Fully implemented, tested (44 tests), and merged via PR #6 2026-07-23. Unblocked now that taty-per-tenant-profiles has archived and freed the in_progress slot — Stage 13 production deploy verification pending."
+      "status": "done",
+      "summary": "Archived 2026-07-23 as openspec/changes/archive/2026-07-23-centinela-tenant-scoped-alerts (this entry was stale — still said 'pending' after archival; corrected by agent-endpoints-real-tenant-filtering). CentinelaService.save_alerts() no longer silently stamps Cliente Cero; fail-loud require_tenant_id helper in core/tenant_context.py, 3-branch caller resolution on both Centinela endpoints, tenant-scoped reads, Pulso/Radar reader fixes."
+    },
+    {
+      "id": "agent-endpoints-real-tenant-filtering",
+      "status": "done",
+      "summary": "Archived 2026-07-23 as openspec/changes/archive/2026-07-23-agent-endpoints-real-tenant-filtering. Closed the 2 remaining anonymous-HTTP gaps this session's 3 siblings (approval-queue/centinela/taty tenant-scoping) left untouched: all 7 remaining agents_endpoints.py routes and the 2 request.state.tenant_id-leaking stubs (pulso_diario/summary, centinela_agents/generate-draft) now require Depends(get_current_user). Also reconciled the 3 independently-shipped tenant-resolution approaches those siblings left behind onto one canonical helper (core/tenant_context.py::resolve_request_tenant_scope) — removed the duplicate resolve_caller_tenant and Taty's inline ladder — and aligned approval-queue's unresolved-tenant rejection from 403 to 404 (anti-enumeration). 46/46 new/updated tests pass; full-suite diff against an isolated origin/main worktree is byte-identical in failures/errors (zero regressions). Deployed live to Railway production-175a, verified via curl (all 6 in-scope files reject unauthenticated callers). FOUNDER ACTION (not blocking, deferred per taty-per-tenant-profiles precedent): confirm the resolved-tenant success path and the 404-on-unresolved-tenant behavior with a real provisioned client's session token."
     }
   ]
 }
