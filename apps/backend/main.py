@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from presentation.router import api_router
 from presentation.health_endpoints import router as health_router
 from presentation.metrics_endpoints import router as metrics_router
@@ -129,6 +129,40 @@ try:
     logger.info("Approval queue router registered successfully")
 except Exception as e:
     logger.error(f"Failed to include approval_queue_router: {e}", exc_info=True)
+
+
+# --- Public Privacy Policy page (required by Meta to publish WhatsApp app) ---
+PRIVACY_HTML = """<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Política de Privacidad — Contexia</title>
+<style>body{font-family:system-ui,sans-serif;max-width:700px;margin:2rem auto;padding:0 1rem;color:#333}
+h1{color:#1a1a2e}h2{margin-top:1.5rem}</style></head><body>
+<h1>Política de Privacidad — Contexia</h1>
+<p><strong>Última actualización:</strong> julio 2026</p>
+<h2>1. Responsable del tratamiento</h2>
+<p>Contexia.online — Bogotá, Colombia. Contacto: contexia.marketing@gmail.com</p>
+<h2>2. Datos recopilados</h2>
+<p>Recopilamos nombre, número de teléfono y mensajes enviados a través de WhatsApp Business API
+con el único propósito de brindar asesoría tributaria y contable.</p>
+<h2>3. Uso de los datos</h2>
+<p>Los datos se usan exclusivamente para: responder consultas tributarias, generar liquidaciones de
+impuestos, gestionar pagos a través de pasarelas autorizadas y mejorar la calidad del servicio.</p>
+<h2>4. Almacenamiento y seguridad</h2>
+<p>Los datos se almacenan en servidores seguros con cifrado en tránsito (TLS) y en reposo.
+No compartimos información personal con terceros salvo obligación legal.</p>
+<h2>5. Derechos del usuario</h2>
+<p>Puedes solicitar acceso, corrección o eliminación de tus datos escribiendo a
+contexia.marketing@gmail.com.</p>
+<h2>6. Cookies y seguimiento</h2>
+<p>Este servicio no utiliza cookies de seguimiento.</p>
+</body></html>"""
+
+
+@app.get("/privacy", response_class=HTMLResponse, include_in_schema=False)
+async def privacy_policy():
+    """Public privacy policy page required by Meta for WhatsApp Cloud API app publication."""
+    return HTMLResponse(content=PRIVACY_HTML)
+
 
 app.include_router(api_router, prefix="/api/v1")
 
