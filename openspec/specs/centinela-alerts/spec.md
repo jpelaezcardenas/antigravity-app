@@ -42,3 +42,18 @@ The similarity search data in Centinela alert is formatted for display in Hermes
 - **THEN** JSON includes: `{ similar_decisions: [{ content, similarity, decided_by, timestamp }, ...] }`
 - **AND** Hermes UI can render "Similar approvals" card inline with Centinela alert
 
+### Requirement: Centinela endpoints resolve tenant through the shared canonical helper
+`centinela_endpoints.py::/evaluate` and `centinela_endpoints.py::/alerts/{company_id}` SHALL
+resolve the caller's tenant via `core/tenant_context.py::resolve_request_tenant_scope`, not a
+second, endpoint-local resolution helper. Alerts SHALL be persisted under the caller's own
+tenant, never a hardcoded default; an unresolved caller SHALL see an empty result, never
+Cliente Cero's data.
+
+#### Scenario: Evaluate saves alerts under the resolved tenant
+- **WHEN** an authenticated caller with a resolved tenant POSTs to `/evaluate`
+- **THEN** saved alerts carry `resolve_request_tenant_scope(user, client).tenant_id`
+
+#### Scenario: Unresolved caller gets an empty, never-Cliente-Cero result
+- **WHEN** an authenticated caller with no resolved tenant calls `GET /alerts/{company_id}`
+- **THEN** the response has `alert_count == 0` and `source == "none"`
+
