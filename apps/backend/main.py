@@ -164,6 +164,40 @@ async def privacy_policy():
     return HTMLResponse(content=PRIVACY_HTML)
 
 
+TERMS_HTML = """<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Condiciones del Servicio — Contexia</title>
+<style>body{font-family:system-ui,sans-serif;max-width:700px;margin:2rem auto;padding:0 1rem;color:#333}
+h1{color:#1a1a2e}h2{margin-top:1.5rem}</style></head><body>
+<h1>Condiciones del Servicio — Contexia</h1>
+<p><strong>Última actualización:</strong> julio 2026</p>
+<h2>1. Aceptación</h2>
+<p>Al utilizar el servicio de asesoría tributaria automatizada de Contexia a través de WhatsApp,
+aceptas estas condiciones.</p>
+<h2>2. Descripción del servicio</h2>
+<p>Contexia ofrece un asistente virtual de asesoría tributaria y contable. Las respuestas
+proporcionadas son orientativas y no reemplazan el criterio de un contador público certificado.</p>
+<h2>3. Uso aceptable</h2>
+<p>El usuario se compromete a proporcionar información veraz y a utilizar el servicio
+exclusivamente para consultas tributarias y contables legítimas.</p>
+<h2>4. Pagos</h2>
+<p>Los pagos por servicios profesionales se gestionan a través de pasarelas autorizadas (Wompi/Bancolombia).
+Los precios se informan antes de confirmar cualquier transacción.</p>
+<h2>5. Limitación de responsabilidad</h2>
+<p>Contexia no se responsabiliza por decisiones financieras tomadas exclusivamente con base en las
+respuestas del asistente virtual sin verificación profesional.</p>
+<h2>6. Modificaciones</h2>
+<p>Nos reservamos el derecho de modificar estas condiciones notificando a los usuarios a través
+del mismo canal de comunicación.</p>
+</body></html>"""
+
+
+@app.get("/terms", response_class=HTMLResponse, include_in_schema=False)
+async def terms_of_service():
+    """Public terms of service page required by Meta for WhatsApp Cloud API app publication."""
+    return HTMLResponse(content=TERMS_HTML)
+
+
 app.include_router(api_router, prefix="/api/v1")
 
 
