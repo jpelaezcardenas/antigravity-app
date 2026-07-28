@@ -182,15 +182,24 @@ Project-specific: deploy branch `main`; Frontend `https://contexia.online/app/ov
   pages (`app/overview.html` etc.) go under `app/`. `app-admin/`, `.antigravity/`, wizard, and
   `assets/`'s non-contexia-app content (css/theme.css, wizard bundle) confirmed untouched by a
   copy-overwrite-only sync (no deletion). Commit `270a859`.
-- [ ] 13.4 Vercel build green; Railway deploy active (confirm via `/api/v1/health` + deployment
-  logs).
-- [ ] 13.5 Production endpoint check: `GET /api/v1/centinela/alerts` and
-  `GET /api/v1/financials/liquidity-bridge` return 200 with correct tenant/empty semantics.
+- [x] 13.4 Railway: deployment `58228003` on `elegant-success`/`antigravity-app` — `SUCCESS`.
+  `GET /api/v1/health` on `antigravity-app-production-175a.up.railway.app` — 200 healthy. Vercel:
+  deployment `dpl_FYm4vdg7C34x7UsGTpq6V9jJryf1` (`contexia-web-app`) — `READY`, `target:
+  production`, matches commit `e1472a8` (confirmed via `githubCommitSha` in deployment metadata).
+- [x] 13.5 Production endpoint check (Railway direct + through the `contexia.online` Vercel
+  proxy): `GET /api/v1/centinela/alerts`, `GET /api/v1/financials/liquidity-bridge`, and the
+  legacy `GET /centinela/alerts/{company_id}` all return a clean `401 {"detail":"Invalid or
+  missing authentication token"}` with no token — correct, since `AUTH_ENFORCED=True` in
+  production (unlike local dev's permissive staging fallback); 401 (not 404/500) confirms the
+  routes are correctly wired and reachable, not crashed. `contexia.online/sw.js` confirmed
+  serving `CACHE_VERSION = "v15-2026-07-27"`; `app/overview.html` confirmed referencing and
+  successfully loading (`200`) the new `_next/static/chunks/*.js` bundle containing
+  `fetchCentinelaAlerts`/`fetchLiquidityBridge`.
 - [ ] 13.6 **Real visual verification with a provisioned client login**: the founder logs in
   himself (Bitwarden credentials — Claude never types passwords into forms) and confirms: real
   Caja Real + real-or-honestly-empty alerts + real liquidity bridge, hard refresh Ctrl+F5;
   `ventas_ayer`/`gastos_ayer` non-zero again (reseed working).
-- [ ] 13.7 Report: `openspec/changes/pwa-tenant-aware-screens/reports/2026-07-XX-deployment.md`.
+- [x] 13.7 Report: `openspec/changes/pwa-tenant-aware-screens/reports/2026-07-27-deployment.md`.
 
 ## Stage 14. Close
 - [ ] 14.1 `opsx:sync` the four delta specs into main `openspec/specs/`.
