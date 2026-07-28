@@ -192,10 +192,45 @@ del mismo canal de comunicación.</p>
 </body></html>"""
 
 
+
 @app.get("/terms", response_class=HTMLResponse, include_in_schema=False)
 async def terms_of_service():
     """Public terms of service page required by Meta for WhatsApp Cloud API app publication."""
     return HTMLResponse(content=TERMS_HTML)
+
+
+DATA_DELETION_HTML = """<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Eliminación de Datos — Contexia</title>
+<style>body{font-family:system-ui,sans-serif;max-width:700px;margin:2rem auto;padding:0 1rem;color:#333}
+h1{color:#1a1a2e}h2{margin-top:1.5rem}ol{line-height:1.8}</style></head><body>
+<h1>Eliminación de Datos de Usuario — Contexia</h1>
+<p><strong>Última actualización:</strong> julio 2026</p>
+<h2>Cómo solicitar la eliminación de tus datos</h2>
+<p>De acuerdo con las leyes de protección de datos aplicables (Ley 1581 de 2012 en Colombia
+y GDPR en la Unión Europea), puedes solicitar la eliminación completa de tus datos personales
+almacenados por Contexia.</p>
+<h2>Pasos para solicitar la eliminación</h2>
+<ol>
+<li>Envía un correo electrónico a <strong>contexia.marketing@gmail.com</strong> con el asunto
+<em>"Solicitud de eliminación de datos"</em>.</li>
+<li>Incluye el número de teléfono asociado a tu cuenta de WhatsApp.</li>
+<li>Recibirás una confirmación dentro de las siguientes <strong>48 horas hábiles</strong>.</li>
+<li>Tus datos serán eliminados permanentemente dentro de los <strong>30 días calendario</strong>
+siguientes a la confirmación.</li>
+</ol>
+<h2>Datos que se eliminan</h2>
+<p>Historial de conversaciones, perfil tributario, datos de contacto y cualquier documento
+compartido a través del servicio.</p>
+<h2>Contacto</h2>
+<p>Para cualquier consulta sobre privacidad: <strong>contexia.marketing@gmail.com</strong></p>
+</body></html>"""
+
+
+@app.get("/data-deletion", response_class=HTMLResponse, include_in_schema=False)
+async def data_deletion():
+    """Data deletion instructions page required by Meta for WhatsApp Cloud API app publication."""
+    return HTMLResponse(content=DATA_DELETION_HTML)
 
 
 app.include_router(api_router, prefix="/api/v1")
