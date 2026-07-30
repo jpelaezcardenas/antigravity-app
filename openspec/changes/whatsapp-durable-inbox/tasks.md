@@ -4,8 +4,8 @@
       `meta_message_id` UNIQUE (the dedup mechanism), normalized payload columns, `claimed_at`,
       `processed_at`, `created_at`. Idempotent (`IF NOT EXISTS`), additive only.
 - [x] 1.2 Index for the pull query (unprocessed + unclaimed, ordered by `created_at`).
-- [ ] 1.3 Apply to Supabase — **founder confirmation required before applying** (matches the
-      precedent set by migrations `0033`/`0034`).
+- [x] 1.3 Applied to Supabase 2026-07-30 with founder confirmation. Verified: all 11 columns
+      present as designed, RLS enabled.
 
 ## 2. Receiver — persist, do not process
 
