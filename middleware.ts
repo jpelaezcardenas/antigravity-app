@@ -1,15 +1,13 @@
-// Vercel Edge Middleware — gates /app/* and /app-admin/* behind a valid Supabase JWT
+// Vercel Edge Middleware — gates /app/* behind a valid Supabase JWT
 // stored in the `sb-access-token` cookie. Verifies HS256 signature with Web Crypto API
-// (no npm deps). Role-aware: /app/bunker and /app-admin/* require role=admin.
+// (no npm deps). Role-aware: /app-admin/* requires role=admin.
+// Redirects unknown /app/* paths to role-appropriate defaults.
 //
 // Requires Vercel env var: SUPABASE_JWT_SECRET (Supabase Dashboard → Settings → API → JWT Secret).
 
 import type { NextRequest } from "next/server";
 
 export const config = {
-  // Apply to everything except static asset paths. Vercel rewrites resolve BEFORE middleware,
-  // so this matcher sees the rewritten path (e.g. /app/bunker → /app-admin/index.html).
-  // We additionally re-check the original pathname inside the handler.
   matcher: ["/((?!_next/|wizard/|favicon|assets/|.*\\.(?:css|js|png|jpg|jpeg|svg|gif|ico|woff2?|ttf)$).*)"],
 };
 
@@ -30,7 +28,19 @@ const PUBLIC_PATHS = new Set([
 
 const PUBLIC_PREFIXES = ["/wizard", "/_next", "/assets", "/app/dashboard-assets", "/app/assets"];
 
-const ADMIN_ONLY = ["/app/bunker", "/app-admin"];
+const ADMIN_ONLY = ["/app-admin"];
+
+const KNOWN_APP_PATHS = new Set([
+  "/app/overview",
+  "/app/fiscal",
+  "/app/radar",
+  "/app/patrimonio",
+  "/app/config",
+  "/app/flujo-detalle",
+  "/app/bunker",
+]);
+
+const APP_ASSET_PREFIXES = ["/app/dashboard-assets", "/app/assets"];
 
 function base64UrlDecode(str: string): Uint8Array {
   const pad = str.length % 4 === 0 ? "" : "=".repeat(4 - (str.length % 4));
@@ -105,12 +115,15 @@ function needsAdmin(pathname: string): boolean {
   return ADMIN_ONLY.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"));
 }
 
+function isAppAsset(pathname: string): boolean {
+  return APP_ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix + "/"));
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname, search } = new URL(req.url);
 
   if (isPublic(pathname)) return;
 
-  // Gate everything else (primarily /app/* and /app-admin/*).
   const token = req.cookies.get("sb-access-token")?.value;
   const secret = process.env.SUPABASE_JWT_SECRET;
 
@@ -138,6 +151,17 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // Authenticated and (if needed) authorized — let the request through.
+  // /app exact → redirect to /app/bunker (shared surface, role filtering happens client-side)
+  if (pathname === "/app") {
+    return Response.redirect(new URL("/app/bunker", req.url), 302);
+  }
+
+  // Unknown /app/* paths → redirect to role-appropriate default
+  if (pathname.startsWith("/app/") && !KNOWN_APP_PATHS.has(pathname) && !isAppAsset(pathname)) {
+    const role = extractRole(payload);
+    const dest = isAdmin(role, payload) ? "/app/bunker" : "/app/overview";
+    return Response.redirect(new URL(dest, req.url), 302);
+  }
+
   return;
 }

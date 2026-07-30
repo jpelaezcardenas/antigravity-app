@@ -117,7 +117,7 @@ export function SellMachineSection() {
   return (
     <div className="w-full space-y-6">
       <section className="mb-2">
-        <h2 className="font-headline-lg text-headline-lg text-primary-container mb-2">
+        <h2 className="font-headline-lg text-headline-lg text-gradient mb-2">
           Sell Machine
         </h2>
         <p className="text-on-surface-variant text-body-md">
