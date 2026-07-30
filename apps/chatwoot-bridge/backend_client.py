@@ -98,3 +98,29 @@ async def taty_reply(lead_id: str, text: str) -> Optional[str]:
     except Exception:
         logger.exception("taty_reply call failed")
         return None
+
+
+async def pull_pending_events(limit: int = 50) -> list[dict[str, Any]]:
+    """Pull and claim unprocessed WhatsApp inbound events (whatsapp-durable-inbox).
+
+    Unlike whatsapp_intake/taty_reply this is allowed to raise: a poll-loop iteration failing
+    loudly and retrying next tick is correct, whereas silently returning an empty list would look
+    identical to "nothing pending" and hide an outage from inbox_health.
+    """
+    url = f"{settings.CONTEXIA_API_URL}/channels/whatsapp/inbox/pending"
+    async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:
+        response = await client.get(url, headers=_headers(), params={"limit": limit})
+        response.raise_for_status()
+        return response.json().get("events", [])
+
+
+async def acknowledge_events(event_ids: list[str]) -> None:
+    """Mark events processed. Called only after Chatwoot has accepted the injected message —
+    see inbox_poller.poll_once."""
+    if not event_ids:
+        return
+
+    url = f"{settings.CONTEXIA_API_URL}/channels/whatsapp/inbox/ack"
+    async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:
+        response = await client.post(url, headers=_headers(), json={"event_ids": event_ids})
+        response.raise_for_status()

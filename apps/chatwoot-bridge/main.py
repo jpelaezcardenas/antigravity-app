@@ -14,20 +14,39 @@ visible in logs.
 
 from __future__ import annotations
 
+import asyncio
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request, status
 
 import backend_client
 import chatwoot_client
 import hermes_client
+import inbox_poller
 from config import settings
 from schemas import ChatwootWebhookPayload
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Chatwoot-Hermes Bridge")
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    """Starts the durable-inbox poller as a background task when enabled (whatsapp-durable-inbox).
+    Off by default (INBOX_POLLER_ENABLED) so the bridge keeps working standalone before it is
+    configured — e.g. before WHATSAPP_APP_SECRET exists in Railway (design.md 4.4)."""
+    poller_task = None
+    if settings.INBOX_POLLER_ENABLED:
+        poller_task = asyncio.create_task(inbox_poller.run_forever())
+
+    yield
+
+    if poller_task is not None:
+        poller_task.cancel()
+
+
+app = FastAPI(title="Chatwoot-Hermes Bridge", lifespan=_lifespan)
 
 AUDIO_FALLBACK_REPLY = (
     "Por ahora te leo mejor por texto - me puedes escribir tu mensaje? 🙂"

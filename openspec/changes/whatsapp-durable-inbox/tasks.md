@@ -35,18 +35,18 @@
 
 ## 4. Bridge poller + Chatwoot injection
 
-- [ ] 4.1 Failing tests: poller injects each pulled event into Chatwoot and acknowledges only on
+- [x] 4.1 Failing tests: poller injects each pulled event into Chatwoot and acknowledges only on
       success; a failed injection leaves the event unacknowledged.
-- [ ] 4.2 `apps/chatwoot-bridge/inbox_poller.py` — interval poll, reusing `backend_client`'s
+- [x] 4.2 `apps/chatwoot-bridge/inbox_poller.py` — interval poll, reusing `backend_client`'s
       existing `sign_tenant_jwt()` / `_headers()` auth path.
-- [ ] 4.3 Chatwoot injection: find-or-create contact by phone, find-or-create conversation on the
+- [x] 4.3 Chatwoot injection: find-or-create contact by phone, find-or-create conversation on the
       WhatsApp inbox, create the incoming message.
-- [ ] 4.4 Wire the poller into the bridge's startup; keep it optional via env so the bridge can
+- [x] 4.4 Wire the poller into the bridge's startup; keep it optional via env so the bridge can
       still run without it.
-- [ ] 4.5 Do NOT call `taty_reply` from the poller — Chatwoot's own webhook to the bridge drives
+- [x] 4.5 Do NOT call `taty_reply` from the poller — Chatwoot's own webhook to the bridge drives
       the reply, preserving the single-brain invariant and the `bot_off` HITL check
       (design.md Decision 6).
-- [ ] 4.6 Bridge tests green.
+- [x] 4.6 Bridge tests green.
 
 ## 5. FOUNDER ACTION — prerequisites
 

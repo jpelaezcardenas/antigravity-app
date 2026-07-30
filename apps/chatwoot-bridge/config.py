@@ -17,6 +17,16 @@ class Settings(BaseSettings):
     CHATWOOT_URL: str = ""
     CHATWOOT_API_TOKEN: str = ""
     CHATWOOT_ACCOUNT_ID: str = "1"
+    # The WhatsApp Cloud API inbox events get injected into (whatsapp-durable-inbox). Empty by
+    # default so the poller stays inert until explicitly configured — never guesses an inbox id.
+    CHATWOOT_WHATSAPP_INBOX_ID: str = ""
+
+    # whatsapp-durable-inbox: interval (seconds) between pulls of the backend's durable queue.
+    # A few seconds is invisible on WhatsApp, which is not a synchronous medium.
+    INBOX_POLL_INTERVAL_SECONDS: float = 5.0
+    # Whether the poller runs at all. Default off so the bridge can still run standalone
+    # (design.md 4.4) — e.g. before the founder has set WHATSAPP_APP_SECRET in Railway.
+    INBOX_POLLER_ENABLED: bool = False
 
     # Hermes Gateway (OpenAI-compatible chat completions surface, see design.md decision 1)
     HERMES_GATEWAY_URL: str = "http://localhost:8642"
