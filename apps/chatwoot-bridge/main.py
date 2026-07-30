@@ -1,9 +1,15 @@
-"""Chatwoot <-> Hermes (Taty) bridge.
+"""Chatwoot <-> Contexia (Taty) bridge.
 
-Thin, stateless transport layer (design.md Goals): Chatwoot event -> filter /
-HITL check -> history -> Hermes chat-completion -> Chatwoot reply. No
-business logic is duplicated from the Contexia backend — lead lifecycle
-stays owned by crm_service.py / social_ops_endpoints.py (design.md decision 5).
+Thin, stateless transport layer: Chatwoot event -> filter / HITL check -> CRM intake ->
+backend Taty reply -> Chatwoot reply. No business logic is duplicated from the Contexia
+backend — lead lifecycle stays owned by crm_service.py, and reply generation is owned by
+services/taty_lead_router.py (taty-channel-consolidation).
+
+Previously this module called Hermes directly for a free-text chat completion: a second reply
+brain that bypassed intent classification, Wompi payment links, payment verification and KB
+grounding. Hermes is still the inference provider, reached through the backend's anonymized LLM
+path; `hermes_client` survives here only as a liveness probe that makes a wrong-profile gateway
+visible in logs.
 """
 
 from __future__ import annotations
@@ -26,7 +32,7 @@ app = FastAPI(title="Chatwoot-Hermes Bridge")
 AUDIO_FALLBACK_REPLY = (
     "Por ahora te leo mejor por texto - me puedes escribir tu mensaje? 🙂"
 )
-HERMES_FALLBACK_REPLY = (
+HANDOVER_FALLBACK_REPLY = (
     "Disculpa, tuve un problema para responderte en este momento. "
     "Un miembro del equipo va a revisar tu mensaje pronto."
 )
@@ -86,20 +92,29 @@ async def process_incoming_message(
         await chatwoot_client.send_reply(conversation_id, AUDIO_FALLBACK_REPLY)
         return
 
-    intake_result = None
-    if phone:
-        intake_result = await backend_client.whatsapp_intake(phone)
-        # Graceful degradation (design.md decision 7): a failed intake call
-        # never blocks the reply — just skip the new-lead side effects below.
-        if intake_result and intake_result.get("is_new") and contact_id is not None:
-            await chatwoot_client.set_contact_attributes(
-                contact_id, {"tipo_lead": "b2c_whatsapp", "estado": "nuevo"}
-            )
+    intake_result = await backend_client.whatsapp_intake(phone) if phone else None
+    if intake_result and intake_result.get("is_new") and contact_id is not None:
+        await chatwoot_client.set_contact_attributes(
+            contact_id, {"tipo_lead": "b2c_whatsapp", "estado": "nuevo"}
+        )
 
-    history = await chatwoot_client.get_recent_messages(conversation_id)
-    reply_text = await hermes_client.invoke_chat_completion(history, content)
+    # taty-channel-consolidation: without a lead we do NOT answer. The previous behaviour fell
+    # through to a raw Hermes completion, which meant an unidentified contact could still get an
+    # ungrounded tax answer with no lead context, no Wompi state and no KB grounding. Handing
+    # over to a human in Chatwoot is the correct degraded mode.
+    lead_id = (intake_result or {}).get("lead_id")
+    if not lead_id:
+        logger.warning(
+            "No lead_id for conversation %s (phone=%s) — handing over to a human",
+            conversation_id,
+            phone,
+        )
+        await chatwoot_client.send_reply(conversation_id, HANDOVER_FALLBACK_REPLY)
+        return
+
+    reply_text = await backend_client.taty_reply(lead_id, content)
     if reply_text is None:
-        reply_text = HERMES_FALLBACK_REPLY
+        reply_text = HANDOVER_FALLBACK_REPLY
 
     await chatwoot_client.send_reply(conversation_id, reply_text)
 

@@ -73,3 +73,28 @@ async def whatsapp_intake(phone: str) -> Optional[dict[str, Any]]:
     except Exception:
         logger.exception("whatsapp_intake call failed")
         return None
+
+
+async def taty_reply(lead_id: str, text: str) -> Optional[str]:
+    """Ask the backend's Taty sales router for this lead's reply.
+
+    taty-channel-consolidation: replaces the bridge's previous raw Hermes chat completion so a
+    single brain (services/taty_lead_router.py) owns intent classification, Wompi payment links,
+    payment verification and KB grounding on every channel.
+
+    Same fail-soft contract as whatsapp_intake: returns None on any failure, never raises. The
+    caller turns None into the human-takeover fallback rather than answering ungrounded.
+    """
+    url = f"{settings.CONTEXIA_API_URL}/channels/whatsapp/leads/{lead_id}/reply"
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:
+            response = await client.post(url, headers=_headers(), json={"text": text})
+        if response.status_code != 200:
+            logger.error(
+                "taty_reply returned non-200: %s %s", response.status_code, response.text
+            )
+            return None
+        return response.json().get("reply")
+    except Exception:
+        logger.exception("taty_reply call failed")
+        return None
