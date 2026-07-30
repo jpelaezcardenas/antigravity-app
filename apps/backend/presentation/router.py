@@ -64,7 +64,8 @@ if settings.CRM_CANONICAL:
 if settings.SELL_MACHINE_CANONICAL:
     api_router.include_router(sell_machine_router, prefix="/sell-machine", tags=["sell-machine"])
 
-# Taty WhatsApp sales router — feature flag gated (default off, flip after Stage 11 smoke-test;
-# no real WhatsApp Business number/token exists yet)
-if settings.WHATSAPP_CANONICAL:
-    api_router.include_router(whatsapp_router, prefix="/channels/whatsapp", tags=["whatsapp"])
+# Taty WhatsApp channel — mounted unconditionally (taty-channel-consolidation). This is the
+# production ingress from Meta via vercel.json's /api/v1/:path* rewrite; a feature flag here would
+# only risk silently dropping live customer messages. Authenticity is enforced by
+# X-Hub-Signature-256 verification inside the handler.
+api_router.include_router(whatsapp_router, prefix="/channels/whatsapp", tags=["whatsapp"])

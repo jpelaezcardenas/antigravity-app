@@ -1,25 +1,25 @@
 ## 1. Internal Taty reply endpoint (additive — nothing consumes it yet)
 
-- [ ] 1.1 Write failing tests in `apps/backend/tests/test_whatsapp_endpoints.py` for the new
+- [x] 1.1 Write failing tests in `apps/backend/tests/test_whatsapp_endpoints.py` for the new
       surface: authenticated call returns the router's reply; unauthenticated → 401; unknown
       `lead_id` → 404 and no lead created.
-- [ ] 1.2 Implement the endpoint in `apps/backend/presentation/whatsapp_endpoints.py`, delegating to
+- [x] 1.2 Implement the endpoint in `apps/backend/presentation/whatsapp_endpoints.py`, delegating to
       `services/taty_lead_router.py::route_lead_message` unmodified, guarded by
       `Depends(get_current_user)`.
-- [ ] 1.3 Mount it in `apps/backend/presentation/router.py` unconditionally (no feature flag).
-- [ ] 1.4 Tests green.
+- [x] 1.3 Mount it in `apps/backend/presentation/router.py` unconditionally (no feature flag).
+- [x] 1.4 Tests green.
 
 ## 2. Point the bridge at the sales router
 
-- [ ] 2.1 Write a failing test in `apps/chatwoot-bridge/tests/test_process_message.py` asserting
+- [x] 2.1 Write a failing test in `apps/chatwoot-bridge/tests/test_process_message.py` asserting
       `process_incoming_message` obtains its reply from `backend_client` and does **not** call
       `hermes_client.invoke_chat_completion`.
-- [ ] 2.2 Add `taty_reply(lead_id, text)` to `apps/chatwoot-bridge/backend_client.py`, reusing the
+- [x] 2.2 Add `taty_reply(lead_id, text)` to `apps/chatwoot-bridge/backend_client.py`, reusing the
       existing `sign_tenant_jwt()` / `_headers()` path.
-- [ ] 2.3 Rewire `apps/chatwoot-bridge/main.py::process_incoming_message` to call it, keeping the
+- [x] 2.3 Rewire `apps/chatwoot-bridge/main.py::process_incoming_message` to call it, keeping the
       existing fail-soft fallback reply on error.
-- [ ] 2.4 Keep `hermes_client.check_models()` as the health/liveness probe (design decision 5).
-- [ ] 2.5 Bridge tests green.
+- [x] 2.4 Keep `hermes_client.check_models()` as the health/liveness probe (design decision 5).
+- [x] 2.5 Bridge tests green.
 
 ## 3. Harden the WhatsApp ingress and retire the flag
 
@@ -28,17 +28,21 @@ Hostinger's, so a Cloudflare Tunnel hostname needs zone delegation (rejected); `
 already publishes `contexia.online/api/v1/*` to Railway, so this route is a free, stable,
 TLS-terminated Meta callback on the company's own domain.
 
-- [ ] 3.1 Add `X-Hub-Signature-256` verification over the RAW body (`hmac.compare_digest`) to
+- [x] 3.1 Add `X-Hub-Signature-256` verification over the RAW body (`hmac.compare_digest`) to
       `POST /webhook`, and make the `GET /webhook` verify token fail closed (no hardcoded
       `"contexia-whatsapp-webhook"` default).
-- [ ] 3.2 Remove `WHATSAPP_CANONICAL` from `apps/backend/config.py` and its conditional mount in
+- [x] 3.2 Remove `WHATSAPP_CANONICAL` from `apps/backend/config.py` and its conditional mount in
       `presentation/router.py` — a flag on a live ingress can only drop real customer messages.
-- [ ] 3.3 Replace the `.env.example` Meta block with fail-closed placeholders
+- [x] 3.3 Replace the `.env.example` Meta block with fail-closed placeholders
       (`WHATSAPP_WEBHOOK_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, `META_*`). No real values.
-- [ ] 3.4 Confirm `channels/whatsapp.py::normalize_whatsapp_webhook` is either still used
+- [x] 3.4 Confirm `channels/whatsapp.py::normalize_whatsapp_webhook` is either still used
       (`send_whatsapp_message` is) or explicitly left in place with a note — do not delete a helper
       that outbound sending depends on.
-- [ ] 3.5 No regression vs HEAD in directly affected suites.
+- [x] 3.5 No regression: 40 failed / 710 passed / 112 skipped — same 40 pre-existing failures
+      as verified in a clean HEAD worktree in the prior implementation pass (httpx/starlette
+      version incompatibility + in-flight shadow-gl-real-data-ingestion/automated-approval-rules
+      asserts), none in files this change touches. Directly affected: 65 passed
+      (whatsapp/meta/taty/channel).
 
 ## 4. FOUNDER ACTION — set the app secrets BEFORE this deploys (hard gate)
 

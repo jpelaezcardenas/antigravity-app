@@ -72,10 +72,19 @@ class Settings(BaseSettings):
     # design.md D5/D7). Activation requires coordinating the Hermes-side poller first.
     HERMES_BRIDGE_TOKEN: Optional[str] = None
 
-    # Taty WhatsApp sales router (change taty-whatsapp-sales-router) — new channel surface,
-    # default off, dark-deployed and flipped after Stage 11 prod smoke-test with a simulated
-    # payload (no real WhatsApp Business number/token exists yet).
-    WHATSAPP_CANONICAL: bool = False
+    # WHATSAPP_CANONICAL was retired by taty-channel-consolidation. The flag guarded a public
+    # webhook that is now the production ingress from Meta (reachable as
+    # contexia.online/api/v1/channels/whatsapp/webhook via vercel.json's rewrite), so gating it
+    # behind a flag only risked a silent outage. Its authenticity is enforced by signature
+    # verification instead.
+    #
+    # Meta credentials. All fail closed: an empty value rejects every request rather than falling
+    # back to a guessable built-in default (the previous code defaulted the verify tokens to
+    # "contexia-whatsapp-webhook" / "contexia-meta-webhook" in source).
+    WHATSAPP_WEBHOOK_VERIFY_TOKEN: str = ""
+    WHATSAPP_APP_SECRET: str = ""
+    META_WEBHOOK_VERIFY_TOKEN: str = ""
+    META_APP_SECRET: str = ""
 
     # Multi-tenant feature gate (Phase 1: MVP)
     MULTI_TENANT_ENABLED: bool = True  # Enable JWT tenant_id extraction

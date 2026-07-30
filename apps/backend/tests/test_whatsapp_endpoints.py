@@ -69,6 +69,191 @@ def reply_client(wa_app):
     )
 
 
+class TestFeatureFlagRetired:
+    def test_no_whatsapp_canonical_setting_remains(self) -> None:
+        from config import settings
+
+        assert not hasattr(settings, "WHATSAPP_CANONICAL")
+
+    def test_router_is_mounted_unconditionally(self) -> None:
+        with open("presentation/router.py", "r", encoding="utf-8") as f:
+            router_code = f.read()
+
+        assert "if settings.WHATSAPP_CANONICAL:" not in router_code
+        assert 'prefix="/channels/whatsapp"' in router_code
+
+
+class TestWebhookVerificationHandshake:
+    @pytest.mark.asyncio
+    async def test_valid_token_echoes_challenge(self, wa_client, configured) -> None:
+        async with wa_client as client:
+            response = await client.get(
+                "/channels/whatsapp/webhook",
+                params={
+                    "hub.mode": "subscribe",
+                    "hub.verify_token": "correct-verify-token",
+                    "hub.challenge": "12345",
+                },
+            )
+
+        assert response.status_code == 200
+        assert response.text == "12345"
+
+    @pytest.mark.asyncio
+    async def test_invalid_token_rejected(self, wa_client, configured) -> None:
+        async with wa_client as client:
+            response = await client.get(
+                "/channels/whatsapp/webhook",
+                params={
+                    "hub.mode": "subscribe",
+                    "hub.verify_token": "wrong-token",
+                    "hub.challenge": "12345",
+                },
+            )
+
+        assert response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_unconfigured_verify_token_fails_closed(self, wa_client) -> None:
+        """No hardcoded default may be accepted."""
+        from config import settings
+
+        async with wa_client as client:
+            with patch.object(settings, "WHATSAPP_WEBHOOK_VERIFY_TOKEN", ""):
+                response = await client.get(
+                    "/channels/whatsapp/webhook",
+                    params={
+                        "hub.mode": "subscribe",
+                        "hub.verify_token": "contexia-whatsapp-webhook",
+                        "hub.challenge": "12345",
+                    },
+                )
+
+        assert response.status_code == 403
+
+
+class TestInboundWebhookSignature:
+    @pytest.mark.asyncio
+    async def test_unsigned_payload_is_rejected_without_side_effects(
+        self, wa_client, configured
+    ) -> None:
+        raw = json.dumps({"entry": []}).encode()
+
+        async with wa_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.normalize_whatsapp_webhook"
+            ) as mock_normalize:
+                response = await client.post(
+                    "/channels/whatsapp/webhook",
+                    content=raw,
+                    headers={"Content-Type": "application/json"},
+                )
+
+        assert response.status_code == 403
+        mock_normalize.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_wrong_signature_is_rejected(self, wa_client, configured) -> None:
+        raw = json.dumps({"entry": []}).encode()
+
+        async with wa_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.normalize_whatsapp_webhook"
+            ) as mock_normalize:
+                response = await client.post(
+                    "/channels/whatsapp/webhook",
+                    content=raw,
+                    headers={
+                        "X-Hub-Signature-256": _sign(raw, "attacker-secret"),
+                        "Content-Type": "application/json",
+                    },
+                )
+
+        assert response.status_code == 403
+        mock_normalize.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_signed_message_is_persisted_not_processed(self, wa_client, configured) -> None:
+        """The webhook stores and acknowledges. Running an LLM call inside Meta's request turns
+        a slow model into a retry, and a retry into a duplicate reply — so classification and
+        sending must NOT happen here (that lands with whatsapp-durable-inbox)."""
+        raw = json.dumps({"entry": []}).encode()
+        fake_events = [
+            {
+                "channel": "whatsapp",
+                "account_id": "573001234567",
+                "source_event_id": "wamid.AAA",
+                "text": "Quiero saber si me toca declarar renta este año",
+                "actor_name": "Maria Lead",
+                "raw_payload": {},
+            }
+        ]
+
+        async with wa_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.normalize_whatsapp_webhook",
+                return_value=fake_events,
+            ), patch(
+                "presentation.whatsapp_endpoints.route_lead_message"
+            ) as mock_route:
+                response = await client.post(
+                    "/channels/whatsapp/webhook",
+                    content=raw,
+                    headers={
+                        "X-Hub-Signature-256": _sign(raw),
+                        "Content-Type": "application/json",
+                    },
+                )
+
+        assert response.status_code == 200
+        mock_route.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_signature_uses_raw_bytes_not_reserialized_json(
+        self, wa_client, configured
+    ) -> None:
+        """Non-canonical key order and whitespace must still verify. If the handler parsed the
+        body and re-serialized it before hashing, this signature would never match."""
+        raw = b'{"object":   "whatsapp_business_account",  "entry": []}'
+
+        async with wa_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.normalize_whatsapp_webhook", return_value=[]
+            ):
+                response = await client.post(
+                    "/channels/whatsapp/webhook",
+                    content=raw,
+                    headers={
+                        "X-Hub-Signature-256": _sign(raw),
+                        "Content-Type": "application/json",
+                    },
+                )
+
+        assert response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_unconfigured_app_secret_rejects_everything(self, wa_client) -> None:
+        from config import settings
+
+        raw = json.dumps({"entry": []}).encode()
+
+        async with wa_client as client:
+            with patch.object(settings, "WHATSAPP_APP_SECRET", ""), patch(
+                "presentation.whatsapp_endpoints.normalize_whatsapp_webhook"
+            ) as mock_normalize:
+                response = await client.post(
+                    "/channels/whatsapp/webhook",
+                    content=raw,
+                    headers={
+                        "X-Hub-Signature-256": _sign(raw),
+                        "Content-Type": "application/json",
+                    },
+                )
+
+        assert response.status_code == 403
+        mock_normalize.assert_not_called()
+
+
 class TestInternalTatyReplyEndpoint:
     @pytest.mark.asyncio
     async def test_authenticated_call_returns_router_reply(self, reply_client) -> None:
