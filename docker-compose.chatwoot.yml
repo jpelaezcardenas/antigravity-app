@@ -48,7 +48,7 @@ services:
       RAILS_ENV: production
       NODE_ENV: production
       INSTALLATION_ENV: docker
-      SECRET_KEY_BASE: ${CHATWOOT_SECRET_KEY_BASE:?Set CHATWOOT_SECRET_KEY_BASE in .env.chatwoot — generate with: openssl rand -hex 64}
+      SECRET_KEY_BASE: "${CHATWOOT_SECRET_KEY_BASE:?Set CHATWOOT_SECRET_KEY_BASE in .env.chatwoot (generate with openssl rand -hex 64)}"
       FRONTEND_URL: http://localhost:${CHATWOOT_PORT:-3020}
       DEFAULT_LOCALE: es
       POSTGRES_HOST: postgres
@@ -58,6 +58,15 @@ services:
       REDIS_URL: redis://redis:6379
       RAILS_LOG_TO_STDOUT: "true"
       ENABLE_ACCOUNT_SIGNUP: "false"
+      # whatsapp-durable-inbox: Chatwoot's SafeFetch/SSRF guard blocks webhook delivery to any
+      # non-public IP by default, including host.docker.internal — that's how it reaches the
+      # bridge process running on the host. This is Chatwoot's own documented escape hatch
+      # (lib/safe_fetch.rb), not a workaround. Security trade-off, deliberately accepted here:
+      # this instance is single-operator, local-only, and ENABLE_ACCOUNT_SIGNUP=false — the
+      # residual risk this control exists for (an attacker-configured webhook URL used to probe
+      # internal infra) requires dashboard access this instance doesn't expose to anyone but the
+      # founder. Revisit if this account ever gains additional users or external exposure.
+      SAFE_FETCH_ALLOW_PRIVATE_NETWORK: "true"
     volumes:
       - chatwoot_storage:/app/storage
     command: ["bundle", "exec", "rails", "s", "-p", "3000", "-b", "0.0.0.0"]
@@ -74,7 +83,7 @@ services:
       RAILS_ENV: production
       NODE_ENV: production
       INSTALLATION_ENV: docker
-      SECRET_KEY_BASE: ${CHATWOOT_SECRET_KEY_BASE:?Set CHATWOOT_SECRET_KEY_BASE in .env.chatwoot — generate with: openssl rand -hex 64}
+      SECRET_KEY_BASE: "${CHATWOOT_SECRET_KEY_BASE:?Set CHATWOOT_SECRET_KEY_BASE in .env.chatwoot (generate with openssl rand -hex 64)}"
       FRONTEND_URL: http://localhost:${CHATWOOT_PORT:-3020}
       POSTGRES_HOST: postgres
       POSTGRES_USERNAME: chatwoot
@@ -82,6 +91,8 @@ services:
       POSTGRES_DATABASE: chatwoot
       REDIS_URL: redis://redis:6379
       RAILS_LOG_TO_STDOUT: "true"
+      # See chatwoot-web's comment above — this is the process that actually runs WebhookJob.
+      SAFE_FETCH_ALLOW_PRIVATE_NETWORK: "true"
     volumes:
       - chatwoot_storage:/app/storage
     command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]

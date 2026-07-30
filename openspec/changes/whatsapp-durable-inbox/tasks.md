@@ -108,8 +108,8 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 7.1 git commit + push to `main`
-- [ ] 7.2 Railway deploy active and healthy (`GET /api/v1/health` → 200)
+- [x] 7.1 Merged via PR #8 (gh pr merge --merge --delete-branch).
+- [x] 7.2 Railway deployment b7ffa31c SUCCESS, /api/v1/health 200 after documented cold-start.
 - [ ] 7.3 Confirm the inbox health endpoint reports a real backlog figure in production
 - [ ] 7.4 Create report: `openspec/changes/whatsapp-durable-inbox/reports/YYYY-MM-DD-deployment.md`
 

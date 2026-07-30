@@ -201,13 +201,21 @@ class TestSendReply:
 
 
 class TestSetContactAttributes:
+    """Chatwoot has no dedicated custom_attributes route for contacts (that member action
+    exists only on conversations, per config/routes.rb) — setting them is a PATCH on the
+    contact's own update endpoint, whose permitted_params includes custom_attributes and merges
+    it with the contact's existing ones. A respx mock against the wrong URL/verb would still
+    have passed here, the same way the wrong path shipped undetected before a real end-to-end
+    run against live Chatwoot surfaced the 404 — the fix is verified against Chatwoot's actual
+    ContactsController#update, not just re-mocked."""
+
     @respx.mock
     @pytest.mark.asyncio
     async def test_sets_custom_attributes(self):
         import chatwoot_client
 
-        route = respx.post(
-            f"{CHATWOOT_URL}/api/v1/accounts/{ACCOUNT_ID}/contacts/7/custom_attributes"
+        route = respx.patch(
+            f"{CHATWOOT_URL}/api/v1/accounts/{ACCOUNT_ID}/contacts/7"
         ).mock(return_value=Response(200, json={}))
 
         await chatwoot_client.set_contact_attributes(

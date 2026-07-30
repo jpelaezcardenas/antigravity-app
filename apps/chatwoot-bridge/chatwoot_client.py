@@ -63,10 +63,17 @@ async def send_reply(conversation_id: int, text: str) -> None:
 
 
 async def set_contact_attributes(contact_id: int, attributes: dict[str, Any]) -> None:
-    """Set/merge custom attributes on a Chatwoot contact (e.g. tipo_lead, estado)."""
-    url = f"{_base_url()}/contacts/{contact_id}/custom_attributes"
+    """Set/merge custom attributes on a Chatwoot contact (e.g. tipo_lead, estado).
+
+    Chatwoot has no dedicated custom_attributes route for contacts — that member action exists
+    only on conversations (config/routes.rb). Contacts::update's permitted_params accepts
+    custom_attributes directly and merges it with the contact's existing ones
+    (ContactsController#contact_custom_attributes), so this is a PATCH on the contact's own
+    update endpoint, not a POST to a sub-resource.
+    """
+    url = f"{_base_url()}/contacts/{contact_id}"
     async with _client() as client:
-        response = await client.post(
+        response = await client.patch(
             url,
             headers=_headers(),
             json={"custom_attributes": attributes},

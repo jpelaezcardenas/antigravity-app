@@ -89,12 +89,13 @@ both reject 100% of inbound traffic. This section blocks Stage 11.
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 7.1 git commit + push to `main`
-- [ ] 7.2 Vercel build complete (no frontend change expected — confirm no regression)
-- [ ] 7.3 Railway deploy active and healthy (`GET /api/v1/health` → 200)
-- [ ] 7.4 Production verification: both webhooks reject an unsigned payload with `403`; the
-      internal reply endpoint rejects an unauthenticated call with `401`
-- [ ] 7.5 Create report: `openspec/changes/taty-channel-consolidation/reports/YYYY-MM-DD-deployment.md`
+- [x] 7.1 git commit + push to `main`
+- [x] 7.2 Vercel build complete (no frontend change expected — confirm no regression)
+- [x] 7.3 Railway deploy active and healthy (`GET /api/v1/health` → 200)
+- [x] 7.4 Verified against the live deploy: WhatsApp webhook -> 403 unsigned; Meta webhook -> 403
+      unsigned; internal reply endpoint -> 401 unauthenticated; inbox/health -> 401 unauthenticated.
+- [x] 7.5 Report: `reports/2026-07-30-deployment.md` (covers both this change and
+      `whatsapp-durable-inbox`, deployed together).
 
 ## 8. FOLLOW-UP (separate change, in progress) — give the accountant her inbox back
 
