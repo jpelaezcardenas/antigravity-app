@@ -62,16 +62,16 @@ both reject 100% of inbound traffic. This section blocks Stage 11.
 
 ## 5. Harden the Meta social webhook
 
-- [ ] 5.1 Write failing tests: correctly signed payload → processed; missing/wrong signature → 403
+- [x] 5.1 Write failing tests: correctly signed payload → processed; missing/wrong signature → 403
       and no ingestion; signature computed over raw bytes with non-canonical key order still
       verifies; unconfigured verify token → 403.
-- [ ] 5.2 Implement `X-Hub-Signature-256` HMAC verification over `await request.body()` with
+- [x] 5.2 Implement `X-Hub-Signature-256` HMAC verification over `await request.body()` with
       `hmac.compare_digest` in `apps/backend/presentation/meta_endpoints.py` — reusing the pattern
       in `presentation/telegram_endpoints.py`.
-- [ ] 5.3 Move `META_WEBHOOK_VERIFY_TOKEN` / `META_APP_SECRET` into `config.py` with no hardcoded
+- [x] 5.3 Move `META_WEBHOOK_VERIFY_TOKEN` / `META_APP_SECRET` into `config.py` with no hardcoded
       defaults (fail-closed, mirroring `validate_wompi_config()`'s style).
-- [ ] 5.4 Add both to `.env.example` as placeholders.
-- [ ] 5.5 Tests green.
+- [x] 5.4 Add both to `.env.example` as placeholders.
+- [x] 5.5 Tests green.
 
 ## 6. Verify
 
