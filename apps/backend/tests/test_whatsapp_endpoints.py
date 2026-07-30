@@ -173,10 +173,11 @@ class TestInboundWebhookSignature:
         mock_normalize.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_signed_message_is_persisted_not_processed(self, wa_client, configured) -> None:
-        """The webhook stores and acknowledges. Running an LLM call inside Meta's request turns
-        a slow model into a retry, and a retry into a duplicate reply — so classification and
-        sending must NOT happen here (that lands with whatsapp-durable-inbox)."""
+    async def test_signed_message_is_stored_not_processed(self, wa_client, configured) -> None:
+        """whatsapp-durable-inbox: the webhook stores and returns. Running an LLM call inside
+        Meta's request turns a slow model into a retry, and a retry into a duplicate reply — so
+        classification and sending must NOT happen here; storage is what makes retries
+        idempotent instead."""
         raw = json.dumps({"entry": []}).encode()
         fake_events = [
             {
@@ -194,6 +195,8 @@ class TestInboundWebhookSignature:
                 "presentation.whatsapp_endpoints.normalize_whatsapp_webhook",
                 return_value=fake_events,
             ), patch(
+                "presentation.whatsapp_endpoints.store_inbound_events", return_value=1
+            ) as mock_store, patch(
                 "presentation.whatsapp_endpoints.route_lead_message"
             ) as mock_route:
                 response = await client.post(
@@ -206,6 +209,8 @@ class TestInboundWebhookSignature:
                 )
 
         assert response.status_code == 200
+        assert response.json()["events_accepted"] == 1
+        mock_store.assert_called_once_with(fake_events)
         mock_route.assert_not_called()
 
     @pytest.mark.asyncio
@@ -252,6 +257,69 @@ class TestInboundWebhookSignature:
 
         assert response.status_code == 403
         mock_normalize.assert_not_called()
+
+
+class TestDurableInboxEndpoints:
+    """The local bridge PULLS from these — that is what lets the local node stay unreachable
+    from the internet, and is why no tunnel or DNS delegation is needed."""
+
+    @pytest.mark.asyncio
+    async def test_pending_returns_claimed_events(self, reply_client) -> None:
+        events = [{"id": "e1", "account_id": "573001234567", "body": "hola"}]
+
+        async with reply_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.pull_pending", return_value=events
+            ) as mock_pull:
+                response = await client.get("/channels/whatsapp/inbox/pending?limit=10")
+
+        assert response.status_code == 200
+        assert response.json()["count"] == 1
+        assert response.json()["events"][0]["id"] == "e1"
+        mock_pull.assert_called_once_with(limit=10)
+
+    @pytest.mark.asyncio
+    async def test_ack_marks_events_processed(self, reply_client) -> None:
+        async with reply_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.acknowledge", return_value=2
+            ) as mock_ack:
+                response = await client.post(
+                    "/channels/whatsapp/inbox/ack", json={"event_ids": ["e1", "e2"]}
+                )
+
+        assert response.status_code == 200
+        assert response.json()["acknowledged"] == 2
+        mock_ack.assert_called_once_with(["e1", "e2"])
+
+    @pytest.mark.asyncio
+    async def test_health_exposes_backlog(self, reply_client) -> None:
+        async with reply_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.inbox_health",
+                return_value={"pending": 12, "oldest_pending_at": "2026-07-28T10:00:00+00:00"},
+            ):
+                response = await client.get("/channels/whatsapp/inbox/health")
+
+        assert response.status_code == 200
+        assert response.json()["pending"] == 12
+
+    @pytest.mark.asyncio
+    async def test_inbox_endpoints_reject_unauthenticated_access(self, wa_client) -> None:
+        """These carry raw customer message text — they must never answer without auth."""
+        from config import settings
+
+        with patch.object(settings, "AUTH_ENFORCED", True):
+            async with wa_client as client:
+                pending = await client.get("/channels/whatsapp/inbox/pending")
+                ack = await client.post(
+                    "/channels/whatsapp/inbox/ack", json={"event_ids": ["e1"]}
+                )
+                health = await client.get("/channels/whatsapp/inbox/health")
+
+        assert pending.status_code == 401
+        assert ack.status_code == 401
+        assert health.status_code == 401
 
 
 class TestInternalTatyReplyEndpoint:

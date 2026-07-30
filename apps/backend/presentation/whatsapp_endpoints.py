@@ -1,25 +1,26 @@
-"""WhatsApp channel endpoints (taty-channel-consolidation).
+"""WhatsApp channel endpoints (taty-channel-consolidation, whatsapp-durable-inbox).
 
-Mounted at /api/v1/channels/whatsapp (see presentation/router.py). Two surfaces:
+Mounted at /api/v1/channels/whatsapp (see presentation/router.py). Three surfaces:
 
 1. `POST /webhook` — the PUBLIC ingress from Meta, live as
    `https://contexia.online/api/v1/channels/whatsapp/webhook` via vercel.json's `/api/v1/:path*`
    rewrite to Railway, which is why Meta's callback needs no tunnel and no DNS delegation. It
-   verifies `X-Hub-Signature-256` over the RAW body before doing anything: previously it accepted
-   any POST, so anyone who learned the URL could forge leads and drive the Wompi flow.
-   Persisting the event for durable, deduplicated processing (rather than routing/sending inline
-   here) is the `whatsapp-durable-inbox` follow-up change — kept out of this one deliberately.
-2. `POST /leads/{lead_id}/reply` — INTERNAL and authenticated. The Chatwoot bridge calls this
-   instead of generating replies from a raw Hermes chat completion, so a single brain
-   (services/taty_lead_router.py) owns intent classification, Wompi payment links, payment
-   verification and KB grounding no matter which channel a message arrived on.
+   verifies `X-Hub-Signature-256` over the RAW body, then does exactly one thing: persist.
+   Classification, LLM inference and outbound sending are deliberately NOT on this path — an LLM
+   call inside Meta's request turns a slow model into a retry, and a retry into a duplicate reply.
+2. `GET /inbox/pending`, `POST /inbox/ack`, `GET /inbox/health` — INTERNAL and authenticated. The
+   local Chatwoot bridge PULLS from these, which is what lets the local node stay unreachable
+   from the internet.
+3. `POST /leads/{lead_id}/reply` — INTERNAL and authenticated. The bridge's entry point into the
+   single Taty brain (taty-channel-consolidation), so intent classification, Wompi payment links,
+   payment verification and KB grounding apply on every channel.
 """
 
 from __future__ import annotations
 
 import hashlib
 import hmac
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import PlainTextResponse
@@ -29,12 +30,23 @@ from channels.whatsapp import normalize_whatsapp_webhook
 from config import settings
 from core.deps import get_current_user
 from services.taty_lead_router import lead_exists, route_lead_message
+from services.whatsapp_inbox_service import (
+    DEFAULT_PULL_LIMIT,
+    acknowledge,
+    inbox_health,
+    pull_pending,
+    store_inbound_events,
+)
 
 router = APIRouter(tags=["whatsapp"])
 
 
 class LeadReplyRequest(BaseModel):
     text: str
+
+
+class AckRequest(BaseModel):
+    event_ids: List[str]
 
 
 def verify_whatsapp_signature(raw_body: bytes, signature_header: str | None) -> bool:
@@ -71,16 +83,45 @@ async def whatsapp_webhook(
     request: Request,
     x_hub_signature_256: str | None = Header(default=None, alias="X-Hub-Signature-256"),
 ) -> Dict[str, Any]:
-    """Verify the signature, normalize the payload. Routing/sending lands with the durable-inbox
-    follow-up change; this task only closes the "accepts any POST" hole."""
+    """Verify, persist, acknowledge. Nothing else.
+
+    The response reports what was accepted for processing, not what was processed — Meta only
+    needs a fast 200 so it stops retrying.
+    """
     raw_body = await request.body()
     if not verify_whatsapp_signature(raw_body, x_hub_signature_256):
         raise HTTPException(status_code=403, detail="Invalid webhook signature")
 
     payload = await request.json()
     events = normalize_whatsapp_webhook(payload)
+    accepted = store_inbound_events(events)
 
-    return {"ok": True, "events_received": len(events)}
+    return {"ok": True, "events_accepted": accepted}
+
+
+@router.get("/inbox/pending")
+async def inbox_pending(
+    limit: int = DEFAULT_PULL_LIMIT,
+    _user: dict = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Hand unprocessed events to the local bridge and claim them."""
+    events = pull_pending(limit=limit)
+    return {"events": events, "count": len(events)}
+
+
+@router.post("/inbox/ack")
+async def inbox_ack(
+    payload: AckRequest,
+    _user: dict = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Mark events processed — called only after Chatwoot accepted the injected message."""
+    return {"acknowledged": acknowledge(payload.event_ids)}
+
+
+@router.get("/inbox/health")
+async def inbox_health_endpoint(_user: dict = Depends(get_current_user)) -> Dict[str, Any]:
+    """Backlog depth and oldest unprocessed age, so an offline local node is detectable."""
+    return inbox_health()
 
 
 @router.post("/leads/{lead_id}/reply")

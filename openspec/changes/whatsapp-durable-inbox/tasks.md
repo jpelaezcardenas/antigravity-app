@@ -9,26 +9,29 @@
 
 ## 2. Receiver — persist, do not process
 
-- [ ] 2.1 Failing tests: a signed single-message payload stores exactly one row and returns 200;
+- [x] 2.1 Failing tests: a signed single-message payload stores exactly one row and returns 200;
       the lead router is NOT called during the request.
-- [ ] 2.2 Failing test: the same `meta_message_id` delivered 3× stores one row, all respond 200.
-- [ ] 2.3 New `apps/backend/services/whatsapp_inbox_service.py` with
+- [x] 2.2 Failing test: the same `meta_message_id` delivered 3× stores one row, all respond 200.
+- [x] 2.3 New `apps/backend/services/whatsapp_inbox_service.py` with
       `store_inbound_events(events)` using `INSERT … ON CONFLICT (meta_message_id) DO NOTHING`.
-- [ ] 2.4 Wire `POST /webhook` in `presentation/whatsapp_endpoints.py` to call it after signature
+- [x] 2.4 Wire `POST /webhook` in `presentation/whatsapp_endpoints.py` to call it after signature
       verification (the endpoint already stopped inline-routing in `taty-channel-consolidation`).
-- [ ] 2.5 Confirm `channels/whatsapp.py::normalize_whatsapp_webhook` surfaces Meta's message id;
-      extend it if it does not (it is the dedup key — without it this change is inert).
-- [ ] 2.6 Tests green.
+- [x] 2.5 Confirmed: `normalize_whatsapp_webhook` already exposes Meta's id as `source_event_id`
+      (`channels/whatsapp.py`). **But it falls back to `""` when absent** — with a UNIQUE column
+      that would collide every un-idded message into one row and silently discard real ones. The
+      service therefore SKIPS such events loudly instead of writing a blank id; covered by
+      `test_event_without_meta_id_is_never_written`.
+- [x] 2.6 Tests green.
 
 ## 3. Pull / acknowledge contract
 
-- [ ] 3.1 Failing tests: pull returns unprocessed events and claims them; a second pull does not
+- [x] 3.1 Failing tests: pull returns unprocessed events and claims them; a second pull does not
       return claimed-and-unexpired events; an expired claim is redelivered; unauthenticated → 401.
-- [ ] 3.2 `GET /channels/whatsapp/inbox/pending` (authenticated, limit + claim TTL).
-- [ ] 3.3 `POST /channels/whatsapp/inbox/ack` (authenticated, marks `processed_at`).
-- [ ] 3.4 `GET /channels/whatsapp/inbox/health` — backlog depth + oldest unprocessed age
+- [x] 3.2 `GET /channels/whatsapp/inbox/pending` (authenticated, limit + claim TTL).
+- [x] 3.3 `POST /channels/whatsapp/inbox/ack` (authenticated, marks `processed_at`).
+- [x] 3.4 `GET /channels/whatsapp/inbox/health` — backlog depth + oldest unprocessed age
       (design.md Risk: a queue nobody watches is a queue that quietly grows).
-- [ ] 3.5 Tests green.
+- [x] 3.5 Tests green.
 
 ## 4. Bridge poller + Chatwoot injection
 
