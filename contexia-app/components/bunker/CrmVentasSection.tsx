@@ -17,7 +17,7 @@ export function CrmVentasSection() {
   return (
     <div className="w-full">
       <section className="mb-6">
-        <h2 className="font-headline-lg text-headline-lg text-primary-container mb-2">
+        <h2 className="font-headline-lg text-headline-lg text-gradient mb-2">
           CRM / Ventas
         </h2>
         <p className="text-on-surface-variant text-body-md">

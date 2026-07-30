@@ -111,7 +111,7 @@ function ServiceCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-surface-elevated rounded-xl p-5 border border-white/10">
+    <div className="card-premium p-5">
       <div className="flex items-start justify-between mb-3.5">
         <div className="flex items-center gap-2.5">
           <span className="text-xl leading-none">{emoji}</span>
@@ -330,7 +330,7 @@ export function InfrastructureDashboard() {
     <div className="w-full">
       <section className="mb-8 flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h2 className="font-headline-lg text-headline-lg text-primary-container mb-2">
+          <h2 className="font-headline-lg text-headline-lg text-gradient mb-2">
             Infrastructure Dashboard
           </h2>
           <p className="text-on-surface-variant text-body-md">
@@ -347,7 +347,7 @@ export function InfrastructureDashboard() {
         {SUMMARY_CARDS.map((c) => (
           <div
             key={c.label}
-            className="bg-surface-elevated rounded-xl p-5 border border-white/10 relative overflow-hidden"
+            className="card-premium p-5 relative overflow-hidden"
           >
             <span className="material-symbols-outlined absolute top-4 right-4 text-on-surface-variant/30 text-xl">
               {c.icon}
@@ -355,7 +355,7 @@ export function InfrastructureDashboard() {
             <div className="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wide mb-2">
               {c.label}
             </div>
-            <div className="font-headline-lg text-2xl text-primary-container font-extrabold">
+            <div className="font-orbitron text-2xl text-primary font-extrabold">
               {c.value}
             </div>
             <div className="text-[11px] text-on-surface-variant mt-1">{c.sub}</div>
@@ -450,7 +450,7 @@ export function InfrastructureDashboard() {
 
       <SectionTitle>💸 Distribución de costos mensuales</SectionTitle>
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 mb-10">
-        <div className="bg-surface-elevated rounded-xl p-5 border border-white/10">
+        <div className="card-premium p-5">
           <div className="text-sm font-bold text-on-surface mb-1">
             Distribución estimada de costos mensuales
           </div>
@@ -459,7 +459,7 @@ export function InfrastructureDashboard() {
           </div>
           <CostBarChart />
         </div>
-        <div className="bg-surface-elevated rounded-xl p-5 border border-white/10">
+        <div className="card-premium p-5">
           <div className="text-sm font-bold text-on-surface mb-1">
             Breakdown por categoría
           </div>
@@ -471,7 +471,7 @@ export function InfrastructureDashboard() {
       </div>
 
       <SectionTitle>📋 Stack técnico completo</SectionTitle>
-      <div className="bg-surface-elevated rounded-xl border border-white/10 mb-10 overflow-x-auto">
+      <div className="card-premium mb-10 overflow-x-auto">
         <table className="w-full border-collapse min-w-[640px]">
           <thead>
             <tr>

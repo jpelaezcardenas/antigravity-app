@@ -1,231 +1,124 @@
 # Authentication & Routing Architecture
 
-## Overview
+> Last updated: 2026-07-28 (`surface-and-routing-standardization`)
+> See also: ARCHITECTURE.md Decision #18
 
-Contexia uses **Supabase Auth** for authentication with SSO support (Google, Microsoft, Email). The routing system differentiates between **admin** and **client** roles, directing users to appropriate dashboards.
+## Canonical Login
 
-## Authentication Flow
+`/login.html` is the **ONLY valid login** for Contexia. It is a standalone static HTML file
+(not a Next.js page) that authenticates against **Supabase Auth** via the browser SDK.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ 1. Landing Page (/)                                         │
-│    ↓ No session → redirect to /login.html                   │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 2. Login Page (/login.html)                                 │
-│    • Static HTML (not Next.js)                              │
-│    • Supabase SDK v2 client-side                            │
-│    • SSO: Google, Microsoft, Email                          │
-│    • Role toggle: visible only for ADMIN_EMAILS             │
-│                                                              │
-│    ADMIN_EMAILS (hardcoded):                                │
-│      - contexia.marketing@gmail.com                         │
-│                                                              │
-│    CLIENT_EMAILS (hardcoded):                               │
-│      - fperez@ferez.co (FEREZ SAS)                          │
-│      - carlos@importacionesmtz.co (Importaciones Martinez)  │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 3. Role Check & Redirect                                    │
-│                                                              │
-│    If user email ∈ ADMIN_EMAILS:                            │
-│      → Redirect to /app/bunker (Admin Dashboard)            │
-│                                                              │
-│    Else if user email ∈ CLIENT_EMAILS:                      │
-│      → Redirect to /app/overview (Client Dashboard)         │
-│                                                              │
-│    Else:                                                     │
-│      → Error: "Este correo no tiene acceso"                 │
-└─────────────────────────────────────────────────────────────┘
-```
+After successful authentication it stores:
+- `localStorage["token"]` — the Supabase access token (used by `lib/authenticated-fetch.ts` for backend API calls)
+- Cookie `sb-access-token` — the same token, read by Vercel Edge Middleware for server-side route gating
 
-## Session Storage
+Role-based destination after login (`destinationForRole()` in `login.html`):
+- Admin (`app_metadata.role` ∈ `{admin, superadmin, contexia_admin}`) → `/app/bunker`
+- Client (any other authenticated user) → `/app/overview`
 
-Login.html stores session in localStorage:
+**Hard rule**: no agent may create alternative login pages, inline auth checks, or Supabase
+`signInWithPassword` flows anywhere other than `login.html`. The legacy inline login at
+`app-admin/index.html` was permanently deleted (2026-07-28).
 
-```javascript
-localStorage.setItem("cx_user", JSON.stringify({
-  email: "user@example.com",
-  role: "admin", // or "client"
-  is_admin: true // boolean
-}));
+## Middleware (`middleware.ts`)
 
-localStorage.setItem("token", session.access_token);
-```
+Vercel Edge Middleware gates all non-public routes. It verifies the `sb-access-token` cookie
+using HS256 HMAC with `SUPABASE_JWT_SECRET`.
 
-## Protected Routes
+### Public paths (no auth required)
 
-### Admin Dashboard (`/app/bunker`)
-- **Accessible by**: contexia.marketing@gmail.com
-- **Frontend**: React app in `contexia-wizard/app`
-- **Features**: Audit trails, user management, system settings
-- **Logout behavior**: Returns to `/login.html` (canonical login)
+`/`, `/landing.html`, `/login.html`, `/reset-password.html`, `/logout.html`,
+`/crear-empresa*`, `/wizard/*`, `/_next/*`, `/assets/*`, `/app/dashboard-assets/*`,
+`/app/assets/*`, `/404.html`, `/_not-found.html`
 
-### Client Dashboard (`/app/overview`)
-- **Accessible by**: Whitelisted client emails
-- **Frontend**: React app in `contexia-wizard/app`
-- **Features**: Tax insights, audit reports, Taty Q&A
-- **Logout behavior**: Returns to `/login.html`
+### Protected paths
 
-## Critical Implementation Details
+All other paths require a valid, non-expired JWT in `sb-access-token`.
+Missing or invalid token → 302 to `/login.html?next=<original-path>`.
 
-### 1. Canonical Login (`login.html`)
+### Admin-only paths
 
-**Path**: `C:\Users\contexia\Projects\antigravity-app\login.html`
+`/app-admin/*` requires `role ∈ {admin, superadmin, contexia_admin}` (extracted from
+`app_metadata.role`, `app_metadata.account_role`, `user_metadata.role`, or `user_metadata.roles`
+array). Non-admin → 302 to `/app/overview`.
 
-- Static HTML file served directly from root
-- **Not** a Next.js page (avoid routing complexity)
-- Contains inline Supabase SDK initialization
-- Uses `setWebhookSecret` with Supabase client
-- Implements OAuth redirect flow (`signInWithOAuth`)
+### Special routing rules
 
-**Important**: This is the ONLY login entry point. Do not create alternative login pages.
+| Path | Behavior |
+|---|---|
+| `/app` (exact) | 302 → `/app/bunker` (all authenticated users) |
+| `/app/<unknown>` | 302 → `/app/bunker` (admin) or `/app/overview` (client) |
+| Known app paths | Pass through (served by vercel.json rewrites) |
 
-### 2. Admin Dashboard Assets (Bundle Cache-Busting)
+Known app paths: `/app/overview`, `/app/fiscal`, `/app/radar`, `/app/patrimonio`,
+`/app/config`, `/app/flujo-detalle`, `/app/bunker`
 
-**File**: `contexia-wizard/app/admin/dashboard/page.tsx`
+## Surface Map
 
-The admin dashboard compiles to:
-```
-/app/dashboard-assets/index-DblwMcm3.auth-logout-20260524.js
-```
+| Route | Source | Shell | Role | Per-tenant | Notes |
+|---|---|---|---|---|---|
+| `/login.html` | `login.html` (standalone) | None | None | No | ONLY valid login |
+| `/app/overview` | `contexia-app/(shell)/overview` | TopBar + BottomNav | Any auth | Yes (Caja Real, Alerts) | Mobile-first PWA |
+| `/app/fiscal` | `contexia-app/(shell)/fiscal` | TopBar + BottomNav | Any auth | Designed for | Mobile-first PWA |
+| `/app/radar` | `contexia-app/(shell)/radar` | TopBar + BottomNav | Any auth | Designed for | Mobile-first PWA |
+| `/app/patrimonio` | `contexia-app/(shell)/patrimonio` | TopBar + BottomNav | Any auth | Designed for | Mobile-first PWA |
+| `/app/config` | `contexia-app/(shell)/config` | TopBar + BottomNav | Any auth | No (user settings) | Rebuilt as React component |
+| `/app/flujo-detalle` | `contexia-app/flujo-detalle` | Detail (back btn) | Any auth | Yes (Liquidity Bridge) | No BottomNav |
+| `/app/bunker` | `contexia-app/app/bunker` | BunkerSidebar | All auth (role-filtered) | Mixed | Desktop-first, premium design |
 
-**Why the versioned suffix?**
-- Dashboard bundle was hardcoded with old logout handler that returned 500
-- Fix: Asset renamed to include version date (20260524) to bust browser cache
-- This ensures users get the fixed logout flow
+## Bunker Role-Based Sections
 
-**Cache-busting rule**: When fixing critical bugs in the admin dashboard:
-1. Apply the fix to the source code
-2. Increment the date suffix in the asset filename
-3. Update `app-admin/index.html` to reference the new filename
+The Bunker (`/app/bunker`) is a shared surface — same route, different section visibility.
 
-**Current status**: Logout tested ✅, returns 200 OK, redirects to `/login.html`
+| Section | Admin | Client |
+|---|---|---|
+| Dashboard | Yes | Yes |
+| CRM / Ventas | Yes | No |
+| Social Content Ops | Yes | No |
+| Onboarding | Yes | No |
+| Sell Machine | Yes | No |
+| Agentic OS | Yes | Yes |
+| Configuración | Yes | Yes |
 
-### 3. Role Detection (Client-Side)
+Implementation: `BunkerSidebar.tsx` reads `isAdmin` prop. The Bunker page (`page.tsx`) reads
+the user role from the JWT cookie (`sb-access-token`) client-side via `readRoleFromJwt()`.
+Admin roles: `admin`, `superadmin`, `contexia_admin`. Admin-only sections are defined in
+`ADMIN_ONLY_SECTIONS` array. Non-admin users attempting to access an admin section via deep
+link see the Dashboard instead (fail-safe guard in `handleSelectSection`).
 
-**File**: `contexia-wizard/app/dashboard/page.tsx`
+## vercel.json Routing
 
-```typescript
-const ADMIN_EMAILS = new Set(["contexia.marketing@gmail.com"]);
-const CLIENT_EMAILS = new Set([
-  "fperez@ferez.co",
-  "carlos@importacionesmtz.co"
-]);
+### Redirects (URL changes in browser)
 
-// On page load:
-const session = await supabase.auth.getSession();
-const userEmail = session.user.email.toLowerCase();
+- `/` → `/landing.html`
+- `/login` → `/login.html`
+- `/app` → `/app/bunker` (302, not permanent)
+- `/logout` → `/logout.html`
 
-if (ADMIN_EMAILS.has(userEmail)) {
-  router.push("/app/bunker");
-} else if (CLIENT_EMAILS.has(userEmail)) {
-  router.push("/app/overview");
-} else {
-  router.push("/login.html?error=unauthorized");
-}
-```
+### Rewrites (transparent, URL stays the same)
 
-**Important**: Role sets are hardcoded. To add new users:
-1. Update `ADMIN_EMAILS` or `CLIENT_EMAILS` in code
-2. Deploy to production
-3. Create user in Supabase Auth (via dashboard or invite)
+- `/api/v1/*` → Railway backend (`antigravity-app-production-175a.up.railway.app`)
+- `/app/overview` → `/app/overview.html` (and similarly for fiscal, radar, patrimonio, config, bunker)
+- `/app/dashboard-assets/*` → `/app-admin/dashboard-assets/*`
+- `/app/*` (catch-all) → `/404.html` (defense-in-depth; middleware redirects before this is reached)
 
-### 4. Logout Handler
+### Cache headers
 
-**File**: `contexia-wizard/app/admin/components/LogoutButton.tsx`
+All `/app/*` and `/app-admin/*` paths: `private, no-store, max-age=0, must-revalidate`
+(prevents stale HTML from browser/CDN cache after deploys).
 
-Logout flow:
-```typescript
-async handleLogout() {
-  await supabase.auth.signOut();
-  localStorage.removeItem("cx_user");
-  localStorage.removeItem("token");
-  window.location.assign("/login.html?logout=1");
-}
-```
+## Deleted Surfaces (2026-07-28)
 
-**Result**: User redirected to canonical login page with `logout=1` flag
+| File | Why deleted |
+|---|---|
+| `app/index.html` | Orphaned — no rewrite pointed to it, loaded Vite SPA without auth |
+| `app-admin/index.html` | Legacy admin shell with rogue inline login that bypassed `login.html` |
+| `app-admin/dashboard-assets/index-DblwMcm3.js` | No-auth variant of Vite SPA bundle |
 
----
+## Backend Auth (for reference)
 
-## Supabase Configuration
-
-### JWT Secret
-- Stored in `.env` (local development)
-- Stored in Railway (production)
-- Used to verify session tokens
-
-### Anon Key vs Service Role
-- **Anon Key** (public): Used by browser SDK, limited permissions (auth only)
-- **Service Role** (secret): Used by backend, full database access
-
-### Tables
-- `auth.users` — Supabase-managed authentication
-- `telegram_chat_mappings` — Maps Telegram chat IDs to company_id (for Taty webhook)
-
----
-
-## Deployment & Environment Variables
-
-### Local Development
-```bash
-# .env.local
-NEXT_PUBLIC_SUPABASE_URL=https://kpynymwghfwshvcvevxq.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...
-```
-
-### Production (Railway)
-Environment variables set in Railway dashboard:
-- `SUPABASE_URL` (used by backend)
-- `SUPABASE_KEY` (used by backend)
-- `TELEGRAM_BOT_TOKEN` (used by Taty webhook)
-
----
-
-## Known Issues & Lessons Learned
-
-### Issue 1: Admin Dashboard 500 Error on Logout
-**Date**: 2026-05-24
-**Root Cause**: Bundle contained syntax error in logout handler, returned 500 instead of redirect
-**Fix**: Cache-busted filename + redeployed with corrected logout flow
-**Verification**: E2E test logout, confirmed 200 OK + redirect to `/login.html`
-**Lesson**: When deploying critical bug fixes to client-side bundles, use version suffix in filename to ensure cache bust
-
-### Issue 2: Telegram Webhook Signature Verification
-**Date**: 2026-05-25
-**Root Cause**: Webhook registered without secret token, but code enforced signature verification
-**Fix**: Made signature verification optional (HTTPS provides transport security)
-**Verification**: Taty bot responds to Telegram messages end-to-end
-**Lesson**: Don't require signature verification unless secret is explicitly set and header is present
-
----
-
-## Testing Checklist
-
-- [ ] Login with Google → redirects to correct dashboard (admin/client)
-- [ ] Login with Microsoft → redirects to correct dashboard
-- [ ] Login with Email → redirects to correct dashboard
-- [ ] Logout from admin dashboard → redirects to `/login.html`
-- [ ] Logout from client dashboard → redirects to `/login.html`
-- [ ] Direct navigation to `/app/bunker` without session → redirects to `/login.html`
-- [ ] Direct navigation to `/app/overview` without session → redirects to `/login.html`
-- [ ] Invalid email (not in whitelist) → error message
-- [ ] Taty bot responds to Telegram messages → end-to-end validation
-
----
-
-## Future Improvements
-
-1. **Server-side middleware** (middleware.ts): Protect routes at Next.js level, not just React components
-2. **Dynamic role loading**: Load ADMIN_EMAILS and CLIENT_EMAILS from Supabase instead of hardcoding
-3. **OAuth provider list**: Move to Supabase configuration (currently hardcoded in login.html)
-4. **Audit logging**: Track all authentication events (login, logout, failed attempts)
-
----
-
-**Last Updated**: 2026-05-25
-**Status**: MVP Validated ✅
+Backend auth is independent of frontend routing:
+- `AUTH_ENFORCED=true` in production (Railway)
+- JWT verification: `core/deps.py::_verify_supabase_token` (supports both HS256 and ES256/JWKS)
+- Tenant resolution: `core/tenant_context.py::resolve_request_tenant_scope()` (Decision #17)
+- All agent endpoints require `Depends(get_current_user)` (Decision #17)

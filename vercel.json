@@ -49,6 +49,11 @@
             "permanent": false
         },
         {
+            "source": "/app",
+            "destination": "/app/bunker",
+            "permanent": false
+        },
+        {
             "source": "/wizard/",
             "destination": "/wizard",
             "permanent": false
@@ -151,10 +156,6 @@
             "destination": "https://antigravity-app-production-175a.up.railway.app/api/v1/:path*"
         },
         {
-            "source": "/app",
-            "destination": "/app-admin/index.html"
-        },
-        {
             "source": "/app/overview",
             "destination": "/app/overview.html"
         },
@@ -196,7 +197,7 @@
         },
         {
             "source": "/app/:path*",
-            "destination": "/app-admin/index.html"
+            "destination": "/404.html"
         },
         {
             "source": "/crear-empresa",
