@@ -48,6 +48,24 @@ have (see proposal). Railway already has it, for free.
    Chatwoot. Rejected — it would duplicate the bridge's filtering and `bot_off` HITL check, which
    is precisely the second-brain mistake this line of work just finished removing.
 
+7. **Injection targets a dedicated `Channel::Api` inbox, not the native `Channel::Whatsapp` one.**
+   Found live during the first end-to-end test: Chatwoot's generic
+   `POST /conversations/{id}/messages` rejects `message_type: incoming` on a `Channel::Whatsapp`
+   inbox — `{"error":"Incoming messages are only allowed in Api inboxes"}`. This is not a bug to
+   route around; it reflects a real assumption mismatch. Chatwoot's native WhatsApp channel type
+   is built for Chatwoot itself to hold the Meta integration (receive the provider's webhook,
+   send outbound via Chatwoot's own Cloud API config). This architecture deliberately does the
+   opposite: Meta talks to Railway, outbound sending is this repo's own `send_whatsapp_message`,
+   and Chatwoot is purely the human-facing mirror — exactly the use case Chatwoot's own "API
+   channel" type exists for.
+   Fix: a second inbox (`Channel::Api`, id `3` locally, name "Taty WhatsApp (inyección durable)")
+   created for this injection flow. `CHATWOOT_WHATSAPP_INBOX_ID` must point at THIS inbox, not at
+   the original native-WhatsApp one (id `1`, "Taty Contadora Amiga 24/7") — that original inbox's
+   Meta credentials are simply unused by this design.
+   *Alternative considered:* switch the original inbox itself from `Channel::Whatsapp` to
+   `Channel::Api`. Rejected — inbox `1` may still carry provider config/history worth keeping
+   separately addressable; a fresh inbox is additive and reversible, an in-place type change is not.
+
 ## Risks / Trade-offs
 
 - **[Risk] Reply latency grows** — the customer's message now waits for a poll interval before

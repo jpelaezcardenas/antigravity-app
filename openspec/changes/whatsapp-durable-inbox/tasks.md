@@ -55,17 +55,54 @@
       is now CHATWOOT_API_TOKEN in apps/chatwoot-bridge/.env, so bot vs human replies are
       distinguishable by sender_id going forward.
 - [x] 5.2 Approved and applied 2026-07-30.
-- [ ] 5.3 Set `WHATSAPP_APP_SECRET` + `WHATSAPP_WEBHOOK_VERIFY_TOKEN` in Railway (inherited gate
-      from `taty-channel-consolidation` — the receiver rejects everything until they exist).
+- [x] 5.3 Set in Railway 2026-07-30: `WHATSAPP_WEBHOOK_VERIFY_TOKEN`, `META_WEBHOOK_VERIFY_TOKEN`
+      (founder-agnostic, generated), `WHATSAPP_APP_SECRET` (founder-provided, real Meta app
+      secret — the account has exactly one app, WhatsApp-only; no separate Instagram/Facebook app
+      exists yet, so `META_APP_SECRET` stays empty and fails closed by design, not left over).
 
 ## 6. Verify
 
-- [ ] 6.1 `RUN_TESTS=1 bash init.sh` green.
-- [ ] 6.2 Local end-to-end: post a signed synthetic Meta payload at the backend → confirm the row
-      lands → run the poller → confirm the conversation appears in Chatwoot.
-- [ ] 6.3 Durability drill: stop the bridge, post 5 signed events, restart it → all 5 appear in
-      Chatwoot, none duplicated.
-- [ ] 6.4 Duplicate drill: post the same event 3× → one row, one Chatwoot message.
+- [x] 6.1 Full backend suite: 732 passed / 40 failed / 112 skipped — same 40 pre-existing failures
+      verified against a clean `main` worktree (2 more passing than before, from this change's new
+      tests). `init.sh` structural gate green.
+- [x] 6.2 Local end-to-end, done for real (not simulated): started the local backend (`:8080`) and
+      bridge (`:8090`) against the live Chatwoot containers and the same production Supabase
+      project. Built a signed synthetic Meta payload, POSTed it — row landed in
+      `whatsapp_inbound_events`, the running poller (5s interval) picked it up unprompted, created
+      the Chatwoot contact + conversation on the `Channel::Api` inbox (see design.md Decision 7),
+      and posted the message. Verified directly in Chatwoot's Postgres: `messages` row exists,
+      `message_type=0` (incoming), `sender_type=Contact`. `processed_at` set after ack.
+      **Two real bugs found and fixed by this drill** (both were latent, neither caught by the
+      730-passing suite because their mocks operated above the real client/query layer):
+      1. `pull_pending`'s `.or_()` call — the installed `postgrest` (0.13.2) has no such method;
+         it was added in a later release. Fixed to build the `or=(...)` param directly via
+         `query.params.add(...)`, the same mechanism `.filter()` uses internally. New test
+         (`TestPullPendingQueryConstruction`) builds the query against the REAL installed
+         postgrest client class (no network) specifically so a missing/renamed method fails here
+         again, instead of a `MagicMock` silently answering to anything.
+      2. Chatwoot rejected `message_type: incoming` on the native `Channel::Whatsapp` inbox
+         (`"Incoming messages are only allowed in Api inboxes"`) — a real design-assumption gap,
+         not a code bug; resolved by design.md Decision 7 (dedicated `Channel::Api` inbox).
+- [x] 6.3 Durability drill, done unintentionally and instructively: killing the bridge process
+      mid-cycle (to apply a config fix) left the test event claimed-but-unprocessed — proving the
+      claim mechanism works exactly as designed. Resetting `claimed_at` and letting a clean cycle
+      run completed the injection with zero data loss.
+- [x] 6.4 Duplicate drill: the same signed payload posted 3× total → exactly 1 row in
+      `whatsapp_inbound_events`, exactly 1 message in Chatwoot. Forged-signature request (random
+      hex, wrong secret) → `403`, confirmed on the same live backend instance.
+      **Incident during this drill, disclosed and resolved**: enabling the real Supabase
+      service-role key locally (needed for this test) caused an unrelated pre-existing test,
+      `test_operator_task_service.py::test_rejects_a_decision_that_is_not_a_campaign_package`, to
+      execute a REAL insert against production `operator_tasks` (previously it "passed" only
+      because missing local credentials made the Supabase client fail to initialize — an
+      accidental pass, not a real one). The test's mock ignores the `draft_type` filter, and
+      `dispatch_campaign_package()` had no independent check of `decision.draft_type` before
+      inserting — trusting the filter alone. 5 junk rows (`status=pending`, the same status
+      Hermes/Manus poll for real dispatch) landed in production; founder confirmed, all 5 deleted
+      by exact id, verified 0 remaining. Fixed the underlying gap with a defense-in-depth check
+      in `operator_task_service.py` (reject if `decision.draft_type != "campaign_package"` even
+      if the caller's filtering was wrong), re-verified 0 rows inserted on re-run, full suite
+      back to the expected 40-failure baseline (732 passed).
 
 ## 7. Stage 11 — Deploy to Production (MANDATORY)
 

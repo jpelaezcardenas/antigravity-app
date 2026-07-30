@@ -97,6 +97,56 @@ class TestStoreInboundEvents:
         assert rows[0]["mime_type"] == "application/pdf"
 
 
+class TestPullPendingQueryConstruction:
+    """A MagicMock happily answers `.or_()` whether or not the installed client actually has it —
+    that is exactly how a real bug (postgrest-py 0.13.2 has no `.or_()` helper; it was added in a
+    later release) shipped through 8 passing tests undetected until a live end-to-end run hit a
+    500. These tests build the query against the REAL installed postgrest client class (no
+    network — .execute() is never called), so a missing/renamed method fails here again."""
+
+    def test_query_builds_against_the_real_client_without_raising(self, fake_supabase) -> None:
+        import postgrest
+
+        from services.whatsapp_inbox_service import pull_pending
+
+        real_query = (
+            postgrest.SyncPostgrestClient(base_url="http://localhost/rest/v1")
+            .from_("whatsapp_inbound_events")
+            .select("*")
+            .is_("processed_at", "null")
+        )
+        fake_supabase.table.return_value.select.return_value.is_.return_value = real_query
+        real_query.execute = lambda: MagicMock(data=[])
+
+        pull_pending(limit=5)  # would raise AttributeError on a missing .or_()-style call
+
+    def test_or_filter_targets_claimed_at_null_or_expired(self, fake_supabase) -> None:
+        import postgrest
+
+        from services.whatsapp_inbox_service import pull_pending
+
+        real_query = (
+            postgrest.SyncPostgrestClient(base_url="http://localhost/rest/v1")
+            .from_("whatsapp_inbound_events")
+            .select("*")
+            .is_("processed_at", "null")
+        )
+        fake_supabase.table.return_value.select.return_value.is_.return_value = real_query
+        captured = {}
+
+        def _execute():
+            captured["params"] = list(real_query.params.multi_items())
+            return MagicMock(data=[])
+
+        real_query.execute = _execute
+
+        pull_pending(limit=5, claim_ttl_seconds=300)
+
+        or_values = [v for k, v in captured["params"] if k == "or"]
+        assert len(or_values) == 1
+        assert or_values[0].startswith("(claimed_at.is.null,claimed_at.lt.")
+
+
 class TestInboxHealth:
     def test_reports_backlog_depth_and_oldest_age(self, fake_supabase) -> None:
         """An offline local node must be detectable — a durable queue nobody watches is a queue
