@@ -1,9 +1,9 @@
 ## 1. Migration — `whatsapp_inbound_events`
 
-- [ ] 1.1 Write `apps/backend/migrations/0036_whatsapp_inbound_events.sql`: table with
+- [x] 1.1 Write `apps/backend/migrations/0036_whatsapp_inbound_events.sql`: table with
       `meta_message_id` UNIQUE (the dedup mechanism), normalized payload columns, `claimed_at`,
       `processed_at`, `created_at`. Idempotent (`IF NOT EXISTS`), additive only.
-- [ ] 1.2 Index for the pull query (unprocessed + unclaimed, ordered by `created_at`).
+- [x] 1.2 Index for the pull query (unprocessed + unclaimed, ordered by `created_at`).
 - [ ] 1.3 Apply to Supabase — **founder confirmation required before applying** (matches the
       precedent set by migrations `0033`/`0034`).
 
