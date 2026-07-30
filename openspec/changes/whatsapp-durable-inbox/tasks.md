@@ -50,11 +50,11 @@
 
 ## 5. FOUNDER ACTION — prerequisites
 
-- [ ] 5.1 Create a dedicated **"Taty Bot"** user in Chatwoot and use ITS access token as the
-      bridge's `CHATWOOT_API_TOKEN`. Without this, bot and human replies are indistinguishable in
-      Chatwoot's database (`sender_id` is identical) and the October
-      keep-or-migrate decision has no data behind it.
-- [ ] 5.2 Approve applying migration `0036` to Supabase.
+- [x] 5.1 Created 'Taty Bot' (user id 4) directly in Chatwoot's Postgres: agent role on account 2,
+      member of inbox 1 (Taty Contadora Amiga), own access_tokens row. ITS token (not the founder's)
+      is now CHATWOOT_API_TOKEN in apps/chatwoot-bridge/.env, so bot vs human replies are
+      distinguishable by sender_id going forward.
+- [x] 5.2 Approved and applied 2026-07-30.
 - [ ] 5.3 Set `WHATSAPP_APP_SECRET` + `WHATSAPP_WEBHOOK_VERIFY_TOKEN` in Railway (inherited gate
       from `taty-channel-consolidation` — the receiver rejects everything until they exist).
 
