@@ -90,6 +90,18 @@ def _get_lead_stage(lead_id: str) -> Optional[str]:
     return (result.data or {}).get("stage")
 
 
+def lead_exists(lead_id: str) -> bool:
+    """Public existence check for a lead id (taty-channel-consolidation).
+
+    The internal reply endpoint uses this to answer 404 without creating anything: find-or-create
+    belongs to /crm/leads/whatsapp-intake, which the bridge already calls immediately before.
+    Deliberately avoids .single(), which raises on a missing row rather than returning empty.
+    """
+    client = get_service_supabase()
+    result = client.table("crm_leads").select("id").eq("id", lead_id).execute()
+    return bool(result.data)
+
+
 def _get_lead_phone(lead_id: str) -> Optional[str]:
     """Reads the lead's whatsapp_phone directly from crm_leads (isolated for test patching)."""
     client = get_service_supabase()

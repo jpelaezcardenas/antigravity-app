@@ -1,49 +1,141 @@
-"""WhatsApp channel endpoints (taty-whatsapp-sales-router, Change D).
+"""WhatsApp channel endpoints (taty-channel-consolidation, whatsapp-durable-inbox).
 
-Mounted at /api/v1/channels/whatsapp behind the WHATSAPP_CANONICAL feature flag (see
-presentation/router.py). GET /webhook mirrors meta_endpoints.py's hub.challenge verification
-exactly. POST /webhook normalizes inbound messages and routes each to the lead-scoped router
-(services/taty_lead_router.py) — a NEW, separate router from taty_intent_router.py, since a
-WhatsApp lead has no tenant_id (see design.md Decision 1).
+Mounted at /api/v1/channels/whatsapp (see presentation/router.py). Three surfaces:
+
+1. `POST /webhook` — the PUBLIC ingress from Meta, live as
+   `https://contexia.online/api/v1/channels/whatsapp/webhook` via vercel.json's `/api/v1/:path*`
+   rewrite to Railway, which is why Meta's callback needs no tunnel and no DNS delegation. It
+   verifies `X-Hub-Signature-256` over the RAW body, then does exactly one thing: persist.
+   Classification, LLM inference and outbound sending are deliberately NOT on this path — an LLM
+   call inside Meta's request turns a slow model into a retry, and a retry into a duplicate reply.
+2. `GET /inbox/pending`, `POST /inbox/ack`, `GET /inbox/health` — INTERNAL and authenticated. The
+   local Chatwoot bridge PULLS from these, which is what lets the local node stay unreachable
+   from the internet.
+3. `POST /leads/{lead_id}/reply` — INTERNAL and authenticated. The bridge's entry point into the
+   single Taty brain (taty-channel-consolidation), so intent classification, Wompi payment links,
+   payment verification and KB grounding apply on every channel.
 """
 
 from __future__ import annotations
 
-import os
-from typing import Any, Dict
+import hashlib
+import hmac
+from typing import Any, Dict, List
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import PlainTextResponse
+from pydantic import BaseModel
 
-from channels.whatsapp import normalize_whatsapp_webhook, send_whatsapp_message
-from services.taty_lead_router import find_or_create_lead, route_lead_document, route_lead_message
+from channels.whatsapp import normalize_whatsapp_webhook
+from config import settings
+from core.deps import get_current_user
+from services.taty_lead_router import lead_exists, route_lead_message
+from services.whatsapp_inbox_service import (
+    DEFAULT_PULL_LIMIT,
+    acknowledge,
+    inbox_health,
+    pull_pending,
+    store_inbound_events,
+)
 
 router = APIRouter(tags=["whatsapp"])
 
 
+class LeadReplyRequest(BaseModel):
+    text: str
+
+
+class AckRequest(BaseModel):
+    event_ids: List[str]
+
+
+def verify_whatsapp_signature(raw_body: bytes, signature_header: str | None) -> bool:
+    """Verify Meta's X-Hub-Signature-256 as HMAC-SHA256 over the EXACT raw request body.
+
+    The raw bytes matter: parsing the JSON and re-serializing it changes key order and
+    whitespace, so a signature computed over a round-tripped body never matches. Fails closed —
+    an unset WHATSAPP_APP_SECRET rejects everything rather than waving traffic through.
+    """
+    secret = settings.WHATSAPP_APP_SECRET
+    if not secret or not signature_header or not signature_header.startswith("sha256="):
+        return False
+
+    expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(signature_header[len("sha256=") :], expected)
+
+
 @router.get("/webhook")
 async def verify_whatsapp_webhook(request: Request):
+    """Meta's subscription handshake. Fails closed: no hardcoded default verify token."""
     params = request.query_params
     mode = params.get("hub.mode")
     token = params.get("hub.verify_token")
     challenge = params.get("hub.challenge")
-    expected = os.getenv("WHATSAPP_WEBHOOK_VERIFY_TOKEN", "contexia-whatsapp-webhook")
+    expected = settings.WHATSAPP_WEBHOOK_VERIFY_TOKEN
 
-    if mode == "subscribe" and challenge and token == expected:
+    if expected and mode == "subscribe" and challenge and hmac.compare_digest(token or "", expected):
         return PlainTextResponse(challenge)
     raise HTTPException(status_code=403, detail="Invalid WhatsApp webhook verification token")
 
 
 @router.post("/webhook")
-async def whatsapp_webhook(payload: Dict[str, Any]):
+async def whatsapp_webhook(
+    request: Request,
+    x_hub_signature_256: str | None = Header(default=None, alias="X-Hub-Signature-256"),
+) -> Dict[str, Any]:
+    """Verify, persist, acknowledge. Nothing else.
+
+    The response reports what was accepted for processing, not what was processed — Meta only
+    needs a fast 200 so it stops retrying.
+    """
+    raw_body = await request.body()
+    if not verify_whatsapp_signature(raw_body, x_hub_signature_256):
+        raise HTTPException(status_code=403, detail="Invalid webhook signature")
+
+    payload = await request.json()
     events = normalize_whatsapp_webhook(payload)
+    accepted = store_inbound_events(events)
 
-    for event in events:
-        lead_id = find_or_create_lead(event["account_id"], full_name=event.get("actor_name"))
-        if event.get("media_id"):
-            await route_lead_document(lead_id, event["media_id"], event.get("mime_type") or "")
-        else:
-            result = route_lead_message(lead_id, event["text"])
-            await send_whatsapp_message(event["account_id"], result["reply"])
+    return {"ok": True, "events_accepted": accepted}
 
-    return {"ok": True, "events_processed": len(events)}
+
+@router.get("/inbox/pending")
+async def inbox_pending(
+    limit: int = DEFAULT_PULL_LIMIT,
+    _user: dict = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Hand unprocessed events to the local bridge and claim them."""
+    events = pull_pending(limit=limit)
+    return {"events": events, "count": len(events)}
+
+
+@router.post("/inbox/ack")
+async def inbox_ack(
+    payload: AckRequest,
+    _user: dict = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Mark events processed — called only after Chatwoot accepted the injected message."""
+    return {"acknowledged": acknowledge(payload.event_ids)}
+
+
+@router.get("/inbox/health")
+async def inbox_health_endpoint(_user: dict = Depends(get_current_user)) -> Dict[str, Any]:
+    """Backlog depth and oldest unprocessed age, so an offline local node is detectable."""
+    return inbox_health()
+
+
+@router.post("/leads/{lead_id}/reply")
+async def taty_lead_reply(
+    lead_id: str,
+    payload: LeadReplyRequest,
+    _user: dict = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Internal, authenticated reply generation for a WhatsApp lead.
+
+    Never creates a lead: the bridge calls /crm/leads/whatsapp-intake first and passes the id it
+    got back, so find-or-create stays owned by crm_service.
+    """
+    if not lead_exists(lead_id):
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    return route_lead_message(lead_id, payload.text)

@@ -181,6 +181,18 @@ async def dispatch_campaign_package(decision_id: str) -> Result:
     if decision is None:
         return False, None, f"decision {decision_id} not found"
 
+    # Defense in depth: never trust list_drafts(draft_type=...) alone to have filtered
+    # correctly. A caller whose filter is wrong (or, as found live 2026-07-30, a test double
+    # that ignores the draft_type argument) would otherwise let ANY decision through this
+    # function unchecked, inserting a real operator_tasks row — which Hermes/Manus poll and
+    # act on — from a decision that was never actually a campaign_package.
+    decision_draft_type = getattr(decision, "draft_type", None)
+    if decision_draft_type != "campaign_package":
+        return False, None, (
+            f"decision {decision_id} has draft_type '{decision_draft_type}', "
+            "not 'campaign_package' — refusing to dispatch"
+        )
+
     decision_status = decision.status.value if hasattr(decision.status, "value") else decision.status
     if decision_status != "approved":
         return False, None, (
