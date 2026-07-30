@@ -1,6 +1,7 @@
 """
 Seed script to load 3 demo clients into Supabase usuarios table.
-This script is meant to run AFTER RLS has been disabled on the usuarios table.
+Uses the service-role client — `usuarios` has RLS enabled with no policy, so the anon client
+this script used before can no longer read or write it.
 """
 import sys
 import os
@@ -10,9 +11,11 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from infrastructure.supabase_client import supabase_client
+from core.supabase_client import get_service_supabase
 from datetime import datetime
 import uuid
+
+supabase_client = get_service_supabase()
 
 # Demo users that match what the auth_service.login() expects
 DEMO_USERS = [

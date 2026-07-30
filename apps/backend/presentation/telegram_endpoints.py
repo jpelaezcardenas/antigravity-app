@@ -14,7 +14,7 @@ import json
 import httpx
 
 from services.taty_service import get_taty_service
-from core.supabase_client import get_supabase
+from core.supabase_client import get_service_supabase, get_supabase
 from services.social_ops_service import get_social_ops_service
 
 logger = logging.getLogger(__name__)
@@ -129,9 +129,10 @@ async def telegram_webhook(request: Request):
             await send_telegram_message(chat_id, build_social_ops_telegram_reply(result))
             return {"ok": True, "social_ops": True, "result": result}
 
-        # PASO 3: Buscar la empresa en Supabase
+        # PASO 3: Buscar la empresa en Supabase. `telegram_chat_mappings` has RLS enabled with
+        # no policy — this must use the service-role client, not the anon one.
         logger.debug("🔵 Getting Supabase client")
-        supabase = get_supabase()
+        supabase = get_service_supabase()
 
         logger.debug(f"🔵 Querying telegram_chat_mappings for chat_id={chat_id}")
         try:

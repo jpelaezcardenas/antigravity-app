@@ -1,12 +1,16 @@
-from infrastructure.supabase_client import supabase_client
+from core.supabase_client import get_service_supabase
 from domain.usuario import Usuario
 import logging
 
 logger = logging.getLogger(__name__)
 
 class UsuarioRepository:
+    """Reads `usuarios` via the service-role client, matching every other reader of this table
+    (identity_resolver.py, crm_service.py). `usuarios` has RLS enabled with no policy — the
+    anon client this repo used before could no longer read anything from it."""
+
     def __init__(self):
-        self.client = supabase_client
+        self.client = get_service_supabase()
 
     async def get_by_email(self, email: str):
         try:

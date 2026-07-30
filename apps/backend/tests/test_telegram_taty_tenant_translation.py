@@ -147,6 +147,7 @@ class TestTelegramCompanyIdToTenantTranslation:
             tenant_rows=[{"id": "11111111-1111-1111-1111-111111111111"}],
         )
         monkeypatch.setattr(telegram_module, "get_supabase", lambda: fake_supabase)
+        monkeypatch.setattr(telegram_module, "get_service_supabase", lambda: fake_supabase)
 
         fake_taty = _FakeTatyService()
         monkeypatch.setattr(telegram_module, "get_taty_service", lambda: fake_taty)
@@ -171,6 +172,7 @@ class TestTelegramCompanyIdToTenantTranslation:
             tenant_rows=[],  # no tenant row matches this company_id
         )
         monkeypatch.setattr(telegram_module, "get_supabase", lambda: fake_supabase)
+        monkeypatch.setattr(telegram_module, "get_service_supabase", lambda: fake_supabase)
 
         forbidden_taty = _ForbiddenTatyService()
         monkeypatch.setattr(telegram_module, "get_taty_service", lambda: forbidden_taty)
@@ -191,6 +193,7 @@ class TestResolveTenantForCompanyIdHelper:
             tenant_rows=[{"id": "22222222-2222-2222-2222-222222222222"}],
         )
         monkeypatch.setattr(telegram_module, "get_supabase", lambda: fake_supabase)
+        monkeypatch.setattr(telegram_module, "get_service_supabase", lambda: fake_supabase)
 
         result = telegram_module._resolve_tenant_for_company_id("acme-co")
 
@@ -199,6 +202,7 @@ class TestResolveTenantForCompanyIdHelper:
     def test_returns_none_when_no_matching_row(self, monkeypatch):
         fake_supabase = _FakeSupabase(mapping_rows=[], tenant_rows=[])
         monkeypatch.setattr(telegram_module, "get_supabase", lambda: fake_supabase)
+        monkeypatch.setattr(telegram_module, "get_service_supabase", lambda: fake_supabase)
 
         result = telegram_module._resolve_tenant_for_company_id("orphan-co")
 
@@ -210,6 +214,7 @@ class TestResolveTenantForCompanyIdHelper:
                 raise RuntimeError("connection refused")
 
         monkeypatch.setattr(telegram_module, "get_supabase", lambda: _ExplodingSupabase())
+        monkeypatch.setattr(telegram_module, "get_service_supabase", lambda: _ExplodingSupabase())
 
         result = telegram_module._resolve_tenant_for_company_id("acme-co")
 
