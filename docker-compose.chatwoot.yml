@@ -8,7 +8,14 @@ name: contexia-chatwoot
 
 services:
   postgres:
-    image: postgres:15
+    # Plain postgres:15 fails Chatwoot's own db:chatwoot_prepare with
+    # "extension vector is not available" — Chatwoot's schema requires pgvector
+    # unconditionally (article_embeddings etc.), not just for a later feature as
+    # originally assumed. Confirmed live: the currently running container already
+    # has this extension installed (its data volume predates this fix landing in
+    # git); this line just makes a future recreation match reality instead of
+    # repeating the original failure.
+    image: pgvector/pgvector:pg15
     restart: unless-stopped
     environment:
       POSTGRES_USER: chatwoot
