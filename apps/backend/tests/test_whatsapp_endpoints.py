@@ -16,7 +16,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
@@ -335,7 +335,12 @@ class TestInternalTatyReplyEndpoint:
                     "confidence": 0.8,
                     "reply": "Aquí tienes el link de pago...",
                 },
-            ) as mock_route:
+            ) as mock_route, patch(
+                "presentation.whatsapp_endpoints.get_lead_phone", return_value="573001234567"
+            ), patch(
+                "presentation.whatsapp_endpoints.send_whatsapp_message",
+                new=AsyncMock(return_value=True),
+            ):
                 response = await client.post(
                     "/channels/whatsapp/leads/lead-1/reply",
                     json={"text": "quiero saber si me toca declarar renta"},
@@ -357,6 +362,84 @@ class TestInternalTatyReplyEndpoint:
 
         assert response.status_code == 404
         mock_route.assert_not_called()
+
+
+class TestReplyIsDeliveredToTheRealWhatsAppCustomer:
+    """Found live: a reply generated here was mirrored into Chatwoot but never reached the
+    customer's actual phone, because Chatwoot's Channel::Api inbox (used to inject durable-inbox
+    events) has no Meta credentials at all — it only fires an outgoing webhook, which happens to
+    be the same one already wired to the bridge. Chatwoot can mirror the conversation for human
+    visibility; it cannot deliver to WhatsApp. Delivery has to happen here, independent of
+    whatever the bridge does with Chatwoot."""
+
+    @pytest.mark.asyncio
+    async def test_reply_is_sent_to_the_leads_own_phone(self, reply_client) -> None:
+        async with reply_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.lead_exists", return_value=True
+            ), patch(
+                "presentation.whatsapp_endpoints.route_lead_message",
+                return_value={"intent": "sales_interest", "confidence": 0.8, "reply": "Hola!"},
+            ), patch(
+                "presentation.whatsapp_endpoints.get_lead_phone", return_value="573001234567"
+            ), patch(
+                "presentation.whatsapp_endpoints.send_whatsapp_message",
+                new=AsyncMock(return_value=True),
+            ) as mock_send:
+                response = await client.post(
+                    "/channels/whatsapp/leads/lead-1/reply", json={"text": "hola"}
+                )
+
+        assert response.status_code == 200
+        mock_send.assert_awaited_once_with("573001234567", "Hola!")
+
+    @pytest.mark.asyncio
+    async def test_missing_phone_skips_delivery_without_failing_the_request(
+        self, reply_client
+    ) -> None:
+        """The bridge still needs the reply text to mirror into Chatwoot even if, for whatever
+        reason, this lead has no phone on file — a missing phone must not 500 the endpoint."""
+        async with reply_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.lead_exists", return_value=True
+            ), patch(
+                "presentation.whatsapp_endpoints.route_lead_message",
+                return_value={"intent": "unknown", "confidence": 0.0, "reply": "..."},
+            ), patch(
+                "presentation.whatsapp_endpoints.get_lead_phone", return_value=None
+            ), patch(
+                "presentation.whatsapp_endpoints.send_whatsapp_message",
+                new=AsyncMock(return_value=True),
+            ) as mock_send:
+                response = await client.post(
+                    "/channels/whatsapp/leads/lead-1/reply", json={"text": "hola"}
+                )
+
+        assert response.status_code == 200
+        mock_send.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_delivery_failure_does_not_break_the_response(self, reply_client) -> None:
+        """A failed Meta send must not prevent the bridge from getting the reply text back —
+        that text still needs to reach Chatwoot for human visibility regardless."""
+        async with reply_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.lead_exists", return_value=True
+            ), patch(
+                "presentation.whatsapp_endpoints.route_lead_message",
+                return_value={"intent": "unknown", "confidence": 0.0, "reply": "..."},
+            ), patch(
+                "presentation.whatsapp_endpoints.get_lead_phone", return_value="573001234567"
+            ), patch(
+                "presentation.whatsapp_endpoints.send_whatsapp_message",
+                new=AsyncMock(return_value=False),
+            ):
+                response = await client.post(
+                    "/channels/whatsapp/leads/lead-1/reply", json={"text": "hola"}
+                )
+
+        assert response.status_code == 200
+        assert response.json()["reply"] == "..."
 
     @pytest.mark.asyncio
     async def test_unauthenticated_call_is_rejected(self, wa_client) -> None:

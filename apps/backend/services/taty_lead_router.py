@@ -102,7 +102,7 @@ def lead_exists(lead_id: str) -> bool:
     return bool(result.data)
 
 
-def _get_lead_phone(lead_id: str) -> Optional[str]:
+def get_lead_phone(lead_id: str) -> Optional[str]:
     """Reads the lead's whatsapp_phone directly from crm_leads (isolated for test patching)."""
     client = get_service_supabase()
     result = (
@@ -415,7 +415,7 @@ async def route_lead_document(lead_id: str, media_id: str, mime_type: str) -> Di
     service.update_tax_profile(lead_id, patch)
 
     if document_type == "rut":
-        phone = _get_lead_phone(lead_id)
+        phone = get_lead_phone(lead_id)
         if phone:
             await send_whatsapp_message(phone, EXTRACTOS_REQUEST_MESSAGE)
 

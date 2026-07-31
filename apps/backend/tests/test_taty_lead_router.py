@@ -399,7 +399,7 @@ class TestRouteLeadDocument:
         ), patch(
             "services.taty_lead_router.upload_tax_document", return_value="lead-1/rut.pdf"
         ) as mock_upload, patch(
-            "services.taty_lead_router._get_lead_phone", return_value="573001234567"
+            "services.taty_lead_router.get_lead_phone", return_value="573001234567"
         ), patch(
             "services.taty_lead_router.send_whatsapp_message", new=AsyncMock(return_value=True)
         ) as mock_send:

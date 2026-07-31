@@ -26,10 +26,10 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
-from channels.whatsapp import normalize_whatsapp_webhook
+from channels.whatsapp import normalize_whatsapp_webhook, send_whatsapp_message
 from config import settings
 from core.deps import get_current_user
-from services.taty_lead_router import lead_exists, route_lead_message
+from services.taty_lead_router import get_lead_phone, lead_exists, route_lead_message
 from services.whatsapp_inbox_service import (
     DEFAULT_PULL_LIMIT,
     acknowledge,
@@ -134,8 +134,23 @@ async def taty_lead_reply(
 
     Never creates a lead: the bridge calls /crm/leads/whatsapp-intake first and passes the id it
     got back, so find-or-create stays owned by crm_service.
+
+    Also DELIVERS the reply to the customer's real WhatsApp number via Meta's API directly. This
+    is not redundant with the bridge mirroring the reply into Chatwoot: Chatwoot's Channel::Api
+    inbox (used to inject durable-inbox events) has no Meta credentials at all — it can only fire
+    an outgoing webhook, it cannot deliver to WhatsApp. Found live: a reply was mirrored into
+    Chatwoot correctly but the customer never received anything, because nothing was calling
+    Meta's send API in this new pipeline (the old, retired webhook route used to do this itself).
+    A missing phone or a failed send does not fail this request — the bridge still needs the
+    reply text back regardless, to mirror into Chatwoot for human visibility.
     """
     if not lead_exists(lead_id):
         raise HTTPException(status_code=404, detail="Lead not found")
 
-    return route_lead_message(lead_id, payload.text)
+    result = route_lead_message(lead_id, payload.text)
+
+    phone = get_lead_phone(lead_id)
+    if phone:
+        await send_whatsapp_message(phone, result["reply"])
+
+    return result
