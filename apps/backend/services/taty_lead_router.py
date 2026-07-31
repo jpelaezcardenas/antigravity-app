@@ -111,6 +111,33 @@ def get_lead_phone(lead_id: str) -> Optional[str]:
     return (result.data or {}).get("whatsapp_phone")
 
 
+def _enqueue_wompi_link_approval(lead_id: str) -> None:
+    """Enqueue a human-approval draft instead of generating/sending a real Wompi link directly
+    (taty-wompi-link-hitl-gate). A plain sync Supabase insert, not
+    ApprovalQueueService.enqueue_draft: that method is async, and route_lead_message stays sync
+    deliberately (see design.md Decision 1) — matches this file's existing local-helper
+    convention (_get_lead_stage, get_lead_phone, etc.) rather than depending on another service.
+
+    Every approval_queue column this needs already defaults safely except tenant_id/draft_id/
+    draft_type/payload, all supplied here. draft_id=lead_id (not a fresh uuid) so the draft is
+    tied to something a human reviewer can act on directly.
+    """
+    client = get_service_supabase()
+    lead_result = (
+        client.table("crm_leads").select("tenant_id").eq("id", lead_id).single().execute()
+    )
+    tenant_id = (lead_result.data or {}).get("tenant_id")
+
+    client.table("approval_queue").insert(
+        {
+            "tenant_id": tenant_id,
+            "draft_id": lead_id,
+            "draft_type": "wompi_payment_link",
+            "payload": {"lead_id": lead_id},
+        }
+    ).execute()
+
+
 def _get_latest_transaction(lead_id: str) -> Optional[Dict[str, Any]]:
     """Reads the lead's most recent crm_wompi_transactions row directly (isolated for test
     patching, mirroring _get_lead_stage). This table is kept authoritative by the existing,
@@ -295,13 +322,17 @@ def route_lead_message(lead_id: str, message: str) -> Dict[str, Any]:
     if intent == "sales_interest":
         if current_stage == "NUEVOS":
             service.advance_lead(lead_id, "PROSPECTOS")
-        link = generate_wompi_link(lead_id)
+        # taty-wompi-link-hitl-gate: no real link is generated or sent here. A human must
+        # approve the resulting approval_queue draft first (ApprovalQueueService.approve_draft)
+        # — see design.md for why this branch used to call generate_wompi_link directly and no
+        # longer does.
+        _enqueue_wompi_link_approval(lead_id)
         return {
             "intent": intent,
             "confidence": confidence,
             "reply": (
-                "¡Con gusto te ayudo! Aquí tienes el link para hacer tu pago de Renta Natural "
-                f"2026 de forma segura: {link}"
+                "¡Con gusto te ayudo! Un asesor de Contexia va a validar tu caso y te va a "
+                "escribir en un momento para continuar."
             ),
         }
 

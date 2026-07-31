@@ -60,8 +60,9 @@ class TestRouteLeadMessage:
         ), patch(
             "services.taty_lead_router._get_lead_stage", return_value="NUEVOS"
         ), patch(
-            "services.taty_lead_router.generate_wompi_link",
-            return_value="https://checkout.wompi.co/p/?reference=abc",
+            "services.taty_lead_router._enqueue_wompi_link_approval"
+        ) as mock_enqueue, patch(
+            "services.taty_lead_router.generate_wompi_link"
         ) as mock_link:
             result = route_lead_message(
                 "lead-1", "Quiero saber si me toca declarar renta este año"
@@ -69,8 +70,9 @@ class TestRouteLeadMessage:
 
         mock_service.advance_lead.assert_called_once_with("lead-1", "PROSPECTOS")
         assert result["intent"] == "sales_interest"
-        mock_link.assert_called_once_with("lead-1")
-        assert "checkout.wompi.co" in result["reply"]
+        mock_enqueue.assert_called_once_with("lead-1")
+        mock_link.assert_not_called()
+        assert "checkout.wompi.co" not in result["reply"]
 
     def test_lead_past_nuevos_is_not_advanced_or_regressed(self):
         mock_service = self._mock_crm_service()
@@ -79,8 +81,7 @@ class TestRouteLeadMessage:
         ), patch(
             "services.taty_lead_router._get_lead_stage", return_value="PROSPECTOS"
         ), patch(
-            "services.taty_lead_router.generate_wompi_link",
-            return_value="https://checkout.wompi.co/p/?reference=abc",
+            "services.taty_lead_router._enqueue_wompi_link_approval"
         ):
             result = route_lead_message(
                 "lead-1", "Quiero saber si me toca declarar renta este año"
@@ -98,8 +99,7 @@ class TestRouteLeadMessage:
         ), patch(
             "services.taty_lead_router._create_empty_tax_profile"
         ) as mock_create, patch(
-            "services.taty_lead_router.generate_wompi_link",
-            return_value="https://checkout.wompi.co/p/?reference=abc",
+            "services.taty_lead_router._enqueue_wompi_link_approval"
         ), patch(
             "services.taty_lead_router._classify_fiscal_question",
             return_value={"is_fiscal_question": False, "search_query": ""},
@@ -157,6 +157,34 @@ class TestRouteLeadMessage:
 
         assert result["intent"] == "payment_confirmation"
         mock_service.advance_lead.assert_not_called()
+
+
+class TestEnqueueWompiLinkApproval:
+    """Real bug found live (taty-wompi-link-hitl-gate): a sales_interest message used to call
+    generate_wompi_link and send a real, production Wompi checkout link with zero human review —
+    and the account behind that link is Contexia's own (Entidad B, tech), not the regulated
+    accounting firm's, which is exactly the merchant-of-record risk the earlier legal review
+    flagged as highest severity. This enqueues a pending_approval draft instead; only an explicit
+    human approval (tested in test_approval_queue_service_wompi_link.py) may generate and send
+    the real link."""
+
+    def test_enqueue_inserts_a_pending_approval_draft(self):
+        from services.taty_lead_router import _enqueue_wompi_link_approval
+
+        mock_client = MagicMock()
+        mock_client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = MagicMock(
+            data={"tenant_id": "tenant-abc"}
+        )
+        with patch(
+            "services.taty_lead_router.get_service_supabase", return_value=mock_client
+        ):
+            _enqueue_wompi_link_approval("lead-1")
+
+        insert_call = mock_client.table.return_value.insert.call_args[0][0]
+        assert insert_call["draft_type"] == "wompi_payment_link"
+        assert insert_call["draft_id"] == "lead-1"
+        assert insert_call["tenant_id"] == "tenant-abc"
+        assert insert_call["payload"] == {"lead_id": "lead-1"}
 
 
 class TestDetectPersonaFieldsIndependiente:

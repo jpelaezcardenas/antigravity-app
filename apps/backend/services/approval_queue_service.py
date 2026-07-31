@@ -12,9 +12,11 @@ from datetime import datetime
 from typing import Tuple, Dict, Any, List, Optional
 
 from agents.agent_critic import validate_journal_entry
+from channels.whatsapp import send_whatsapp_message
 from core.supabase_client import get_service_supabase
 from models.approval_decisions import ApprovalDecision, ApprovalStatus, VectorizationStatus
 from services.embeddings_service import EmbeddingsService
+from services.taty_lead_router import generate_wompi_link, get_lead_phone
 
 logger = logging.getLogger(__name__)
 
@@ -186,6 +188,17 @@ class ApprovalQueueService:
             if decision.draft_type == "tax_correction":
                 ApprovalQueueService._create_outbox_job_sync(decision_id, decision)
 
+            # taty-wompi-link-hitl-gate: the ONLY path that may generate and send a real Wompi
+            # checkout link. route_lead_message enqueues this draft instead of sending directly —
+            # see design.md for why (merchant-of-record risk: the account behind the production
+            # Wompi key was confirmed to be Contexia's own, not the regulated accounting firm's).
+            # A delivery failure here does not roll back the approval (mirrors vectorization's
+            # own failure-doesn't-roll-back behavior below) — the human decision already happened;
+            # a downstream WhatsApp API failure is an operational follow-up, not grounds to
+            # pretend the approval never occurred.
+            if decision.draft_type == "wompi_payment_link":
+                await ApprovalQueueService._deliver_wompi_link(decision)
+
             asyncio.create_task(
                 ApprovalQueueService._vectorize_and_persist(decision)
             )
@@ -281,6 +294,35 @@ class ApprovalQueueService:
             logger.info(f"Created executor_outbox job for approval {decision_id}")
         except Exception as e:
             logger.error(f"Failed to create executor_outbox job for approval {decision_id}: {str(e)}")
+
+    @staticmethod
+    async def _deliver_wompi_link(decision: ApprovalDecision) -> None:
+        """Generate the real Wompi checkout link and deliver it to the lead's WhatsApp — the
+        only path allowed to do so (taty-wompi-link-hitl-gate). Re-reads the lead's current
+        phone rather than trusting anything cached in the draft's payload at enqueue time,
+        since a lead's phone or stage could change in the interval before a human reviews it.
+        Never raises: a delivery failure must not undo an approval a human already made.
+        """
+        lead_id = decision.payload.get("lead_id")
+        try:
+            phone = get_lead_phone(lead_id)
+            if not phone:
+                logger.warning(
+                    f"wompi_payment_link approval {decision.id}: lead {lead_id} has no phone "
+                    "on file — link generated but not delivered"
+                )
+                return
+
+            link = generate_wompi_link(lead_id)
+            await send_whatsapp_message(
+                phone,
+                "¡Con gusto te ayudo! Aquí tienes el link para hacer tu pago de Renta Natural "
+                f"2026 de forma segura: {link}",
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to deliver Wompi link for approval {decision.id} (lead {lead_id}): {e}"
+            )
 
     @staticmethod
     async def _vectorize_and_persist(decision: ApprovalDecision) -> None:
