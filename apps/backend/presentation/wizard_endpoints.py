@@ -10,7 +10,7 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import List, Optional, Dict, Any
 import logging
 
-from services.wizard_service import run_auditoria_sombra
+from services.wizard_service import run_auditoria_sombra, run_renta_diagnostico
 
 logger = logging.getLogger(__name__)
 
@@ -94,3 +94,46 @@ async def auditoria_sombra(request: AuditoriaSombraRequest) -> AuditoriaSombraRe
 @router.get("/health", summary="Wizard health check")
 async def wizard_health():
     return {"status": "ok", "service": "wizard", "ready": True}
+
+
+class RentaDiagnosticoRequest(BaseModel):
+    nombre: str
+    whatsapp: str
+    tipo_ingreso: str
+    ingresos_anuales: int = 0
+    patrimonio: int = 0
+    compras: int = 0
+    consumos_tarjeta: int = 0
+    inversiones: int = 0
+
+class RentaDiagnosticoResponse(BaseModel):
+    color: str
+    mensaje: str
+    fecha_corte: str
+    obligado: bool
+
+@router.post(
+    "/renta-diagnostico",
+    response_model=RentaDiagnosticoResponse,
+    summary="Diagnóstico Semáforo Renta 2026"
+)
+@router.options("/renta-diagnostico")
+async def renta_diagnostico(request: RentaDiagnosticoRequest) -> RentaDiagnosticoResponse:
+    try:
+        result = run_renta_diagnostico(
+            nombre=request.nombre,
+            whatsapp=request.whatsapp,
+            tipo_ingreso=request.tipo_ingreso,
+            ingresos_anuales=request.ingresos_anuales,
+            patrimonio=request.patrimonio,
+            compras=request.compras,
+            consumos_tarjeta=request.consumos_tarjeta,
+            inversiones=request.inversiones
+        )
+        return RentaDiagnosticoResponse(**result)
+    except Exception as e:
+        logger.error(f"Error in renta_diagnostico: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generando diagnóstico: {str(e)}",
+        )

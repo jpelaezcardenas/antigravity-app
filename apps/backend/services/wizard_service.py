@@ -16,6 +16,7 @@ import logging
 import re
 
 from services.centinela_service import get_centinela_service
+from services.supabase_client import get_service_supabase
 from agents.agent_6_analyst import AnalystAgent
 
 logger = logging.getLogger(__name__)
@@ -204,4 +205,56 @@ def run_auditoria_sombra(
         "audit_duration_seconds": round(duration, 2),
         "generated_at": started_at.isoformat(),
         "notes": notes,
+    }
+
+
+def run_renta_diagnostico(
+    nombre: str,
+    whatsapp: str,
+    tipo_ingreso: str,
+    ingresos_anuales: int,
+    patrimonio: int,
+    compras: int,
+    consumos_tarjeta: int,
+    inversiones: int
+) -> dict:
+    # 1. Evaluar topes DIAN (Art. 592 ET para año gravable)
+    TOPE_INGRESOS = 59376800  # Aprox 1400 UVT
+    TOPE_PATRIMONIO = 190854000 # Aprox 4500 UVT
+    TOPE_COMPRAS = 59376800
+    TOPE_CONSIGNACIONES = 59376800
+
+    es_obligado = (
+        ingresos_anuales >= TOPE_INGRESOS or
+        patrimonio >= TOPE_PATRIMONIO or
+        compras >= TOPE_COMPRAS or
+        consumos_tarjeta >= TOPE_COMPRAS or
+        inversiones >= TOPE_CONSIGNACIONES
+    )
+
+    color = "rojo" if es_obligado else "verde"
+    mensaje = "¡Atención! Superaste los topes. Estás obligado a declarar renta en 2026." if es_obligado else "¡Tranquilidad! No estás obligado a declarar renta."
+    fecha_corte = "Agosto - Octubre 2026"
+
+    # 2. Guardar lead en Supabase CRM
+    try:
+        supabase = get_service_supabase()
+        lead_data = {
+            "tenant_id": "ctx-000000000", # Cliente Cero fallback
+            "name": nombre,
+            "whatsapp": whatsapp,
+            "lead_source": "renta_inbound_2026",
+            "crm_stage": "prospecting",
+            "notes": f"Ingresos: {ingresos_anuales}, Patrimonio: {patrimonio}, Compras: {compras}"
+        }
+        supabase.table("crm_leads").insert(lead_data).execute()
+        logger.info(f"Renta inbound lead saved: {whatsapp}")
+    except Exception as e:
+        logger.error(f"Failed to save renta lead to CRM: {e}")
+
+    return {
+        "color": color,
+        "mensaje": mensaje,
+        "fecha_corte": fecha_corte,
+        "obligado": es_obligado
     }
