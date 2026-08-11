@@ -42,6 +42,12 @@ def normalize_whatsapp_webhook(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
                 message_type = message.get("type")
                 media = message.get(message_type) if message_type in ("document", "image") else None
 
+                if not text and media:
+                    # An image/document sent with a caption carries the sender's actual words in
+                    # `caption`, not `text` — found live 2026-08-11 when a forwarded ad image with
+                    # a caption produced an empty event and Taty fell back to a generic non-answer.
+                    text = (media.get("caption") or "").strip()
+
                 if not text and not media:
                     continue
 

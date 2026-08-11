@@ -48,7 +48,15 @@ def _fabricated_text_message_payload(phone="573001234567", text="Hola, quiero sa
     }
 
 
-def _fabricated_document_message_payload(phone="573001234567", media_id="MEDIA_ID_123"):
+def _fabricated_document_message_payload(phone="573001234567", media_id="MEDIA_ID_123", caption=None):
+    document = {
+        "filename": "rut.pdf",
+        "mime_type": "application/pdf",
+        "sha256": "abc123",
+        "id": media_id,
+    }
+    if caption is not None:
+        document["caption"] = caption
     return {
         "entry": [
             {
@@ -65,12 +73,7 @@ def _fabricated_document_message_payload(phone="573001234567", media_id="MEDIA_I
                                     "id": "wamid.DOC123",
                                     "timestamp": "1721400000",
                                     "type": "document",
-                                    "document": {
-                                        "filename": "rut.pdf",
-                                        "mime_type": "application/pdf",
-                                        "sha256": "abc123",
-                                        "id": media_id,
-                                    },
+                                    "document": document,
                                 }
                             ],
                         },
@@ -82,7 +85,10 @@ def _fabricated_document_message_payload(phone="573001234567", media_id="MEDIA_I
     }
 
 
-def _fabricated_image_message_payload(phone="573001234567", media_id="MEDIA_ID_456"):
+def _fabricated_image_message_payload(phone="573001234567", media_id="MEDIA_ID_456", caption=None):
+    image = {"mime_type": "image/jpeg", "sha256": "def456", "id": media_id}
+    if caption is not None:
+        image["caption"] = caption
     return {
         "entry": [
             {
@@ -99,11 +105,7 @@ def _fabricated_image_message_payload(phone="573001234567", media_id="MEDIA_ID_4
                                     "id": "wamid.IMG456",
                                     "timestamp": "1721400000",
                                     "type": "image",
-                                    "image": {
-                                        "mime_type": "image/jpeg",
-                                        "sha256": "def456",
-                                        "id": media_id,
-                                    },
+                                    "image": image,
                                 }
                             ],
                         },
@@ -177,6 +179,29 @@ class TestNormalizeWhatsappWebhook:
         assert event["media_id"] == "MEDIA_ID_456"
         assert event["mime_type"] == "image/jpeg"
         assert event["text"] == ""
+
+    def test_image_message_with_caption_uses_caption_as_text(self):
+        """Found live 2026-08-11 (taty-whatsapp-renta-sales-capability): a click-to-WhatsApp ad
+        image forwarded with its caption produced an empty event["text"], so Taty answered with the
+        generic KB fallback instead of engaging with what the sender actually wrote. WhatsApp images
+        (and documents) carry the sender's text as `caption`, not `text` — the normalizer must fall
+        back to it so a captioned image isn't functionally silent."""
+        events = normalize_whatsapp_webhook(
+            _fabricated_image_message_payload(caption="Vi este anuncio, me toca declarar renta?")
+        )
+
+        assert len(events) == 1
+        event = events[0]
+        assert event["media_id"] == "MEDIA_ID_456"
+        assert event["text"] == "Vi este anuncio, me toca declarar renta?"
+
+    def test_document_message_with_caption_uses_caption_as_text(self):
+        events = normalize_whatsapp_webhook(
+            _fabricated_document_message_payload(caption="Aqui esta mi RUT, ya lo pague?")
+        )
+
+        assert len(events) == 1
+        assert events[0]["text"] == "Aqui esta mi RUT, ya lo pague?"
 
 
 class TestSendWhatsappMessage:
