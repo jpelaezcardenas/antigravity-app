@@ -16,7 +16,7 @@ import logging
 import re
 
 from services.centinela_service import get_centinela_service
-from services.supabase_client import get_service_supabase
+from core.supabase_client import get_service_supabase
 from agents.agent_6_analyst import AnalystAgent
 
 logger = logging.getLogger(__name__)
