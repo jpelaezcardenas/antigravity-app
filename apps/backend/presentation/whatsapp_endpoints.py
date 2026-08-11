@@ -49,6 +49,7 @@ class HistoryTurn(BaseModel):
 class LeadReplyRequest(BaseModel):
     text: str
     history: List[HistoryTurn] | None = None
+    deliver: bool = True
 
 
 class AckRequest(BaseModel):
@@ -141,14 +142,21 @@ async def taty_lead_reply(
     Never creates a lead: the bridge calls /crm/leads/whatsapp-intake first and passes the id it
     got back, so find-or-create stays owned by crm_service.
 
-    Also DELIVERS the reply to the customer's real WhatsApp number via Meta's API directly. This
-    is not redundant with the bridge mirroring the reply into Chatwoot: Chatwoot's Channel::Api
-    inbox (used to inject durable-inbox events) has no Meta credentials at all — it can only fire
-    an outgoing webhook, it cannot deliver to WhatsApp. Found live: a reply was mirrored into
-    Chatwoot correctly but the customer never received anything, because nothing was calling
-    Meta's send API in this new pipeline (the old, retired webhook route used to do this itself).
-    A missing phone or a failed send does not fail this request — the bridge still needs the
-    reply text back regardless, to mirror into Chatwoot for human visibility.
+    `deliver` (default True) controls whether this endpoint ALSO sends the reply to the
+    customer's real WhatsApp number via Meta's API directly, or returns text only.
+
+    Historical context for why this flag exists (taty-whatsapp-renta-sales-capability, Stage 5):
+    when the bridge injected events into Chatwoot's `Channel::Api` inbox (no Meta credentials —
+    it can only fire an outgoing webhook, never deliver to WhatsApp), this endpoint HAD to send
+    directly or the customer got nothing (found live: a reply mirrored into Chatwoot correctly
+    but never reached the phone, because nothing else was calling Meta's send API). Once the
+    bridge is pointed at the real Meta-linked `Channel::Whatsapp` inbox, Chatwoot itself can
+    deliver — the bridge calls this with `deliver=False` and sends the returned text via its own
+    `chatwoot_client.send_reply`, so a human's reply typed in Chatwoot also reaches the customer,
+    which it could not while this endpoint was the only channel capable of a real send. A missing
+    phone or a failed send never fails this request — the caller still needs the reply text back
+    regardless (for Chatwoot mirroring when `deliver=False`, or simply because a delivery failure
+    is not the request's failure).
     """
     if not lead_exists(lead_id):
         raise HTTPException(status_code=404, detail="Lead not found")
@@ -156,8 +164,9 @@ async def taty_lead_reply(
     history = [turn.model_dump() for turn in payload.history] if payload.history else None
     result = route_lead_message(lead_id, payload.text, history=history)
 
-    phone = get_lead_phone(lead_id)
-    if phone:
-        await send_whatsapp_message(phone, result["reply"])
+    if payload.deliver:
+        phone = get_lead_phone(lead_id)
+        if phone:
+            await send_whatsapp_message(phone, result["reply"])
 
     return result

@@ -507,3 +507,49 @@ class TestReplyIsDeliveredToTheRealWhatsAppCustomer:
                 )
 
         assert response.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_deliver_false_skips_the_direct_send(self, reply_client) -> None:
+        """taty-whatsapp-renta-sales-capability Stage 5: the bridge calls with deliver=False once
+        Chatwoot itself (pointed at the real Meta-linked inbox) becomes the sender — this endpoint
+        must still return the reply text, just not double-send it via Meta directly."""
+        async with reply_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.lead_exists", return_value=True
+            ), patch(
+                "presentation.whatsapp_endpoints.route_lead_message",
+                return_value={"intent": "unknown", "confidence": 0.0, "reply": "Hola!"},
+            ), patch(
+                "presentation.whatsapp_endpoints.get_lead_phone", return_value="573001234567"
+            ), patch(
+                "presentation.whatsapp_endpoints.send_whatsapp_message",
+                new=AsyncMock(return_value=True),
+            ) as mock_send:
+                response = await client.post(
+                    "/channels/whatsapp/leads/lead-1/reply",
+                    json={"text": "hola", "deliver": False},
+                )
+
+        assert response.status_code == 200
+        assert response.json()["reply"] == "Hola!"
+        mock_send.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_deliver_omitted_defaults_to_true(self, reply_client) -> None:
+        """Backward compatibility: any existing caller that never sends `deliver` at all must
+        keep today's behavior — a direct send, unchanged."""
+        async with reply_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.lead_exists", return_value=True
+            ), patch(
+                "presentation.whatsapp_endpoints.route_lead_message",
+                return_value={"intent": "unknown", "confidence": 0.0, "reply": "Hola!"},
+            ), patch(
+                "presentation.whatsapp_endpoints.get_lead_phone", return_value="573001234567"
+            ), patch(
+                "presentation.whatsapp_endpoints.send_whatsapp_message",
+                new=AsyncMock(return_value=True),
+            ) as mock_send:
+                await client.post("/channels/whatsapp/leads/lead-1/reply", json={"text": "hola"})
+
+        mock_send.assert_awaited_once_with("573001234567", "Hola!")

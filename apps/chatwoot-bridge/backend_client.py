@@ -82,13 +82,21 @@ async def taty_reply(lead_id: str, text: str) -> Optional[str]:
     single brain (services/taty_lead_router.py) owns intent classification, Wompi payment links,
     payment verification and KB grounding on every channel.
 
+    `deliver: False` (taty-whatsapp-renta-sales-capability, Stage 5): the backend must return
+    text only, never send via Meta directly — this bridge is the one delivering, via
+    `chatwoot_client.send_reply` right after this call returns, now that the bridge targets the
+    real Meta-linked Chatwoot inbox instead of the credential-less injection-only one. Sending
+    from both places would double-message the customer.
+
     Same fail-soft contract as whatsapp_intake: returns None on any failure, never raises. The
     caller turns None into the human-takeover fallback rather than answering ungrounded.
     """
     url = f"{settings.CONTEXIA_API_URL}/channels/whatsapp/leads/{lead_id}/reply"
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:
-            response = await client.post(url, headers=_headers(), json={"text": text})
+            response = await client.post(
+                url, headers=_headers(), json={"text": text, "deliver": False}
+            )
         if response.status_code != 200:
             logger.error(
                 "taty_reply returned non-200: %s %s", response.status_code, response.text

@@ -91,3 +91,53 @@ class TestWhatsappIntake:
         result = await backend_client.whatsapp_intake("+573001234567")
 
         assert result is None
+
+
+class TestTatyReply:
+    """taty-whatsapp-renta-sales-capability Stage 5: taty_reply must always ask the backend for
+    text only (deliver=False) — this bridge is the one that delivers, via
+    chatwoot_client.send_reply, now that it targets the real Meta-linked inbox. Sending from both
+    places would double-message the customer."""
+
+    @respx.mock
+    @pytest.mark.asyncio
+    async def test_sends_deliver_false_and_returns_the_reply_text(self):
+        import backend_client
+
+        route = respx.post(f"{BACKEND_URL}/channels/whatsapp/leads/lead-1/reply").mock(
+            return_value=Response(
+                200, json={"intent": "unknown", "confidence": 0.0, "reply": "Hola!"}
+            )
+        )
+
+        result = await backend_client.taty_reply("lead-1", "hola ayudame")
+
+        assert result == "Hola!"
+        body = json.loads(route.calls[0].request.content)
+        assert body == {"text": "hola ayudame", "deliver": False}
+
+    @respx.mock
+    @pytest.mark.asyncio
+    async def test_network_failure_returns_none_without_raising(self):
+        import backend_client
+
+        respx.post(f"{BACKEND_URL}/channels/whatsapp/leads/lead-1/reply").mock(
+            side_effect=httpx.ConnectError("refused")
+        )
+
+        result = await backend_client.taty_reply("lead-1", "hola")
+
+        assert result is None
+
+    @respx.mock
+    @pytest.mark.asyncio
+    async def test_non_200_returns_none_without_raising(self):
+        import backend_client
+
+        respx.post(f"{BACKEND_URL}/channels/whatsapp/leads/lead-1/reply").mock(
+            return_value=Response(500, json={"error": "boom"})
+        )
+
+        result = await backend_client.taty_reply("lead-1", "hola")
+
+        assert result is None
