@@ -154,9 +154,27 @@ def _retrieve_memory(query: str, client_id: str, top_k: int) -> List[Dict]:
 # ---------------------------------------------------------------------------
 
 def _seed_pgvector(client_id: str, chunks: List[Dict]) -> int:
+    """Upsert chunks by (client_id, content_hash). Chunks whose embedding fails are SKIPPED
+    entirely rather than upserted with embedding=None.
+
+    Found live 2026-08-11 (taty-whatsapp-renta-sales-capability): ensure_dian_loaded() runs at
+    every backend process start (taty_service.py import time) and re-seeds dian_chunks.json into
+    pgvector, not just memory. When it ran during a Railway redeploy while both embedding
+    providers were unavailable (OpenAI out of credits, Gemini's free quota exhausted by this
+    session's own testing), the old code unconditionally included `"embedding": None` in every
+    row, and Postgrest's upsert applied that literally — silently overwriting 48 previously
+    good, non-null embeddings with NULL, permanently invisible to match_knowledge_chunks'
+    `WHERE embedding IS NOT NULL` filter until manually re-seeded. Skipping the row instead means
+    an embedding outage degrades to "this seed call adds nothing new" rather than "this seed call
+    actively destroys existing good data."
+    """
     rows = []
+    skipped = 0
     for chunk in chunks:
         embedding = _embed_text(chunk["content"])
+        if embedding is None:
+            skipped += 1
+            continue
         rows.append({
             "client_id": client_id,
             "source": chunk.get("source", "unknown"),
@@ -165,6 +183,16 @@ def _seed_pgvector(client_id: str, chunks: List[Dict]) -> int:
             "metadata": chunk.get("metadata", {}),
             "embedding": embedding,
         })
+
+    if skipped:
+        logger.warning(
+            f"KB[pgvector]: skipped {skipped}/{len(chunks)} chunks for {client_id} — embedding "
+            "failed (all providers unavailable). Never upserting embedding=None over a possibly "
+            "existing good value; re-run seeding once an embedding provider is available."
+        )
+    if not rows:
+        return 0
+
     # Upsert by (client_id, content_hash)
     result = _SUPABASE_CLIENT.table("knowledge_chunks").upsert(
         rows, on_conflict="client_id,content_hash"

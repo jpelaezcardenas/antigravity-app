@@ -8,6 +8,8 @@ integration tests when SUPABASE_URL is set, gated by RUN_KB_PGVECTOR=1).
 from __future__ import annotations
 
 import os
+from unittest.mock import patch
+
 import pytest
 
 from services import kb_seeding_service as kb
@@ -103,6 +105,57 @@ class TestBackendStatus:
         assert status["backend"] == "memory"
         assert "c1" in status["memory_clients"]
         assert status["memory_total_chunks"] >= 1
+
+
+class TestSeedPgvectorNeverClobbersWithNullEmbedding:
+    """Regression test for a real data-loss bug found live 2026-08-11
+    (taty-whatsapp-renta-sales-capability): _seed_pgvector used to include
+    "embedding": None unconditionally in every upserted row. When ensure_dian_loaded()
+    re-seeded on a Railway cold start while both embedding providers were down, Postgrest's
+    upsert applied that literally — silently overwriting 48 previously-good embeddings with
+    NULL. Hermetic (mocked Supabase client + mocked _embed_text), no RUN_KB_PGVECTOR needed."""
+
+    def setup_method(self) -> None:
+        from unittest.mock import MagicMock
+        kb._SUPABASE_CLIENT = MagicMock()
+        kb._SUPABASE_CLIENT.table.return_value.upsert.return_value.execute.return_value.data = []
+
+    def test_chunk_with_failed_embedding_is_skipped_not_upserted_as_null(self) -> None:
+        with patch("services.kb_seeding_service._embed_text", return_value=None):
+            n = kb._seed_pgvector("__global__", [{"source": "s", "content": "test content"}])
+
+        assert n == 0
+        kb._SUPABASE_CLIENT.table.return_value.upsert.assert_not_called()
+
+    def test_partial_embedding_failure_only_upserts_the_successful_chunks(self) -> None:
+        def fake_embed(text):
+            return None if "fails" in text else [0.1] * 1536
+
+        with patch("services.kb_seeding_service._embed_text", side_effect=fake_embed):
+            n = kb._seed_pgvector(
+                "__global__",
+                [
+                    {"source": "good", "content": "this one works"},
+                    {"source": "bad", "content": "this one fails"},
+                ],
+            )
+
+        assert n == 1
+        upsert_call = kb._SUPABASE_CLIENT.table.return_value.upsert.call_args
+        rows = upsert_call[0][0]
+        assert len(rows) == 1
+        assert rows[0]["source"] == "good"
+        assert rows[0]["embedding"] is not None
+
+    def test_all_chunks_embed_successfully_upserts_all(self) -> None:
+        with patch("services.kb_seeding_service._embed_text", return_value=[0.1] * 1536):
+            n = kb._seed_pgvector(
+                "__global__", [{"source": "a", "content": "x"}, {"source": "b", "content": "y"}]
+            )
+
+        assert n == 2
+        rows = kb._SUPABASE_CLIENT.table.return_value.upsert.call_args[0][0]
+        assert all(r["embedding"] is not None for r in rows)
 
 
 @pytest.mark.skipif(
