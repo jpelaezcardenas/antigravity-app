@@ -1207,7 +1207,7 @@
             document.getElementById('resultado-fecha').innerText = data.fecha_limite || "Agosto - Octubre 2026";
 
             // Prepare WhatsApp Link
-            let msg = `Hola Taty 🙌 acabo de hacer el diagnóstico y me salió ${icon.innerHTML} ${data.color_semaforo}... ¿cuándo me toca declarar?`;
+            let msg = `Hola Taty! Acabo de hacer el diagnóstico y me salió ${data.color_semaforo}... ¿cuándo me toca declarar?`;
             const waLink = `https://wa.me/573106229286?text=${encodeURIComponent(msg)}`; // Replace with real Taty number if needed
             document.getElementById('whatsapp-link').href = waLink;
             
