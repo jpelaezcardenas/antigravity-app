@@ -337,6 +337,23 @@
         #mobile-menu-btn.open #line3 {
             transform: translateY(-8px) rotate(-45deg);
         }
+    
+        /* Semáforo CSS */
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: white; }
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, #2DD4BF, #8B5CF6);
+        }
+        .step-container { display: none; opacity: 0; transition: opacity 0.4s ease; }
+        .step-container.active { display: block; opacity: 1; }
+        .btn-option {
+            width: 100%; text-align: left; padding: 1rem; margin-bottom: 0.75rem;
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(45, 212, 191, 0.2);
+            border-radius: 0.5rem; transition: all 0.2s; cursor: pointer;
+        }
+        .btn-option:hover { background: rgba(45, 212, 191, 0.1); border-color: #2DD4BF; }
     </style>
 </head>
 
@@ -442,119 +459,110 @@
         </div>
     </nav>
 
-    <!-- Entrevista Rápida -->
-    <section id="entrevista" class="pt-28 md:pt-64 pb-20 relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-b from-violet/5 via-transparent to-teal/5 pointer-events-none"></div>
-        <div class="max-w-4xl mx-auto px-6 lg:px-8 relative">
-            <div class="text-center mb-12 fade-in">
-                <h2 class="text-2xl sm:text-3xl md:text-4xl font-black mb-4">¿Te estresa la <span class="gradient-text">DIAN</span> cada vez que vendes online?</h2>
-                <p class="text-white text-xl font-semibold mb-2">Queremos escucharte.</p>
-                <p class="text-slate-400 max-w-2xl mx-auto text-lg">Cuéntanos cómo manejas hoy tus impuestos y obligaciones con la DIAN, ¡Gracias por ayudar!</p>
-                <div class="mt-6 flex items-center justify-center gap-6 text-sm text-slate-500">
-                    <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> ~2 minutos</span>
-                    <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> 100% anónimo</span>
-                    <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg> Escribe o graba</span>
+    
+    <!-- Semáforo de la DIAN -->
+    <section id="semaforo" class="pt-28 md:pt-64 pb-20 relative overflow-hidden flex flex-col items-center">
+        <div class="absolute inset-0 bg-gradient-to-b from-teal/5 via-transparent to-violet/5 pointer-events-none"></div>
+        <div class="max-w-4xl mx-auto px-6 lg:px-8 relative w-full flex flex-col items-center">
+            
+            <header class="w-full max-w-2xl text-center mb-8 fade-in">
+                <div class="inline-block px-3 py-1 mb-4 rounded-full bg-teal/10 text-teal border border-teal/20 text-sm font-semibold tracking-wide">
+                    Gratis • Anónimo • 60 Segundos
                 </div>
+                <h2 class="text-3xl md:text-4xl font-extrabold mb-4 font-['Orbitron']">
+                    El <span class="gradient-text">Semáforo</span> de la DIAN
+                </h2>
+                <p class="text-gray-400 text-sm md:text-base">
+                    ¿Te toca declarar renta en 2026? Descúbrelo sin estrés.
+                </p>
+            </header>
+
+            <main class="w-full max-w-lg bg-navy/80 border border-teal/10 p-6 rounded-2xl shadow-2xl backdrop-blur-md">
+        
+        <!-- Step 1: Tipo de Ingresos -->
+        <div id="step-1" class="step-container active">
+            <h2 class="text-xl font-semibold mb-6">1. ¿De dónde provienen tus principales ingresos?</h2>
+            <button class="btn-option" onclick="nextStep(2)">Soy empleado (salario fijo)</button>
+            <button class="btn-option" onclick="nextStep(2)">Soy independiente / Freelance</button>
+            <button class="btn-option" onclick="nextStep(2)">Tengo un negocio o comercio</button>
+            <button class="btn-option" onclick="nextStep(2)">Múltiples fuentes</button>
+        </div>
+
+        <!-- Step 2: Ingresos Anuales -->
+        <div id="step-2" class="step-container">
+            <h2 class="text-xl font-semibold mb-6">2. Sumando todo lo del año pasado, tus ingresos (o consignaciones) fueron:</h2>
+            <button class="btn-option" onclick="saveRevenueAndNext(40000000)">Menos de $50 Millones</button>
+            <button class="btn-option" onclick="saveRevenueAndNext(65000000)">Entre $50M y $69.7 Millones</button>
+            <button class="btn-option" onclick="saveRevenueAndNext(80000000)">Más de $69.7 Millones</button>
+            <button class="btn-option" onclick="saveRevenueAndNext(150000000)">Más de $100 Millones</button>
+        </div>
+
+        <!-- Step 3: Bienes/Patrimonio -->
+        <div id="step-3" class="step-container">
+            <h2 class="text-xl font-semibold mb-6">3. ¿Compraste casa, carro o tus bienes suman más de $200 Millones?</h2>
+            <button class="btn-option" onclick="nextStep(4)">Sí, definitivamente</button>
+            <button class="btn-option" onclick="nextStep(4)">No, aún no</button>
+            <button class="btn-option" onclick="nextStep(4)">No estoy seguro</button>
+        </div>
+
+        <!-- Step 4: Cédula -->
+        <div id="step-4" class="step-container">
+            <h2 class="text-xl font-semibold mb-6">4. Para calcular tu fecha exacta límite, ¿en qué terminan los últimos 2 dígitos de tu cédula?</h2>
+            <input type="number" id="cedula" class="w-full bg-navy border border-gray-600 rounded-lg p-3 text-white mb-4" placeholder="Ej: 45">
+            <button class="w-full bg-teal text-navy-dark font-bold py-3 rounded-lg hover:bg-teal-dark transition" onclick="saveCedulaAndNext()">Siguiente</button>
+        </div>
+
+        <!-- Step 5: Captura -->
+        <div id="step-5" class="step-container">
+            <h2 class="text-xl font-semibold mb-4">¡Ya tenemos tu resultado!</h2>
+            <p class="text-sm text-gray-400 mb-6">Déjanos tu nombre y WhatsApp para enviarte una copia del resultado y tu Guía Anti-Multas gratis. Te escribiremos <strong class="text-teal">una sola vez</strong>.</p>
+            
+            <input type="text" id="nombre" class="w-full bg-navy border border-gray-600 rounded-lg p-3 text-white mb-3" placeholder="Tu Nombre">
+            
+            <div class="flex mb-4">
+                <span class="bg-navy border border-r-0 border-gray-600 rounded-l-lg p-3 text-gray-400">+57</span>
+                <input type="tel" id="whatsapp" class="w-full bg-navy border border-gray-600 rounded-r-lg p-3 text-white" placeholder="Celular (ej: 3001234567)">
             </div>
 
-            <!-- Progress Bar -->
-            <div class="mb-10 fade-in">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs text-slate-500 font-medium">Progreso</span>
-                    <span id="interview-progress-text" class="text-xs text-teal font-bold">0 / 3</span>
-                </div>
-                <div class="interview-progress-bar">
-                    <div id="interview-progress-fill" class="interview-progress-fill"></div>
-                </div>
+            <button id="btn-submit" class="w-full bg-teal text-navy-dark font-bold py-3 rounded-lg hover:bg-teal-dark transition mb-3" onclick="submitForm()">Ver mi resultado ahora</button>
+            <button class="w-full text-gray-500 text-sm hover:text-white transition" onclick="submitForm(true)">Ver resultado sin registrarme</button>
+        </div>
+
+        <!-- Result Loading -->
+        <div id="step-loading" class="step-container text-center py-8">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal mx-auto mb-4"></div>
+            <p class="text-teal">Analizando reglas de la DIAN...</p>
+        </div>
+
+        <!-- Result Panel -->
+        <div id="step-result" class="step-container text-center">
+            <div id="semaforo-icon" class="text-6xl mb-4"></div>
+            <h2 id="resultado-titulo" class="text-2xl font-bold mb-2"></h2>
+            <p id="resultado-desc" class="text-gray-300 mb-6"></p>
+
+            <div class="bg-navy border border-gray-700 p-4 rounded-lg mb-6">
+                <p class="text-sm text-gray-400">Fecha límite estimada:</p>
+                <p id="resultado-fecha" class="text-xl font-semibold text-teal"></p>
             </div>
 
-            <!-- Interview Form -->
-            <form id="interview-form" class="space-y-4 fade-in">
+            <a id="whatsapp-link" href="#" target="_blank" class="block w-full bg-[#25D366] text-white font-bold py-3 rounded-lg hover:bg-[#1DA851] transition shadow-lg shadow-green-900/20 mb-4">
+                Hablar con Taty (Asesora) 💬
+            </a>
+            <p class="text-xs text-gray-500">Taty es nuestra agente inteligente experta en renta.</p>
+        </div>
 
-                <!-- Pregunta 1: Validación del dolor (miedo DIAN) -->
-                <div class="interview-card" data-question="1">
-                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
-                        <span class="question-number bg-teal/10 text-teal">1</span>
-                        <p class="text-white font-semibold leading-relaxed flex-1">¿Qué fue lo que más te asustó al pensar en la DIAN o en la Cámara de Comercio cuando empezaste?</p>
-                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <textarea class="interview-textarea" id="q1" name="q1" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
-                        <div class="flex items-center justify-between mt-3">
-                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q1')">
-                                <span class="record-dot"></span>
-                                <span class="record-label">Grabar respuesta</span>
-                                <span class="record-timer">00:00</span>
-                            </button>
-                        </div>
-                        <div class="audio-playback" id="audio-q1"></div>
-                    </div>
-                </div>
-
-                <!-- Pregunta 2: Comportamiento actual (alternativas) -->
-                <div class="interview-card" data-question="2">
-                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
-                        <span class="question-number bg-violet/10 text-violet">2</span>
-                        <p class="text-white font-semibold leading-relaxed flex-1">¿Cómo manejas hoy tus impuestos y obligaciones? ¿Lo haces solo, con contador, app... o lo pospones?</p>
-                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <textarea class="interview-textarea" id="q2" name="q2" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
-                        <div class="flex items-center justify-between mt-3">
-                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q2')">
-                                <span class="record-dot"></span>
-                                <span class="record-label">Grabar respuesta</span>
-                                <span class="record-timer">00:00</span>
-                            </button>
-                        </div>
-                        <div class="audio-playback" id="audio-q2"></div>
-                    </div>
-                </div>
-
-                <!-- Pregunta 3: Validación de solución (herramienta ideal) -->
-                <div class="interview-card" data-question="3">
-                    <div class="accordion-header flex items-center gap-4" onclick="toggleAccordion(this)">
-                        <span class="question-number bg-orange/10 text-orange">3</span>
-                        <p class="text-white font-semibold leading-relaxed flex-1">Imagina que existiera una herramienta que te guiara desde cero en RUT, régimen, facturación, proyecciones fiscales... ¿qué tendría que tener para que la usaras ya?</p>
-                        <svg class="accordion-chevron w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <textarea class="interview-textarea" id="q3" name="q3" placeholder="Escribe tu respuesta aquí... sé lo más detallado posible" oninput="updateProgress()"></textarea>
-                        <div class="flex items-center justify-between mt-3">
-                            <button type="button" class="record-btn" onclick="toggleRecording(this, 'q3')">
-                                <span class="record-dot"></span>
-                                <span class="record-label">Grabar respuesta</span>
-                                <span class="record-timer">00:00</span>
-                            </button>
-                        </div>
-                        <div class="audio-playback" id="audio-q3"></div>
-                    </div>
-                </div>
-
-                <!-- Submit -->
-                <div class="text-center pt-8">
-                    <button type="submit" class="interview-submit-btn">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                        </svg>
-                        Enviar Respuestas
-                    </button>
-                    <p class="text-xs text-slate-500 mt-3">Tus respuestas son completamente anónimas y nos ayudan a crear mejores soluciones</p>
-                </div>
-            </form>
-
-            <!-- Success State -->
-            <div id="interview-success" class="interview-success fade-in">
-                <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-teal/10 flex items-center justify-center">
-                    <svg class="w-10 h-10 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
-                </div>
-                <h3 class="text-2xl font-black text-white mb-3">¡Gracias por tu tiempo!</h3>
-                <p class="text-slate-400 max-w-md mx-auto">Tus respuestas son invaluables para crear soluciones reales para emprendedores como tú. 🚀</p>
-            </div>
+    </main>
+            
+            <!-- Progress -->
+            
+    <div class="w-full max-w-lg mt-6">
+        <div class="bg-navy h-2 rounded-full overflow-hidden">
+            <div id="progress-bar" class="bg-gradient-to-r from-teal to-violet h-full w-1/5 transition-all duration-300"></div>
+        </div>
+    </div>
         </div>
     </section>
+
 
     <!-- Hero -->
     <section class="pt-32 pb-20 relative overflow-hidden">
@@ -1106,288 +1114,116 @@
 
     <!-- Interview Audio Recording & Form Logic -->
     <script>
-        // Accordion toggle
-        function toggleAccordion(headerEl) {
-            const card = headerEl.closest('.interview-card');
-            const isOpen = card.classList.contains('open');
-            // Close all others
-            document.querySelectorAll('.interview-card.open').forEach(c => {
-                if (c !== card) c.classList.remove('open');
-            });
-            // Toggle this one
-            if (isOpen) {
-                card.classList.remove('open');
-            } else {
-                card.classList.add('open');
-                // Scroll into view smoothly
-                setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+
+        /* Semáforo JS */
+        let userData = { ingresos: 0, cedula: "01", nombre: "Anónimo", whatsapp: "0000000000" };
+
+        function nextStep(step) {
+            document.querySelectorAll('.step-container').forEach(el => el.classList.remove('active'));
+            document.getElementById(`step-${step}`).classList.add('active');
+            document.getElementById('progress-bar').style.width = `${(step / 5) * 100}%`;
+        }
+
+        function saveRevenueAndNext(val) {
+            userData.ingresos = val;
+            nextStep(3);
+        }
+
+        function saveCedulaAndNext() {
+            const ced = document.getElementById('cedula').value || "01";
+            userData.cedula = ced;
+            nextStep(5);
+        }
+
+        async function submitForm(anonymous = false) {
+            if (!anonymous) {
+                const nombre = document.getElementById('nombre').value;
+                const wp = document.getElementById('whatsapp').value;
+                if(!nombre || wp.length < 10) {
+                    alert("Por favor ingresa tu nombre y un celular válido, o elige continuar sin registro.");
+                    return;
+                }
+                userData.nombre = nombre;
+                userData.whatsapp = "+57" + wp;
             }
-        }
 
-        // ============================================
-        // GOOGLE APPS SCRIPT URL - REEMPLAZAR CON TU URL
-        // ============================================
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4MvXpRWbbM79IYBpUPv3JsX1-PoGY7MQvhksyrzDEMe5nn5jbjjdhjmivQftBYsd9/exec';
+            document.querySelectorAll('.step-container').forEach(el => el.classList.remove('active'));
+            document.getElementById('step-loading').classList.add('active');
 
-        // Audio recording state
-        const recorders = {};
-        const audioBlobs = {};
-        const timerIntervals = {};
-        const audioTranscripts = {};
-        const speechRecognitions = {};
-
-        function formatTime(seconds) {
-            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-            const s = (seconds % 60).toString().padStart(2, '0');
-            return `${m}:${s}`;
-        }
-
-        async function toggleRecording(btn, questionId) {
-            if (btn.classList.contains('recording')) {
-                stopRecording(btn, questionId);
-            } else {
-                await startRecording(btn, questionId);
-            }
-        }
-
-        async function startRecording(btn, questionId) {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const mediaRecorder = new MediaRecorder(stream);
-                const chunks = [];
+                // Determine API URL (local vs prod based on hostname)
+                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                                ? 'http://localhost:8080/api/v1/wizard/renta-diagnostico' 
+                                : '/api/v1/wizard/renta-diagnostico';
 
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) chunks.push(e.data);
-                };
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nombre: userData.nombre,
+                        whatsapp: userData.whatsapp,
+                        ingresos_anuales: userData.ingresos,
+                        digitos_cedula: userData.cedula
+                    })
+                });
 
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'audio/webm' });
-                    audioBlobs[questionId] = blob;
-                    stream.getTracks().forEach(track => track.stop());
-                    showAudioPlayback(questionId, blob);
-                    updateProgress();
-                };
-
-                recorders[questionId] = mediaRecorder;
-                mediaRecorder.start();
-
-                btn.classList.add('recording');
-                btn.querySelector('.record-label').textContent = 'Detener';
-
-                // Timer
-                let seconds = 0;
-                const timerEl = btn.querySelector('.record-timer');
-                timerEl.textContent = '00:00';
-                timerIntervals[questionId] = setInterval(() => {
-                    seconds++;
-                    timerEl.textContent = formatTime(seconds);
-                }, 1000);
-
-                // Start Speech Recognition for transcription
-                startSpeechRecognition(questionId);
+                if(!response.ok) throw new Error("Error en servidor");
+                const data = await response.json();
+                showResult(data);
 
             } catch (err) {
-                alert('No se pudo acceder al micrófono. Por favor, permite el acceso al micrófono en tu navegador.');
-                console.error('Microphone access error:', err);
+                console.error(err);
+                // Fallback offline mock in case of failure
+                const color = userData.ingresos >= 69718600 ? "ROJO" : (userData.ingresos >= 60000000 ? "AMARILLO" : "VERDE");
+                showResult({ color_semaforo: color, fecha_limite: "Septiembre 2026", fallback: true });
             }
         }
 
-        // Speech Recognition for real-time transcription
-        function startSpeechRecognition(questionId) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                console.warn('Speech Recognition not supported in this browser');
-                audioTranscripts[questionId] = '(Transcripción no disponible en este navegador)';
-                return;
+        function showResult(data) {
+            document.querySelectorAll('.step-container').forEach(el => el.classList.remove('active'));
+            document.getElementById('step-result').classList.add('active');
+            document.getElementById('progress-bar').style.width = `100%`;
+
+            const icon = document.getElementById('semaforo-icon');
+            const title = document.getElementById('resultado-titulo');
+            const desc = document.getElementById('resultado-desc');
+            
+            if (data.color_semaforo === 'ROJO') {
+                icon.innerHTML = '🔴';
+                title.innerText = '¡Te toca Declarar Renta!';
+                title.className = "text-2xl font-bold mb-2 text-red-500";
+                desc.innerText = 'Tus ingresos o movimientos superaron los topes de la DIAN. Evita multas gestionándolo con tiempo.';
+            } else if (data.color_semaforo === 'AMARILLO') {
+                icon.innerHTML = '🟡';
+                title.innerText = 'Estás al límite';
+                title.className = "text-2xl font-bold mb-2 text-yellow-500";
+                desc.innerText = 'Estás muy cerca de los topes. Te recomendamos revisar tus extractos detalladamente con nuestra asesora.';
+            } else {
+                icon.innerHTML = '🟢';
+                title.innerText = 'Estás a salvo (por ahora)';
+                title.className = "text-2xl font-bold mb-2 text-green-500";
+                desc.innerText = 'Según tus ingresos, no parece que debas declarar. ¡Guarda esta confirmación!';
             }
 
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'es-CO'; // Spanish - Colombia
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.maxAlternatives = 1;
+            document.getElementById('resultado-fecha').innerText = data.fecha_limite || "Agosto - Octubre 2026";
 
-            let finalTranscript = '';
-
-            recognition.onresult = (event) => {
-                let interimTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        finalTranscript += transcript + ' ';
-                    } else {
-                        interimTranscript += transcript;
-                    }
-                }
-                audioTranscripts[questionId] = finalTranscript.trim();
-                
-                // Show live transcription indicator
-                const card = document.querySelector(`.interview-card[data-question="${questionId.replace('q', '')}"]`);
-                if (card) {
-                    let indicator = card.querySelector('.transcription-indicator');
-                    if (!indicator) {
-                        indicator = document.createElement('div');
-                        indicator.className = 'transcription-indicator';
-                        indicator.style.cssText = 'margin-top: 8px; padding: 8px 12px; background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.2); border-radius: 8px; font-size: 12px; color: #94a3b8;';
-                        const audioContainer = card.querySelector('.audio-playback');
-                        if (audioContainer) audioContainer.parentNode.insertBefore(indicator, audioContainer);
-                    }
-                    const displayText = finalTranscript + (interimTranscript ? `<span style="color:#64748b">${interimTranscript}</span>` : '');
-                    indicator.innerHTML = `<span style="color:#2dd4bf;font-weight:600;">🎙️ Transcribiendo:</span> ${displayText || '<em>Escuchando...</em>'}`;
-                }
-            };
-
-            recognition.onerror = (event) => {
-                console.warn('Speech recognition error:', event.error);
-                if (event.error === 'no-speech') {
-                    // Restart if no speech detected
-                    try { recognition.start(); } catch(e) {}
-                }
-            };
-
-            recognition.onend = () => {
-                // Don't restart if recording has stopped
-                if (recorders[questionId] && recorders[questionId].state === 'recording') {
-                    try { recognition.start(); } catch(e) {}
-                }
-            };
-
-            try {
-                recognition.start();
-                speechRecognitions[questionId] = recognition;
-            } catch(e) {
-                console.warn('Could not start speech recognition:', e);
+            // Prepare WhatsApp Link
+            let msg = `Hola Taty 🙌 acabo de hacer el diagnóstico y me salió ${icon.innerHTML} ${data.color_semaforo}... ¿cuándo me toca declarar?`;
+            const waLink = `https://wa.me/573000000000?text=${encodeURIComponent(msg)}`; // Replace with real Taty number if needed
+            document.getElementById('whatsapp-link').href = waLink;
+            
+            // GA4 event mockup
+            if(window.gtag) {
+                window.gtag('event', 'generate_lead', {
+                    'currency': 'COP',
+                    'value': 89000,
+                    'lead_source': 'renta_inbound_2026',
+                    'result_color': data.color_semaforo
+                });
             }
         }
-
-        function stopRecording(btn, questionId) {
-            if (recorders[questionId] && recorders[questionId].state === 'recording') {
-                recorders[questionId].stop();
-            }
-            btn.classList.remove('recording');
-            btn.querySelector('.record-label').textContent = 'Grabar de nuevo';
-            clearInterval(timerIntervals[questionId]);
-
-            // Stop speech recognition
-            if (speechRecognitions[questionId]) {
-                try { speechRecognitions[questionId].stop(); } catch(e) {}
-            }
-
-            // Update transcription indicator to final state
-            const card = document.querySelector(`.interview-card[data-question="${questionId.replace('q', '')}"]`);
-            if (card) {
-                const indicator = card.querySelector('.transcription-indicator');
-                if (indicator && audioTranscripts[questionId]) {
-                    indicator.innerHTML = `<span style="color:#2dd4bf;font-weight:600;">✅ Transcripción:</span> ${audioTranscripts[questionId]}`;
-                    indicator.style.borderColor = 'rgba(45,212,191,0.3)';
-                } else if (indicator) {
-                    indicator.innerHTML = `<span style="color:#f59e0b;font-weight:600;">⚠️</span> No se detectó voz`;
-                }
-            }
-        }
-
-        function showAudioPlayback(questionId, blob) {
-            const container = document.getElementById(`audio-${questionId}`);
-            const url = URL.createObjectURL(blob);
-            container.innerHTML = `
-                <svg class="w-4 h-4 text-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                </svg>
-                <audio controls src="${url}"></audio>
-                <button type="button" class="delete-audio-btn" onclick="deleteAudio('${questionId}')" title="Eliminar grabación">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                    </svg>
-                </button>
-            `;
-            container.classList.add('has-audio');
-        }
-
-        function deleteAudio(questionId) {
-            delete audioBlobs[questionId];
-            delete audioTranscripts[questionId];
-            const container = document.getElementById(`audio-${questionId}`);
-            container.innerHTML = '';
-            container.classList.remove('has-audio');
-            // Remove transcription indicator
-            const card = document.querySelector(`.interview-card[data-question="${questionId.replace('q', '')}"]`);
-            if (card) {
-                const indicator = card.querySelector('.transcription-indicator');
-                if (indicator) indicator.remove();
-                const btn = card.querySelector('.record-btn');
-                btn.querySelector('.record-label').textContent = 'Grabar respuesta';
-            }
-            updateProgress();
-        }
-
-        function updateProgress() {
-            let answered = 0;
-            for (let i = 1; i <= 3; i++) {
-                const textarea = document.getElementById(`q${i}`);
-                const hasText = textarea && textarea.value.trim().length > 0;
-                const hasAudio = !!audioBlobs[`q${i}`];
-                if (hasText || hasAudio) answered++;
-            }
-            const pct = (answered / 3) * 100;
-            document.getElementById('interview-progress-fill').style.width = `${pct}%`;
-            document.getElementById('interview-progress-text').textContent = `${answered} / 3`;
-        }
-
-        // Form submission - Send to Google Apps Script
-        document.getElementById('interview-form')?.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `
-                <svg class="animate-spin w-5 h-5 inline mr-2" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                </svg>
-                Enviando respuestas a Google Drive...
-            `;
-
-            // Collect all responses
-            const responses = {};
-            for (let i = 1; i <= 3; i++) {
-                const textarea = document.getElementById(`q${i}`);
-                responses[`q${i}_text`] = textarea ? textarea.value.trim() : '';
-                responses[`q${i}_audio_transcript`] = audioTranscripts[`q${i}`] || '';
-                responses[`q${i}_has_audio`] = !!audioBlobs[`q${i}`];
-            }
-
-            console.log('Sending interview responses:', responses);
-
-            try {
-                // Send to Google Apps Script
-                if (GOOGLE_APPS_SCRIPT_URL && GOOGLE_APPS_SCRIPT_URL !== 'PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-                    const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(responses)
-                    });
-                    console.log('Google Apps Script response sent');
-                } else {
-                    console.warn('Google Apps Script URL not configured. Responses logged to console only.');
-                    console.log('Full responses data:', JSON.stringify(responses, null, 2));
-                }
-            } catch (err) {
-                console.error('Error sending to Google Apps Script:', err);
-            }
-
-            // Show success state
-            document.getElementById('interview-form').style.display = 'none';
-            document.querySelector('.interview-progress-bar')?.parentElement?.style && (document.querySelector('.interview-progress-bar').parentElement.style.display = 'none');
-            const success = document.getElementById('interview-success');
-            success.classList.add('show');
-            success.classList.add('visible');
-
-            // Scroll to success message
-            success.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
     </script>
+
 
     <!-- Logo Lightbox Modal -->
     <div id="logo-lightbox" class="logo-lightbox" onclick="closeLogoLightbox(event)">
@@ -1431,6 +1267,23 @@
         .taty-pulse {
             animation: taty-pulse-ring 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
+    
+        /* Semáforo CSS */
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: white; }
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, #2DD4BF, #8B5CF6);
+        }
+        .step-container { display: none; opacity: 0; transition: opacity 0.4s ease; }
+        .step-container.active { display: block; opacity: 1; }
+        .btn-option {
+            width: 100%; text-align: left; padding: 1rem; margin-bottom: 0.75rem;
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(45, 212, 191, 0.2);
+            border-radius: 0.5rem; transition: all 0.2s; cursor: pointer;
+        }
+        .btn-option:hover { background: rgba(45, 212, 191, 0.1); border-color: #2DD4BF; }
     </style>
     <a href="https://wa.me/573106229289?text=Hola%20Taty%2C%20me%20interesa%20Contexia"
        target="_blank" rel="noopener noreferrer"
