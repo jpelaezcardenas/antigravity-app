@@ -144,27 +144,46 @@ publishing partial work either session didn't intend to ship yet.
 
 ## 4. Route WhatsApp through TatyAgentService (design.md Migration Plan step 4)
 
-- [ ] 4.1 Write failing tests: a WhatsApp-channel call into `TatyAgentService` accepts history +
-  persona fields + CRM stage + offer context, and resolves to Cliente Cero's tenant.
-- [ ] 4.2 Add the WhatsApp calling convention to `services/taty_service.py` (design.md Decision 3 —
-  Cliente Cero resolution, no new tenant-resolution branch needed).
-- [ ] 4.3 In `taty_lead_router.py`, change the `unknown`-intent branch (and optionally
-  `sales_interest`/`payment_confirmation`'s conversational framing, per design.md Decision 2 — CRM
-  and Wompi side effects stay exactly as they are) to call the new `TatyAgentService` convention
-  instead of `_classify_fiscal_question`/`_synthesize_kb_reply`. Remove `STATIC_UNKNOWN_REPLY` and
-  `KB_FALLBACK_REPLY` only once the replacement path is verified working (keep them as the
-  exception-path fallback text, per the delta spec's "graceful fallback" scenario).
-- [ ] 4.4 Extend `POST /leads/{lead_id}/reply` (`whatsapp_endpoints.py`) to accept recent
-  conversation history in the payload (bridge already tracks `MAX_HISTORY=10`).
-- [ ] 4.5 Unit tests: the four scenarios in the `taty-whatsapp-sales-router` delta spec (grounded
-  reply, graceful no-KB fallback, conversational non-fiscal reply, service-failure fallback) plus
-  the three in `taty-fiscal-assistant`'s new requirements.
-- [ ] 4.6 Manual verification against the test inbox (Chatwoot inbox `3`, still — do not cut over
-  delivery yet): inject the same messages that produced the original bug report ("Hola ayudame",
-  "Ok", "Xomo lo contacto?", "Si, mi cedula es 98670827") and confirm none produces
-  `STATIC_UNKNOWN_REPLY` or `KB_FALLBACK_REPLY` verbatim.
-- [ ] 4.7 Confirm the Wompi HITL gate is untouched: trigger `sales_interest`, confirm a draft lands
-  in `approval_queue` with `draft_type="wompi_payment_link"` and no link is sent automatically.
+- [x] 4.1 Added `tests/test_taty_service_whatsapp_channel.py` (12 tests, TDD-first): `_build_prompt`
+  accepts `conversation_history` (no-op when omitted — regression-safe for Telegram/PWA, byte-for-
+  byte identical whitespace verified by hand); `_build_system_prompt` accepts `lead_context`
+  (stage, persona, offer/documents, price-non-invention, and — added mid-stage, see 4.6 —
+  contact-info-non-invention).
+- [x] 4.2 Added the WhatsApp calling convention to `services/taty_service.py`: `ask()` gained
+  `conversation_history`/`lead_context` params, threaded into `_build_prompt`/`_build_system_prompt`.
+  Cliente Cero resolution reuses the existing `core.tenant_context.resolve_cliente_cero_tenant_id`
+  helper — no new resolution branch (design.md Decision 3).
+- [x] 4.3 Rewrote `taty_lead_router.py`'s `unknown`-intent branch to call
+  `get_taty_service().ask(channel="whatsapp", ...)` instead of the retired
+  `_classify_fiscal_question`/`_synthesize_kb_reply` (both deleted — confirmed no other caller
+  anywhere in the codebase before removing). `sales_interest`/`payment_confirmation` untouched,
+  by design — their CRM/Wompi side effects and static replies are unchanged. `STATIC_UNKNOWN_REPLY`
+  removed entirely (Taty now handles conversational messages herself); `KB_FALLBACK_REPLY` kept as
+  the sole last-resort fallback for tenant-unresolved or `ask()`-raises/errors.
+- [x] 4.4 `POST /leads/{lead_id}/reply` (`whatsapp_endpoints.py`) now accepts an optional `history`
+  field (`HistoryTurn` list), converted to plain dicts and passed through to `route_lead_message`.
+- [x] 4.5 68/68 tests pass across `test_taty_service_whatsapp_channel.py` (new),
+  `test_taty_lead_router.py` (rewrote the 3 test classes that covered the retired
+  classify-then-synthesize flow into `TestBuildLeadContext` + `TestRouteLeadMessageUnknownRoutesToTaty`
+  — 8 new tests covering exactly the delta spec's scenarios: Taty answer used verbatim, history
+  passed through, this-turn persona changes visible before persistence, unresolved-tenant and
+  ask()-error/exception graceful fallback), `test_taty_ask_tenant_scoping.py` and
+  `test_taty_tenant_profiles.py` (unchanged, confirming no regression to the existing
+  tenant-resolution contract).
+- [x] 4.6 Manual verification with a real test lead (created via `find_or_create_lead`, cleaned up
+  after) against the exact 4 original bug-report messages. **None produced the old static replies.**
+  Found and fixed one more real issue during this check: the model fabricated a plausible-looking
+  Contexia email/phone/website when asked "Xomo lo contacto?" — same hallucination class as the
+  fiscal-figure risk from Stage 3's A/B, just for contact details instead of numbers. Added an
+  unconditional never-invent-contact-details instruction to `_build_system_prompt` (mirrors the
+  price-non-invention pattern; unlike price there's no "confirmed" source to gate on, so it's
+  always present). Re-verified: no fabricated contact info in either affected message afterward.
+  Minor, non-blocking cosmetic quirk noticed: the model sometimes cites its own system-prompt
+  instructions as a "source" (e.g. "Política de contacto de Contexia... 【Developer instructions】")
+  — doesn't invent data, just an odd citation style; not fixed here.
+- [x] 4.7 Verified live with a real test lead: `sales_interest` still returns the static reply with
+  no Wompi link in the text, and exactly one `approval_queue` row lands with
+  `draft_type="wompi_payment_link"` — the HITL gate (commit `0839eda`) is untouched.
 
 ## 5. Chatwoot sole-sender delivery cutover (design.md Migration Plan step 5 — last, highest blast radius)
 

@@ -348,7 +348,60 @@ class TestInternalTatyReplyEndpoint:
 
         assert response.status_code == 200
         assert response.json()["reply"] == "Aquí tienes el link de pago..."
-        mock_route.assert_called_once_with("lead-1", "quiero saber si me toca declarar renta")
+        mock_route.assert_called_once_with(
+            "lead-1", "quiero saber si me toca declarar renta", history=None
+        )
+
+    @pytest.mark.asyncio
+    async def test_history_is_forwarded_to_route_lead_message(self, reply_client) -> None:
+        """taty-whatsapp-renta-sales-capability Stage 4: the bridge-supplied conversation history
+        must reach route_lead_message as plain dicts, not Pydantic models."""
+        async with reply_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.lead_exists", return_value=True
+            ), patch(
+                "presentation.whatsapp_endpoints.route_lead_message",
+                return_value={"intent": "unknown", "confidence": 0.0, "reply": "Hola"},
+            ) as mock_route, patch(
+                "presentation.whatsapp_endpoints.get_lead_phone", return_value=None
+            ):
+                response = await client.post(
+                    "/channels/whatsapp/leads/lead-1/reply",
+                    json={
+                        "text": "Ok",
+                        "history": [
+                            {"role": "user", "text": "Hola ayudame"},
+                            {"role": "assistant", "text": "Claro, ¿en qué te ayudo?"},
+                        ],
+                    },
+                )
+
+        assert response.status_code == 200
+        mock_route.assert_called_once_with(
+            "lead-1",
+            "Ok",
+            history=[
+                {"role": "user", "text": "Hola ayudame"},
+                {"role": "assistant", "text": "Claro, ¿en qué te ayudo?"},
+            ],
+        )
+
+    @pytest.mark.asyncio
+    async def test_omitted_history_forwards_none(self, reply_client) -> None:
+        async with reply_client as client:
+            with patch(
+                "presentation.whatsapp_endpoints.lead_exists", return_value=True
+            ), patch(
+                "presentation.whatsapp_endpoints.route_lead_message",
+                return_value={"intent": "unknown", "confidence": 0.0, "reply": "Hola"},
+            ) as mock_route, patch(
+                "presentation.whatsapp_endpoints.get_lead_phone", return_value=None
+            ):
+                await client.post(
+                    "/channels/whatsapp/leads/lead-1/reply", json={"text": "Ok"}
+                )
+
+        mock_route.assert_called_once_with("lead-1", "Ok", history=None)
 
     @pytest.mark.asyncio
     async def test_unknown_lead_returns_404_and_does_not_route(self, reply_client) -> None:

@@ -6,6 +6,12 @@ and has no notion of a pre-signup crm_leads row. This module reuses the same pro
 (deterministic keyword classification, an escalation-style graceful-stub idiom) but operates on
 lead identity throughout — see design.md Decision 1 for the full rationale.
 
+route_lead_message no longer generates reply text itself for unmatched (`unknown`-intent)
+messages: it hands off to services.taty_service.TatyAgentService — the same brain Telegram and
+the PWA use — via the WhatsApp calling convention (taty-whatsapp-renta-sales-capability). This
+file keeps its deterministic side effects (CRM stage advance, Wompi HITL enqueue, persona-field
+persistence) as tools that turn invokes, not as gates on what gets said.
+
 generate_wompi_link / verify_wompi_transaction are explicit NotImplementedError stubs pending the
 Wompi integration (Change C) — never a fabricated payment confirmation.
 """
@@ -13,26 +19,39 @@ Wompi integration (Change C) — never a fabricated payment confirmation.
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
 from config import settings
-from agents.secure_llm import get_anonymized_ai_response
 from channels.whatsapp import download_whatsapp_media, send_whatsapp_message
 from core.constants import UMBRAL_RENTA_COP
 from core.supabase_client import get_service_supabase
+from core.tenant_context import resolve_cliente_cero_tenant_id
 from services.crm_service import get_crm_service
 from services.document_storage_service import upload_tax_document
-from services.kb_seeding_service import retrieve_similar
+from services.taty_service import get_taty_service
 from services.wompi_signature import compute_integrity_signature
 
+# Sole remaining static reply: the last-resort fallback when TatyAgentService itself is
+# unreachable (tenant unresolved, or ask() raises/errors) — never a substitute for a real answer.
+# The two-tier static-reply logic this used to gate (a keyword-classified "is this fiscal?" check,
+# a separate zero-chunks fallback) was retired in taty-whatsapp-renta-sales-capability: Taty now
+# handles both fiscal and conversational messages herself, grounded via her own KB retrieval.
 KB_FALLBACK_REPLY = (
     "No tengo esa información a la mano en este momento, pero un asesor de Contexia te puede "
     "ayudar con eso."
 )
-STATIC_UNKNOWN_REPLY = (
-    "No estoy segura de tu pregunta. ¿Quieres saber si te toca declarar renta este año?"
-)
+
+# Static, code-verified offer facts a WhatsApp lead's Taty turn is given as context — never
+# invented. Documents match RUT_REQUEST_MESSAGE/EXTRACTOS_REQUEST_MESSAGE below (the actual
+# document-collection flow). Price is deliberately absent (`precio_confirmado: False`): pricing
+# tiers are undefined as of this change (founder decision, 2026-08-11) — see
+# TatyAgentService._build_system_prompt, which turns this exact flag into an explicit
+# never-invent-a-number instruction.
+RENTA_OFFER_CONTEXT: Dict[str, Any] = {
+    "documentos_requeridos": ["RUT (foto o PDF)", "extractos bancarios del año (PDF o foto)"],
+    "precio_confirmado": False,
+}
 
 WOMPI_WEB_CHECKOUT_BASE_URL = "https://checkout.wompi.co/p/"
 
@@ -249,37 +268,19 @@ def _detect_persona_fields(
     return fields
 
 
-def _classify_fiscal_question(message: str) -> Dict[str, Any]:
-    """Reason step 1 of the bounded Reason->Act->Reason loop for Taty's unknown-intent fallback
-    (taty-kb-and-react-router, design.md Decision 2). One anonymized, JSON-mode LLM call decides
-    whether the message is a fiscal question worth searching the KB for, and if so what to search.
-    Never calls the raw (non-anonymized) llm_engine directly — SOSP compliance is mandatory for
-    any message that may carry a lead's PII/fiscal specifics."""
-    return get_anonymized_ai_response(
-        prompt=message,
-        system_prompt=(
-            "Eres un clasificador. Dado un mensaje de WhatsApp de un lead colombiano, decide si "
-            "es una pregunta fiscal/tributaria (sobre declarar renta, DIAN, impuestos, etc.). "
-            "Responde solo JSON: {\"is_fiscal_question\": bool, \"search_query\": string}."
-        ),
-        response_format="json",
-        required_keys={"is_fiscal_question", "search_query"},
-    )
-
-
-def _synthesize_kb_reply(message: str, chunks: list) -> str:
-    """Reason step 2 of the bounded loop: synthesizes a reply grounded strictly in the retrieved
-    KB chunks (never called when zero chunks were retrieved — design.md Decision 2, to avoid
-    ungrounded hallucination)."""
-    context = "\n\n".join(chunk.get("content", "") for chunk in chunks)
-    return get_anonymized_ai_response(
-        prompt=message,
-        system_prompt=(
-            "Eres Taty, la asistente fiscal de Contexia. Responde la pregunta del lead usando "
-            "SOLO la siguiente información de referencia. Sé breve y clara.\n\n"
-            f"Información de referencia:\n{context}"
-        ),
-    )
+def _build_lead_context(current_stage: Optional[str], current_persona: Dict[str, Any]) -> Dict[str, Any]:
+    """Assembles the WhatsApp calling-convention context TatyAgentService.ask() expects
+    (taty-fiscal-assistant delta spec) from state route_lead_message already has in hand — no
+    extra reads beyond what the function already does for its existing CRM side effects."""
+    return {
+        "lead_stage": current_stage,
+        "persona_fields": {
+            k: current_persona[k]
+            for k in ("es_asalariado", "topes", "obligado_declarar")
+            if k in current_persona
+        },
+        "offer": dict(RENTA_OFFER_CONTEXT),
+    }
 
 
 def find_or_create_lead(whatsapp_phone: str, full_name: Optional[str] = None) -> str:
@@ -294,7 +295,9 @@ def find_or_create_lead(whatsapp_phone: str, full_name: Optional[str] = None) ->
     return result["lead_id"]
 
 
-def route_lead_message(lead_id: str, message: str) -> Dict[str, Any]:
+def route_lead_message(
+    lead_id: str, message: str, history: Optional[List[Dict[str, str]]] = None
+) -> Dict[str, Any]:
     """Classify the message and route it against the lead's current state.
 
     - sales_interest: advances NUEVOS -> PROSPECTOS via the existing, unmodified
@@ -302,8 +305,17 @@ def route_lead_message(lead_id: str, message: str) -> Dict[str, Any]:
       Decision 6) — this routing never re-advances or regresses a stage.
     - payment_confirmation: returns a graceful "not yet available" reply; never calls the Wompi
       stubs, never touches crm_wompi_transactions.
+    - unknown: routed to TatyAgentService (taty-whatsapp-renta-sales-capability) — the same
+      shared brain Telegram and the PWA already use, not a second implementation. This function
+      no longer generates reply text itself for this branch; it builds the WhatsApp calling
+      convention (lead stage, persona fields, offer context) from state already in hand.
     - Detected persona fields are persisted via CrmService.update_tax_profile, creating an empty
       tax-profile row first if none exists yet for this lead.
+
+    `history` (optional, most-recent-last, shape [{"role": "user"|"assistant", "text": "..."}])
+    is passed straight through to TatyAgentService for the unknown branch only — the bridge
+    supplies it; older callers that omit it get the exact same behavior as before this parameter
+    existed.
 
     Returns: {"intent": str, "confidence": float, "reply": str}
     """
@@ -368,18 +380,23 @@ def route_lead_message(lead_id: str, message: str) -> Dict[str, Any]:
             ),
         }
 
-    reply = STATIC_UNKNOWN_REPLY
+    # unknown intent: hand off to the shared Taty brain rather than generating reply text here.
+    reply = KB_FALLBACK_REPLY
     try:
-        classification = _classify_fiscal_question(message)
+        tenant_id = resolve_cliente_cero_tenant_id(get_service_supabase())
+        if tenant_id:
+            current_persona = {**(tax_profile or {}), **persona_fields}
+            result = get_taty_service().ask(
+                tenant_id=tenant_id,
+                question=message,
+                channel="whatsapp",
+                conversation_history=history,
+                lead_context=_build_lead_context(current_stage, current_persona),
+            )
+            if result.get("answer") and not result.get("error_code"):
+                reply = result["answer"]
     except Exception:
-        classification = {"is_fiscal_question": False, "search_query": ""}
-
-    if classification.get("is_fiscal_question"):
-        chunks = retrieve_similar(classification.get("search_query", ""), "__global__", top_k=3)
-        if chunks:
-            reply = _synthesize_kb_reply(message, chunks)
-        else:
-            reply = KB_FALLBACK_REPLY
+        pass  # keep KB_FALLBACK_REPLY — matches this file's existing degrade-gracefully convention
 
     return {
         "intent": intent,

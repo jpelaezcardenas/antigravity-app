@@ -15,7 +15,7 @@ Performance target: P95 < 4 seconds for common questions (IVA, renta, UVT)
 """
 
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import logging
 import time
 import json
@@ -120,6 +120,8 @@ class TatyAgentService:
         conversation_id: Optional[str] = None,
         user_id: Optional[str] = None,
         hermes_profile: Optional[str] = None,
+        conversation_history: Optional[List[Dict[str, str]]] = None,
+        lead_context: Optional[Dict[str, Any]] = None,
     ) -> Dict:
         """
         Answer a fiscal question with RAG, LLM, and client-specific config.
@@ -130,6 +132,18 @@ class TatyAgentService:
             channel: "telegram", "dashboard", "whatsapp"
             conversation_id: For multi-turn conversations
             user_id: For audit logging
+            conversation_history: Recent turns, oldest first, shape
+                [{"role": "user"|"assistant", "text": "..."}, ...]. Additive — omitted (None) for
+                every existing caller, so Telegram/PWA prompts are byte-identical to before this
+                parameter existed. Introduced for the WhatsApp sales-lead channel
+                (taty-whatsapp-renta-sales-capability), which is genuinely multi-turn; the shared
+                LLM engine only accepts a flat (system_prompt, prompt) pair, not a messages array,
+                so history is flattened into the built prompt text rather than threaded through
+                the engine as separate turns.
+            lead_context: WhatsApp sales-funnel context — {"lead_stage": str,
+                "persona_fields": {"es_asalariado": bool, "topes": {...},
+                "obligado_declarar": bool}, "offer": {"documentos_requeridos": [...],
+                "precio_confirmado": bool}}. Additive, same reasoning as conversation_history.
 
         Returns:
             {
@@ -156,7 +170,9 @@ class TatyAgentService:
             chunks, sources_used = self._retrieve_chunks(question, profile)
 
             # 3. Build fiscal prompt with context
-            prompt = self._build_prompt(question, chunks, profile)
+            prompt = self._build_prompt(
+                question, chunks, profile, conversation_history=conversation_history
+            )
 
             # 4. Anonymize prompt (SOSP rule)
             masked_prompt, mask_map = Anonymizer.mask(prompt)
@@ -169,7 +185,7 @@ class TatyAgentService:
             response = llm_engine.get_ai_response_with_profile(
                 prompt=masked_prompt,
                 profile_name=profile_name,
-                system_prompt=self._build_system_prompt(profile),
+                system_prompt=self._build_system_prompt(profile, lead_context=lead_context),
                 response_format="text",
                 max_tokens=2000,
                 temperature=0.3,  # Lower temp for fiscal = more precise
@@ -303,7 +319,13 @@ class TatyAgentService:
         logger.debug(f"Retrieved {len(chunks)} chunks via kb_seeding_service")
         return chunks, sources_used
 
-    def _build_prompt(self, question: str, chunks: List[Dict], profile: Dict) -> str:
+    def _build_prompt(
+        self,
+        question: str,
+        chunks: List[Dict],
+        profile: Dict,
+        conversation_history: Optional[List[Dict[str, str]]] = None,
+    ) -> str:
         """Build RAG prompt with question + context.
 
         `regimen` is only interpolated when the profile actually resolved one.
@@ -311,17 +333,29 @@ class TatyAgentService:
         .antigravity/GROUND_TRUTH.md and design.md D1) — when `regimen` is
         `None`, the clause is omitted entirely rather than rendered as
         "Régimen None" or left as a dangling label.
+
+        `conversation_history` is flattened into the prompt text (the shared LLM engine takes a
+        single system+user prompt pair, not a messages array — see ask()'s docstring). Omitted by
+        every caller except the WhatsApp channel, so this is a no-op for Telegram/PWA.
         """
         context = "\n".join([f"- {c['source']}: {c['text']}" for c in chunks])
         regimen = profile.get("regimen")
         regimen_clause = f" (Régimen {regimen})" if regimen else ""
+
+        history_block = ""
+        if conversation_history:
+            turns = "\n".join(
+                f"{'Cliente' if turn.get('role') == 'user' else 'Taty'}: {turn.get('text', '')}"
+                for turn in conversation_history
+            )
+            history_block = f"\nConversación reciente:\n{turns}\n"
 
         if context:
             return f"""Eres Taty, una asesora fiscal para {profile['nombre_empresa']}{regimen_clause}.
 
 Contexto fiscal (fuentes oficiales):
 {context}
-
+{history_block}
 Pregunta del cliente:
 {question}
 
@@ -329,18 +363,68 @@ Responde en tono {profile['tono']}. Si no estás seguro, di "No tengo informaci�
 Siempre cita las fuentes que usaste."""
         else:
             return f"""Eres Taty, una asesora fiscal para {profile['nombre_empresa']}.
-
+{history_block}
 Pregunta del cliente:
 {question}
 
 Si no tienes información suficiente, di "No tengo información suficiente para responder con precisión"."""
 
-    def _build_system_prompt(self, profile: Dict) -> str:
-        """Build system prompt for LLM."""
-        return (
+    def _build_system_prompt(self, profile: Dict, lead_context: Optional[Dict[str, Any]] = None) -> str:
+        """Build system prompt for LLM.
+
+        `lead_context` (WhatsApp sales-funnel channel only — see ask()'s docstring) appends an
+        addendum with the lead's known persona/stage and the offer's document requirements. It
+        deliberately never states a price unless `offer.precio_confirmado` is explicitly true —
+        pricing tiers are undefined as of this change (founder decision 2026-08-11, deferred);
+        Taty must not invent one (mirrors the "never invent a fiscal figure" rule this change's
+        A/B testing showed is safety-critical, applied here to commercial figures too)."""
+        base = (
             f"Eres Taty Contadora, asesora fiscal de {profile['nombre_empresa']}. "
             "Responde en español. Sé preciso, cita fuentes, y advierte si necesita asesoría legal."
         )
+        if not lead_context:
+            return base
+
+        parts = [base, "\nContexto adicional de este lead de WhatsApp (declaración de renta persona natural):"]
+        stage = lead_context.get("lead_stage")
+        if stage:
+            parts.append(f"- Etapa actual en el embudo: {stage}.")
+
+        persona = lead_context.get("persona_fields") or {}
+        if "es_asalariado" in persona:
+            parts.append(
+                "- Es asalariado." if persona["es_asalariado"] else "- Es independiente/freelancer."
+            )
+        if persona.get("obligado_declarar") is not None:
+            parts.append(
+                "- Según lo que ha contado, "
+                + ("SÍ" if persona["obligado_declarar"] else "probablemente NO")
+                + " está obligado a declarar (señal preliminar, no una determinación legal — "
+                "acláraselo si lo mencionas)."
+            )
+
+        offer = lead_context.get("offer") or {}
+        docs = offer.get("documentos_requeridos")
+        if docs:
+            parts.append(f"- Documentos que Contexia pide para armar la declaración: {', '.join(docs)}.")
+        if not offer.get("precio_confirmado"):
+            parts.append(
+                "- El precio para este caso todavía no está definido en el sistema. Si el cliente "
+                "pregunta cuánto cuesta, NO inventes ni menciones un número — dile que un asesor "
+                "de Contexia le confirma el valor exacto según su caso."
+            )
+        # Unconditional (unlike the price flag above, there's no "confirmed" contact-info source
+        # to check): found live 2026-08-11 that without this instruction, the model fabricates
+        # a plausible-looking Contexia email, phone number and website when asked how to make
+        # contact — none of them real. Same class of risk as inventing a fiscal figure.
+        parts.append(
+            "- No inventes un correo, teléfono o sitio web de contacto — no tienes esa "
+            "información confirmada. Si preguntan cómo contactar a alguien más, di que pueden "
+            "seguir escribiendo por este mismo chat de WhatsApp y que un asesor de Contexia se "
+            "vincula a la conversación."
+        )
+
+        return "\n".join(parts)
 
     def _extract_citations(self, sources_used: List[str], chunks: List[Dict]) -> List[Dict]:
         """Extract citations from used chunks."""

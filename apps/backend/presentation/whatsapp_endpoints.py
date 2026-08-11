@@ -41,8 +41,14 @@ from services.whatsapp_inbox_service import (
 router = APIRouter(tags=["whatsapp"])
 
 
+class HistoryTurn(BaseModel):
+    role: str  # "user" | "assistant"
+    text: str
+
+
 class LeadReplyRequest(BaseModel):
     text: str
+    history: List[HistoryTurn] | None = None
 
 
 class AckRequest(BaseModel):
@@ -147,7 +153,8 @@ async def taty_lead_reply(
     if not lead_exists(lead_id):
         raise HTTPException(status_code=404, detail="Lead not found")
 
-    result = route_lead_message(lead_id, payload.text)
+    history = [turn.model_dump() for turn in payload.history] if payload.history else None
+    result = route_lead_message(lead_id, payload.text, history=history)
 
     phone = get_lead_phone(lead_id)
     if phone:
