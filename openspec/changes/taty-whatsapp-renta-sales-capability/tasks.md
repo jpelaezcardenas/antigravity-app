@@ -187,24 +187,38 @@ publishing partial work either session didn't intend to ship yet.
 
 ## 5. Chatwoot sole-sender delivery cutover (design.md Migration Plan step 5 — last, highest blast radius)
 
-- [ ] 5.1 Add a `deliver: bool = True` flag to `POST /leads/{lead_id}/reply`; when `False`, skip
-  `send_whatsapp_message` and return reply text only.
-- [ ] 5.2 Update `apps/chatwoot-bridge/main.py` to call the endpoint with `deliver=False` and
-  deliver the returned text itself via `chatwoot_client.send_reply`.
-- [ ] 5.3 Update `apps/chatwoot-bridge/.env`: `CHATWOOT_WHATSAPP_INBOX_ID` from `3` to `1`.
-- [ ] 5.4 Update `apps/chatwoot-bridge/.env.example` to include the three vars missing from it
-  today (`CHATWOOT_WHATSAPP_INBOX_ID`, `INBOX_POLLER_ENABLED`, `INBOX_POLL_INTERVAL_SECONDS`).
-- [ ] 5.5 Restart the bridge (Scheduled Task `ContexiaChatwootBridge`), confirm it comes back
-  healthy against inbox `1`.
-- [ ] 5.6 Confirm `bot_off` still pauses automated replies (delta spec scenario) — tag a test
-  conversation, send a message, confirm no automated reply is generated.
-- [ ] 5.7 **Real-phone verification** (the test that matters): send a WhatsApp message from a
-  physical phone to +57 310 6229289. Confirm: (a) it appears in Chatwoot inbox `1`; (b) Taty's
-  reply is conversational and arrives on the phone; (c) it arrives exactly once, not duplicated;
-  (d) a human-typed reply from Chatwoot also reaches the phone.
-- [ ] 5.8 If 5.7 fails in a way that risks live customer traffic, revert 5.1-5.3 immediately
-  (design.md Rollback: point `CHATWOOT_WHATSAPP_INBOX_ID` back to `3`, re-enable direct send) before
-  investigating further.
+- [x] 5.1 Added `deliver: bool = True` to `POST /leads/{lead_id}/reply`; `False` skips
+  `send_whatsapp_message` and returns reply text only. 24/24 `test_whatsapp_endpoints.py` pass.
+- [x] 5.2 `apps/chatwoot-bridge/backend_client.py::taty_reply` now always sends `deliver: false` —
+  `main.py::process_incoming_message` already called `chatwoot_client.send_reply` right after, no
+  change needed there. 8/8 `test_backend_client.py` pass (new `TestTatyReply`).
+- [x] **Sequencing correction found live**: switching the bridge's inbox + restarting it BEFORE
+  the backend's `deliver` flag was deployed would have double-messaged a real customer (old
+  deployed backend ignores the unknown field and sends directly; Chatwoot, now on the real inbox,
+  also sends). Deployed 5.1-5.2 to Railway first (commit `671c1ed`, pushed and confirmed live —
+  old deployment `b608d456` → `REMOVED`, new `2239d802` → `SUCCESS`), ahead of this change's own
+  Stage 11, specifically so the local cutover below is safe. Founder-approved 2026-08-11.
+- [x] 5.3 `apps/chatwoot-bridge/.env`: `CHATWOOT_WHATSAPP_INBOX_ID` `3` → `1`.
+- [x] 5.4 `apps/chatwoot-bridge/.env.example`: added the three vars that were missing
+  (`CHATWOOT_WHATSAPP_INBOX_ID`, `INBOX_POLLER_ENABLED`, `INBOX_POLL_INTERVAL_SECONDS`).
+- [x] 5.5 Restarted the `ContexiaChatwootBridge` Scheduled Task (stop → start). Confirmed healthy:
+  `GET http://localhost:8090/` → `{"status":"ok","service":"chatwoot-hermes-bridge",...}`.
+- [x] 5.6 Verified via existing, unmodified, passing test coverage rather than a live injection
+  against the real customer-facing inbox (safer — no risk of a stray test message reaching a real
+  number): `tests/test_webhook_filter.py::test_bot_off_label_pauses_processing` — the bridge's own
+  webhook handler checks the `bot_off` label before ever reaching `process_incoming_message`. 9/9
+  pass, untouched by this change.
+- [ ] 5.7 **Real-phone verification (FOUNDER ACTION — the test that matters)**: send a WhatsApp
+  message from a physical phone to **+57 310 6229289**. Confirm: (a) it appears in Chatwoot inbox
+  `1` ("Taty Contadora Amiga 24/7"); (b) Taty's reply is conversational (not the old static
+  strings) and arrives on the phone; (c) it arrives **exactly once**, not duplicated; (d) typing a
+  reply directly in that Chatwoot conversation also reaches the phone (this specifically did NOT
+  work before this change — inbox `3` had no Meta credentials to deliver a human's reply).
+- [ ] 5.8 If 5.7 fails in a way that risks live customer traffic: revert by setting
+  `CHATWOOT_WHATSAPP_INBOX_ID` back to `3` in `apps/chatwoot-bridge/.env` and restarting the
+  `ContexiaChatwootBridge` task — this alone is sufficient (the backend's `deliver` flag defaults
+  to `True`, so reverting the bridge's config immediately restores the exact pre-Stage-5 behavior
+  without needing a second Railway deploy).
 
 ## 6. Founder-owned Meta sustainability actions (tracked, not blocking Stage 1-5)
 
@@ -227,11 +241,13 @@ publishing partial work either session didn't intend to ship yet.
 
 ## 8. Repo hygiene (found during investigation, low-risk, included per proposal.md Impact)
 
-- [ ] 8.1 Delete untracked `app-admin/dashboard-assets/index-DblwMcm3.js` — confirmed
-  byte-identical (via `git hash-object`) to the blob `surface-and-routing-standardization` deleted
-  in `c3eba88`; `vercel.json:191` still routes to it.
-- [ ] 8.2 Commit the uncommitted PID-guard fix already in the working tree for
-  `docker-compose.chatwoot.yml` (stale-PID-file guard on the `chatwoot` service command).
+- [x] 8.1 Re-verified live (hash still matched) then deleted untracked
+  `app-admin/dashboard-assets/index-DblwMcm3.js` — was byte-identical (via `git hash-object`) to
+  the blob `surface-and-routing-standardization` deleted in `c3eba88`; `vercel.json:191` still
+  routes to it.
+- [x] 8.2 Already committed — this session's very first commit (`406f2cb`) staged
+  `docker-compose.chatwoot.yml` along with the OpenSpec archive/open work and picked up the
+  pre-existing uncommitted PID-guard fix in the process. Confirmed via `git show 406f2cb --stat`.
 
 ## 9. Review and Update Existing Unit Tests (MANDATORY)
 
