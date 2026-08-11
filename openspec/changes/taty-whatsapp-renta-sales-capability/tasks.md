@@ -1,0 +1,205 @@
+## 0. Setup: Create Feature Branch (MANDATORY - FIRST STEP)
+
+- [ ] 0.1 Create feature branch `feature/taty-whatsapp-renta-sales-capability` from `main`.
+- [ ] 0.2 Verify branch creation and current branch status (`git branch --show-current`).
+
+## 1. Knowledge base schema repair (design.md Migration Plan step 1)
+
+- [ ] 1.1 Write a failing test asserting `retrieve_similar("...", "__global__", top_k=3)` against
+  the live-shaped schema does not raise (mirrors the real "function does not exist" failure mode).
+- [ ] 1.2 Write migration `apps/backend/supabase/migrations/0036_knowledge_chunks_client_id.sql`
+  (numbered after `0035_rolling_reseed_synthetic_shadow_gl.sql` — confirm the latest number in the
+  directory first, do not assume `0036` is still free): additive `client_id text not null default
+  '__global__'`, `source text` columns; new `match_knowledge_chunks(query_embedding vector,
+  p_client_id text, match_count int)` RPC overload. Do not drop or modify the existing
+  `match_threshold`-keyed overload.
+- [ ] 1.3 Apply the migration via Supabase MCP `apply_migration`, verify via `list_tables` /
+  `execute_sql` that both `client_id` and both RPC overloads exist.
+- [ ] 1.4 Re-run 1.1's test — confirm it now passes.
+- [ ] 1.5 Confirm the pre-existing `match_threshold` overload still resolves (regression check —
+  query `pg_proc` for both signatures).
+
+## 2. Renta-persona-natural KB content
+
+- [ ] 2.1 Draft `apps/backend/kb/renta_natural_chunks.json`: thresholds, filing deadlines by cédula
+  digit, required documents, price, Entidad-B scope limits. Every fiscal figure traced to a
+  confirmed source (current DIAN calendar, Contexia's actual pricing) — no invented numbers
+  (design.md Risk: KB seed content quality).
+- [ ] 2.2 Seed via `POST /api/v1/kb/seed` (or extend `seed-dian`'s pattern) targeting
+  `client_id="__global__"`.
+- [ ] 2.3 Verify `count(*) == count(embedding)` in `knowledge_chunks` — no `NULL` embeddings that
+  the RPC would silently filter out.
+- [ ] 2.4 Stand-alone retrieval check: call `retrieve_similar` directly (not through a live
+  conversation yet) with 3-5 realistic renta questions, confirm relevant chunks come back.
+
+## 3. Provider chain: profile-aware LLM calls + Groq repointing (design.md Migration Plan step 3)
+
+- [ ] 3.1 Write failing tests: `get_anonymized_ai_response` accepts and forwards a `profile_name`
+  parameter to `get_ai_response_with_profile`.
+- [ ] 3.2 Add `profile_name: Optional[str] = None` to `agents/secure_llm.py::get_anonymized_ai_response`,
+  defaulting to today's behavior when omitted (no regression for existing non-Taty callers of this
+  function, if any — grep and confirm call sites first).
+- [ ] 3.3 A/B the 3 candidate models (design.md Decision 5) against the 12 real messages already in
+  `whatsapp_inbound_events`: `groq/openai-gpt-oss-120b`, `groq/qwen3.6-27b`, DeepSeek V4-Flash.
+  Compare replies side by side for Spanish quality and tone. Record the result and the chosen
+  model in this change's `reports/` folder before proceeding.
+- [ ] 3.4 Add a DeepSeek client to `agents/llm_engine.py` (OpenAI-compatible; mirror the existing
+  Groq/Mistral client blocks), gated on a new `DEEPSEEK_API_KEY` setting in `config.py`.
+- [ ] 3.5 Update `PROFILE_CONFIGS["taty-v1"]`: `primary` = the A/B winner, `fallback_chain` =
+  `[GROQ, DEEPSEEK, GEMINI]` (or the winning order from 3.3). Remove GLM and
+  `llama-2-7b-chat`/OpenRouter-Free from this profile's chain specifically — do not touch other
+  profiles' chains.
+- [ ] 3.6 **Regression gate — Telegram**: send 3-5 real messages to `@contexia_bot`, confirm replies
+  are unchanged in quality/behavior from before 3.5.
+- [ ] 3.7 **Regression gate — PWA**: call `/api/v1/agents/ask` as a provisioned client (or the
+  staging identity if no login is available in this environment), confirm answers are unchanged in
+  quality/behavior from before 3.5.
+- [ ] 3.8 Do not proceed to Stage 4 until 3.6 and 3.7 both pass — design.md flags this as the
+  largest risk in the change.
+
+## 4. Route WhatsApp through TatyAgentService (design.md Migration Plan step 4)
+
+- [ ] 4.1 Write failing tests: a WhatsApp-channel call into `TatyAgentService` accepts history +
+  persona fields + CRM stage + offer context, and resolves to Cliente Cero's tenant.
+- [ ] 4.2 Add the WhatsApp calling convention to `services/taty_service.py` (design.md Decision 3 —
+  Cliente Cero resolution, no new tenant-resolution branch needed).
+- [ ] 4.3 In `taty_lead_router.py`, change the `unknown`-intent branch (and optionally
+  `sales_interest`/`payment_confirmation`'s conversational framing, per design.md Decision 2 — CRM
+  and Wompi side effects stay exactly as they are) to call the new `TatyAgentService` convention
+  instead of `_classify_fiscal_question`/`_synthesize_kb_reply`. Remove `STATIC_UNKNOWN_REPLY` and
+  `KB_FALLBACK_REPLY` only once the replacement path is verified working (keep them as the
+  exception-path fallback text, per the delta spec's "graceful fallback" scenario).
+- [ ] 4.4 Extend `POST /leads/{lead_id}/reply` (`whatsapp_endpoints.py`) to accept recent
+  conversation history in the payload (bridge already tracks `MAX_HISTORY=10`).
+- [ ] 4.5 Unit tests: the four scenarios in the `taty-whatsapp-sales-router` delta spec (grounded
+  reply, graceful no-KB fallback, conversational non-fiscal reply, service-failure fallback) plus
+  the three in `taty-fiscal-assistant`'s new requirements.
+- [ ] 4.6 Manual verification against the test inbox (Chatwoot inbox `3`, still — do not cut over
+  delivery yet): inject the same messages that produced the original bug report ("Hola ayudame",
+  "Ok", "Xomo lo contacto?", "Si, mi cedula es 98670827") and confirm none produces
+  `STATIC_UNKNOWN_REPLY` or `KB_FALLBACK_REPLY` verbatim.
+- [ ] 4.7 Confirm the Wompi HITL gate is untouched: trigger `sales_interest`, confirm a draft lands
+  in `approval_queue` with `draft_type="wompi_payment_link"` and no link is sent automatically.
+
+## 5. Chatwoot sole-sender delivery cutover (design.md Migration Plan step 5 — last, highest blast radius)
+
+- [ ] 5.1 Add a `deliver: bool = True` flag to `POST /leads/{lead_id}/reply`; when `False`, skip
+  `send_whatsapp_message` and return reply text only.
+- [ ] 5.2 Update `apps/chatwoot-bridge/main.py` to call the endpoint with `deliver=False` and
+  deliver the returned text itself via `chatwoot_client.send_reply`.
+- [ ] 5.3 Update `apps/chatwoot-bridge/.env`: `CHATWOOT_WHATSAPP_INBOX_ID` from `3` to `1`.
+- [ ] 5.4 Update `apps/chatwoot-bridge/.env.example` to include the three vars missing from it
+  today (`CHATWOOT_WHATSAPP_INBOX_ID`, `INBOX_POLLER_ENABLED`, `INBOX_POLL_INTERVAL_SECONDS`).
+- [ ] 5.5 Restart the bridge (Scheduled Task `ContexiaChatwootBridge`), confirm it comes back
+  healthy against inbox `1`.
+- [ ] 5.6 Confirm `bot_off` still pauses automated replies (delta spec scenario) — tag a test
+  conversation, send a message, confirm no automated reply is generated.
+- [ ] 5.7 **Real-phone verification** (the test that matters): send a WhatsApp message from a
+  physical phone to +57 310 6229289. Confirm: (a) it appears in Chatwoot inbox `1`; (b) Taty's
+  reply is conversational and arrives on the phone; (c) it arrives exactly once, not duplicated;
+  (d) a human-typed reply from Chatwoot also reaches the phone.
+- [ ] 5.8 If 5.7 fails in a way that risks live customer traffic, revert 5.1-5.3 immediately
+  (design.md Rollback: point `CHATWOOT_WHATSAPP_INBOX_ID` back to `3`, re-enable direct send) before
+  investigating further.
+
+## 6. Founder-owned Meta sustainability actions (tracked, not blocking Stage 1-5)
+
+- [ ] 6.1 Add `/privacy`, `/terms`, `/data-deletion` rewrites to `vercel.json` (routes exist on
+  Railway at `apps/backend/main.py:161,196,230` but 404 on `contexia.online` today — needed for
+  Meta Business Verification). This one IS an engineering task.
+- [ ] 6.2 FOUNDER: start Business Verification in Meta Business Manager (raises `TIER_250`).
+- [ ] 6.3 FOUNDER: re-verify the display name (`code_verification_status` is `EXPIRED`).
+- [ ] 6.4 FOUNDER: create `es_CO` message templates for >24h re-engagement (only `hello_world`/
+  `en_US` exists today). Not blocking the inbound-first motion.
+
+## 7. Manus handoff runbook
+
+- [ ] 7.1 Create `docs/runbooks/taty-whatsapp-campaign.md`: `wa.me/573106229289` link convention
+  with per-content UTM-style params for attribution; real limits (inbound effectively uncapped;
+  250 business-initiated conversations/24h until 6.2 lands); what Taty can/cannot say (Entidad B
+  limits); where leads land (Chatwoot inbox `1` + `crm_leads`); `bot_off` handover; the Wompi HITL
+  gate; how to bring the local stack up (`docker compose -f docker-compose.chatwoot.yml up -d`,
+  Scheduled Task `ContexiaChatwootBridge`).
+
+## 8. Repo hygiene (found during investigation, low-risk, included per proposal.md Impact)
+
+- [ ] 8.1 Delete untracked `app-admin/dashboard-assets/index-DblwMcm3.js` — confirmed
+  byte-identical (via `git hash-object`) to the blob `surface-and-routing-standardization` deleted
+  in `c3eba88`; `vercel.json:191` still routes to it.
+- [ ] 8.2 Commit the uncommitted PID-guard fix already in the working tree for
+  `docker-compose.chatwoot.yml` (stale-PID-file guard on the `chatwoot` service command).
+
+## 9. Review and Update Existing Unit Tests (MANDATORY)
+
+- [ ] 9.1 Update `apps/backend/tests/test_taty_lead_router.py` for the new routing behavior
+  (reply generation delegated to `TatyAgentService`, static-string assertions removed/replaced).
+- [ ] 9.2 Update/add tests for `secure_llm.py`'s new `profile_name` parameter.
+- [ ] 9.3 Add tests for the KB migration's new RPC overload and the `deliver` flag on
+  `whatsapp_endpoints.py`.
+- [ ] 9.4 Confirm `test_model_selector_cloud_only.py`'s pre-existing failing assertion (found live
+  2026-08-11: asserts `not hasattr(LLMProvider, 'OLLAMA')`, which is false against the current
+  `llm_engine.py`) — fix or explicitly document as a pre-existing, unrelated failure, do not leave
+  it unexplained in the test report.
+
+## 10. Run Unit Tests and Verify Database State (MANDATORY)
+
+- [ ] 10.1 Capture pre-test baseline: `knowledge_chunks` row count, `crm_leads` count (9 as of
+  2026-08-11), `whatsapp_inbound_events` count (12 as of 2026-08-11).
+- [ ] 10.2 Run targeted tests: `pytest apps/backend/tests/test_taty_lead_router.py
+  apps/backend/tests/test_whatsapp_endpoints.py -v`.
+- [ ] 10.3 Run `RUN_TESTS=1 bash init.sh` (full backend suite) — confirm green, or that any failure
+  is on the same pre-existing list `pwa-tenant-aware-screens` recorded (40 pre-existing failures),
+  not a new regression.
+- [ ] 10.4 Verify post-test DB state matches baseline (test data cleaned up); restore if not.
+- [ ] 10.5 Create report `openspec/changes/taty-whatsapp-renta-sales-capability/reports/YYYY-MM-DD-step-10-unit-test-and-db-verification.md`.
+
+## 11. Manual Endpoint Testing with curl (MANDATORY - AGENT MUST EXECUTE)
+
+- [ ] 11.1 `curl -X POST .../api/v1/kb/search` against the seeded renta content, verify non-empty
+  results.
+- [ ] 11.2 `curl -X POST .../api/v1/channels/whatsapp/leads/{id}/reply` with `deliver=false` against
+  a test lead, verify text-only response, no outbound send attempted.
+- [ ] 11.3 Test error cases: malformed payload, non-existent `lead_id`.
+- [ ] 11.4 Document all commands/responses in the same reports folder.
+
+## 12. E2E Testing with Playwright MCP
+
+- [ ] 12.1 **Not applicable** — this change has no frontend surface (per proposal.md Impact: "No
+  frontend changes"). The real end-to-end verification is Stage 5's physical-phone test (5.7),
+  documented there instead.
+
+## 13. Update Technical Documentation (MANDATORY)
+
+- [ ] 13.1 Update `ARCHITECTURE.md`'s Chatwoot + bridge row / Caja Real flow section if the
+  delivery-path change affects anything documented there.
+- [ ] 13.2 Update `AGENTES.md`'s Taty entry to reflect the WhatsApp channel now routing through
+  `TatyAgentService` (currently describes Telegram + `/api/v1/agents` only).
+- [ ] 13.3 Confirm `docs/runbooks/taty-whatsapp-campaign.md` (Stage 7) is complete and accurate as
+  of the final implementation.
+
+## 14. Stage 11: Deploy to Production (MANDATORY - CLOSES THE LOOP)
+
+See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
+
+Project-specific details:
+- Deploy branch: main
+- Frontend URL: https://contexia.online/app/bunker (no frontend change expected, verify unaffected)
+- Backend URL: https://antigravity-app-production-175a.up.railway.app
+
+- [ ] 14.1 Merge `feature/taty-whatsapp-renta-sales-capability` → main, push.
+- [ ] 14.2 Set `DEEPSEEK_API_KEY` (and any other new env var from Stage 3) in Railway production.
+- [ ] 14.3 Railway deploy green; `GET /api/v1/health` returns 200.
+- [ ] 14.4 Vercel build green (rewrites from 6.1 live at `contexia.online/privacy` etc — 200, not
+  404).
+- [ ] 14.5 Production smoke test: repeat 5.7's real-phone test against production, not local Docker
+  Chatwoot — confirm the full path (Meta → Railway → Chatwoot inbox `1` → Taty reply → delivered
+  once) works against the deployed backend, not just local.
+- [ ] 14.6 Create report: `openspec/changes/taty-whatsapp-renta-sales-capability/reports/YYYY-MM-DD-deployment.md`.
+
+## 15. Close
+
+- [ ] 15.1 `opsx:sync` the four delta specs (`taty-whatsapp-sales-router`, `taty-fiscal-assistant`,
+  `taty-knowledge-base`, `chatwoot-whatsapp-delivery`) into main `openspec/specs/`.
+- [ ] 15.2 `opsx:archive` this change.
+- [ ] 15.3 Update `feature_list.json`: mark `taty-whatsapp-renta-sales-capability` `done`, set
+  `active` to whatever comes next (or `null` if nothing is queued).

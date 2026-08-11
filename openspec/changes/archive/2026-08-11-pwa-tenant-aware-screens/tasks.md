@@ -168,8 +168,10 @@ Project-specific: deploy branch `main`; Frontend `https://contexia.online/app/ov
   694 passed / 40 pre-existing-and-unrelated failures (same exact list as before the merge,
   confirmed via `git diff main...HEAD` file-overlap check) / 112 skipped. See `design.md` D1 for
   the reconciled design.
-- [ ] 13.1 `git branch --show-current` check, then merge `feature/pwa-tenant-aware-screens` → main
-  (or open a PR per repo convention), push.
+- [x] 13.1 Verified 2026-08-11: `feature/pwa-tenant-aware-screens`'s deployed commit `e1472a8` is
+  confirmed an ancestor of `main` (`git merge-base --is-ancestor e1472a8 main`) — the merge already
+  happened (this checkbox was stale bookkeeping; 13.4/13.5 already confirmed the same commit live
+  in production). No further merge action needed.
 - [x] 13.2 Applied migration `0035_*.sql` to Supabase (`kpynymwghfwshvcvevxq`) via Supabase MCP
   `apply_migration` (success). Verified via `SELECT`: all 19 SYNTH sale/expense rows re-dated
   `2026-07-27` (= `CURRENT_DATE - 1`, was `2026-07-20`); `cron.job` shows `reseed-synth-shadow-gl`
@@ -195,15 +197,27 @@ Project-specific: deploy branch `main`; Frontend `https://contexia.online/app/ov
   serving `CACHE_VERSION = "v15-2026-07-27"`; `app/overview.html` confirmed referencing and
   successfully loading (`200`) the new `_next/static/chunks/*.js` bundle containing
   `fetchCentinelaAlerts`/`fetchLiquidityBridge`.
-- [ ] 13.6 **Real visual verification with a provisioned client login**: the founder logs in
-  himself (Bitwarden credentials — Claude never types passwords into forms) and confirms: real
-  Caja Real + real-or-honestly-empty alerts + real liquidity bridge, hard refresh Ctrl+F5;
-  `ventas_ayer`/`gastos_ayer` non-zero again (reseed working).
+- [ ] 13.6 **PENDING FOUNDER ACTION (not blocking archive):** Real visual verification with a
+  provisioned client login: the founder logs in himself (Bitwarden credentials — Claude never
+  types passwords into forms) and confirms: real Caja Real + real-or-honestly-empty alerts + real
+  liquidity bridge, hard refresh Ctrl+F5; `ventas_ayer`/`gastos_ayer` non-zero again (reseed
+  working). Archived 2026-08-11 without this step complete — endpoint-level verification (13.5)
+  already confirmed the routes are live and correctly wired; this is the founder's own
+  human-eyes confirmation on top of that, deferred by founder decision to unblock the
+  `taty-whatsapp-renta-sales-capability` change under the one-change-at-a-time harness invariant.
+  If this surfaces a real UI bug, file it as its own fix, not a reopen of this archived change.
 - [x] 13.7 Report: `openspec/changes/pwa-tenant-aware-screens/reports/2026-07-27-deployment.md`.
 
 ## Stage 14. Close
-- [ ] 14.1 `opsx:sync` the four delta specs into main `openspec/specs/`.
-- [ ] 14.2 `opsx:archive` this change.
-- [ ] 14.3 Update `feature_list.json`: mark `pwa-tenant-aware-screens` `done`, reconcile `active`
-  with whatever the shared checkout's other parallel sessions have landed by then (check
-  `git log main` for what merged first).
+- [x] 14.1 `opsx:sync` the four delta specs into main `openspec/specs/` — done 2026-08-11:
+  `centinela-alerts` (added 1 requirement, 6 scenarios), `client-pwa-live-data` (added 1
+  requirement, 3 scenarios, to the existing 4-requirement spec from
+  `reconcile-contexia-app-source-live-pwa`), `pulso-financials-api` (added 2 requirements, 6
+  scenarios), `pulso-overview-live-data` (modified 1 requirement's description + error scenario,
+  added 1 requirement, 2 scenarios).
+- [x] 14.2 Archived via `git mv openspec/changes/pwa-tenant-aware-screens
+  openspec/changes/archive/2026-08-11-pwa-tenant-aware-screens`.
+- [x] 14.3 Updated `feature_list.json`: `pwa-tenant-aware-screens` → `done`, `active` →
+  `taty-whatsapp-renta-sales-capability`. No other parallel session had a different change
+  in-flight at time of archive (checked `git log main` — no other active-change commits since
+  `e1472a8`).

@@ -6,7 +6,7 @@
     "scope_source": "openspec/changes/<id>/tasks.md",
     "valid_status": ["pending", "in_progress", "done", "blocked"]
   },
-  "active": "pwa-tenant-aware-screens",
+  "active": "taty-whatsapp-renta-sales-capability",
   "features": [
     {
       "id": "adopt-gbrain-second-brain",
@@ -20,8 +20,13 @@
     },
     {
       "id": "pwa-tenant-aware-screens",
+      "status": "done",
+      "summary": "COMPLETE (45/47 tasks; 13.1 confirmed already-merged via git ancestor check, 13.6 deferred as FOUNDER ACTION not blocking archive), archived 2026-08-11 as openspec/changes/archive/2026-08-11-pwa-tenant-aware-screens. Next wave of tenant-aware data-bound PWA screens: Pulso ActiveAlerts + Flujo-detalle Monthly Liquidity Bridge, tenant-scoped backend endpoints, rolling reseed of synthetic Shadow GL, CashTodayCard error-state honesty fix. Reconciled onto the canonical resolve_request_tenant_scope() helper (agent-endpoints-real-tenant-filtering landed on main mid-implementation). Four delta specs synced into openspec/specs/ 2026-08-11 (centinela-alerts, client-pwa-live-data, pulso-financials-api, pulso-overview-live-data). FOUNDER ACTION REQUIRED (not blocking, same deferred pattern as taty-per-tenant-profiles): 13.6 — log in with a real provisioned client and visually confirm Caja Real/alerts/liquidity-bridge render live data post-deploy."
+    },
+    {
+      "id": "taty-whatsapp-renta-sales-capability",
       "status": "in_progress",
-      "summary": "Next wave of tenant-aware data-bound PWA screens: Pulso ActiveAlerts + Flujo-detalle Monthly Liquidity Bridge, tenant-scoped backend endpoints, rolling reseed of synthetic Shadow GL, CashTodayCard error-state honesty fix. Reconciled onto the canonical resolve_request_tenant_scope() helper (agent-endpoints-real-tenant-filtering landed on main mid-implementation) — centinela_endpoints.py's new GET /alerts route now uses it instead of a parallel resolver; migration renumbered 0033->0035 (collision with approval-queue-tenant-scoping's 0033). openspec/changes/pwa-tenant-aware-screens/."
+      "summary": "Fixes Taty's WhatsApp channel (repeats two static replies) and adds a declaración-de-renta-persona-natural sales capability. Root causes found live 2026-08-11: (1) knowledge_chunks table has 0 rows AND its schema doesn't match the code (missing client_id column, mismatched match_knowledge_chunks RPC signature); (2) taty_lead_router.py only reaches the LLM on the 'unknown' intent branch, defaulting through OpenRouter Free's meta-llama/llama-2-7b-chat since get_anonymized_ai_response has no profile parameter — the existing taty-v1/GLM profile is unreachable from WhatsApp; (3) WhatsApp is the only Taty channel NOT wired to the shared TatyAgentService (services/taty_service.py) that Telegram and the PWA already use — this change routes WhatsApp through it instead of building a second brain, keeping taty_lead_router.py as the funnel tools (persona detection, CRM stage advance, Wompi HITL approval) Taty invokes. Also moves Chatwoot delivery from inbox 3 (test injection channel) to inbox 1 ('Taty Contadora Amiga 24/7', real Meta-linked inbox) with Chatwoot as sole outbound sender. Plan: C:\\Users\\contexia\\.claude\\plans\\tengo-dos-hilos-de-cheeky-eagle.md. openspec/changes/taty-whatsapp-renta-sales-capability/ (to be created)."
     },
     {
       "id": "hermes-task-queue-tenant-scoping",
