@@ -208,16 +208,51 @@ publishing partial work either session didn't intend to ship yet.
   number): `tests/test_webhook_filter.py::test_bot_off_label_pauses_processing` — the bridge's own
   webhook handler checks the `bot_off` label before ever reaching `process_incoming_message`. 9/9
   pass, untouched by this change.
-- [ ] 5.7 **Real-phone verification (FOUNDER ACTION — the test that matters)**: send a WhatsApp
-  message from a physical phone to **+57 310 6229289**. Confirm: (a) it appears in Chatwoot inbox
-  `1` ("Taty Contadora Amiga 24/7"); (b) Taty's reply is conversational (not the old static
-  strings) and arrives on the phone; (c) it arrives **exactly once**, not duplicated; (d) typing a
-  reply directly in that Chatwoot conversation also reaches the phone (this specifically did NOT
-  work before this change — inbox `3` had no Meta credentials to deliver a human's reply).
+- [x] **Real operational bug found and fixed while attempting 5.7**: the founder's first real test
+  message ("Hola" / "Renta" to +57 310 6229289, 2026-08-11 ~16:44) got a correct, conversational
+  reply and reached the phone — proving Stages 1-4 work end-to-end against a real customer message
+  — but investigation (Chatwoot's own Postgres: `conversations`/`messages` tables) showed it landed
+  in **conversation id 3, inbox_id 3** (the old test/injection channel), not inbox `1`. Root cause:
+  `Stop-ScheduledTask` / `Start-ScheduledTask` did NOT actually replace the running bridge process —
+  `run_bridge.ps1`'s watchdog self-check (`if port 8090 already answers, exit 0 — no-op`) is
+  designed for crash recovery, not a deliberate config-reload restart, and cannot tell a healthy
+  *stale* process from a healthy *fresh* one. The uvicorn process from 9:15 AM that morning (hours
+  before any Stage 5 edit) was still alive and serving, with the old `CHATWOOT_WHATSAPP_INBOX_ID=3`
+  and pre-`deliver`-flag code loaded in memory the whole time — so what the founder actually
+  verified was the OLD architecture (confirmed by the delivery path: the backend defaulted
+  `deliver=True` since the stale bridge never sent the new field, and Meta got the message from
+  the direct-send path exactly as it did before this change existed).
+  **Fixed**: `Stop-Process -Id <pid> -Force` on the actual uvicorn process, confirmed port 8090
+  went quiet, then `Start-ScheduledTask` — new process confirmed (new PID, creation time matching
+  the restart) with a fresh log file. That log showed two transient, non-blocking issues on
+  startup, both self-resolved within the same log (confirmed by the log's own later lines and a
+  live re-check): a `502 Bad Gateway` on the first `/inbox/pending` poll (Railway's normal
+  post-deploy warm-up window; the very next poll 5s later returned `200`) and an
+  `httpx.LocalProtocolError: Illegal header value b'Bearer '` from `hermes_client`'s startup
+  liveness probe (pre-existing, documented as inert in `main.py`'s own module docstring —
+  `HERMES_API_KEY` is blank in this local setup, unrelated to the reply-generation path this
+  change touches).
+  **Operational gap flagged for the Stage 7 runbook, not fixed in code here** (real scope of its
+  own): the watchdog cannot currently distinguish "needs a deliberate restart after a config
+  change" from "already healthy" — the correct manual procedure (kill the actual PID, not just the
+  scheduled task) needs to be documented so this doesn't silently repeat next time `.env` changes.
+- [ ] 5.7 **Real-phone verification, retry (FOUNDER ACTION — the test that matters)**: now that the
+  bridge is genuinely running fresh, send another WhatsApp message from a physical phone to
+  **+57 310 6229289**. Confirm: (a) it appears in Chatwoot inbox `1` ("Taty Contadora Amiga
+  24/7") — a NEW conversation there, not conversation 3 again; (b) Taty's reply is conversational
+  and arrives on the phone; (c) it arrives **exactly once**, not duplicated; (d) typing a reply
+  directly in that Chatwoot conversation also reaches the phone (did NOT work before this change —
+  inbox `3` had no Meta credentials to deliver a human's reply). **Known active condition to
+  expect while testing**: Gemini's free embedding quota is exhausted right now (confirmed live,
+  `429 ResourceExhausted`, from this session's own heavy testing volume today) — retrieval may
+  silently degrade to the smaller, unsynced in-memory KB (see design.md's "Second correction"), so
+  a reply might occasionally read as more generic/less grounded than the answers seen earlier
+  today until the quota resets or `OPENAI_API_KEY` is credited (tasks.md 2.3).
 - [ ] 5.8 If 5.7 fails in a way that risks live customer traffic: revert by setting
-  `CHATWOOT_WHATSAPP_INBOX_ID` back to `3` in `apps/chatwoot-bridge/.env` and restarting the
-  `ContexiaChatwootBridge` task — this alone is sufficient (the backend's `deliver` flag defaults
-  to `True`, so reverting the bridge's config immediately restores the exact pre-Stage-5 behavior
+  `CHATWOOT_WHATSAPP_INBOX_ID` back to `3` in `apps/chatwoot-bridge/.env` and — critically, per the
+  bug just found — kill the actual bridge process by PID before restarting the scheduled task, not
+  just `Stop-ScheduledTask`. This alone is sufficient (the backend's `deliver` flag defaults to
+  `True`, so reverting the bridge's config immediately restores the exact pre-Stage-5 behavior
   without needing a second Railway deploy).
 
 ## 6. Founder-owned Meta sustainability actions (tracked, not blocking Stage 1-5)
