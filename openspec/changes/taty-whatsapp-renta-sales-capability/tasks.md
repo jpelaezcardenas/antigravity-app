@@ -74,30 +74,73 @@
   natural", "plazos 2026", "Art. 592 tope". The retrieval path Taty will actually use now works
   end-to-end against live production Supabase.
 
-## 3. Provider chain: profile-aware LLM calls + Groq repointing (design.md Migration Plan step 3)
+## 3. Provider chain repointing (design.md Migration Plan step 3)
 
-- [ ] 3.1 Write failing tests: `get_anonymized_ai_response` accepts and forwards a `profile_name`
-  parameter to `get_ai_response_with_profile`.
-- [ ] 3.2 Add `profile_name: Optional[str] = None` to `agents/secure_llm.py::get_anonymized_ai_response`,
-  defaulting to today's behavior when omitted (no regression for existing non-Taty callers of this
-  function, if any — grep and confirm call sites first).
-- [ ] 3.3 A/B the 3 candidate models (design.md Decision 5) against the 12 real messages already in
-  `whatsapp_inbound_events`: `groq/openai-gpt-oss-120b`, `groq/qwen3.6-27b`, DeepSeek V4-Flash.
-  Compare replies side by side for Spanish quality and tone. Record the result and the chosen
-  model in this change's `reports/` folder before proceeding.
-- [ ] 3.4 Add a DeepSeek client to `agents/llm_engine.py` (OpenAI-compatible; mirror the existing
-  Groq/Mistral client blocks), gated on a new `DEEPSEEK_API_KEY` setting in `config.py`.
-- [ ] 3.5 Update `PROFILE_CONFIGS["taty-v1"]`: `primary` = the A/B winner, `fallback_chain` =
-  `[GROQ, DEEPSEEK, GEMINI]` (or the winning order from 3.3). Remove GLM and
-  `llama-2-7b-chat`/OpenRouter-Free from this profile's chain specifically — do not touch other
-  profiles' chains.
-- [ ] 3.6 **Regression gate — Telegram**: send 3-5 real messages to `@contexia_bot`, confirm replies
-  are unchanged in quality/behavior from before 3.5.
-- [ ] 3.7 **Regression gate — PWA**: call `/api/v1/agents/ask` as a provisioned client (or the
-  staging identity if no login is available in this environment), confirm answers are unchanged in
-  quality/behavior from before 3.5.
-- [ ] 3.8 Do not proceed to Stage 4 until 3.6 and 3.7 both pass — design.md flags this as the
-  largest risk in the change.
+- [x] 3.1 **SUPERSEDED, see design.md "Correction found during implementation"**: originally
+  planned to add `profile_name` to `secure_llm.get_anonymized_ai_response`. Found while starting
+  this stage that `TatyAgentService.ask()` doesn't use `secure_llm.py` at all — it has its own
+  established profile-aware call pattern. Stage 4 deletes `taty_lead_router`'s only two callers of
+  `get_anonymized_ai_response` (the ones that would have needed a profile) and replaces them with
+  a `TatyAgentService` call. `secure_llm.py` is not touched by this change.
+- [x] 3.2 **SUPERSEDED** — same reason as 3.1. No code change needed here.
+- [x] 3.3 A/B'd `openai/gpt-oss-120b` vs `qwen/qwen3.6-27b` (both via Groq) against the 12 real
+  messages in `whatsapp_inbound_events`, using Taty's actual system prompt
+  (`taty_service.py::_build_system_prompt`). **DeepSeek V4-Flash could not be tested — no
+  `DEEPSEEK_API_KEY` exists anywhere (not in Railway, not locally); deferred, see 3.4.**
+  - `qwen3.6-27b` **disqualified**: it is a reasoning model whose API response surfaces its
+    `<think>...</think>` chain-of-thought as `content` — every one of the 12 test calls returned
+    only English internal reasoning, never a final Spanish answer, even at 200 output tokens.
+  - `gpt-oss-120b` is also a reasoning model, but at low `max_tokens` (200-800, my initial test
+    budget) its hidden reasoning consumed the whole budget before any visible content — 2/12
+    outputs came back empty. Confirmed this is an artifact of my test harness, not of production
+    config: `TatyAgentService` already calls with `max_tokens=2000` (`taty_service.py:174`); at
+    that budget both previously-empty messages completed with full, fluent, correctly-toned
+    Spanish responses (one `finish_reason=stop`, fully complete).
+  - **Winner: `openai/gpt-oss-120b`**, conditional on 2000-token budgets (already true) and — this
+    is the important part — **conditional on KB grounding actually being wired in Stage 4**: the
+    ungrounded A/B responses **hallucinated dangerous fiscal figures with full confidence** —
+    stated "1.400.607 UVT" as the ingresos-brutos threshold (the real figure is 1.400 UVT, a
+    1000×  error), a stale/wrong UVT value ($42.562), and a **fabricated contact email and phone
+    number that don't exist**. This isn't specific to this model — any ungrounded LLM will do
+    this. It confirms the `taty-fiscal-assistant` delta spec's "never invent a figure it can't
+    trace to retrieved content" requirement is safety-critical, not optional polish, and Stage 4
+    must not ship without it actually wired end-to-end.
+- [ ] 3.4 **Deferred, not blocking**: add a DeepSeek client to `agents/llm_engine.py` once
+  `DEEPSEEK_API_KEY` exists. Until then, the `taty-v1` fallback chain uses only providers with
+  real credentials (Groq primary, Gemini fallback — `GEMINI_API_KEY` confirmed present).
+- [x] 3.5 Updated `PROFILE_CONFIGS["taty-v1"]`: `primary` = `GROQ` (model repointed to
+  `openai/gpt-oss-120b`), `fallback_chain` = `[GROQ, GEMINI, OPENROUTER]`. Removed GLM and the
+  implicit `llama-2-7b-chat`/OpenRouter-Free default from this profile's chain specifically — no
+  other profile's chain touched.
+- [x] 3.6/3.7 **Regression gate — Telegram + PWA**: called `TatyAgentService.ask()` directly
+  (the exact shared function both channels invoke — `telegram_endpoints.py:181`,
+  `taty_endpoints.py:181/246`) with `channel="telegram"` and `channel="dashboard"` against Cliente
+  Cero's real tenant. Both produced complete, well-formed, correctly-toned Spanish answers,
+  `error_code: None`, confidence 0.6. No crash, no regression in structure/behavior from the
+  profile repoint.
+  - **Also independently reproduced the same hallucination risk found in 3.3's A/B**, this time
+    through the real production call path, not a synthetic test: the "¿Qué es el UVT?" answer
+    stated "UVT 2024 = $42.562" (stale/wrong) and fabricated a contact email + phone number.
+    Traced the cause: `_retrieve_pgvector` hit a transient Gemini rate-limit during this test and
+    silently fell back to the **in-memory KB store**, which is a **separate, out-of-sync copy** —
+    `ensure_dian_loaded()` (`taty_service.py:33`) only ever loads the original 48-chunk
+    `dian_chunks.json` into memory; it never sees the 84 chunks now seeded into pgvector (79
+    curated + 5 new renta-natural chunks with the correct UVT/threshold figures). **This is a
+    real, structural gap, not a one-off**: any pgvector hiccup — Gemini rate limit, transient
+    Supabase error, anything caught by `_retrieve_pgvector`'s broad `except` — silently degrades
+    ALL of Taty's fiscal answers (not just WhatsApp) to a smaller, staler, unsynced fallback KB.
+    Not fixed here (real scope, deserves its own design decision on whether the memory fallback
+    should exist at all vs. fail loudly) — flagged for the founder and for Stage 7's runbook.
+- [x] 3.8 Cleared to proceed to Stage 4.
+
+**Operational note, not a task**: while committing this stage, discovered another session
+(likely Manus or a parallel Claude Code session, sharing this same local checkout) committed
+directly onto the checked-out `feature/taty-whatsapp-renta-sales-capability` branch and fast-
+forward-merged it into `main` — an unrelated frontend commit ("Update WhatsApp number..."). No
+data lost (fast-forward is non-destructive), but `main` now carries this change's in-progress work
+mixed with that commit. Founder decision: continue committing locally on `main`, but **do not
+`git push` until the entire change (through Stage 14) is complete and verified** — avoids
+publishing partial work either session didn't intend to ship yet.
 
 ## 4. Route WhatsApp through TatyAgentService (design.md Migration Plan step 4)
 

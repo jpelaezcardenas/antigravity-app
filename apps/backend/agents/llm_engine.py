@@ -55,9 +55,17 @@ class LLMProvider(Enum):
 # Every chain keeps Groq as a reachable fallback so a GLM outage never drops a request.
 PROFILE_CONFIGS = {
     "taty-v1": {
-        "primary": LLMProvider.GLM,
-        "fallback_chain": [LLMProvider.GLM, LLMProvider.GROQ, LLMProvider.OPENROUTER],
-        "description": "Fiscal advisor — GLM 5.2 (subscription) for interactive <2s; Groq fallback"
+        "primary": LLMProvider.GROQ,
+        "fallback_chain": [LLMProvider.GROQ, LLMProvider.GEMINI, LLMProvider.OPENROUTER],
+        "model_overrides": {LLMProvider.GROQ: "openai/gpt-oss-120b"},
+        "description": (
+            "Fiscal advisor / WhatsApp renta sales — Groq openai/gpt-oss-120b primary "
+            "(repointed 2026-08-11, taty-whatsapp-renta-sales-capability: GLM 5.2 was the most "
+            "expensive option evaluated at list price with no quality advantage confirmed via "
+            "A/B, and was unreachable from the WhatsApp channel anyway since taty_lead_router.py "
+            "never used this profile — see design.md). Gemini fallback (DeepSeek deferred, no "
+            "DEEPSEEK_API_KEY exists yet — see tasks.md 3.4)."
+        ),
     },
     "centinela-v1": {
         "primary": LLMProvider.GROQ,
@@ -291,6 +299,7 @@ class LLMEngine:
                     temperature=temperature,
                     timeout=timeout,
                     provider_order=fallback_chain,
+                    model_overrides=profile.get("model_overrides"),
                 )
         else:
             # Fall back to default task-tier routing (backward compatibility)
@@ -365,9 +374,15 @@ class LLMEngine:
         temperature: float,
         timeout: int,
         provider_order: list,
+        model_overrides: Optional[Dict["LLMProvider", str]] = None,
     ) -> str:
-        """Run the provider failover loop with a custom provider order."""
+        """Run the provider failover loop with a custom provider order.
+
+        `model_overrides` lets a single profile pin a specific model for a given provider
+        (e.g. taty-v1 -> Groq's openai/gpt-oss-120b) without changing that provider's default
+        model for every other profile that also routes through it."""
         errors_log = []
+        model_overrides = model_overrides or {}
 
         for provider in provider_order:
             try:
@@ -382,8 +397,11 @@ class LLMEngine:
                         prompt, system_prompt, max_tokens, temperature
                     )
                 elif provider == LLMProvider.GROQ:
+                    groq_kwargs = {}
+                    if LLMProvider.GROQ in model_overrides:
+                        groq_kwargs["model"] = model_overrides[LLMProvider.GROQ]
                     response = self._call_groq(
-                        prompt, system_prompt, max_tokens, temperature
+                        prompt, system_prompt, max_tokens, temperature, **groq_kwargs
                     )
                 elif provider == LLMProvider.CEREBRAS:
                     response = self._call_cerebras(
@@ -570,13 +588,19 @@ class LLMEngine:
         )
         return response.choices[0].message.content
 
-    def _call_groq(self, prompt: str, system_prompt: str, max_tokens: int, temp: float) -> str:
-        """Call Groq API"""
+    def _call_groq(
+        self, prompt: str, system_prompt: str, max_tokens: int, temp: float,
+        model: str = "llama-3.3-70b-versatile",
+    ) -> str:
+        """Call Groq API. `model` defaults to the shared task-tier model so every profile
+        without an explicit override (centinela-v1, pulso-v1, social-ops-v1, kb-v1) keeps its
+        exact current behavior — only a profile's own `model_overrides` (PROFILE_CONFIGS) changes
+        which model it gets."""
         if not self.groq_client:
             raise ValueError("Groq client not initialized")
 
         response = self.groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=model,
             messages=[
                 {"role": "system", "content": system_prompt or "You are a helpful assistant."},
                 {"role": "user", "content": prompt}
@@ -646,7 +670,11 @@ class LLMEngine:
             "x-goog-api-key": self.gemini_api_key,
         }
 
-        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+        # gemini-2.0-flash and gemini-2.5-flash were both retired (404 "no longer available")
+        # as of this fix (2026-08-11, taty-whatsapp-renta-sales-capability) — found while wiring
+        # Gemini into taty-v1's fallback chain; this call site was silently broken for every
+        # profile that could reach it. gemini-3.1-flash-lite confirmed working live.
+        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent"
 
         payload = {
             "contents": [

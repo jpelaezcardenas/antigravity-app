@@ -78,6 +78,42 @@ does not change; WhatsApp joins as a channel; renta-persona-natural sales joins 
    the additive shape means any other undiscovered caller of the old RPC signature keeps working
    regardless.
 
+## Correction found during implementation (2026-08-11, Stage 3)
+
+The original Stage 3 plan assumed `taty_lead_router.py` would keep calling
+`agents.secure_llm.get_anonymized_ai_response` directly and just needed a `profile_name` parameter
+threaded through it. Reading `services/taty_service.py::ask()` in full while starting Stage 3
+showed this premise was wrong: `TatyAgentService.ask()` does **not** use `secure_llm.py` at all —
+it has its own established pattern (`Anonymizer.mask()` directly, then
+`get_llm_engine().get_ai_response_with_profile(profile_name=...)`, then `Anonymizer.unmask()`).
+That is how it already correctly reaches the `taty-v1` profile for Telegram/PWA today.
+
+Since Stage 4 deletes `taty_lead_router`'s two raw LLM calls (`_classify_fiscal_question`,
+`_synthesize_kb_reply`) entirely and replaces them with a call into `TatyAgentService` — per
+Decision 1, that was always the point — adding `profile_name` to `secure_llm.py` would fix a call
+site that stops existing one stage later. **Dropped**: `secure_llm.py` is not touched by this
+change. The WhatsApp channel reaches `taty-v1` for free once Stage 4 lands, through
+`TatyAgentService`'s existing internal pattern — no new plumbing needed. Stage 3's real remaining
+work is unchanged: the provider chain itself (`PROFILE_CONFIGS["taty-v1"]`) still points at
+`llama-2-7b`/GLM regardless of which caller reaches it, and still needs repointing, A/B testing,
+and Telegram/PWA regression coverage before Stage 4 can safely route WhatsApp through it.
+
+## Second correction found during implementation (2026-08-11, Stage 3 regression testing)
+
+While regression-testing `TatyAgentService.ask()` for Telegram/PWA (tasks.md 3.6/3.7), a transient
+Gemini rate-limit made `_retrieve_pgvector` fall back to `_retrieve_memory` — and the answer that
+came back stated a stale UVT figure and a fabricated contact number, reproducing 3.3's A/B
+hallucination finding through the real production path. Root cause: **the in-memory KB fallback
+is a separate, out-of-sync store**, not a cache of pgvector. `ensure_dian_loaded()`
+(`taty_service.py:33`) loads only the original 48-chunk `dian_chunks.json` into memory at import
+time; it has no knowledge of the 84 chunks (79 curated + 5 renta-natural, with the correct
+figures) now seeded into pgvector by this change. Any pgvector hiccup — not specific to this
+change, this is a pre-existing structural property of `kb_seeding_service.py` — silently degrades
+every Taty fiscal answer, on every channel, to a smaller and staler knowledge base with no
+signal to the caller that this happened. Not fixed in this change (real scope of its own: does
+the memory fallback still make sense at all, versus failing loudly or lazily syncing from
+pgvector); flagged in tasks.md Stage 3 and for the Stage 7 runbook.
+
 ## Risks / Trade-offs
 
 - **[Risk] Changing the shared `taty-v1` profile chain for a WhatsApp fix could regress Telegram or
