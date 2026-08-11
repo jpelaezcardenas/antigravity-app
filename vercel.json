@@ -156,6 +156,18 @@
             "destination": "https://antigravity-app-production-175a.up.railway.app/api/v1/:path*"
         },
         {
+            "source": "/privacy",
+            "destination": "https://antigravity-app-production-175a.up.railway.app/privacy"
+        },
+        {
+            "source": "/terms",
+            "destination": "https://antigravity-app-production-175a.up.railway.app/terms"
+        },
+        {
+            "source": "/data-deletion",
+            "destination": "https://antigravity-app-production-175a.up.railway.app/data-deletion"
+        },
+        {
             "source": "/app/overview",
             "destination": "/app/overview.html"
         },

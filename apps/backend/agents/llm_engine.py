@@ -1,6 +1,7 @@
 """
 LLM Engine with failover support across multiple providers.
-Implements automatic fallback chain: Ollama → OpenRouter Free → Groq → Cerebras → Mistral → Gemini
+Implements automatic fallback chain: OpenRouter Free → Groq → Cerebras → Mistral → Gemini →
+OpenRouter (paid). Cloud-only — no local model provider.
 Auto-heals malformed JSON responses with intelligent parsing and recovery strategies.
 """
 
@@ -43,7 +44,6 @@ class LLMProvider(Enum):
     MISTRAL = "mistral"
     GEMINI = "gemini"
     OPENROUTER = "openrouter"
-    OLLAMA = "ollama"
     GLM = "glm"  # Z.AI / Zhipu GLM 5.2 (subscription) — interactive agents
 
 

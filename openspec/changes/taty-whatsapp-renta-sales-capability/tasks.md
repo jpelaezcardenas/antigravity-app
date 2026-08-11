@@ -257,9 +257,9 @@ publishing partial work either session didn't intend to ship yet.
 
 ## 6. Founder-owned Meta sustainability actions (tracked, not blocking Stage 1-5)
 
-- [ ] 6.1 Add `/privacy`, `/terms`, `/data-deletion` rewrites to `vercel.json` (routes exist on
-  Railway at `apps/backend/main.py:161,196,230` but 404 on `contexia.online` today — needed for
-  Meta Business Verification). This one IS an engineering task.
+- [x] 6.1 Added `/privacy`, `/terms`, `/data-deletion` rewrites to `vercel.json`, proxying to the
+  same Railway backend as `/api/v1/:path*`. Validated JSON syntax; deploys with the next Vercel
+  push (Stage 14).
 - [ ] 6.2 FOUNDER: start Business Verification in Meta Business Manager (raises `TIER_250`).
 - [ ] 6.3 FOUNDER: re-verify the display name (`code_verification_status` is `EXPIRED`).
 - [ ] 6.4 FOUNDER: create `es_CO` message templates for >24h re-engagement (only `hello_world`/
@@ -267,12 +267,11 @@ publishing partial work either session didn't intend to ship yet.
 
 ## 7. Manus handoff runbook
 
-- [ ] 7.1 Create `docs/runbooks/taty-whatsapp-campaign.md`: `wa.me/573106229289` link convention
-  with per-content UTM-style params for attribution; real limits (inbound effectively uncapped;
-  250 business-initiated conversations/24h until 6.2 lands); what Taty can/cannot say (Entidad B
-  limits); where leads land (Chatwoot inbox `1` + `crm_leads`); `bot_off` handover; the Wompi HITL
-  gate; how to bring the local stack up (`docker compose -f docker-compose.chatwoot.yml up -d`,
-  Scheduled Task `ContexiaChatwootBridge`).
+- [x] 7.1 Created `docs/runbooks/taty-whatsapp-campaign.md`: link + attribution convention, real
+  limits, what Taty can/cannot say (price + contact-info non-invention, Entidad B), where leads
+  land, `bot_off` handover, the Wompi HITL gate, KB health check (the in-memory/pgvector desync
+  risk from Stage 3/4), and how to bring the stack up — including the stale-process restart
+  gotcha found live in Stage 5, so it doesn't silently repeat.
 
 ## 8. Repo hygiene (found during investigation, low-risk, included per proposal.md Impact)
 
@@ -286,15 +285,18 @@ publishing partial work either session didn't intend to ship yet.
 
 ## 9. Review and Update Existing Unit Tests (MANDATORY)
 
-- [ ] 9.1 Update `apps/backend/tests/test_taty_lead_router.py` for the new routing behavior
-  (reply generation delegated to `TatyAgentService`, static-string assertions removed/replaced).
-- [ ] 9.2 Update/add tests for `secure_llm.py`'s new `profile_name` parameter.
-- [ ] 9.3 Add tests for the KB migration's new RPC overload and the `deliver` flag on
-  `whatsapp_endpoints.py`.
-- [ ] 9.4 Confirm `test_model_selector_cloud_only.py`'s pre-existing failing assertion (found live
-  2026-08-11: asserts `not hasattr(LLMProvider, 'OLLAMA')`, which is false against the current
-  `llm_engine.py`) — fix or explicitly document as a pre-existing, unrelated failure, do not leave
-  it unexplained in the test report.
+- [x] 9.1 Done in Stage 4: `test_taty_lead_router.py` rewritten for the new routing behavior.
+- [x] 9.2 **N/A** — superseded per Stage 3's design.md correction: `secure_llm.py` was never
+  touched, so it never needed a `profile_name` parameter.
+- [x] 9.3 Done: KB migration RPC overload tested in Stage 1
+  (`TestPgvectorSchemaMatchesRetrieveSimilar`), `deliver` flag tested in Stage 5
+  (`test_whatsapp_endpoints.py`, `test_backend_client.py`).
+- [x] 9.4 **Fixed, not just documented**: removed the dead `LLMProvider.OLLAMA` enum member
+  (`llm_engine.py:46`) — confirmed via repo-wide grep it had exactly one reference anywhere, inside
+  this failing test's own assertion string. Also corrected the module docstring's stale failover
+  order (still said "Ollama → OpenRouter Free → ..."; the real chain never included Ollama). All
+  27 tests across `test_model_selector_cloud_only.py` + `test_llm_engine.py` pass now (1 skip,
+  a real-call E2E test gated behind its own flag).
 
 ## 10. Run Unit Tests and Verify Database State (MANDATORY)
 
