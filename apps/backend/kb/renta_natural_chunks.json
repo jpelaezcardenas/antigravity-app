@@ -1,0 +1,27 @@
+[
+  {
+    "source": "Estatuto Tributario Art. 592 — Tope de ingresos para declarar renta AG 2025",
+    "content": "Una persona natural está obligada a declarar renta del año gravable 2025 (se declara en 2026) si sus ingresos brutos o sus consignaciones bancarias, depósitos o inversiones durante 2025 fueron iguales o superiores a 1.400 UVT. Con la UVT 2025 de $49.799, ese tope equivale a $69.718.600. Este tope aplica de forma independiente para ingresos y para consignaciones: superar cualquiera de los dos ya genera la obligación.",
+    "metadata": {"topic": "topes_declarar_renta", "norma": "ET Art. 592", "year": 2025, "complexity": "basic", "category": "renta_persona_natural"}
+  },
+  {
+    "source": "DIAN — Calendario declaración de renta personas naturales 2026",
+    "content": "Los plazos para declarar y pagar renta AG 2025 van del 12 de agosto al 26 de octubre de 2026, escalonados por los dos últimos dígitos de la cédula (o del NIT), en orden ascendente por parejas. Primeras fechas confirmadas: dígitos 01-02 vencen el 12 de agosto; 03-04 el 13 de agosto; 05-06 el 14 de agosto; 07-08 el 18 de agosto; 09-10 el 19 de agosto. Para el resto de dígitos, el orden sigue siendo ascendente por parejas hasta el 26 de octubre (dígitos 99-00), pero la fecha exacta debe confirmarse con un asesor o en el calendario oficial de la DIAN — no asumas ni inventes una fecha para un rango de dígitos no listado aquí.",
+    "metadata": {"topic": "plazos_renta_persona_natural", "year": 2026, "complexity": "basic", "category": "renta_persona_natural", "partial": true}
+  },
+  {
+    "source": "Contexia — Documentos que se piden para la declaración de renta",
+    "content": "Para armar la declaración de renta persona natural, Contexia pide: (1) una foto o PDF del RUT, y (2) los extractos bancarios del año (PDF o foto) de todas las cuentas del cliente. Con esos dos documentos se arma la carpeta inicial; si falta algo adicional según el caso, un asesor humano lo solicita directamente.",
+    "metadata": {"topic": "documentos_requeridos", "complexity": "basic", "category": "renta_persona_natural"}
+  },
+  {
+    "source": "Contexia — Qué es y quién puede necesitar declarar renta persona natural",
+    "content": "La declaración de renta persona natural es el reporte anual que un individuo presenta a la DIAN sobre sus ingresos, patrimonio y movimientos financieros del año anterior. No declarar estando obligado, o declarar tarde, genera sanciones (ver sanción mínima). Asalariados, independientes y freelancers pueden estar obligados si superan los topes de ingresos o consignaciones del año gravable correspondiente — el hecho de tener un empleo fijo con retención en la fuente NO exime automáticamente de la obligación de declarar.",
+    "metadata": {"topic": "que_es_declarar_renta", "complexity": "basic", "category": "renta_persona_natural"}
+  },
+  {
+    "source": "Contexia — Qué es y qué NO es Contexia (Entidad B)",
+    "content": "Contexia es la capa tecnológica (Entidad B) del ecosistema: no es una firma contable, no está adscrita a la Junta Central de Contadores, y no ejerce contaduría pública regulada. Contexia no firma estados financieros, declaraciones tributarias ni dictámenes — eso lo hace la Entidad A, la firma contable regulada y separada, con su contador registrado ante la JCC. Cuando Taty habla de 'nosotros' preparando o ayudando con la declaración, se refiere al servicio tecnológico y de acompañamiento de Contexia, con la firma y responsabilidad profesional siempre a cargo de un contador de Entidad A.",
+    "metadata": {"topic": "entidad_b_alcance", "complexity": "basic", "category": "renta_persona_natural"}
+  }
+]

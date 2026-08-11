@@ -63,8 +63,17 @@ def _detect_backend() -> str:
         return _BACKEND
 
     try:
-        from supabase import create_client
-        _SUPABASE_CLIENT = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        # Use the shared service-role client (core.supabase_client.get_service_supabase),
+        # not a raw anon-keyed client built here. `knowledge_chunks`'s RLS policies grant
+        # SELECT only to role `authenticated` and INSERT only to `service_role`
+        # (match_knowledge_chunks is SECURITY INVOKER, so RLS applies through the RPC too) —
+        # an anon-keyed client would silently return zero rows on every read (RLS filters
+        # rows rather than erroring on SELECT) and hard-fail on every seed. Found live
+        # 2026-08-11 while fixing taty-whatsapp-renta-sales-capability's root cause #2: this
+        # is exactly the "seeded successfully, Taty still says she doesn't know" failure mode
+        # a raw anon client would have reproduced even after the schema was fixed.
+        from core.supabase_client import get_service_supabase
+        _SUPABASE_CLIENT = get_service_supabase()
         # Probe table existence (cheap select with limit 0)
         _SUPABASE_CLIENT.table("knowledge_chunks").select("id").limit(1).execute()
         logger.info("KB: pgvector backend active")
@@ -201,13 +210,22 @@ def _embed_text(text: str) -> Optional[List[float]]:
     except Exception as e:
         logger.debug(f"KB embedding: OpenAI failed ({e})")
 
-    # Gemini fallback
+    # Gemini fallback. Found live 2026-08-11 (taty-whatsapp-renta-sales-capability): the old
+    # "models/embedding-001" model was retired (404) and google-generativeai was never in
+    # requirements.txt, so this fallback was dead code even where OpenAI was unavailable
+    # (e.g. once its credit balance was exhausted). "models/gemini-embedding-001" is the current
+    # model; it defaults to 3072 dims, so output_dimensionality is pinned to 1536 to match this
+    # table's `embedding vector(1536)` column exactly.
     try:
         from config import settings
         if settings.GEMINI_API_KEY:
             import google.generativeai as genai
             genai.configure(api_key=settings.GEMINI_API_KEY)
-            result = genai.embed_content(model="models/embedding-001", content=text)
+            result = genai.embed_content(
+                model="models/gemini-embedding-001",
+                content=text,
+                output_dimensionality=1536,
+            )
             return result["embedding"]
     except Exception as e:
         logger.debug(f"KB embedding: Gemini failed ({e})")

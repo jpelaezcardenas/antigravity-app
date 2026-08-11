@@ -103,3 +103,59 @@ class TestBackendStatus:
         assert status["backend"] == "memory"
         assert "c1" in status["memory_clients"]
         assert status["memory_total_chunks"] >= 1
+
+
+@pytest.mark.skipif(
+    os.getenv("RUN_KB_PGVECTOR") != "1",
+    reason="Exercises the live Supabase pgvector RPC; set RUN_KB_PGVECTOR=1 with SUPABASE_URL "
+    "configured to run against a real project.",
+)
+class TestPgvectorSchemaMatchesRetrieveSimilar:
+    """
+    Regression coverage for taty-whatsapp-renta-sales-capability root cause #2: the live
+    knowledge_chunks table + match_knowledge_chunks RPC diverged from what retrieve_similar()
+    actually calls (no client_id column; RPC keyed on match_threshold, not p_client_id).
+    Migration 0038_knowledge_chunks_client_id.sql reconciles this. These tests exercise the real
+    pgvector path end-to-end against a live Supabase project (never mocked) so a future schema
+    drift is caught here instead of live in a customer conversation.
+    """
+
+    def setup_method(self) -> None:
+        # Override the file's autouse memory-forcing fixture: force real backend re-detection
+        # against the actual configured Supabase project for this test class only.
+        kb._BACKEND = None
+        kb._SUPABASE_CLIENT = None
+
+    def test_backend_detects_pgvector_when_supabase_is_configured(self) -> None:
+        assert kb._detect_backend() == "pgvector"
+
+    def test_retrieve_similar_call_signature_succeeds_against_live_rpc(self) -> None:
+        """The exact failure mode found live 2026-08-11: calling retrieve_similar() raised
+        because match_knowledge_chunks(query_embedding, p_client_id, match_count) did not exist.
+        A successful call (even with zero results) proves the RPC signature now resolves."""
+        results = kb.retrieve_similar("declaración de renta persona natural", "__global__", top_k=3)
+        assert isinstance(results, list)
+
+    def test_seed_then_retrieve_round_trips_through_pgvector(self) -> None:
+        test_client = "test-taty-whatsapp-renta-sales-capability"
+        chunks = [
+            {
+                "source": "test-fixture",
+                "content": "Chunk de prueba para taty-whatsapp-renta-sales-capability, "
+                "borrado al final del test.",
+            }
+        ]
+        try:
+            seed_result = kb.seed_knowledge_base(test_client, chunks)
+            assert seed_result["backend"] == "pgvector"
+
+            if kb._embed_text("probe") is None:
+                pytest.skip("No embedding provider configured (OPENAI_API_KEY/GEMINI_API_KEY)")
+
+            results = kb.retrieve_similar("prueba taty whatsapp", test_client, top_k=3)
+            assert any(test_client in str(r) or "prueba" in r.get("content", "") for r in results)
+        finally:
+            # Restore DB state: this test must not leave rows behind.
+            kb._SUPABASE_CLIENT.table("knowledge_chunks").delete().eq(
+                "client_id", test_client
+            ).execute()

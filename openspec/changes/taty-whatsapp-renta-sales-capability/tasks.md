@@ -1,36 +1,78 @@
 ## 0. Setup: Create Feature Branch (MANDATORY - FIRST STEP)
 
-- [ ] 0.1 Create feature branch `feature/taty-whatsapp-renta-sales-capability` from `main`.
-- [ ] 0.2 Verify branch creation and current branch status (`git branch --show-current`).
+- [x] 0.1 Created `feature/taty-whatsapp-renta-sales-capability` from `main`.
+- [x] 0.2 Verified via `git branch --show-current`.
 
 ## 1. Knowledge base schema repair (design.md Migration Plan step 1)
 
-- [ ] 1.1 Write a failing test asserting `retrieve_similar("...", "__global__", top_k=3)` against
-  the live-shaped schema does not raise (mirrors the real "function does not exist" failure mode).
-- [ ] 1.2 Write migration `apps/backend/supabase/migrations/0036_knowledge_chunks_client_id.sql`
-  (numbered after `0035_rolling_reseed_synthetic_shadow_gl.sql` — confirm the latest number in the
-  directory first, do not assume `0036` is still free): additive `client_id text not null default
-  '__global__'`, `source text` columns; new `match_knowledge_chunks(query_embedding vector,
-  p_client_id text, match_count int)` RPC overload. Do not drop or modify the existing
-  `match_threshold`-keyed overload.
-- [ ] 1.3 Apply the migration via Supabase MCP `apply_migration`, verify via `list_tables` /
-  `execute_sql` that both `client_id` and both RPC overloads exist.
-- [ ] 1.4 Re-run 1.1's test — confirm it now passes.
-- [ ] 1.5 Confirm the pre-existing `match_threshold` overload still resolves (regression check —
-  query `pg_proc` for both signatures).
+- [x] 1.1 Added `TestPgvectorSchemaMatchesRetrieveSimilar` to `tests/test_kb_seeding.py`, gated by
+  `RUN_KB_PGVECTOR=1` (matching the file's existing convention). Confirmed it reproduced the real
+  failure before the fix (RLS `42501` on seed; would have been an RPC-signature error pre-migration).
+- [x] 1.2 Migration numbering corrected: the actual latest local file was `0037` (not `0035` as
+  first assumed — `apps/backend/migrations/` and `apps/backend/supabase/migrations/` are two
+  parallel directories; `migrations/` numbered files are the live convention, confirmed against
+  Supabase's own `list_migrations` history). Wrote
+  `apps/backend/migrations/0038_knowledge_chunks_client_id.sql`. Also discovered
+  `20260527_knowledge_chunks.sql` (the file that originally defined the table) was itself never
+  actually applied as written — its header says "apply manually... app works without it" — so what
+  was live before this migration was a materially different, simpler schema. 0038 reconciles that
+  divergence, additively.
+- [x] 1.3 Applied via `mcp__supabase__apply_migration` (name matches filename convention). Verified
+  live: `client_id`/`source` columns present with correct defaults; both RPC overloads
+  (`p_client_id`-keyed and `match_threshold`-keyed) coexist in `pg_proc`.
+- [x] 1.4 Re-ran 1.1's tests — pass.
+- [x] 1.5 Confirmed via `pg_proc` query — both overloads present, pre-existing one untouched.
+- [x] 1.6 **Found and fixed a second, deeper bug during 1.1's test**: `kb_seeding_service.py`
+  built its own Supabase client from `settings.SUPABASE_KEY` (anon role). Live RLS on
+  `knowledge_chunks`: SELECT granted only to `authenticated`, INSERT only to `service_role`;
+  `match_knowledge_chunks` is `SECURITY INVOKER` so RLS applies through the RPC too. An anon
+  client would have hard-failed on every seed AND silently returned zero rows on every read
+  forever (RLS filters SELECT rows rather than erroring) — reproducing the exact original bug
+  even after the schema fix. Repointed to the shared `core.supabase_client.get_service_supabase()`
+  (the codebase's established service-role accessor, per migration `0037`'s own precedent).
+  Verified: seed + retrieve round-trip test passes against live Supabase; DB left clean
+  (`select count(*) from knowledge_chunks where client_id='test-taty-whatsapp-renta-sales-capability'` = 0
+  after the test's cleanup).
 
 ## 2. Renta-persona-natural KB content
 
-- [ ] 2.1 Draft `apps/backend/kb/renta_natural_chunks.json`: thresholds, filing deadlines by cédula
-  digit, required documents, price, Entidad-B scope limits. Every fiscal figure traced to a
-  confirmed source (current DIAN calendar, Contexia's actual pricing) — no invented numbers
-  (design.md Risk: KB seed content quality).
-- [ ] 2.2 Seed via `POST /api/v1/kb/seed` (or extend `seed-dian`'s pattern) targeting
-  `client_id="__global__"`.
-- [ ] 2.3 Verify `count(*) == count(embedding)` in `knowledge_chunks` — no `NULL` embeddings that
-  the RPC would silently filter out.
-- [ ] 2.4 Stand-alone retrieval check: call `retrieve_similar` directly (not through a live
-  conversation yet) with 3-5 realistic renta questions, confirm relevant chunks come back.
+- [x] 2.1 Drafted `apps/backend/kb/renta_natural_chunks.json` (5 chunks): Art. 592 threshold
+  ($69.718.600 = 1.400 UVT × $49.799 AG2025, founder-confirmed, cross-checked against UVT 2025/2026
+  values via web search), partial-but-honest plazos calendar (5 confirmed digit-pairs, explicit
+  "don't invent the rest" instruction baked into the chunk itself), documentos requeridos (sourced
+  from the actual `RUT_REQUEST_MESSAGE`/`EXTRACTOS_REQUEST_MESSAGE` strings already live in
+  `taty_lead_router.py`, not invented), Entidad-B scope (sourced verbatim-paraphrased from
+  `.antigravity/GROUND_TRUTH.md`). **Price was deliberately left out of this file** — see 2.1b.
+  Also seeded the founder's own pre-curated `apps/backend/kb/dian_chunks_expanded.json` (79
+  chunks, previously dead/unreferenced data) alongside it.
+- [x] 2.1b **Pricing discrepancy found and resolved with the founder**: `crm_service.py`'s
+  `RENTA_NATURAL_PRICE_CENTS = 8_900_000` ($89.000 COP) is a single fixed price, confirmed against
+  all 7 real `crm_wompi_transactions` rows (100% consistent at $89.000) — contradicting the
+  founder's recollection of "~$300.000, varies by movements." Founder decided: real tiered pricing
+  by asalariado vs. independiente/freelancer. **Blocked on the two actual price numbers** — not
+  invented. See Stage 2.1c.
+- [ ] 2.1c FOUNDER: provide the two tier prices (asalariado / independiente-freelancer). Once
+  given: (a) add a KB chunk stating both tiers honestly, (b) this is a real code change beyond KB
+  content — `RENTA_NATURAL_PRICE_CENTS`'s single-constant shape in `crm_service.py` must become
+  tier-aware in `checkout_lead_payment`, which needs its own tasks under this stage once the
+  numbers exist (not designed yet — genuinely new scope, not silently absorbed into "just a KB
+  seed task"). Until this lands, Taty must not state a specific price to a WhatsApp lead.
+- [x] 2.2 Seeded via direct `seed_knowledge_base("__global__", chunks)` calls (matches the
+  existing `seed-dian` CLI hook's own pattern) — not yet via the HTTP endpoint (that's Stage 11's
+  curl verification, separate).
+- [x] 2.3 **Found and fixed two additional live bugs while seeding, beyond the two already known**:
+  (a) `OPENAI_API_KEY` (the primary embedding provider) has zero credits in production
+  (`insufficient_quota`/`credit_balance_exhausted`) — a real, currently-live production issue, not
+  caused by this change. FOUNDER ACTION: add credits, or accept Gemini as primary until resolved.
+  (b) The Gemini fallback was dead code in every environment, including production:
+  `google-generativeai` was never in `requirements.txt` (added now), and the hardcoded model
+  `models/embedding-001` no longer exists (404 — retired). Fixed to `models/gemini-embedding-001`
+  with `output_dimensionality=1536` pinned to match the schema (the model defaults to 3072 dims).
+  Verified: `count(*) = 84`, `count(embedding) = 84` — zero orphaned rows.
+- [x] 2.4 `retrieve_similar("te toca declarar renta", "__global__", top_k=3)` — the literal bug-report
+  question — returns 3 relevant chunks (similarity 0.72/0.70/0.69): "qué es declarar renta persona
+  natural", "plazos 2026", "Art. 592 tope". The retrieval path Taty will actually use now works
+  end-to-end against live production Supabase.
 
 ## 3. Provider chain: profile-aware LLM calls + Groq repointing (design.md Migration Plan step 3)
 
