@@ -82,7 +82,7 @@ export default function WizardFooter() {
             <a href="#" className="hover:text-slate-300 transition-colors">Privacidad</a>
             <a href="#" className="hover:text-slate-300 transition-colors">Seguridad</a>
             <a 
-              href="https://wa.me/573018948151?text=Hola,%20me%20interesa%20Contexia" 
+              href="https://wa.me/573106229289?text=Hola,%20me%20interesa%20Contexia" 
               className="text-teal hover:text-teal-dark transition-colors font-semibold"
             >
               Hablemos por WhatsApp

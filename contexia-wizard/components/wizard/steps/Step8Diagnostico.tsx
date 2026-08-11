@@ -33,7 +33,7 @@ function Ciiu1090Banner() {
           Antes de formalizar, verifica el certificado sanitario y el concepto de uso de suelos.
         </p>
         <a
-          href="https://wa.me/573018948151?text=Hola%20Taty,%20tengo%20CIIU%201090%20y%20necesito%20orientación%20sobre%20INVIMA%20y%20BPM"
+          href="https://wa.me/573106229289?text=Hola%20Taty,%20tengo%20CIIU%201090%20y%20necesito%20orientación%20sobre%20INVIMA%20y%20BPM"
           target="_blank" rel="noopener noreferrer"
           className="ctx-btn-secondary"
           style={{

@@ -15,7 +15,7 @@ export default function TatyFloat() {
   }, []);
 
   const WA_URL =
-    "https://wa.me/573018948151?text=Hola,%20completé%20el%20Shadow%20Audit%20y%20quiero%20agendar%20asesoría";
+    "https://wa.me/573106229289?text=Hola,%20completé%20el%20Shadow%20Audit%20y%20quiero%20agendar%20asesoría";
 
   return (
     <div className="taty-float" style={{ bottom: "1.25rem", right: "1.25rem" }}>

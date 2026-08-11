@@ -123,7 +123,7 @@ export default function ConfigPage() {
         </h3>
         <div className="flex flex-col gap-2">
           <a
-            href="https://wa.me/573018948151?text=Hola%20Taty%2C%20necesito%20ayuda%20con%20la%20app"
+            href="https://wa.me/573106229289?text=Hola%20Taty%2C%20necesito%20ayuda%20con%20la%20app"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-surface-elevated rounded-xl border border-white/10 p-4 flex items-center gap-3 hover:border-primary/30 transition-all"

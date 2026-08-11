@@ -65,7 +65,7 @@ export function ClientTopBar() {
           {/* Desktop right: Taty card + logout */}
           <div className="hidden md:flex items-center gap-6">
             <a
-              href="https://wa.me/573018948151"
+              href="https://wa.me/573106229289"
               target="_blank"
               rel="noopener noreferrer"
               className="group relative flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 pr-6 hover:bg-white/10 hover:border-[#2DD4BF]/50 transition-all duration-500 overflow-hidden"
@@ -111,7 +111,7 @@ export function ClientTopBar() {
 
           {/* Taty card (mobile, centered) */}
           <a
-            href="https://wa.me/573018948151?text=Hola%20Taty%2C%20necesito%20ayuda"
+            href="https://wa.me/573106229289?text=Hola%20Taty%2C%20necesito%20ayuda"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Chat con Taty - Tu Amiga Contadora 24/7"

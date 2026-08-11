@@ -64,7 +64,7 @@ export default function ConfirmacionPage() {
   const waLink = useMemo(() => {
     const ref = data?.reference || params.reference || "";
     const msg = encodeURIComponent(`Hola Taty, acabo de completar el pago de mi empresa. Orden ${ref}. Necesito confirmar los siguientes pasos.`);
-    return `https://wa.me/573018948151?text=${msg}`;
+    return `https://wa.me/573106229289?text=${msg}`;
   }, [data, params.reference]);
 
   if (!params.reference) {

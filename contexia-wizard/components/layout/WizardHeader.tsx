@@ -108,7 +108,7 @@ export default function WizardHeader() {
             <div className="flex items-center gap-6">
               {/* Taty Button */}
               <a 
-                href="https://wa.me/573018948151?text=Hola,%20completé%20el%20Shadow%20Audit%20y%20quiero%20agendar%20asesoría" 
+                href="https://wa.me/573106229289?text=Hola,%20completé%20el%20Shadow%20Audit%20y%20quiero%20agendar%20asesoría" 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="group relative flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 pr-6 hover:bg-white/10 hover:border-ctx-teal/50 transition-all duration-500 overflow-hidden" 

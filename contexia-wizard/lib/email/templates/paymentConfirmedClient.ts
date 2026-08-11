@@ -45,7 +45,7 @@ export function buildClientConfirmedEmail(args: ClientEmailArgs): { subject: str
           <li>¡Empresa lista, 100% digital!</li>
         </ol>
         <div style="text-align:center;margin:32px 0;">
-          <a href="https://wa.me/573018948151?text=${encodeURIComponent(`Hola Taty, acabo de pagar mi empresa ${args.razonSocial}. Orden ${args.reference}.`)}" style="background:#25D366;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:12px;display:inline-block;">💬 Escribir a Taty por WhatsApp</a>
+          <a href="https://wa.me/573106229289?text=${encodeURIComponent(`Hola Taty, acabo de pagar mi empresa ${args.razonSocial}. Orden ${args.reference}.`)}" style="background:#25D366;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:12px;display:inline-block;">💬 Escribir a Taty por WhatsApp</a>
         </div>
         <p style="color:#94a3b8;font-size:12px;text-align:center;margin:24px 0 0;">
           Guarda este correo. Si tienes dudas, responde aquí o escribe a <a href="mailto:growth@contexia.online" style="color:#2DD4BF;">growth@contexia.online</a>.
