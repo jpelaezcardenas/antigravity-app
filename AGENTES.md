@@ -123,19 +123,19 @@ CONTEXIA SWARM (Hermes Workspace)
 
 ### TIER 2: CONVERSACIONAL
 
-#### 5. TATY (Conversational Operator + Telegram 24/7)
+#### 5. TATY (Conversational Operator + Telegram + WhatsApp 24/7)
 
 | Campo | Valor |
 |-------|-------|
-| **Endpoint** | `POST /api/v1/agents` (role: `"taty"`) + Telegram webhook |
+| **Endpoint** | `POST /api/v1/agents/ask` (dashboard) + Telegram webhook + `POST /api/v1/channels/whatsapp/leads/{id}/reply` (interno, vía `taty_lead_router.py`) |
 | **Tipo** | Conversational + Zero-UI Command Parser |
-| **Función canónica** | Operador 24/7: fiscal conversacional, soporte Telegram, onboarding, comandos Social Ops |
-| **Entrada** | Mensajes naturales (chat, Telegram, Slack, email) |
-| **Proceso** | 1. Parse intención. 2. Invoca skill correspondiente. 3. Retorna respuesta natural + links a acciones en Hermes |
-| **Salida** | Respuesta conversacional + oferta de acciones |
-| **HITL** | ✅ SÍ — Si comando sensible, Taty lo dirige a Approval Queue |
+| **Función canónica** | Operador 24/7: fiscal conversacional, soporte Telegram, WhatsApp (venta de declaración de renta persona natural), onboarding, comandos Social Ops |
+| **Entrada** | Mensajes naturales (chat, Telegram, WhatsApp) |
+| **Proceso** | Un solo cerebro (`TatyAgentService.ask()`) para las tres superficies — nunca una segunda implementación por canal. WhatsApp añade una convención de llamada aditiva (`conversation_history` + `lead_context`: etapa del lead, perfil detectado, oferta) que Telegram/PWA no usan. `taty_lead_router.py` aporta las herramientas del embudo de venta (avance de etapa CRM, encolar aprobación de Wompi) como efectos secundarios, no como quien redacta la respuesta |
+| **Salida** | Respuesta conversacional + oferta de acciones. Nunca inventa precio (tarifas sin definir, decisión pendiente del fundador) ni datos de contacto — instrucción explícita en el system prompt tras un hallazgo en vivo (2026-08-11) |
+| **HITL** | ✅ SÍ — comando sensible → Approval Queue; interés de compra en WhatsApp → link de pago Wompi solo tras aprobación humana (`taty-wompi-link-hitl-gate`) |
 | **Cadencia** | Continua (24/7) |
-| **Cliente Cero** | ✅ Público en Telegram de Contexia (@contexia_bot) |
+| **Cliente Cero** | ✅ Público en Telegram de Contexia (@contexia_bot) y WhatsApp (+57 310 6229289, inbox `1` "Taty Contadora Amiga 24/7" en Chatwoot) |
 
 **Casos de uso:**
 - "¿Cuánta caja tengo hoy?" → Taty consulta Pulso

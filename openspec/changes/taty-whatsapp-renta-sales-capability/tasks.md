@@ -348,12 +348,16 @@ publishing partial work either session didn't intend to ship yet.
 
 ## 13. Update Technical Documentation (MANDATORY)
 
-- [ ] 13.1 Update `ARCHITECTURE.md`'s Chatwoot + bridge row / Caja Real flow section if the
-  delivery-path change affects anything documented there.
-- [ ] 13.2 Update `AGENTES.md`'s Taty entry to reflect the WhatsApp channel now routing through
-  `TatyAgentService` (currently describes Telegram + `/api/v1/agents` only).
-- [ ] 13.3 Confirm `docs/runbooks/taty-whatsapp-campaign.md` (Stage 7) is complete and accurate as
-  of the final implementation.
+- [x] 13.1 Updated `ARCHITECTURE.md`'s Chatwoot + bridge row (inbox `1` vs `3`, single-brain
+  routing, `deliver` flag, Scheduled Task) and added Decision #19 documenting the core
+  architectural change (WhatsApp is a Taty channel, not a second agent) plus the price/contact
+  non-invention finding.
+- [x] 13.2 Updated `AGENTES.md`'s Taty entry: endpoint list now includes the WhatsApp internal
+  reply route, process description reflects the single shared `TatyAgentService.ask()` brain
+  across all three channels, HITL row mentions the Wompi gate specifically, Cliente Cero row
+  includes the real WhatsApp number and Chatwoot inbox.
+- [x] 13.3 Confirmed accurate as written — no changes needed since Stage 7 (only the stale-process
+  restart procedure, already reflected there, has been exercised live since).
 
 ## 14. Stage 11: Deploy to Production (MANDATORY - CLOSES THE LOOP)
 
