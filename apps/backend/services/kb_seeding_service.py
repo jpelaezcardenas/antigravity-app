@@ -226,37 +226,49 @@ def _retrieve_pgvector(query: str, client_id: str, top_k: int) -> List[Dict]:
 # ---------------------------------------------------------------------------
 
 def _embed_text(text: str) -> Optional[List[float]]:
-    """Try embedding providers in order. Returns None if none available."""
-    # OpenAI ada-002
+    """Embed text to a 1536-dim vector using text-embedding-3-small, reachable through two providers
+    that share the SAME vector space so seeding and querying stay comparable.
+
+    Provider order (taty-whatsapp-renta-sales-capability, 2026-08-12, reworked live):
+      1. OpenRouter (openai/text-embedding-3-small) — PRIMARY. Funded by OpenRouter credits, which
+         is the point: direct OpenAI credit was exhausted (429 "no credits remaining") and Gemini's
+         free daily quota was exceeded (429) at the same time, leaving the KB unfillable. OpenRouter
+         proxies OpenAI's own text-embedding-3-small, so its output is the identical space as (2).
+      2. Direct OpenAI (text-embedding-3-small) — same model, same space, used when OpenRouter is
+         unreachable and the OpenAI account has credit.
+
+    Deliberately NO ada-002 and NO Gemini: those are DIFFERENT embedding spaces, and mixing embedding
+    models within one table makes cosine similarity meaningless (a query embedded with model A cannot
+    be compared to chunks embedded with model B). Standardizing on 3-small (1536) also keeps the
+    column `embedding vector(1536)` unchanged — no migration. Returns None on total failure; the
+    caller skips the chunk on seed, and Taty's token-free keyword fallback covers reads.
+    """
+    import openai
+    from config import settings
+
+    # 1. OpenRouter — credit-funded, primary
+    try:
+        if getattr(settings, "OPENROUTER_API_KEY", None):
+            client = openai.OpenAI(
+                api_key=settings.OPENROUTER_API_KEY,
+                base_url="https://openrouter.ai/api/v1",
+            )
+            resp = client.embeddings.create(
+                model="openai/text-embedding-3-small", input=text
+            )
+            return resp.data[0].embedding
+    except Exception as e:
+        logger.debug(f"KB embedding: OpenRouter failed ({e})")
+
+    # 2. Direct OpenAI — identical model/space, used when it has credit
     try:
         api_key = os.getenv("OPENAI_API_KEY")
         if api_key:
-            import openai
             client = openai.OpenAI(api_key=api_key)
-            resp = client.embeddings.create(model="text-embedding-ada-002", input=text)
+            resp = client.embeddings.create(model="text-embedding-3-small", input=text)
             return resp.data[0].embedding
     except Exception as e:
         logger.debug(f"KB embedding: OpenAI failed ({e})")
-
-    # Gemini fallback. Found live 2026-08-11 (taty-whatsapp-renta-sales-capability): the old
-    # "models/embedding-001" model was retired (404) and google-generativeai was never in
-    # requirements.txt, so this fallback was dead code even where OpenAI was unavailable
-    # (e.g. once its credit balance was exhausted). "models/gemini-embedding-001" is the current
-    # model; it defaults to 3072 dims, so output_dimensionality is pinned to 1536 to match this
-    # table's `embedding vector(1536)` column exactly.
-    try:
-        from config import settings
-        if settings.GEMINI_API_KEY:
-            import google.generativeai as genai
-            genai.configure(api_key=settings.GEMINI_API_KEY)
-            result = genai.embed_content(
-                model="models/gemini-embedding-001",
-                content=text,
-                output_dimensionality=1536,
-            )
-            return result["embedding"]
-    except Exception as e:
-        logger.debug(f"KB embedding: Gemini failed ({e})")
 
     return None
 
