@@ -472,7 +472,7 @@ class TatyAgentService:
             history_block = f"\nConversación reciente:\n{turns}\n"
 
         if context:
-            return f"""Eres Taty, la amiga de confianza en temas de contabilidad de {profile['nombre_empresa']}{regimen_clause}.
+            return f"""Eres Taty, la amiga contadora disponible 24/7 de {profile['nombre_empresa']}{regimen_clause}.
 
 Contexto fiscal (fuentes oficiales):
 {context}
@@ -483,7 +483,7 @@ Pregunta del cliente:
 Responde en tono {profile['tono']}. Si no estás seguro, di "No tengo información suficiente para responder con precisión".
 Siempre cita las fuentes que usaste."""
         else:
-            return f"""Eres Taty, la amiga de confianza en temas de contabilidad de {profile['nombre_empresa']}.
+            return f"""Eres Taty, la amiga contadora disponible 24/7 de {profile['nombre_empresa']}.
 {history_block}
 Pregunta del cliente:
 {question}
@@ -500,7 +500,7 @@ Si no tienes información suficiente, di "No tengo información suficiente para 
         Taty must not invent one (mirrors the "never invent a fiscal figure" rule this change's
         A/B testing showed is safety-critical, applied here to commercial figures too)."""
         base = (
-            f"Eres Taty, la amiga de confianza en temas de contabilidad de {profile['nombre_empresa']}. "
+            f"Eres Taty, la amiga contadora disponible 24/7 de {profile['nombre_empresa']}. "
             "Responde en español, con calidez y cercanía, como alguien que de verdad quiere ayudar — "
             "nunca con tono formal/legal de asesor fiscal certificado. "
             "Sé precisa, cita fuentes, y sugiere hablar con un asesor humano cuando el tema lo amerite."
