@@ -53,6 +53,11 @@ RENTA_OFFER_CONTEXT: Dict[str, Any] = {
     "precio_confirmado": False,
 }
 
+# The campaign's own landing page (same URL as the click-to-WhatsApp ad's caption, see
+# taty-whatsapp-renta-sales-capability tasks.md's image-caption finding). Founder-requested
+# (2026-08-12): Taty should link back to it on the first message of a conversation.
+RENTA_LANDING_URL = "https://www.contexia.online/landing.html"
+
 WOMPI_WEB_CHECKOUT_BASE_URL = "https://checkout.wompi.co/p/"
 
 SALES_INTEREST_KEYWORDS = (
@@ -268,10 +273,22 @@ def _detect_persona_fields(
     return fields
 
 
-def _build_lead_context(current_stage: Optional[str], current_persona: Dict[str, Any]) -> Dict[str, Any]:
+def _build_lead_context(
+    current_stage: Optional[str],
+    current_persona: Dict[str, Any],
+    history: Optional[List[Dict[str, str]]] = None,
+) -> Dict[str, Any]:
     """Assembles the WhatsApp calling-convention context TatyAgentService.ask() expects
     (taty-fiscal-assistant delta spec) from state route_lead_message already has in hand — no
-    extra reads beyond what the function already does for its existing CRM side effects."""
+    extra reads beyond what the function already does for its existing CRM side effects.
+
+    `is_first_message` (founder-requested 2026-08-12): empty/None `history` is the direct signal
+    that this is the first turn the bridge has ever sent for this conversation — more reliable
+    than CRM `lead_stage`, which can stay "NUEVOS" across many messages if the lead hasn't advanced
+    through the funnel yet. TatyAgentService turns this into a hard rule: always give the full
+    self-introduction (name + company) and the landing link on the first message only, so a
+    multi-turn conversation doesn't repeat the same intro on every reply.
+    """
     return {
         "lead_stage": current_stage,
         "persona_fields": {
@@ -280,6 +297,8 @@ def _build_lead_context(current_stage: Optional[str], current_persona: Dict[str,
             if k in current_persona
         },
         "offer": dict(RENTA_OFFER_CONTEXT),
+        "is_first_message": not history,
+        "landing_url": RENTA_LANDING_URL,
     }
 
 
@@ -391,7 +410,7 @@ def route_lead_message(
                 question=message,
                 channel="whatsapp",
                 conversation_history=history,
-                lead_context=_build_lead_context(current_stage, current_persona),
+                lead_context=_build_lead_context(current_stage, current_persona, history=history),
             )
             if result.get("answer") and not result.get("error_code"):
                 reply = result["answer"]

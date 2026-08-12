@@ -578,6 +578,26 @@ Si no tienes información suficiente, di "No tengo información suficiente para 
             "seguir escribiendo por este mismo chat de WhatsApp y que un asesor de Contexia se "
             "vincula a la conversación."
         )
+        # First-message-only hard intro rule (founder-requested 2026-08-12): live testing showed
+        # the model sometimes drops "de Contexia.online" or shortens the self-intro on later turns
+        # — acceptable variance in an ongoing conversation, but the FIRST message of a conversation
+        # must always fully introduce Taty and the company, plus point to the landing page. Gated
+        # on `is_first_message` (empty conversation_history — see _build_lead_context) so it fires
+        # exactly once per conversation, not on every reply.
+        landing_url = lead_context.get("landing_url")
+        if lead_context.get("is_first_message"):
+            parts.append(
+                "- Este es el PRIMER mensaje de esta conversación: tu primera frase debe ser, "
+                "textualmente, \"¡Hola! Soy Taty, la amiga contadora disponible 24/7 de "
+                f"{profile['nombre_empresa']}.\" (puedes agregar un emoji después, pero no cambies "
+                "esas palabras ni omitas el nombre de la empresa)."
+                + (
+                    f" Incluye también el link {landing_url} en algún punto de tu respuesta, de "
+                    "forma natural (por ejemplo invitando a conocer más sobre Contexia ahí)."
+                    if landing_url
+                    else ""
+                )
+            )
         # Format + citation override for real WhatsApp (found live 2026-08-12): the "cita fuentes"
         # instruction in `base` above is fine for Telegram/PWA (markdown-rendering surfaces) but on
         # a real phone it produced literal Markdown-table pipes, `<br>` tags, `##` headers and a
