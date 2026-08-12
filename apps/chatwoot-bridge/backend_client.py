@@ -82,11 +82,23 @@ async def taty_reply(lead_id: str, text: str) -> Optional[str]:
     single brain (services/taty_lead_router.py) owns intent classification, Wompi payment links,
     payment verification and KB grounding on every channel.
 
-    `deliver: False` (taty-whatsapp-renta-sales-capability, Stage 5): the backend must return
-    text only, never send via Meta directly — this bridge is the one delivering, via
-    `chatwoot_client.send_reply` right after this call returns, now that the bridge targets the
-    real Meta-linked Chatwoot inbox instead of the credential-less injection-only one. Sending
-    from both places would double-message the customer.
+    `deliver: True` (taty-whatsapp-renta-sales-capability, Stage 5, CORRECTED 2026-08-12 found
+    live): the backend delivers Taty's reply to the customer's real WhatsApp number directly via
+    Meta's Graph API. An earlier revision set this to False on the theory that Chatwoot itself would
+    deliver, now that the bridge targets the real Meta-linked `Channel::Whatsapp` inbox. That theory
+    was wrong AND it is mutually incompatible with the 422 fix that had to land at the same time:
+    because the durable-inbox webhook lands on Railway (not on Chatwoot) and the poller mirrors the
+    customer's message into Chatwoot as a *private note* (a real `incoming` is rejected 422 on a
+    real-provider inbox), Chatwoot's WhatsApp channel never records a genuine customer inbound, so
+    its own 24-hour-window bookkeeping always believes the window is CLOSED. Every outgoing Chatwoot
+    tries to deliver is then rejected by Meta ("Message not sent because the WhatsApp 24-hour
+    customer service window is closed... send an approved template instead") — so with deliver=False
+    NOTHING reached the customer's phone, for the bot OR a human. Meta's real window is in fact OPEN
+    (the customer's inbound arrived at our webhook with a real wamid minutes earlier), so a DIRECT
+    Graph API send from the backend succeeds. No double-send: Chatwoot's own delivery attempt fails
+    on the closed-window check, so the backend is the only path that actually reaches the phone.
+    (Known follow-up, not fixed here: a human's reply typed in Chatwoot still cannot reach the phone
+    for the same reason — Chatwoot can't open the window it never saw an inbound for.)
 
     Same fail-soft contract as whatsapp_intake: returns None on any failure, never raises. The
     caller turns None into the human-takeover fallback rather than answering ungrounded.
@@ -95,7 +107,7 @@ async def taty_reply(lead_id: str, text: str) -> Optional[str]:
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:
             response = await client.post(
-                url, headers=_headers(), json={"text": text, "deliver": False}
+                url, headers=_headers(), json={"text": text, "deliver": True}
             )
         if response.status_code != 200:
             logger.error(

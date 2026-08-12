@@ -135,7 +135,13 @@ async def process_incoming_message(
     if reply_text is None:
         reply_text = HANDOVER_FALLBACK_REPLY
 
-    await chatwoot_client.send_reply(conversation_id, reply_text)
+    # The backend already delivered this exact reply to the customer's phone directly via Meta's
+    # Graph API (taty_reply now sends deliver=True — see backend_client.taty_reply for why Chatwoot
+    # cannot do the delivery itself). Posting it here as a *private note* mirrors it for the human
+    # operator without a second, failing delivery attempt: Chatwoot believes the 24h window is
+    # closed (it never saw a real inbound, only the private-note mirror), so an outgoing message
+    # would just surface a red "Error al enviar" even though the phone already received it.
+    await chatwoot_client.send_reply(conversation_id, reply_text, private=True)
 
 
 @app.get("/")
