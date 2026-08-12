@@ -18,8 +18,10 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 import logging
 import os
+import re
 import time
 import json
+import unicodedata
 
 import uuid
 
@@ -34,33 +36,105 @@ logger = logging.getLogger(__name__)
 ensure_dian_loaded()
 
 
-def _load_renta_fallback_chunks() -> List[Dict[str, str]]:
-    """Load the curated renta-persona-natural facts as a hardcoded grounding fallback.
+def _strip_accents(text: str) -> str:
+    normalized = unicodedata.normalize("NFKD", text)
+    return "".join(ch for ch in normalized if not unicodedata.combining(ch))
 
-    Why this exists (taty-whatsapp-renta-sales-capability, 2026-08-12, found live): the pgvector
-    KB requires an embedding provider both to seed AND to retrieve, and both configured providers
-    were simultaneously out of quota (OpenAI: "no credits remaining"; Gemini: daily free quota
-    exceeded), so `retrieve_similar` returns nothing and Taty, per its prompt, answers every renta
-    question with "No tengo información suficiente". These 5 curated, price-free facts (same file
-    that seeds the KB — single source of truth) are injected ONLY when live retrieval yields
-    nothing, so the fallback self-deactivates the moment the KB can be seeded again. Reading the
-    file fails soft to an empty list — a missing/corrupt file must never break the reply path.
+
+def _normalize_for_search(text: str) -> str:
+    return _strip_accents(text).lower()
+
+
+# Common Spanish function words that carry no retrieval signal — dropped from the query so the
+# keyword fallback scores on meaningful terms (renta, declarar, plazos, retencion, iva...) only.
+_KB_STOPWORDS = frozenset(
+    {
+        # 3-letter function words (kept short so fiscal acronyms UVT/IVA/RUT/NIT survive the
+        # length filter, which is why these must be listed explicitly)
+        "que", "los", "las", "una", "del", "con", "sin", "sus", "por", "son", "les", "nos",
+        "hay", "ese", "eso", "esa", "fue", "voy", "vas", "mis", "tus", "muy", "mas", "dia",
+        # longer function words
+        "hola", "cual", "cuales", "como", "para", "uno", "unos", "unas", "este", "esta", "esto",
+        "esos", "esas", "tengo", "tiene", "tienen", "quiero", "necesito", "puedo", "podria",
+        "porque", "cuando", "donde", "sobre", "entre", "hasta", "desde", "pero", "todo", "toda",
+        "todos", "todas", "algun", "alguna", "ustedes", "nosotros", "gracias", "favor", "info",
+        "informacion", "ayuda", "ayudame", "saber", "decir", "dime", "senor", "senora", "cuanto",
+        "cuanta", "cuantos", "cuantas",
+    }
+)
+
+
+def _load_kb_fallback_corpus() -> List[Dict[str, str]]:
+    """Load the older, token-free fiscal knowledge base for the keyword fallback.
+
+    Why this exists (taty-whatsapp-renta-sales-capability, 2026-08-12, found live): the pgvector KB
+    needs an embedding provider both to SEED and to QUERY, and both configured providers were
+    simultaneously out of quota (OpenAI: "no credits remaining"; Gemini: daily free quota
+    exceeded), so `retrieve_similar` returns nothing and Taty answers every fiscal question with
+    "No tengo información suficiente". Contexia already ships a curated fiscal corpus as plain JSON
+    (`kb/dian_chunks_expanded.json`, 79 chunks of Estatuto Tributario / DIAN facts, plus
+    `kb/renta_natural_chunks.json`, 5 price-free renta-persona-natural facts) — the same files the
+    KB is seeded from. This loads them once at import so a simple keyword search (see
+    `_keyword_fallback_search`) can ground answers WITHOUT any embedding/token call, used only when
+    live semantic retrieval returns nothing. Renta facts are loaded first so they win ties for the
+    campaign's core questions. Reading fails soft to whatever loaded — a missing/corrupt file must
+    never break the reply path.
     """
-    path = os.path.join(os.path.dirname(__file__), "..", "kb", "renta_natural_chunks.json")
-    try:
-        with open(path, encoding="utf-8") as f:
-            raw = json.load(f)
-        return [
-            {"text": c["content"], "source": c["source"]}
-            for c in raw
-            if c.get("content") and c.get("source")
-        ]
-    except Exception as e:  # noqa: BLE001 - fallback must never raise
-        logger.warning("Could not load renta fallback chunks: %s", e)
+    corpus: List[Dict[str, str]] = []
+    seen: set = set()
+    kb_dir = os.path.join(os.path.dirname(__file__), "..", "kb")
+    for filename in ("renta_natural_chunks.json", "dian_chunks_expanded.json"):
+        try:
+            with open(os.path.join(kb_dir, filename), encoding="utf-8") as f:
+                raw = json.load(f)
+        except Exception as e:  # noqa: BLE001 - fallback must never raise
+            logger.warning("Could not load KB fallback file %s: %s", filename, e)
+            continue
+        for chunk in raw if isinstance(raw, list) else raw.get("chunks", []):
+            content = (chunk.get("content") or "").strip()
+            source = (chunk.get("source") or "").strip()
+            if not content or not source or content in seen:
+                continue
+            seen.add(content)
+            corpus.append(
+                {
+                    "text": content,
+                    "source": source,
+                    "_blob": _normalize_for_search(f"{source} {content}"),
+                }
+            )
+    logger.info("Loaded %d chunks into the token-free KB fallback corpus", len(corpus))
+    return corpus
+
+
+KB_FALLBACK_CORPUS: List[Dict[str, str]] = _load_kb_fallback_corpus()
+
+
+def _keyword_fallback_search(question: str, top_k: int = 5) -> List[Dict[str, str]]:
+    """Token-free keyword retrieval over KB_FALLBACK_CORPUS.
+
+    Scores each chunk by how many distinct meaningful query terms appear in it (source + content),
+    weighted by occurrence count. Returns the top_k chunks with a non-zero score, so a greeting or
+    an off-topic message that matches nothing simply yields no context (Taty answers
+    conversationally) rather than dragging in irrelevant fiscal text. No network, no embeddings.
+    """
+    if not KB_FALLBACK_CORPUS:
         return []
-
-
-RENTA_FALLBACK_CHUNKS: List[Dict[str, str]] = _load_renta_fallback_chunks()
+    query_terms = {
+        term
+        for term in re.findall(r"[a-z0-9]+", _normalize_for_search(question))
+        if len(term) >= 3 and term not in _KB_STOPWORDS
+    }
+    if not query_terms:
+        return []
+    scored: List[Tuple[int, Dict[str, str]]] = []
+    for chunk in KB_FALLBACK_CORPUS:
+        blob = chunk["_blob"]
+        score = sum(blob.count(term) for term in query_terms if term in blob)
+        if score:
+            scored.append((score, chunk))
+    scored.sort(key=lambda pair: pair[0], reverse=True)
+    return [{"text": c["text"], "source": c["source"]} for _, c in scored[:top_k]]
 
 
 # Template for profile fields NOT sourced from the `tenants` table.
@@ -346,19 +420,22 @@ class TatyAgentService:
                         if chunk["source"] not in sources_used:
                             sources_used.append(chunk["source"])
 
-        # Hardcoded renta grounding fallback: only when live retrieval (and the legacy dict) yield
-        # nothing — i.e. while the embedding providers are out of quota and the KB cannot be
-        # seeded/queried. Self-deactivates the moment retrieve_similar returns real chunks again.
-        # See _load_renta_fallback_chunks for the full rationale.
-        if not chunks and RENTA_FALLBACK_CHUNKS:
-            for chunk in RENTA_FALLBACK_CHUNKS:
+        # Token-free keyword fallback over the older curated fiscal corpus (DIAN expanded + renta):
+        # only when live semantic retrieval AND the legacy dict both return nothing — i.e. while the
+        # embedding providers are out of quota and the pgvector KB cannot be queried. Self-deactivates
+        # the moment retrieve_similar returns real chunks again. See _load_kb_fallback_corpus /
+        # _keyword_fallback_search for the full rationale.
+        if not chunks:
+            keyword_chunks = _keyword_fallback_search(question, top_k=5)
+            for chunk in keyword_chunks:
                 chunks.append(chunk)
                 if chunk["source"] not in sources_used:
                     sources_used.append(chunk["source"])
-            logger.info(
-                "Using %d hardcoded renta fallback chunks (KB retrieval returned nothing)",
-                len(RENTA_FALLBACK_CHUNKS),
-            )
+            if keyword_chunks:
+                logger.info(
+                    "Using %d token-free keyword-fallback chunks (semantic KB returned nothing)",
+                    len(keyword_chunks),
+                )
 
         logger.debug(f"Retrieved {len(chunks)} chunks via kb_seeding_service")
         return chunks, sources_used
