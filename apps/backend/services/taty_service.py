@@ -17,6 +17,7 @@ Performance target: P95 < 4 seconds for common questions (IVA, renta, UVT)
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 import logging
+import os
 import time
 import json
 
@@ -31,6 +32,35 @@ logger = logging.getLogger(__name__)
 
 # Load DIAN seed into the KB store at module import (idempotent, no-op if already loaded)
 ensure_dian_loaded()
+
+
+def _load_renta_fallback_chunks() -> List[Dict[str, str]]:
+    """Load the curated renta-persona-natural facts as a hardcoded grounding fallback.
+
+    Why this exists (taty-whatsapp-renta-sales-capability, 2026-08-12, found live): the pgvector
+    KB requires an embedding provider both to seed AND to retrieve, and both configured providers
+    were simultaneously out of quota (OpenAI: "no credits remaining"; Gemini: daily free quota
+    exceeded), so `retrieve_similar` returns nothing and Taty, per its prompt, answers every renta
+    question with "No tengo información suficiente". These 5 curated, price-free facts (same file
+    that seeds the KB — single source of truth) are injected ONLY when live retrieval yields
+    nothing, so the fallback self-deactivates the moment the KB can be seeded again. Reading the
+    file fails soft to an empty list — a missing/corrupt file must never break the reply path.
+    """
+    path = os.path.join(os.path.dirname(__file__), "..", "kb", "renta_natural_chunks.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = json.load(f)
+        return [
+            {"text": c["content"], "source": c["source"]}
+            for c in raw
+            if c.get("content") and c.get("source")
+        ]
+    except Exception as e:  # noqa: BLE001 - fallback must never raise
+        logger.warning("Could not load renta fallback chunks: %s", e)
+        return []
+
+
+RENTA_FALLBACK_CHUNKS: List[Dict[str, str]] = _load_renta_fallback_chunks()
 
 
 # Template for profile fields NOT sourced from the `tenants` table.
@@ -315,6 +345,20 @@ class TatyAgentService:
                         chunks.append(chunk)
                         if chunk["source"] not in sources_used:
                             sources_used.append(chunk["source"])
+
+        # Hardcoded renta grounding fallback: only when live retrieval (and the legacy dict) yield
+        # nothing — i.e. while the embedding providers are out of quota and the KB cannot be
+        # seeded/queried. Self-deactivates the moment retrieve_similar returns real chunks again.
+        # See _load_renta_fallback_chunks for the full rationale.
+        if not chunks and RENTA_FALLBACK_CHUNKS:
+            for chunk in RENTA_FALLBACK_CHUNKS:
+                chunks.append(chunk)
+                if chunk["source"] not in sources_used:
+                    sources_used.append(chunk["source"])
+            logger.info(
+                "Using %d hardcoded renta fallback chunks (KB retrieval returned nothing)",
+                len(RENTA_FALLBACK_CHUNKS),
+            )
 
         logger.debug(f"Retrieved {len(chunks)} chunks via kb_seeding_service")
         return chunks, sources_used
