@@ -26,7 +26,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
-from channels.whatsapp import normalize_whatsapp_webhook, send_whatsapp_message
+from channels.whatsapp import normalize_whatsapp_webhook, sanitize_for_whatsapp, send_whatsapp_message
 from config import settings
 from core.deps import get_current_user
 from services.taty_lead_router import get_lead_phone, lead_exists, route_lead_message
@@ -163,6 +163,14 @@ async def taty_lead_reply(
 
     history = [turn.model_dump() for turn in payload.history] if payload.history else None
     result = route_lead_message(lead_id, payload.text, history=history)
+
+    # Safety net: strip any Markdown/HTML artifacts (tables, headers, <br>, **bold**, "Fuentes:"
+    # footer) a real WhatsApp client can't render, regardless of how "reply" was generated. Applied
+    # here so both the direct Meta send below AND the value returned to the bridge (which the bridge
+    # mirrors into Chatwoot as a private note) get the same clean text — see
+    # channels/whatsapp.py::sanitize_for_whatsapp for the full rationale.
+    if result.get("reply"):
+        result["reply"] = sanitize_for_whatsapp(result["reply"])
 
     if payload.deliver:
         phone = get_lead_phone(lead_id)

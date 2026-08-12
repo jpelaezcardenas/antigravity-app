@@ -15,6 +15,7 @@ import pytest
 from channels.whatsapp import (
     download_whatsapp_media,
     normalize_whatsapp_webhook,
+    sanitize_for_whatsapp,
     send_whatsapp_message,
 )
 
@@ -287,3 +288,48 @@ class TestDownloadWhatsappMedia:
             result = await download_whatsapp_media("MEDIA_ID_123")
 
         assert result is None
+
+
+class TestSanitizeForWhatsapp:
+    """Found live 2026-08-12 (taty-whatsapp-renta-sales-capability): Chatwoot's web UI renders GFM
+    fine, but a real WhatsApp app shows raw Markdown-table pipes, <br>, ## headers, **bold** and a
+    trailing 'Fuentes:' block as literal clutter. This is the safety-net sanitizer applied to every
+    outbound WhatsApp reply, on top of (not instead of) the prompt instructions in taty_service.py."""
+
+    def test_plain_text_passes_through_unchanged(self):
+        text = "Hola! Soy Taty. El tope es 1400 UVT."
+        assert sanitize_for_whatsapp(text) == text
+
+    def test_double_asterisk_bold_becomes_single(self):
+        assert sanitize_for_whatsapp("Esto es **importante**") == "Esto es *importante*"
+
+    def test_markdown_table_becomes_plain_lines_with_no_pipes(self):
+        text = "| Concepto | Detalle |\n|---|---|\n| Tarifa | 19% |"
+        result = sanitize_for_whatsapp(text)
+        assert "|" not in result
+        assert "Tarifa" in result and "19%" in result
+
+    def test_br_inside_a_table_row_does_not_leave_orphan_pipes(self):
+        text = "| Tarifas | Progresiva <br> 0% hasta 1090 UVT |"
+        result = sanitize_for_whatsapp(text)
+        assert "|" not in result
+        assert "<br" not in result
+        assert "1090 UVT" in result
+
+    def test_markdown_heading_markers_are_stripped(self):
+        result = sanitize_for_whatsapp("### ¿Qué debes saber?")
+        assert "#" not in result
+        assert "¿Qué debes saber?" in result
+
+    def test_horizontal_rule_is_dropped(self):
+        result = sanitize_for_whatsapp("Antes\n\n---\n\nDespués")
+        assert "---" not in result
+
+    def test_trailing_fuentes_block_is_dropped(self):
+        text = "Aquí tienes la respuesta.\n\n**Fuentes**: Art. 241 Estatuto Tributario; DIAN 2026"
+        result = sanitize_for_whatsapp(text)
+        assert "fuentes" not in result.lower()
+        assert "Aquí tienes la respuesta." in result
+
+    def test_empty_string_returns_empty_string(self):
+        assert sanitize_for_whatsapp("") == ""

@@ -275,7 +275,7 @@ class TatyAgentService:
 
             # 3. Build fiscal prompt with context
             prompt = self._build_prompt(
-                question, chunks, profile, conversation_history=conversation_history
+                question, chunks, profile, conversation_history=conversation_history, channel=channel
             )
 
             # 4. Anonymize prompt (SOSP rule)
@@ -446,6 +446,7 @@ class TatyAgentService:
         chunks: List[Dict],
         profile: Dict,
         conversation_history: Optional[List[Dict[str, str]]] = None,
+        channel: str = "dashboard",
     ) -> str:
         """Build RAG prompt with question + context.
 
@@ -458,6 +459,14 @@ class TatyAgentService:
         `conversation_history` is flattened into the prompt text (the shared LLM engine takes a
         single system+user prompt pair, not a messages array — see ask()'s docstring). Omitted by
         every caller except the WhatsApp channel, so this is a no-op for Telegram/PWA.
+
+        `channel`: found live 2026-08-12 that the unconditional "cita las fuentes" instruction below
+        made Taty append a "Fuentes:" block and Markdown tables/headers to every WhatsApp answer —
+        Chatwoot's own web UI renders that fine (Markdown), but the real WhatsApp app the customer
+        reads on their phone does not understand GFM tables/`<br>`/`##` headers, so the reply arrived
+        full of stray pipes, dashes and asterisks. WhatsApp gets a different, shorter closing
+        instruction (see below); Telegram/PWA (channel != "whatsapp") keep the original
+        citation-required behavior unchanged.
         """
         context = "\n".join([f"- {c['source']}: {c['text']}" for c in chunks])
         regimen = profile.get("regimen")
@@ -471,6 +480,20 @@ class TatyAgentService:
             )
             history_block = f"\nConversación reciente:\n{turns}\n"
 
+        closing = (
+            "Responde en tono cercano y natural, como un mensaje de WhatsApp real: frases cortas, "
+            "sin tablas, sin encabezados (#), sin negrilla doble (**), sin listas numeradas largas. "
+            "Si usas negrilla usa un solo asterisco (*así*). No agregues un bloque de \"Fuentes\" al "
+            "final ni menciones nombres de documentos — integra la información de forma natural, "
+            "como si ya la supieras. Si no estás segura, dilo con naturalidad."
+            if channel == "whatsapp"
+            else (
+                f"Responde en tono {profile['tono']}. Si no estás seguro, di "
+                '"No tengo información suficiente para responder con precisión".\n'
+                "Siempre cita las fuentes que usaste."
+            )
+        )
+
         if context:
             return f"""Eres Taty, la amiga contadora disponible 24/7 de {profile['nombre_empresa']}{regimen_clause}.
 
@@ -480,15 +503,22 @@ Contexto fiscal (fuentes oficiales):
 Pregunta del cliente:
 {question}
 
-Responde en tono {profile['tono']}. Si no estás seguro, di "No tengo información suficiente para responder con precisión".
-Siempre cita las fuentes que usaste."""
+{closing}"""
         else:
+            no_context_note = (
+                "Responde en tono cercano y natural, como un mensaje de WhatsApp real: frases "
+                "cortas, sin tablas, sin encabezados, sin negrilla doble (**) — un solo asterisco "
+                "si acaso (*así*)."
+                if channel == "whatsapp"
+                else ""
+            )
             return f"""Eres Taty, la amiga contadora disponible 24/7 de {profile['nombre_empresa']}.
 {history_block}
 Pregunta del cliente:
 {question}
 
-Si no tienes información suficiente, di "No tengo información suficiente para responder con precisión"."""
+Si no tienes información suficiente, di "No tengo información suficiente para responder con precisión".
+{no_context_note}"""
 
     def _build_system_prompt(self, profile: Dict, lead_context: Optional[Dict[str, Any]] = None) -> str:
         """Build system prompt for LLM.
@@ -547,6 +577,27 @@ Si no tienes información suficiente, di "No tengo información suficiente para 
             "información confirmada. Si preguntan cómo contactar a alguien más, di que pueden "
             "seguir escribiendo por este mismo chat de WhatsApp y que un asesor de Contexia se "
             "vincula a la conversación."
+        )
+        # Format + citation override for real WhatsApp (found live 2026-08-12): the "cita fuentes"
+        # instruction in `base` above is fine for Telegram/PWA (markdown-rendering surfaces) but on
+        # a real phone it produced literal Markdown-table pipes, `<br>` tags, `##` headers and a
+        # trailing "Fuentes:" block — none of which the WhatsApp app renders, so the customer just
+        # sees clutter. This explicitly overrides that instruction for this channel only.
+        parts.append(
+            "- IMPORTANTE — este mensaje va directo a WhatsApp real (no a un chat web): NO uses "
+            "tablas, NO uses encabezados con #, NO uses **negrilla doble**, NO agregues un bloque "
+            "de \"Fuentes\" al final ni cites nombres de artículos o resoluciones — intégra la "
+            "información con naturalidad, como si ya la supieras de memoria. Si quieres resaltar "
+            "algo usa un solo asterisco (*así*). Escribe como Taty realmente escribiría un "
+            "WhatsApp: frases cortas, cálidas, directas."
+        )
+        parts.append(
+            "- Filosofía de Taty (síguela siempre, no la repitas literalmente): eres el 'Fintech "
+            "Centrado en el Ser Humano' de Contexia — combinas precisión técnica con calidez "
+            "humana. Con la precisión de una auditora pero la empatía de una amiga contadora, "
+            "traduces la ley y los números a instrucciones claras y accionables para HOY, en "
+            "segundos, no en jerga distante de horario de oficina. Eres el copiloto fiscal 24/7 "
+            "que libera al empresario de tareas operativas para que se enfoque en crecer."
         )
 
         return "\n".join(parts)

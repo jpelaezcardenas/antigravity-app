@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -18,6 +19,60 @@ import httpx
 logger = logging.getLogger(__name__)
 
 GRAPH_API_BASE = "https://graph.facebook.com/v20.0"
+
+_MD_TABLE_SEPARATOR = re.compile(r"^\s*\|?[\s:|-]+\|?\s*$")
+_MD_HEADING = re.compile(r"^\s{0,3}#{1,6}\s*")
+_MD_HR = re.compile(r"^\s*[-=*_]{3,}\s*$")
+_MD_BOLD_DOUBLE = re.compile(r"\*\*(.+?)\*\*")
+_HTML_BR = re.compile(r"<br\s*/?>", re.IGNORECASE)
+_SOURCES_FOOTER = re.compile(
+    r"\n{0,2}\**\s*fuentes?\s*\**\s*:.*$", re.IGNORECASE | re.DOTALL
+)
+_BLANK_RUN = re.compile(r"\n{3,}")
+
+
+def sanitize_for_whatsapp(text: str) -> str:
+    """Strip Markdown/HTML artifacts a real WhatsApp client cannot render.
+
+    Found live 2026-08-12 (taty-whatsapp-renta-sales-capability): Chatwoot's own web UI renders
+    GFM (tables, `##` headers, `**bold**`) fine, so a reply looked correct there, but the real
+    WhatsApp app on the customer's phone has no Markdown-table/HTML support — it shows the raw
+    pipes, dashes, `<br>` tags and double asterisks as literal clutter. The prompt now instructs
+    the model to avoid all of this (see taty_service.py's WhatsApp-only closing instructions), but
+    since instruction-following isn't 100% reliable (the same gap that made "24/7" get spelled out
+    once), this is the safety net applied to every outbound WhatsApp reply regardless of source.
+
+    - `**bold**` -> `*bold*` (WhatsApp's own bold syntax)
+    - Markdown table rows/separators and `---`/`===` horizontal rules -> dropped
+    - `#`/`##`/... headings -> the `#` markers stripped, text kept
+    - `<br>` -> newline
+    - A trailing "Fuentes: ..." / "**Fuentes**: ..." block -> dropped entirely
+    - 3+ consecutive blank lines -> collapsed to 2
+    """
+    if not text:
+        return text
+
+    text = _SOURCES_FOOTER.sub("", text)
+    # A space, not a newline: <br> inside a Markdown table cell is a soft break WITHIN one row —
+    # splitting the line there would break the row's pipe count and leave orphan "| ...|" fragments
+    # that the table-row detection below (which needs the whole row on one line) can't recognize.
+    text = _HTML_BR.sub(" ", text)
+    text = _MD_BOLD_DOUBLE.sub(r"*\1*", text)
+
+    kept_lines = []
+    for line in text.split("\n"):
+        if _MD_TABLE_SEPARATOR.match(line) and "|" in line:
+            continue
+        if line.count("|") >= 2:
+            line = "- " + " ".join(part.strip() for part in line.strip().strip("|").split("|") if part.strip())
+        if _MD_HR.match(line):
+            continue
+        line = _MD_HEADING.sub("", line)
+        kept_lines.append(line)
+
+    result = "\n".join(kept_lines)
+    result = _BLANK_RUN.sub("\n\n", result)
+    return result.strip()
 
 
 def normalize_whatsapp_webhook(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
