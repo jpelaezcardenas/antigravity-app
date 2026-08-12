@@ -236,18 +236,124 @@ publishing partial work either session didn't intend to ship yet.
   own): the watchdog cannot currently distinguish "needs a deliberate restart after a config
   change" from "already healthy" — the correct manual procedure (kill the actual PID, not just the
   scheduled task) needs to be documented so this doesn't silently repeat next time `.env` changes.
-- [ ] 5.7 **Real-phone verification, retry (FOUNDER ACTION — the test that matters)**: now that the
-  bridge is genuinely running fresh, send another WhatsApp message from a physical phone to
-  **+57 310 6229289**. Confirm: (a) it appears in Chatwoot inbox `1` ("Taty Contadora Amiga
-  24/7") — a NEW conversation there, not conversation 3 again; (b) Taty's reply is conversational
-  and arrives on the phone; (c) it arrives **exactly once**, not duplicated; (d) typing a reply
-  directly in that Chatwoot conversation also reaches the phone (did NOT work before this change —
-  inbox `3` had no Meta credentials to deliver a human's reply). **Known active condition to
-  expect while testing**: Gemini's free embedding quota is exhausted right now (confirmed live,
-  `429 ResourceExhausted`, from this session's own heavy testing volume today) — retrieval may
-  silently degrade to the smaller, unsynced in-memory KB (see design.md's "Second correction"), so
-  a reply might occasionally read as more generic/less grounded than the answers seen earlier
-  today until the quota resets or `OPENAI_API_KEY` is credited (tasks.md 2.3).
+- [x] **Second, deeper operational bug found and fixed after 5.6**: even with a genuinely fresh
+  bridge process (previous bug), real customer messages sent hours later (2026-08-11 21:44-22:12,
+  "Hola", "Renta", "Ayuda", "Si tenho rut") still got no reply — the founder reported it live
+  ("acabode enviar dos mensajes y nada que responde taty"), initially suspected as an exhausted
+  free-tier LLM quota (it was not — Taty's prompts run ~300-2800 tokens, nowhere near Hermes's
+  ~50K master-prompt scale). Root cause, confirmed by direct `curl` reproduction against Chatwoot's
+  own API: **Chatwoot's Messages API rejects `message_type: "incoming"` with a 422**
+  (`"Incoming messages are only allowed in Api inboxes"`) for any inbox with a real provider behind
+  it (`Channel::Whatsapp`) — the poller's original design (5.1-5.6 above) injected the customer's
+  message as `incoming` and relied on Chatwoot's own `message_created` webhook looping back to this
+  bridge to trigger a reply. That loopback only ever worked against the credential-less
+  `Channel::Api` test inbox (`id=3`) used before this Stage's cutover to the real inbox (`id=1`) —
+  against `id=1`, injection always failed with a 422, the loopback never fired, and **Taty had
+  never replied to a single real WhatsApp customer message** since the Stage 5.3 cutover, despite
+  5.5/5.6 both passing (5.6 tested the `bot_off` filter, not the injection path itself; nothing in
+  5.1-5.6 exercised a real inbox with real Meta-provider credentials end-to-end).
+  **Fixed** (`apps/chatwoot-bridge/chatwoot_client.py`, `inbox_poller.py`,
+  `tests/test_inbox_poller.py`, commit `681fe47`): `create_incoming_message()` removed entirely;
+  replaced with `create_customer_message_note()` (mirrors the customer's text as a **private
+  note** — succeeds on a real inbox, visible to a human agent, but by design does not trigger the
+  webhook loopback, since this bridge's own `/webhook` handler filters private messages) plus
+  `get_conversation_labels()`. `poll_once()` now checks `bot_off` itself (bypassing the loopback
+  means bypassing the check `main.py`'s webhook handler used to make) and calls
+  `main.process_incoming_message()` **directly** instead of waiting for a webhook that can never
+  fire for a private message. 8 tests rewritten in `test_inbox_poller.py` (the old ones asserted
+  the now-removed `incoming`-injection behavior) — `pytest tests/test_inbox_poller.py`: 8/8 pass.
+  **Verified live in production**, not just locally: reset `claimed_at = null` on the 4 real
+  messages stuck since before the fix ("Renta", "Hola ayudame xon la declaracion de renta",
+  "Ayuda", "Si tenho rut") plus 2 new real messages sent during verification ("¡Hola! Quiero más
+  información" — delivered twice by Meta, a separate pre-existing webhook-retry duplication, not
+  introduced by this fix and not yet addressed) — all 6 processed successfully end-to-end (Chatwoot
+  private-note mirror + real Taty-generated reply posted back through Chatwoot's own API) after the
+  fix deployed, confirmed via direct DB queries (`whatsapp_inbound_events.processed_at`) and
+  Chatwoot's own Rails logs.
+- [x] **Third, unrelated operational risk found live while verifying the fix above**: while
+  confirming the 4 stuck messages drained, the bridge process itself repeatedly became fully
+  unresponsive for minutes at a time — including at least once *after* it had already been
+  confirmed healthy and had already processed a message correctly, ruling out "never finished
+  starting" as the explanation. Root-caused, not guessed: (1) Chatwoot's own `redis` container went
+  down for its Sidekiq worker for ~80 seconds (`chatwoot-worker` logs:
+  `RedisClient::ReadTimeoutError` repeatedly from 23:12:57 to 23:14:16 UTC, then `"Redis is online,
+  ~80s downtime"`), which cascades into Chatwoot's web process too — creating a message
+  synchronously computes an `ActionCable` broadcast payload (`Avatarable#avatar_url`) before
+  responding, so a slow Redis makes ordinary `POST .../messages` and `GET .../contacts/search`
+  calls hit Chatwoot's own 15-second `Rack::Timeout` and return a bare `500`; (2) separately, the
+  bridge's own uvicorn process hung outright (alive per `Get-Process`, but not accepting
+  connections, including the trivial `GET /` health route) multiple times, and the watchdog's
+  1-minute retry trigger (`whatsapp-durable-inbox`'s `run_bridge.ps1`) piled up **5+ simultaneous
+  zombie `uvicorn` processes** at once because its own health self-check
+  (`Test-NetConnection -Port 8090`) kept reporting "not running" under the same load rather than
+  actually catching up.
+  **Actual root cause of both**: this laptop was simultaneously running, at full tilt, **Antigravity
+  IDE, two separate Manus processes, a second Claude Code session, and Comet** (`Get-Process | sort
+  CPU -desc`: 22,275 / 10,792+6,549 / 8,829 / 7,895+4,232 CPU-seconds respectively) alongside the
+  Chatwoot Docker stack (Postgres + Redis + web + worker) and this bridge — genuine host-level CPU
+  starvation, not a bug in this change's code. Confirmed by elimination: a manually-launched,
+  isolated instance on a spare port (8091) started cleanly in ~8 seconds and correctly processed a
+  stuck message the very first time it was tried, with nothing else different about it.
+  **Not fixed in code — this is a capacity/scheduling problem on the shared local machine, not a
+  Python bug**, consistent with `ARCHITECTURE.md` decisions #1/#10's explicit trade-off (data
+  sovereignty over cloud reliability for anything touching Hermes-adjacent infrastructure). Flagged
+  for the Stage 7 runbook: running Manus (the campaign executor) at full load on the same machine as
+  the live Chatwoot/bridge stack measurably degrades WhatsApp reply latency, and during a Redis
+  outage window like this one, a real customer's message would sit unanswered until the next retry
+  cycle (5 minutes, `DEFAULT_CLAIM_TTL_SECONDS`) picked it back up. No code mitigation applied
+  tonight beyond process hygiene (killing accumulated zombies, leaving exactly one bridge instance
+  running); a durable fix (e.g. a Docker Desktop resource limit, or moving the health self-check off
+  a bare TCP connect) is out of scope for this change and not yet decided.
+- [x] **Fourth bug found live, in the founder's own next test**: after the fix above deployed, the
+  founder forwarded the campaign's own click-to-WhatsApp ad image (with its caption — the actual ad
+  copy, "¿Moviste más de $69.7 millones... 🚨 Entonces SÍ te toca declarar renta...") to test the
+  realistic scenario of a lead forwarding the ad itself. Reported live: "ya he enviaDO PERO NADA."
+  Root cause, found in `whatsapp_inbound_events`: the stored event had `body: ""` — WhatsApp images
+  carry the sender's typed text as `image.caption`, not a top-level `text` field, and
+  `normalize_whatsapp_webhook` (`apps/backend/channels/whatsapp.py`) only ever read `message.text.body`.
+  Taty received empty content and correctly-but-unhelpfully fell back to
+  `KB_FALLBACK_REPLY` ("No tengo información suficiente para responder con precisión.") — which
+  reads as no reply at all, and is exactly what a real lead will hit whenever they forward the ad
+  creative instead of typing their own question (an entirely normal thing to do, and a near-certain
+  occurrence once Manus's image-led campaign is live).
+  **Fixed** (`apps/backend/channels/whatsapp.py`, `tests/test_whatsapp_channel.py`, commit
+  `232c3c8`, pushed and deployed to Railway — new deployment `6b06ed76` → `SUCCESS`): when a message
+  has no top-level `text` but does carry `image`/`document` media, `normalize_whatsapp_webhook` now
+  falls back to that media's own `caption` as the event text. No-caption image/document behavior
+  (`text == ""`) is unchanged and still covered by the pre-existing tests. TDD: wrote
+  `test_image_message_with_caption_uses_caption_as_text` and
+  `test_document_message_with_caption_uses_caption_as_text` first (confirmed both failed against the
+  old code), then implemented the fix — 39/39 tests pass across
+  `test_whatsapp_channel.py`/`test_whatsapp_endpoints.py`.
+  **Verified live**: backfilled the founder's own stuck event's `body` from the caption already
+  present in its stored `raw_payload` and reset it for reprocessing (rather than asking the founder
+  to resend) — that specific retry then hit the same Chatwoot 500/timeout described in the finding
+  above and is still pending its own automatic retry, but a **separate, fully organic new message**
+  the founder sent immediately after ("Hola Taty! Acabo de hacer el diagnóstico y me salió VERDE...
+  ¿cuándo me toca declarar?") processed cleanly end-to-end with a correct, sensible, in-context reply
+  ("¡Con gusto te ayudo! Un asesor de Contexia va a validar tu caso y te va a escribir en un momento
+  para continuar.") — confirming the whole pipeline (Meta → Railway → bridge → Chatwoot → Taty →
+  Chatwoot → Meta) genuinely works end-to-end for real traffic post-fix, independent of the
+  synthetic backfill test.
+- [ ] 5.7 **Real-phone verification, retry (FOUNDER ACTION — the test that matters)**: backend-level
+  round-tripping is now proven (7/8 real/synthetic messages processed end-to-end across the two
+  findings above, including one fully organic real exchange with a correct contextual reply), but
+  nobody has yet confirmed it from the founder's own phone screen. Send another WhatsApp message from
+  a physical phone to **+57 310 6229289**. Confirm: (a) it appears in Chatwoot inbox `1` ("Taty
+  Contadora Amiga 24/7") as a private-note-mirrored message, not conversation 3 again; (b) Taty's
+  reply is conversational and arrives on the phone; (c) it arrives **exactly once**, not duplicated
+  (note the Meta double-delivery seen during verification above — this may not always hold); (d)
+  typing a reply directly in that Chatwoot conversation also reaches the phone (did NOT work before
+  this change — inbox `3` had no Meta credentials to deliver a human's reply; still genuinely
+  unconfirmed — nothing tonight exercised this specific path). **Known active conditions to expect
+  while testing**: (1) Gemini's free embedding quota was exhausted earlier today (confirmed live,
+  `429 ResourceExhausted`) — retrieval may silently degrade to the smaller, unsynced in-memory KB
+  (see design.md's "Second correction"), so a reply might occasionally read as more generic/less
+  grounded than expected until the quota resets or `OPENAI_API_KEY` is credited (tasks.md 2.3); (2)
+  per the finding above, reply latency (or a missed reply needing a retry) may be visibly worse if
+  Manus or another heavy local process is running at the same time — if a test message gets no
+  reply within a minute or two, check `docker stats` / Task Manager for contention before assuming
+  the code regressed.
 - [ ] 5.8 If 5.7 fails in a way that risks live customer traffic: revert by setting
   `CHATWOOT_WHATSAPP_INBOX_ID` back to `3` in `apps/chatwoot-bridge/.env` and — critically, per the
   bug just found — kill the actual bridge process by PID before restarting the scheduled task, not
