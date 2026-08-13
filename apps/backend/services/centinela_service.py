@@ -19,13 +19,16 @@ from typing import Dict, List, Optional
 import logging
 import json
 
+from core.constants import UVT_2026
 from core.supabase_client import get_service_supabase
 from core.tenant_context import require_tenant_id
 
 logger = logging.getLogger(__name__)
 
-# Constantes fiscales 2026 para Colombia
-UVT_2026 = 52.374
+# Constantes fiscales 2026 para Colombia (UVT_2026 importada de core.constants — antes había una
+# copia local `UVT_2026 = 52.374`, un float literal cuyo punto Python interpreta como decimal, no
+# como separador de miles: evaluaba a 52.374 en vez de 52374, dejando el umbral de Régimen Simple
+# ~1000x más bajo de lo real y disparando falsos positivos casi siempre. Ver core/constants.py.)
 REGIMEN_SIMPLE_LIMIT_UVT = 160
 REGIMEN_COMUN_MIN_RETENTION = 0.03  # 3%
 IVA_STANDARD_RATE = 0.19

@@ -17,6 +17,7 @@ import re
 
 from services.centinela_service import get_centinela_service
 from core.supabase_client import get_service_supabase
+from core.constants import UMBRAL_RENTA_COP, UMBRAL_PATRIMONIO_COP
 from agents.agent_6_analyst import AnalystAgent
 
 logger = logging.getLogger(__name__)
@@ -218,11 +219,14 @@ def run_renta_diagnostico(
     consumos_tarjeta: int,
     inversiones: int
 ) -> dict:
-    # 1. Evaluar topes DIAN (Art. 592 ET para año gravable)
-    TOPE_INGRESOS = 59376800  # Aprox 1400 UVT
-    TOPE_PATRIMONIO = 190854000 # Aprox 4500 UVT
-    TOPE_COMPRAS = 59376800
-    TOPE_CONSIGNACIONES = 59376800
+    # 1. Evaluar topes DIAN (Art. 592 ET para año gravable) — importados de core.constants
+    # (corregido 2026-08-12: los valores hardcodeados aquí antes no correspondían a ningún año
+    # de UVT real — 59.376.800 no es 1.400 UVT de ningún año conocido; el valor correcto,
+    # verificado contra Resolución DIAN 000193/2024, es $69.718.600).
+    TOPE_INGRESOS = UMBRAL_RENTA_COP
+    TOPE_PATRIMONIO = UMBRAL_PATRIMONIO_COP
+    TOPE_COMPRAS = UMBRAL_RENTA_COP
+    TOPE_CONSIGNACIONES = UMBRAL_RENTA_COP
 
     es_obligado = (
         ingresos_anuales >= TOPE_INGRESOS or
