@@ -56,16 +56,33 @@ For detailed standards and guidelines specific to different areas of the project
 - When a request matches a skill, load and follow the corresponding `SKILL.md` automatically before continuing.
 - Also load any referenced files in the skill folder (for example, `references/*.md`) when the skill requires them.
 
-## 5. Planning Model Requirement
+## 5. Model Policy (updated 2026-08-12 — supersedes the previous "Opus high only" rule)
 
-Planning workflows must run with Opus high reasoning.
+The old rule hard-required Opus high reasoning for planning and told agents to **self-correct**
+`.claude/settings.json` without asking. That rule (a) named a model id that no longer exists
+(`claude-opus-4-7`), and (b) caused agents to silently override the founder's deliberate model
+choice. Both are fixed below.
 
-This requirement applies to:
-- `enrich-us`
-- `openspec-ff-change`
-- `openspec-continue-change`
+**Tiered policy — match the model to the task, do not auto-switch:**
 
-Before starting any of these workflows, verify the session is using Opus high reasoning. If it is not, **self-correct** by adding `"model": "claude-opus-4-7"` to `.claude/settings.json` (use the `update-config` skill or edit directly), then continue — do not stop and ask the user. Do the same to come back to sonnet medium for any other step.
+| Tier | Model | Use for |
+|---|---|---|
+| **Deep planning** | Opus (high/xhigh reasoning) | Architecture decisions, new OpenSpec `propose`/`design` for multi-phase changes, security-sensitive design (auth, payments, RLS, multi-tenant), adversarial review |
+| **Standard work** | Sonnet (medium) | `opsx:apply` on an already-designed change, implementing a single task, writing tests, docs updates, refactors with a clear spec |
+| **Light/mechanical** | Fable or Haiku | Exploratory scoping and first-draft plans, renames, formatting, single-file mechanical edits, log/status checks, summarizing |
+
+**Rules:**
+1. **Never auto-edit `.claude/settings.json` to change the model.** If the current model looks
+   mismatched for the task, say so in one sentence and let the founder decide. The founder
+   routinely plans on a lighter model on purpose (cost/speed) and then escalates.
+2. A **lighter model is always allowed** for any task — including planning. If planning starts on
+   Fable/Haiku/Sonnet, proceed; just flag once if the task involves the security-sensitive
+   surfaces listed above (auth, payments, RLS, multi-tenant, secrets), where Opus is strongly
+   recommended before the design is finalized.
+3. **Escalate rather than restart**: a plan drafted on a light model can be reviewed/hardened on
+   Opus in the same or a follow-up thread. Do not discard light-model planning work.
+4. Model ids for reference: `claude-opus-5`, `claude-sonnet-5`, `claude-fable-5`,
+   `claude-haiku-4-5-20251001`. Use `/model` (or the app's model picker) — not a settings edit.
 
 ## 6. Symlink Integrity and Multi-Agent Portability
 
