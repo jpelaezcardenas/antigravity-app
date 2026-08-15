@@ -161,3 +161,52 @@ class TestRewriteHook:
             result = rewrite_hook(original, reason="robotic tone")
 
         assert result == original
+
+
+class TestRewriteHookShapeGuard:
+    """copywriter-rewrite-shape-guard: found live 2026-08-15 — _SYSTEM_PROMPT instructs the LLM
+    to respond as a JSON array (correct for generate_hooks, wrong for a single-hook rewrite), and
+    the LLM sometimes wraps its rewrite in a list. That must degrade to the original hook, not
+    crash evaluate_hooks() downstream (AttributeError: 'list' object has no attribute 'get')."""
+
+    def test_list_response_with_a_well_shaped_first_element_is_unwrapped(self):
+        original = {"headline": "H", "body": "B", "cta": "C", "pain_tag": "multa_dian"}
+        wrapped = [{"headline": "H2", "body": "B2", "cta": "C2", "pain_tag": "multa_dian"}]
+        with patch("services.copywriter_service._llm_rewrite_hook", return_value=wrapped):
+            result = rewrite_hook(original, reason="robotic tone")
+
+        assert result == wrapped[0]
+
+    def test_empty_list_response_falls_back_to_the_original_hook(self):
+        original = {"headline": "H", "body": "B", "cta": "C", "pain_tag": "multa_dian"}
+        with patch("services.copywriter_service._llm_rewrite_hook", return_value=[]):
+            result = rewrite_hook(original, reason="robotic tone")
+
+        assert result == original
+
+    def test_list_with_a_malformed_first_element_falls_back_to_the_original_hook(self):
+        original = {"headline": "H", "body": "B", "cta": "C", "pain_tag": "multa_dian"}
+        with patch(
+            "services.copywriter_service._llm_rewrite_hook",
+            return_value=[{"headline": "only headline"}],
+        ):
+            result = rewrite_hook(original, reason="robotic tone")
+
+        assert result == original
+
+    def test_dict_missing_required_keys_falls_back_to_the_original_hook(self):
+        """Matches the LLM engine's own JSON-parse-failure fallback shape."""
+        original = {"headline": "H", "body": "B", "cta": "C", "pain_tag": "multa_dian"}
+        malformed = {"raw_response": "...", "parsing_error": True, "status": "fallback"}
+        with patch("services.copywriter_service._llm_rewrite_hook", return_value=malformed):
+            result = rewrite_hook(original, reason="robotic tone")
+
+        assert result == original
+
+    def test_well_shaped_dict_is_unaffected_by_the_shape_guard(self):
+        original = {"headline": "H", "body": "B", "cta": "C", "pain_tag": "multa_dian"}
+        rewritten = {"headline": "H2", "body": "B2", "cta": "C2", "pain_tag": "multa_dian"}
+        with patch("services.copywriter_service._llm_rewrite_hook", return_value=rewritten):
+            result = rewrite_hook(original, reason="robotic tone")
+
+        assert result == rewritten

@@ -18,6 +18,15 @@ from services.kb_seeding_service import retrieve_similar
 
 logger = logging.getLogger(__name__)
 
+_REQUIRED_HOOK_KEYS = {"headline", "body", "cta"}
+
+
+def _well_shaped_hook(candidate: Any) -> Optional[Dict[str, Any]]:
+    """Returns `candidate` if it's a dict with headline/body/cta, else None."""
+    if isinstance(candidate, dict) and _REQUIRED_HOOK_KEYS <= set(candidate.keys()):
+        return candidate
+    return None
+
 _GENERIC_GROUNDING_QUERY = "declarar renta, multas DIAN, obligación tributaria"
 
 _SYSTEM_PROMPT = (
@@ -153,11 +162,17 @@ def generate_hooks(count: int = 5, report: Optional[Dict[str, Any]] = None) -> L
 
 def rewrite_hook(hook: Dict[str, Any], reason: str) -> Dict[str, Any]:
     """Rewrite a single rejected hook once, addressing `reason`. Falls back to returning the
-    original hook unchanged if the LLM engine is unavailable (never errors)."""
+    original hook unchanged if the LLM engine is unavailable OR returns a malformed shape (never
+    errors, never propagates a non-hook value downstream — copywriter-rewrite-shape-guard: found
+    live 2026-08-15, _SYSTEM_PROMPT's array-response instruction can make the LLM wrap a single
+    rewrite in a list, which used to crash evaluate_hooks() with AttributeError)."""
     try:
         rewritten = _llm_rewrite_hook(hook, reason)
-        if rewritten:
-            return rewritten
+        if isinstance(rewritten, list):
+            rewritten = rewritten[0] if rewritten else None
+        well_shaped = _well_shaped_hook(rewritten)
+        if well_shaped is not None:
+            return well_shaped
     except Exception as exc:
         logger.warning("copywriter_service: rewrite unavailable, keeping original hook: %s", exc)
 
