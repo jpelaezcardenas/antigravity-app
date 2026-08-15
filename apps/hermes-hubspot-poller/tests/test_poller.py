@@ -19,6 +19,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import chatwoot_client  # noqa: E402
 import hubspot_client  # noqa: E402
 import poller  # noqa: E402
 import supabase_client  # noqa: E402
@@ -84,6 +85,75 @@ class TestStageMapping:
 
     def test_unknown_stage_falls_back_to_nuevos_mapping(self):
         assert resolve_dealstage("SOMETHING_UNEXPECTED") == "appointmentscheduled"
+
+
+# --------------------------------------------------------------------------- chatwoot client
+
+
+class TestChatwootClient:
+    def test_find_contact_by_phone_without_config_makes_no_http_call(self, monkeypatch):
+        monkeypatch.setattr(settings, "CHATWOOT_URL", "")
+        monkeypatch.setattr(settings, "CHATWOOT_API_TOKEN", "")
+        with patch("chatwoot_client.httpx.get") as mock_get:
+            assert chatwoot_client.find_contact_by_phone("+573000000000") is None
+        mock_get.assert_not_called()
+
+    def test_find_contact_by_phone_returns_id_on_match(self, monkeypatch):
+        monkeypatch.setattr(settings, "CHATWOOT_URL", "http://localhost:3020")
+        monkeypatch.setattr(settings, "CHATWOOT_API_TOKEN", "cw-token")
+        from unittest.mock import MagicMock
+
+        response = MagicMock(status_code=200)
+        response.json.return_value = {"payload": [{"id": 42}]}
+        with patch("chatwoot_client.httpx.get", return_value=response) as mock_get:
+            result = chatwoot_client.find_contact_by_phone("+573000000000")
+        assert result == 42
+        assert mock_get.call_args.kwargs["params"]["q"] == "+573000000000"
+
+    def test_find_contact_by_phone_returns_none_on_no_match(self, monkeypatch):
+        monkeypatch.setattr(settings, "CHATWOOT_URL", "http://localhost:3020")
+        monkeypatch.setattr(settings, "CHATWOOT_API_TOKEN", "cw-token")
+        from unittest.mock import MagicMock
+
+        response = MagicMock(status_code=200)
+        response.json.return_value = {"payload": []}
+        with patch("chatwoot_client.httpx.get", return_value=response):
+            assert chatwoot_client.find_contact_by_phone("+573000000000") is None
+
+    def test_find_contact_by_phone_never_raises_on_network_error(self, monkeypatch):
+        monkeypatch.setattr(settings, "CHATWOOT_URL", "http://localhost:3020")
+        monkeypatch.setattr(settings, "CHATWOOT_API_TOKEN", "cw-token")
+        with patch("chatwoot_client.httpx.get", side_effect=Exception("boom")):
+            assert chatwoot_client.find_contact_by_phone("+573000000000") is None
+
+    def test_set_cross_reference_attributes_without_config_makes_no_http_call(self, monkeypatch):
+        monkeypatch.setattr(settings, "CHATWOOT_URL", "")
+        with patch("chatwoot_client.httpx.patch") as mock_patch:
+            assert chatwoot_client.set_cross_reference_attributes(42, "lead-1", "hs-1") is False
+        mock_patch.assert_not_called()
+
+    def test_set_cross_reference_attributes_patches_custom_attributes(self, monkeypatch):
+        monkeypatch.setattr(settings, "CHATWOOT_URL", "http://localhost:3020")
+        monkeypatch.setattr(settings, "CHATWOOT_API_TOKEN", "cw-token")
+        from unittest.mock import MagicMock
+
+        response = MagicMock(status_code=200)
+        with patch("chatwoot_client.httpx.patch", return_value=response) as mock_patch:
+            result = chatwoot_client.set_cross_reference_attributes(42, "lead-1", "hs-1")
+        assert result is True
+        url = mock_patch.call_args[0][0]
+        assert url.endswith("/contacts/42")
+        body = mock_patch.call_args.kwargs["json"]
+        assert body["custom_attributes"] == {
+            "supabase_customer_id": "lead-1",
+            "hubspot_contact_id": "hs-1",
+        }
+
+    def test_set_cross_reference_attributes_never_raises_on_network_error(self, monkeypatch):
+        monkeypatch.setattr(settings, "CHATWOOT_URL", "http://localhost:3020")
+        monkeypatch.setattr(settings, "CHATWOOT_API_TOKEN", "cw-token")
+        with patch("chatwoot_client.httpx.patch", side_effect=Exception("boom")):
+            assert chatwoot_client.set_cross_reference_attributes(42, "lead-1", "hs-1") is False
 
 
 # --------------------------------------------------------------------------- hubspot client
@@ -499,6 +569,58 @@ class TestRunTick:
             poller.run_tick()
 
         mock_has_open.assert_not_called()
+
+    def test_lead_sync_pushes_cross_reference_attributes_to_chatwoot(self, monkeypatch):
+        monkeypatch.setattr(settings, "HUBSPOT_ACCESS_TOKEN", "token-123")
+        monkeypatch.setattr(settings, "SUPABASE_URL", "https://x.supabase.co")
+        monkeypatch.setattr(settings, "SUPABASE_SERVICE_ROLE_KEY", "key-123")
+        with patch("supabase_client.list_leads", return_value=[_lead(lead_id="lead-1")]), patch(
+            "supabase_client.list_b2b_clients", return_value=[]
+        ), patch("supabase_client.get_latest_wompi_transaction", return_value=None), patch(
+            "hubspot_client.upsert_contact", return_value="hs-contact-1"
+        ), patch("hubspot_client.upsert_deal", return_value="hs-deal-1"), patch(
+            "supabase_client.mark_lead_synced", return_value=True
+        ), patch("chatwoot_client.find_contact_by_phone", return_value=42), patch(
+            "chatwoot_client.set_cross_reference_attributes", return_value=True
+        ) as mock_set:
+            poller.run_tick()
+
+        mock_set.assert_called_once_with(42, "lead-1", "hs-contact-1")
+
+    def test_lead_sync_skips_chatwoot_when_no_matching_contact(self, monkeypatch):
+        monkeypatch.setattr(settings, "HUBSPOT_ACCESS_TOKEN", "token-123")
+        monkeypatch.setattr(settings, "SUPABASE_URL", "https://x.supabase.co")
+        monkeypatch.setattr(settings, "SUPABASE_SERVICE_ROLE_KEY", "key-123")
+        with patch("supabase_client.list_leads", return_value=[_lead()]), patch(
+            "supabase_client.list_b2b_clients", return_value=[]
+        ), patch("supabase_client.get_latest_wompi_transaction", return_value=None), patch(
+            "hubspot_client.upsert_contact", return_value="hs-contact-1"
+        ), patch("hubspot_client.upsert_deal", return_value="hs-deal-1"), patch(
+            "supabase_client.mark_lead_synced", return_value=True
+        ), patch("chatwoot_client.find_contact_by_phone", return_value=None), patch(
+            "chatwoot_client.set_cross_reference_attributes"
+        ) as mock_set:
+            poller.run_tick()
+
+        mock_set.assert_not_called()
+
+    def test_chatwoot_failure_does_not_block_lead_sync(self, monkeypatch):
+        monkeypatch.setattr(settings, "HUBSPOT_ACCESS_TOKEN", "token-123")
+        monkeypatch.setattr(settings, "SUPABASE_URL", "https://x.supabase.co")
+        monkeypatch.setattr(settings, "SUPABASE_SERVICE_ROLE_KEY", "key-123")
+        with patch("supabase_client.list_leads", return_value=[_lead()]), patch(
+            "supabase_client.list_b2b_clients", return_value=[]
+        ), patch("supabase_client.get_latest_wompi_transaction", return_value=None), patch(
+            "hubspot_client.upsert_contact", return_value="hs-contact-1"
+        ), patch("hubspot_client.upsert_deal", return_value="hs-deal-1"), patch(
+            "supabase_client.mark_lead_synced", return_value=True
+        ) as mock_mark, patch(
+            "chatwoot_client.find_contact_by_phone", side_effect=Exception("boom")
+        ):
+            summary = poller.run_tick()
+
+        assert summary["leads_synced"] == 1
+        mock_mark.assert_called_once()
 
     def test_hubspot_failure_does_not_mark_lead_synced(self, monkeypatch):
         monkeypatch.setattr(settings, "HUBSPOT_ACCESS_TOKEN", "token-123")

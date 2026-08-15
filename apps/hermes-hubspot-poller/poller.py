@@ -15,6 +15,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict
 
+import chatwoot_client
 import hubspot_client
 import supabase_client
 from config import settings
@@ -74,6 +75,19 @@ def _sync_lead(lead: Dict[str, Any]) -> bool:
     # Task in HubSpot, gated on not already having one open (design.md Decision #3).
     if lead.get("stage") == "POR_APROBAR" and not hubspot_client.has_open_task(deal_id):
         hubspot_client.create_task(deal_id, f"Aprobar pago — {lead.get('full_name') or lead_id}")
+
+    # chatwoot-hubspot-supabase-cross-ids: best-effort — a Chatwoot blip must never block
+    # persisting the HubSpot sync itself (spec.md "Chatwoot failure does not block").
+    try:
+        phone = lead.get("whatsapp_phone")
+        if phone:
+            chatwoot_contact_id = chatwoot_client.find_contact_by_phone(phone)
+            if chatwoot_contact_id is not None:
+                chatwoot_client.set_cross_reference_attributes(
+                    chatwoot_contact_id, lead_id, contact_id
+                )
+    except Exception:
+        logger.exception("Chatwoot cross-reference push failed for lead %s (non-fatal)", lead_id)
 
     return supabase_client.mark_lead_synced(lead_id, contact_id, deal_id, _now_iso())
 

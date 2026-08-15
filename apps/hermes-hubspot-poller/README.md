@@ -12,9 +12,15 @@ Every tick also:
   an incomplete Task is already attached.
 - Self-heals a stale stored HubSpot id (e.g. after HubSpot's own contact dedup/merge) by
   creating a fresh object instead of failing the sync.
+- Pushes `supabase_customer_id`/`hubspot_contact_id` as custom attributes onto the matching
+  Chatwoot contact (found by phone, same local Chatwoot instance `apps/chatwoot-bridge/` uses)
+  — closes the identity triangle between Supabase, HubSpot, and Chatwoot. Best-effort: a
+  Chatwoot blip never blocks the HubSpot sync itself.
 
-See `openspec/changes/archive/2026-08-15-hubspot-sync-renta-natural/` (base sync) and
-`openspec/changes/hubspot-activity-value-sync/` (notes/value/tasks) for the full design.
+See `openspec/changes/archive/2026-08-15-hubspot-sync-renta-natural/` (base sync),
+`openspec/changes/hubspot-activity-value-sync/` (notes/value/tasks), and
+`openspec/changes/chatwoot-hubspot-supabase-cross-ids/` (Chatwoot identity linking) for the
+full design.
 
 ## Setup
 

@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     SUPABASE_URL: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
 
+    # --- Chatwoot (local instance, same credentials apps/chatwoot-bridge/ uses — see
+    # openspec/changes/chatwoot-hubspot-supabase-cross-ids/design.md) ---
+    CHATWOOT_URL: str = ""
+    CHATWOOT_API_TOKEN: str = ""
+    CHATWOOT_ACCOUNT_ID: str = "1"
+
     # --- Behavior ---
     MAX_RECORDS_PER_TICK: int = 50
     HTTP_TIMEOUT_SECONDS: float = 30.0
