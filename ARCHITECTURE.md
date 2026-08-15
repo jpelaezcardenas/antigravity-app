@@ -57,6 +57,7 @@ flowchart TB
 | **Datos** | Auth + Postgres + pgvector; tablas Shadow GL | Supabase (`kpynymwghfwshvcvevxq`) | Supabase cloud |
 | **Hermes** | Orquestador/scheduler de agentes + memoria aplicada | Nous Research native | **Local / WSL** (soberanía de datos) |
 | **GBrain** | Segundo cerebro: hybrid search (vector+keyword+expansión) + grafo de conocimiento auto-wired sobre `contexia-brain`; MCP server para Claude Code/Codex/Hermes | TypeScript/Bun (github.com/jpelaezcardenas/garrytan-gbrain), `gbrain-autopilot.service` (systemd) | **Local / WSL** (mismo host que Hermes) — proceso local, almacenamiento en esquema dedicado `gbrain` en el mismo proyecto Supabase (`kpynymwghfwshvcvevxq`) |
+| **Hermes-HubSpot poller** | Sync unidireccional Supabase → HubSpot (free tier): `crm_leads` → Contacts + Deals en el único pipeline gratis (funnel Renta Natural B2C); `b2b_clients` → Companies solo lectura, nunca Deals. Ver `openspec/changes/hubspot-sync-renta-natural/` | `apps/hermes-hubspot-poller/` (Python/httpx), scheduled task cada 5 min | **Local / laptop** (mismo host que Hermes) — el Private App Access Token de HubSpot y la service-role key de Supabase nunca llegan a Railway/Vercel |
 | **Chatwoot + bridge** | Inbox real de WhatsApp (Meta Cloud API) para Taty — inbox `1` ("Taty Contadora Amiga 24/7", `Channel::Whatsapp`; el inbox `3` es `Channel::Api`, solo pruebas/inyección, sin credenciales Meta). `apps/chatwoot-bridge/` (FastAPI) es una capa de transporte delgada: reenvía al backend (`POST /channels/whatsapp/leads/{id}/reply`, que enruta a `taty_lead_router` → `TatyAgentService` — un solo cerebro, el mismo que Telegram/PWA) y Chatwoot entrega la respuesta al cliente real (`deliver=false` en esa llamada evita el doble envío). Pausa HITL vía etiqueta `bot_off` | Chatwoot (Docker Compose, `docker-compose.chatwoot.yml`) + FastAPI/Python 3.11, corre como Scheduled Task de Windows (`ContexiaChatwootBridge`, watchdog de 1 min) | **Local / laptop** (mismo host que Hermes, soberanía de datos) — nunca Vercel/Railway. Docker Desktop instalado y corriendo desde `chatwoot-hermes-taty-bridge`; ver `taty-whatsapp-renta-sales-capability` para el cableado actual al cerebro compartido de Taty |
 
 **Fuente canónica vs artefacto de build:** `contexia-app/` es la fuente de la PWA; la carpeta `app/` (raíz) es un **artefacto generado** (`npm run build` → sync `out/` → `app/`). **Nunca editar `app/` a mano.** (Ver CLAUDE.md §9.)
@@ -146,6 +147,21 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
     inventa cifras fiscales y datos de contacto con total confianza — el system prompt ahora
     instruye explícitamente no inventar precio (las tarifas están sin definir, decisión pendiente
     del fundador) ni contacto. Ver `openspec/changes/taty-whatsapp-renta-sales-capability/`.
+
+20. **HubSpot es una capa comercial/reporting encima de Supabase, no un reemplazo del CRM** (`hubspot-sync-renta-natural`,
+    2026-08-15) — el free tier de HubSpot fue verificado en vivo (accountId 51867201, STANDARD, **exactamente 1
+    pipeline de deals**). Ese único pipeline se dedica 100% al funnel B2C Renta Natural
+    (`crm_leads.stage`: `NUEVOS`→`appointmentscheduled`, `PROSPECTOS`→`qualifiedtobuy`,
+    `POR_APROBAR`→`presentationscheduled`, `LISTOS_CONTADORA`→`decisionmakerboughtin`; un
+    `crm_wompi_transactions.status` `APPROVED`/`DECLINED` relacionado sobreescribe a
+    `closedwon`/`closedlost`). `b2b_clients` sincroniza solo a Companies — **nunca** a Deals, mismo
+    principio de soberanía de datos que Hermes/GBrain (Decisiones #1/#10): el poller corre 100%
+    local (`apps/hermes-hubspot-poller/`, scheduled task cada 5 min), nunca en Railway/Vercel, y
+    el Private App Access Token + la service-role key de Supabase solo viven en el `.env` local.
+    Sync estrictamente unidireccional (Supabase → HubSpot); el Búnker solo lee el estado de sync
+    (`last_synced_at` en `crm_leads`/`b2b_clients`, migraciones `0040`/`0041`) para un badge
+    "Sincronizado ✓" — sin ninguna acción de escritura hacia HubSpot desde la UI. Ver
+    `openspec/changes/hubspot-sync-renta-natural/`.
 
 ## Enlaces canónicos
 

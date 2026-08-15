@@ -8,6 +8,7 @@ import {
   type CrmLead,
   type CrmStage,
 } from "@/lib/crm-api";
+import { HubspotSyncBadge } from "./HubspotSyncBadge";
 
 const COLUMNS: { id: CrmStage; label: string }[] = [
   { id: "NUEVOS", label: "Nuevos" },
@@ -126,6 +127,11 @@ export function B2cKanbanTab() {
                     <span className="rounded-md border border-outline-variant/30 bg-white/5 px-2 py-0.5">
                       {lead.score}/100
                     </span>
+                    <HubspotSyncBadge
+                      objectType="deal"
+                      hubspotId={lead.hubspot_deal_id}
+                      lastSyncedAt={lead.last_synced_at}
+                    />
                   </div>
                   <div className="mt-3 grid grid-cols-1 gap-2">
                     {lead.stage === "POR_APROBAR" && (

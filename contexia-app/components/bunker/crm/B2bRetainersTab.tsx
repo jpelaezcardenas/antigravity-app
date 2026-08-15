@@ -13,6 +13,7 @@ import {
   type RetentionAlert,
 } from "@/lib/crm-api";
 import { formatCop } from "@/lib/format";
+import { HubspotSyncBadge } from "./HubspotSyncBadge";
 
 const MONTH_LABELS: Record<string, string> = {
   "01": "Ene",
@@ -299,6 +300,7 @@ export function B2bRetainersTab() {
                 <th className="px-4 py-3 font-semibold">Contacto</th>
                 <th className="px-4 py-3 font-semibold">Login</th>
                 <th className="px-4 py-3 font-semibold">Estado</th>
+                <th className="px-4 py-3 font-semibold">HubSpot</th>
                 {grid.periods.map((period) => (
                   <th key={period} className="px-4 py-3 text-right font-semibold">
                     {periodLabel(period)}
@@ -342,6 +344,13 @@ export function B2bRetainersTab() {
                       >
                         {client.status}
                       </button>
+                    </td>
+                    <td className="px-4 py-3">
+                      <HubspotSyncBadge
+                        objectType="company"
+                        hubspotId={full?.hubspot_company_id}
+                        lastSyncedAt={full?.last_synced_at}
+                      />
                     </td>
                     {grid.periods.map((period) => {
                       const amount = grid.cells[client.id]?.[period] ?? 0;

@@ -17,6 +17,8 @@ export interface B2bClient {
   phone?: string | null;
   contact_name?: string | null;
   provision_status?: "not_provisioned" | "provisioned" | "pending_email";
+  hubspot_company_id?: string | null;
+  last_synced_at?: string | null;
 }
 
 export interface B2bClientsResponse {
@@ -161,6 +163,9 @@ export interface CrmLead {
   stage: CrmStage;
   score: number;
   last_message?: string | null;
+  hubspot_contact_id?: string | null;
+  hubspot_deal_id?: string | null;
+  last_synced_at?: string | null;
 }
 
 export interface CrmPipelineColumn {

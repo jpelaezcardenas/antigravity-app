@@ -116,7 +116,7 @@ class CrmService:
                     client.table("b2b_clients")
                     .select(
                         "id, name, status, monthly_fee_cents, email, phone, "
-                        "contact_name, provision_status"
+                        "contact_name, provision_status, hubspot_company_id, last_synced_at"
                     )
                     .eq("tenant_id", tenant_id)
                     .order("name")
@@ -141,7 +141,10 @@ class CrmService:
                 tenant_id = self._resolve_cliente_cero_tenant_id(client)
                 clients_result = (
                     client.table("b2b_clients")
-                    .select("id, name, status, email, phone, contact_name, provision_status")
+                    .select(
+                        "id, name, status, email, phone, contact_name, provision_status, "
+                        "hubspot_company_id, last_synced_at"
+                    )
                     .eq("tenant_id", tenant_id)
                     .order("name")
                     .execute()
@@ -360,7 +363,10 @@ class CrmService:
                 tenant_id = self._resolve_cliente_cero_tenant_id(client)
                 result = (
                     client.table("crm_leads")
-                    .select("id, full_name, whatsapp_phone, stage, score, last_message")
+                    .select(
+                        "id, full_name, whatsapp_phone, stage, score, last_message, "
+                        "hubspot_contact_id, hubspot_deal_id, last_synced_at"
+                    )
                     .eq("tenant_id", tenant_id)
                     .order("score", desc=True)
                     .execute()
