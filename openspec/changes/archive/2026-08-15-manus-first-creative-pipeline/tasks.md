@@ -68,20 +68,16 @@ Project-specific details:
 - Deploy branch: `main`
 - Backend URL: https://antigravity-app-production-175a.up.railway.app
 
-- [ ] 8.1 Commit + merge `feature/manus-first-creative-pipeline` into `main` + push
-- [ ] 8.2 Railway deploy active (backend-only change) — confirm `SUCCESS` via Railway MCP
-- [ ] 8.3 Verify in production: this change adds no new endpoint, so live verification is via
-      Supabase MCP — confirm the deployed `get_latest_manus_draft()` code path is reachable (no
-      import/startup errors, same evidence pattern as `brand-voice-canonization`'s deployment
-      report: a clean response from an existing sell-machine endpoint, plus Railway logs showing
-      no crash) — a full functional test requires a real `research` task result, which is a
-      founder-driven action (creating a Manus research task) out of scope for this change to
-      simulate
-- [ ] 8.4 Create deployment report:
-      `openspec/changes/manus-first-creative-pipeline/reports/YYYY-MM-DD-deployment.md`
+- [x] 8.1 Committed (`189c183`) + fast-forward merged into `main` + pushed (`5de7789..189c183`)
+- [x] 8.2 Railway deploy `b66c0081-490a-4ba0-8433-82704b103310` confirmed `SUCCESS` via Railway MCP
+- [x] 8.3 Verified: `GET /sell-machine/tasks/pending` (imports the modified module) returns clean
+      200s post-deploy, Manus↔poller loop unaffected. Full functional exercise of a real Manus
+      `research` result awaits a founder-run Manus task — see `reports/2026-08-15-deployment.md`
+- [x] 8.4 Deployment report created:
+      `openspec/changes/manus-first-creative-pipeline/reports/2026-08-15-deployment.md`
 
 ## 9. Archive
 
-- [ ] 9.1 Run `openspec-sync-specs` to merge the delta spec into
+- [x] 9.1 Ran `openspec-sync-specs`: merged the 2 ADDED requirements into
       `openspec/specs/sell-machine-creative-swarm/spec.md`
-- [ ] 9.2 Archive this change once Stage 11 is verified and all tasks above are checked
+- [x] 9.2 Archiving this change now that Stage 11 is verified and all tasks above are checked
