@@ -14,6 +14,7 @@ import pytest
 
 from services.sell_machine_service import (
     create_campaign_package,
+    get_latest_manus_draft,
     list_campaigns,
     run_creative_loop,
 )
@@ -108,6 +109,100 @@ class TestRunCreativeLoop:
         mock_report.assert_called_once()
         _, kwargs = mock_generate.call_args
         assert kwargs.get("report") == fake_report
+
+
+class TestRunCreativeLoopWithManusDraft:
+    """manus-first-creative-pipeline: an optional Manus draft skips generation entirely."""
+
+    def test_manus_draft_skips_generation_and_is_evaluated_directly(self):
+        draft = [_hook(1), _hook(2)]
+        with patch("services.sell_machine_service.generate_hooks") as mock_generate, patch(
+            "services.sell_machine_service.evaluate_hook", return_value={"approved": True, "reason": "ok"}
+        ):
+            survivors = run_creative_loop(manus_draft_hooks=draft)
+
+        mock_generate.assert_not_called()
+        assert len(survivors) == 2
+
+    def test_manus_draft_hooks_still_go_through_evaluation_and_rewrite(self):
+        draft = [_hook(1)]
+        rewritten = {"headline": "H1-rewritten", "body": "B1", "cta": "C", "pain_tag": "multa_dian"}
+
+        def fake_evaluate(hook):
+            if hook.get("headline") == "H1-rewritten":
+                return {"approved": True, "reason": "fixed"}
+            return {"approved": False, "reason": "robotic tone"}
+
+        with patch("services.sell_machine_service.generate_hooks") as mock_generate, patch(
+            "services.sell_machine_service.evaluate_hook", side_effect=fake_evaluate
+        ), patch("services.sell_machine_service.rewrite_hook", return_value=rewritten) as mock_rewrite:
+            survivors = run_creative_loop(manus_draft_hooks=draft)
+
+        mock_generate.assert_not_called()
+        mock_rewrite.assert_called_once()
+        assert survivors[0]["headline"] == "H1-rewritten"
+
+    def test_omitting_manus_draft_preserves_generation_behavior(self):
+        hooks = [_hook(1)]
+        with patch(
+            "services.sell_machine_service.generate_hooks", return_value=hooks
+        ) as mock_generate, patch(
+            "services.sell_machine_service.evaluate_hook", return_value={"approved": True, "reason": "ok"}
+        ):
+            survivors = run_creative_loop(count=1)
+
+        mock_generate.assert_called_once()
+        assert len(survivors) == 1
+
+
+class TestGetLatestManusDraft:
+    """manus-first-creative-pipeline: reads the latest completed Manus `research` task as a
+    creative draft, failing closed to None rather than guessing at a malformed shape."""
+
+    def test_returns_none_when_no_completed_research_tasks(self):
+        with patch(
+            "services.sell_machine_service.list_completed_tasks", return_value=[]
+        ):
+            assert get_latest_manus_draft() is None
+
+    def test_returns_hooks_from_the_most_recent_well_shaped_result(self):
+        tasks = [
+            {
+                "created_at": "2026-08-14T10:00:00Z",
+                "result": {"hooks": [{"headline": "old", "body": "b", "cta": "c"}]},
+            },
+            {
+                "created_at": "2026-08-15T10:00:00Z",
+                "result": {"hooks": [{"headline": "new", "body": "b2", "cta": "c2"}]},
+            },
+        ]
+        with patch(
+            "services.sell_machine_service.list_completed_tasks", return_value=tasks
+        ):
+            draft = get_latest_manus_draft()
+
+        assert draft == [{"headline": "new", "body": "b2", "cta": "c2"}]
+
+    def test_returns_none_when_latest_result_has_no_hooks_key(self):
+        tasks = [{"created_at": "2026-08-15T10:00:00Z", "result": {"summary": "unrelated research"}}]
+        with patch(
+            "services.sell_machine_service.list_completed_tasks", return_value=tasks
+        ):
+            assert get_latest_manus_draft() is None
+
+    def test_returns_none_when_hooks_is_not_a_list_of_dicts(self):
+        tasks = [{"created_at": "2026-08-15T10:00:00Z", "result": {"hooks": "not a list"}}]
+        with patch(
+            "services.sell_machine_service.list_completed_tasks", return_value=tasks
+        ):
+            assert get_latest_manus_draft() is None
+
+    def test_returns_none_when_hook_items_are_missing_required_keys(self):
+        tasks = [{"created_at": "2026-08-15T10:00:00Z", "result": {"hooks": [{"headline": "only headline"}]}}]
+        with patch(
+            "services.sell_machine_service.list_completed_tasks", return_value=tasks
+        ):
+            assert get_latest_manus_draft() is None
 
 
 class TestCreateCampaignPackage:

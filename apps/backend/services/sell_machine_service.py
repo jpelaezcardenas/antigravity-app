@@ -23,6 +23,8 @@ from services.copywriter_service import generate_hooks, rewrite_hook
 from services.crm_service import get_funnel_snapshot
 from services.operator_task_service import list_completed_tasks
 
+_REQUIRED_HOOK_KEYS = {"headline", "body", "cta"}
+
 logger = logging.getLogger(__name__)
 
 
@@ -78,14 +80,44 @@ def get_telemetry_report() -> Dict[str, Any]:
     }
 
 
+def get_latest_manus_draft() -> Optional[List[Dict[str, Any]]]:
+    """Reads the most recently completed Manus `research` operator task and extracts a hook list
+    from its result (manus-first-creative-pipeline, Change: Ola 2). Fails closed to `None` — never
+    raises — if no such task exists or its result doesn't contain a recognizable hook list, so a
+    malformed/missing Manus draft degrades to generation-from-scratch rather than erroring."""
+    tasks = list_completed_tasks(task_type="research")
+    if not tasks:
+        return None
+
+    latest = max(tasks, key=lambda t: t.get("created_at") or "")
+    hooks = (latest.get("result") or {}).get("hooks")
+    if not isinstance(hooks, list) or not hooks:
+        return None
+    if not all(isinstance(h, dict) and _REQUIRED_HOOK_KEYS <= set(h.keys()) for h in hooks):
+        return None
+
+    return hooks
+
+
 def run_creative_loop(
-    count: int = 5, target_segment: Optional[str] = None, use_telemetry: bool = False
+    count: int = 5,
+    target_segment: Optional[str] = None,
+    use_telemetry: bool = False,
+    manus_draft_hooks: Optional[List[Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
-    """Generate `count` hooks and evaluate them, returning only the survivors.
+    """Generate (or accept) hooks and evaluate them, returning only the survivors.
 
     `use_telemetry` (sell-machine-telemetry-loop, Change G) opts into fetching the telemetry
     report and passing it to the Copywriter as prior-performance context. Defaults to False, so
-    existing callers see no behavior change."""
+    existing callers see no behavior change.
+
+    `manus_draft_hooks` (manus-first-creative-pipeline, Change: Ola 2) lets a Manus-produced draft
+    skip generation entirely and go straight into the same evaluate/rewrite/survivor pipeline —
+    Manus produces, the Copywriter/Content Critic refine and gate (HANDOFF-RENTA-NATURAL-2026.md
+    §7). Omitting it leaves every existing caller's behavior unchanged."""
+    if manus_draft_hooks is not None:
+        return evaluate_hooks(manus_draft_hooks)
+
     report = get_telemetry_report() if use_telemetry else None
     hooks = generate_hooks(count=count, report=report)
     return evaluate_hooks(hooks)
