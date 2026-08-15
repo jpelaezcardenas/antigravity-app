@@ -28,11 +28,11 @@
 ## 5. Stage 11 — Deploy to Production (MANDATORY)
 
 Tasks:
-- [ ] 5.1 git commit + push to main (backend code change; no schema migration)
-- [ ] 5.2 Verify Railway backend redeploys successfully
-- [ ] 5.3 Create report: `openspec/changes/fix-whatsapp-phone-normalization-dedup/reports/YYYY-MM-DD-deployment.md`
+- [x] 5.1 git commit + push to main (backend code change; no schema migration) — commit `ab75327`
+- [x] 5.2 Verify Railway backend redeploys successfully — deployment `2526c8b7-f51c-477a-9b33-7b276a99f5d3`, status `SUCCESS`
+- [x] 5.3 Create report: `openspec/changes/fix-whatsapp-phone-normalization-dedup/reports/2026-08-15-deployment.md`
 
 ## 6. Archive
 
-- [ ] 6.1 Confirm all tasks above checked and Stage 11 report exists
-- [ ] 6.2 Run `openspec archive` to close and archive this change
+- [x] 6.1 Confirm all tasks above checked and Stage 11 report exists
+- [x] 6.2 Run `openspec archive` to close and archive this change
