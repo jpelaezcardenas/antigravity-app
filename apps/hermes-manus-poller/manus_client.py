@@ -11,6 +11,11 @@ hermes-manus-execution-bridge (archived 2026-07-19):
   Poll      GET  /v2/task.detail?task_id=<id>
             -> {"ok": true, "task": {"id", "status", "credit_usage", "task_url", ...}}
   Status    running | stopped | waiting | error
+  Messages  GET  /v2/task.listMessages?task_id=<id>  (manus-content-retrieval, confirmed 2026-08-15
+            from https://open.manus.ai/docs/v2/task.listMessages.md — task.detail alone never
+            carries what Manus actually produced, only status metadata)
+            -> {"ok": true, "task_id", "messages": [{"type", "assistant_message": {"content"},
+               "structured_output_result": {"success", "value", "error"}, ...}], "has_more"}
 
 Fail-soft: no function raises on network/HTTP/`ok:false` failure. They return None (create) or
 None-status (get) and log, so one bad tick never crashes the scheduled run — the operator task is
@@ -21,7 +26,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 
@@ -133,4 +138,34 @@ def get_task(task_id: str) -> Optional[ManusTask]:
         )
     except Exception as exc:  # fail soft
         logger.error("Manus task.detail failed: %s", exc)
+        return None
+
+
+def list_messages(task_id: str) -> Optional[List[Dict[str, Any]]]:
+    """Fetch a terminal task's message history (manus-content-retrieval), including any
+    structured/free-text output Manus actually produced — task.detail alone never carries this.
+    Fail-soft: returns None on any failure, same contract as get_task()/create_task()."""
+    if not is_configured():
+        logger.error("MANUS_API_KEY is not set — refusing to call Manus.")
+        return None
+
+    try:
+        response = httpx.get(
+            f"{settings.MANUS_API_BASE_URL}/v2/task.listMessages",
+            headers=_headers(),
+            params={"task_id": task_id},
+            timeout=settings.HTTP_TIMEOUT_SECONDS,
+        )
+        if response.status_code != 200:
+            logger.error(
+                "Manus task.listMessages HTTP %s: %s", response.status_code, response.text[:500]
+            )
+            return None
+        body = response.json()
+        if not body.get("ok"):
+            logger.error("Manus task.listMessages returned not-ok: %s", str(body)[:500])
+            return None
+        return body.get("messages") or []
+    except Exception as exc:  # fail soft
+        logger.error("Manus task.listMessages failed: %s", exc)
         return None

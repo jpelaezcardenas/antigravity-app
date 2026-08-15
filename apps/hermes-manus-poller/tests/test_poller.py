@@ -83,6 +83,19 @@ class TestPrompts:
         prompt = build_manus_prompt(_task(payload={"creative_brief": "UNIQUE-MARKER-123"}))
         assert "UNIQUE-MARKER-123" in prompt
 
+    def test_creative_brief_research_task_requests_structured_hooks_output(self):
+        prompt = build_manus_prompt(
+            _task(task_type="research", payload={"creative_brief": "Renta Natural freelancers"})
+        )
+        assert '"hooks"' in prompt
+        assert "headline" in prompt and "body" in prompt and "cta" in prompt
+
+    def test_non_creative_research_task_prompt_is_unaffected(self):
+        prompt = build_manus_prompt(
+            _task(task_type="research", payload={"question": "UVT 2026 vigente?"})
+        )
+        assert '"hooks"' not in prompt
+
     def test_title_is_short_and_identifies_the_task(self):
         title = build_manus_title(_task(task_id="abcdef1234567890", task_type="research"))
         assert "research" in title
@@ -150,6 +163,48 @@ class TestManusClient:
             assert task.is_terminal is is_terminal
             if backend_status:
                 assert task.backend_status == backend_status
+
+    def test_list_messages_without_key_makes_no_http_call(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "")
+        with patch("manus_client.httpx.get") as mock_get:
+            assert manus_client.list_messages("m-1") is None
+        mock_get.assert_not_called()
+
+    def test_list_messages_returns_the_message_list_on_success(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        response = MagicMock(status_code=200)
+        response.json.return_value = {
+            "ok": True,
+            "task_id": "m-1",
+            "messages": [{"type": "assistant_message", "assistant_message": {"content": "hi"}}],
+            "has_more": False,
+        }
+        with patch("manus_client.httpx.get", return_value=response) as mock_get:
+            messages = manus_client.list_messages("m-1")
+
+        assert messages == [{"type": "assistant_message", "assistant_message": {"content": "hi"}}]
+        url = mock_get.call_args[0][0]
+        assert url.endswith("/v2/task.listMessages")
+        assert mock_get.call_args.kwargs["params"]["task_id"] == "m-1"
+
+    def test_list_messages_returns_none_on_non_200(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        with patch(
+            "manus_client.httpx.get", return_value=MagicMock(status_code=500, text="err")
+        ):
+            assert manus_client.list_messages("m-1") is None
+
+    def test_list_messages_returns_none_on_not_ok_body(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        response = MagicMock(status_code=200)
+        response.json.return_value = {"ok": False}
+        with patch("manus_client.httpx.get", return_value=response):
+            assert manus_client.list_messages("m-1") is None
+
+    def test_list_messages_never_raises_on_network_error(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        with patch("manus_client.httpx.get", side_effect=Exception("boom")):
+            assert manus_client.list_messages("m-1") is None
 
 
 # --------------------------------------------------------------------------- backend client
@@ -239,8 +294,10 @@ class TestRunTick:
             task_id="m-1", status="stopped", task_url="https://manus/x", credit_usage=12
         )
         with patch("manus_client.get_task", return_value=finished), patch(
-            "backend_client.report_result", return_value=True
-        ) as mock_report, patch("backend_client.list_pending", return_value=[]):
+            "manus_client.list_messages", return_value=None
+        ), patch("backend_client.report_result", return_value=True) as mock_report, patch(
+            "backend_client.list_pending", return_value=[]
+        ):
             summary = poller.run_tick()
 
         assert summary["resolved"] == 1
@@ -248,13 +305,98 @@ class TestRunTick:
         assert mock_report.call_args[0][2]["credit_usage"] == 12
         assert state.get_manus_task_id("t-1") is None
 
+    def test_structured_hooks_result_is_included_in_the_reported_result(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        state.remember("t-1", "m-1")
+        finished = manus_client.ManusTask(task_id="m-1", status="stopped")
+        hooks = [{"headline": "H1", "body": "B1", "cta": "C1", "pain_tag": "multa_dian"}]
+        messages = [
+            {
+                "type": "structured_output_result",
+                "structured_output_result": {"success": True, "value": {"hooks": hooks}, "error": None},
+            }
+        ]
+        with patch("manus_client.get_task", return_value=finished), patch(
+            "manus_client.list_messages", return_value=messages
+        ), patch("backend_client.report_result", return_value=True) as mock_report, patch(
+            "backend_client.list_pending", return_value=[]
+        ):
+            poller.run_tick()
+
+        reported_result = mock_report.call_args[0][2]
+        assert reported_result["hooks"] == hooks
+        assert "manus_message" not in reported_result
+
+    def test_last_successful_structured_output_wins_over_an_earlier_failed_one(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        state.remember("t-1", "m-1")
+        finished = manus_client.ManusTask(task_id="m-1", status="stopped")
+        good_hooks = [{"headline": "Good", "body": "B", "cta": "C", "pain_tag": "multa_dian"}]
+        messages = [
+            {
+                "type": "structured_output_result",
+                "structured_output_result": {"success": False, "value": None, "error": "retry"},
+            },
+            {
+                "type": "structured_output_result",
+                "structured_output_result": {"success": True, "value": {"hooks": good_hooks}, "error": None},
+            },
+        ]
+        with patch("manus_client.get_task", return_value=finished), patch(
+            "manus_client.list_messages", return_value=messages
+        ), patch("backend_client.report_result", return_value=True) as mock_report, patch(
+            "backend_client.list_pending", return_value=[]
+        ):
+            poller.run_tick()
+
+        assert mock_report.call_args[0][2]["hooks"] == good_hooks
+
+    def test_unstructured_output_is_surfaced_as_manus_message_not_hooks(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        state.remember("t-1", "m-1")
+        finished = manus_client.ManusTask(task_id="m-1", status="stopped")
+        messages = [
+            {"type": "assistant_message", "assistant_message": {"content": "Investigué la normativa DIAN..."}},
+        ]
+        with patch("manus_client.get_task", return_value=finished), patch(
+            "manus_client.list_messages", return_value=messages
+        ), patch("backend_client.report_result", return_value=True) as mock_report, patch(
+            "backend_client.list_pending", return_value=[]
+        ):
+            poller.run_tick()
+
+        reported_result = mock_report.call_args[0][2]
+        assert "hooks" not in reported_result
+        assert "Investigué la normativa DIAN" in reported_result["manus_message"]
+
+    def test_list_messages_failure_does_not_affect_the_reported_result(self, monkeypatch):
+        """manus_client.list_messages() returning None (its fail-soft contract) must not crash
+        the tick or block reporting the base result — same as before this change existed."""
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        state.remember("t-1", "m-1")
+        finished = manus_client.ManusTask(task_id="m-1", status="stopped", credit_usage=5)
+        with patch("manus_client.get_task", return_value=finished), patch(
+            "manus_client.list_messages", return_value=None
+        ), patch("backend_client.report_result", return_value=True) as mock_report, patch(
+            "backend_client.list_pending", return_value=[]
+        ):
+            summary = poller.run_tick()
+
+        assert summary["resolved"] == 1
+        reported_result = mock_report.call_args[0][2]
+        assert "hooks" not in reported_result
+        assert "manus_message" not in reported_result
+        assert reported_result["credit_usage"] == 5
+
     def test_error_status_maps_to_failed(self, monkeypatch):
         monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
         state.remember("t-1", "m-1")
         errored = manus_client.ManusTask(task_id="m-1", status="error")
         with patch("manus_client.get_task", return_value=errored), patch(
-            "backend_client.report_result", return_value=True
-        ) as mock_report, patch("backend_client.list_pending", return_value=[]):
+            "manus_client.list_messages", return_value=None
+        ), patch("backend_client.report_result", return_value=True) as mock_report, patch(
+            "backend_client.list_pending", return_value=[]
+        ):
             poller.run_tick()
 
         assert mock_report.call_args[0][1] == "failed"

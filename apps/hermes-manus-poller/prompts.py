@@ -69,6 +69,19 @@ def build_manus_prompt(task: Dict[str, Any]) -> str:
             "configurado, y métricas iniciales si están disponibles."
         )
 
+    if task_type == "research" and "creative_brief" in payload:
+        return (
+            f"{_NO_INVENTION_BANNER}\n\n"
+            "Tarea de investigación creativa para Contexia (manus-first-creative-pipeline): "
+            "investiga tendencias, dolores reales y contexto normativo DIAN vigente relevantes al "
+            f"siguiente brief, y produce ganchos de marketing.\n\nBrief:\n{body}\n\n"
+            "IMPORTANTE: entrega tu resultado final como salida estructurada (structured output) "
+            "en este formato JSON exacto, sin texto adicional fuera del JSON:\n"
+            '{"hooks": [{"headline": "...", "body": "...", "cta": "...", "pain_tag": "..."}]}\n'
+            "Cada hook debe tener headline, body, cta y pain_tag. No inventes cifras fiscales ni "
+            "de contacto — si no encuentras un dato con fuente confiable, omítelo del hook."
+        )
+
     if task_type == "research":
         return (
             f"{_NO_INVENTION_BANNER}\n\n"

@@ -24,6 +24,43 @@ from prompts import build_manus_prompt, build_manus_title
 
 logger = logging.getLogger(__name__)
 
+_REQUIRED_HOOK_KEYS = {"headline", "body", "cta"}
+
+
+def _extract_manus_output(task_id: str) -> Dict[str, Any]:
+    """Retrieves a terminal task's actual output via list_messages (manus-content-retrieval) and
+    extracts it into the shape the backend result payload expects. Returns {} if list_messages
+    fails or no usable content is found — the caller merges this into the base result dict, so an
+    empty extraction never removes the existing status metadata fields."""
+    messages = manus_client.list_messages(task_id)
+    if not messages:
+        return {}
+
+    last_structured_hooks = None
+    for message in messages:
+        structured = message.get("structured_output_result")
+        if not structured or not structured.get("success"):
+            continue
+        value = structured.get("value")
+        hooks = (value or {}).get("hooks") if isinstance(value, dict) else None
+        if isinstance(hooks, list) and hooks and all(
+            isinstance(h, dict) and _REQUIRED_HOOK_KEYS <= set(h.keys()) for h in hooks
+        ):
+            last_structured_hooks = hooks
+
+    if last_structured_hooks is not None:
+        return {"hooks": last_structured_hooks}
+
+    assistant_texts = [
+        m["assistant_message"]["content"]
+        for m in messages
+        if m.get("type") == "assistant_message" and m.get("assistant_message", {}).get("content")
+    ]
+    if assistant_texts:
+        return {"manus_message": "\n\n".join(assistant_texts)}
+
+    return {}
+
 
 def _resolve_dispatched() -> int:
     """Poll Manus for every task this node dispatched; report the terminal ones. Returns how many
@@ -50,6 +87,7 @@ def _resolve_dispatched() -> int:
             "task_url": manus_task.task_url,
             "credit_usage": manus_task.credit_usage,
         }
+        result.update(_extract_manus_output(manus_task.task_id))
 
         if settings.DRY_RUN:
             logger.info(
