@@ -18,9 +18,15 @@ structured output SHALL NOT produce a `hooks` key — only a genuinely well-shap
   `success: true` and a `value` containing a well-shaped `hooks` list
 - **THEN** the reported result includes that `hooks` list verbatim
 
+#### Scenario: A fenced JSON block in free text is recognized as a fallback structured source
+- **WHEN** a terminal Manus task has no successful `structured_output_result`, but its
+  `assistant_message` text contains a fenced ` ```json ... ``` ` block that parses to a dict with
+  a well-shaped `hooks` list
+- **THEN** the reported result includes that `hooks` list, extracted from the fenced block
+
 #### Scenario: Unstructured output is surfaced for human review, not promoted to hooks
-- **WHEN** a terminal Manus task's message history contains only `assistant_message` text, no
-  successful `structured_output_result`
+- **WHEN** a terminal Manus task's message history contains only `assistant_message` text, with no
+  successful `structured_output_result` and no parseable fenced-JSON `hooks` block
 - **THEN** the reported result includes that text under `manus_message`, and does NOT include a
   `hooks` key
 

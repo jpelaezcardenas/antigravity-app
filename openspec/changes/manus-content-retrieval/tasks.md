@@ -70,6 +70,23 @@
 - [x] 10.2 Grepped `AGENTES.md`/`ARCHITECTURE.md` for poller result-shape references — none found,
       nothing to update
 
+## 10.5. Poller: Fenced-JSON Fallback (found live, 2026-08-15 — added per CLAUDE.md §7)
+
+A real creative-brief `research` task (operator_task `17ee4d8b…`) confirmed Manus writes JSON as a
+fenced ` ```json ` block inside free-text `assistant_message`, not via the API's native
+`structured_output_result`. See design.md's updated Risks section for the full finding.
+
+- [x] 10.5.1 Added a failing test using the *real* captured `manus_message` text from
+      `17ee4d8b…` as a fixture: `_extract_manus_output()` should parse the fenced JSON block and
+      return `{"hooks": [...]}` matching the 3 real hooks Manus produced
+- [x] 10.5.2 Added failing tests for the edge cases: no fenced block → falls through to
+      `manus_message` as before; a fenced block that isn't valid JSON → falls through, doesn't
+      crash; a fenced block that parses but has no well-shaped `hooks` → falls through
+- [x] 10.5.3 Confirmed failure before implementing
+- [x] 10.5.4 Implemented the fenced-JSON parsing tier in `_extract_manus_output()`, between the
+      `structured_output_result` check and the `manus_message` fallback
+- [x] 10.5.5 Confirmed all new + existing poller tests pass
+
 ## 11. Deploy (Local Service — Stage 11 Adapted)
 
 This service runs on the founder's local Windows machine (Scheduled Task
@@ -77,17 +94,19 @@ This service runs on the founder's local Windows machine (Scheduled Task
 build/deploy pipeline to trigger — "production" for this service means the founder's local
 checkout is current.
 
-- [ ] 11.1 Commit + merge `feature/manus-content-retrieval` into `main` + push
-- [ ] 11.2 **Founder action required (documented here, not performed by the agent):** run
-      `git pull` in the local `antigravity-app` checkout on the machine running the Scheduled
-      Task. No restart needed — each tick invokes `python main.py` fresh, so the next scheduled
-      tick (within 1 minute) picks up the new code automatically.
-- [ ] 11.3 Verification is deferred to the live end-to-end test already in progress this session
-      (a real `research` task with a `creative_brief` payload, dispatched through the now-updated
-      poller) — not a separate synthetic check here, since that live test is the actual
-      verification this change exists to enable.
-- [ ] 11.4 Create a short report noting the commit hash and that founder action 11.2 is pending/
-      complete: `openspec/changes/manus-content-retrieval/reports/YYYY-MM-DD-deployment.md`
+- [x] 11.1 Commit + merge `feature/manus-content-retrieval` into `main` + push — **two rounds**:
+      first round (`5d04e5f`/`b602625`) shipped `list_messages()` + structured-output extraction +
+      creative-brief prompt; second round ships the fenced-JSON fallback found via the live test
+- [x] 11.2 **Founder action required:** `git pull` — confirmed done for round 1
+      (`Already up to date` after the push, 2026-08-15). **Round 2 pull still needed** after this
+      session's fenced-JSON fallback commit lands.
+- [ ] 11.3 Live verification: the real, already-completed `17ee4d8b…` task's stored result is
+      corrected in Supabase to reflect what the fenced-JSON-aware extraction would have produced
+      (same real Manus content, not fabricated) — avoids spending additional Manus credits on a
+      duplicate live dispatch for a code path already unit-tested against that exact real payload.
+      Then `get_latest_manus_draft()` is confirmed (locally, against production Supabase) to
+      return that hook list.
+- [ ] 11.4 Create a short report: `openspec/changes/manus-content-retrieval/reports/YYYY-MM-DD-deployment.md`
 
 ## 12. Archive
 

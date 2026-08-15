@@ -13,8 +13,10 @@ Resolve runs first so a backlog drains (finished work is reported) before more i
 
 from __future__ import annotations
 
+import json
 import logging
-from typing import Any, Dict, List
+import re
+from typing import Any, Dict, List, Optional
 
 import backend_client
 import manus_client
@@ -25,13 +27,47 @@ from prompts import build_manus_prompt, build_manus_title
 logger = logging.getLogger(__name__)
 
 _REQUIRED_HOOK_KEYS = {"headline", "body", "cta"}
+_FENCED_JSON_PATTERN = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL)
+
+
+def _well_shaped_hooks(value: Any) -> Optional[List[Dict[str, Any]]]:
+    """Returns `value["hooks"]` if it's a non-empty list of dicts with the required keys, else
+    None. Shared by both the structured-output and fenced-JSON extraction tiers so "well-shaped"
+    means exactly one thing in this module."""
+    hooks = (value or {}).get("hooks") if isinstance(value, dict) else None
+    if isinstance(hooks, list) and hooks and all(
+        isinstance(h, dict) and _REQUIRED_HOOK_KEYS <= set(h.keys()) for h in hooks
+    ):
+        return hooks
+    return None
+
+
+def _hooks_from_fenced_json(text: str) -> Optional[List[Dict[str, Any]]]:
+    """Manus frequently writes valid JSON inside a fenced ```json code block within free-text
+    assistant_message, rather than via the API's native structured_output_result (confirmed live,
+    2026-08-15, operator_task 17ee4d8b…). Tries the LAST fenced block in the text (mirrors "last
+    successful structured_output_result wins"); returns None on no block, invalid JSON, or a
+    parsed object with no well-shaped hooks — never raises."""
+    matches = _FENCED_JSON_PATTERN.findall(text)
+    if not matches:
+        return None
+    try:
+        parsed = json.loads(matches[-1])
+    except (ValueError, TypeError):
+        return None
+    return _well_shaped_hooks(parsed)
 
 
 def _extract_manus_output(task_id: str) -> Dict[str, Any]:
     """Retrieves a terminal task's actual output via list_messages (manus-content-retrieval) and
     extracts it into the shape the backend result payload expects. Returns {} if list_messages
     fails or no usable content is found — the caller merges this into the base result dict, so an
-    empty extraction never removes the existing status metadata fields."""
+    empty extraction never removes the existing status metadata fields.
+
+    Three tiers, most-trusted first: (1) a successful structured_output_result — the API's native
+    mechanism; (2) a fenced ```json block inside free-text assistant_message — Manus's common
+    fallback behavior when it doesn't use (1); (3) plain assistant_message text, surfaced for human
+    review under manus_message, never promoted to a hooks contract it can't back up."""
     messages = manus_client.list_messages(task_id)
     if not messages:
         return {}
@@ -41,11 +77,8 @@ def _extract_manus_output(task_id: str) -> Dict[str, Any]:
         structured = message.get("structured_output_result")
         if not structured or not structured.get("success"):
             continue
-        value = structured.get("value")
-        hooks = (value or {}).get("hooks") if isinstance(value, dict) else None
-        if isinstance(hooks, list) and hooks and all(
-            isinstance(h, dict) and _REQUIRED_HOOK_KEYS <= set(h.keys()) for h in hooks
-        ):
+        hooks = _well_shaped_hooks(structured.get("value"))
+        if hooks is not None:
             last_structured_hooks = hooks
 
     if last_structured_hooks is not None:
@@ -56,10 +89,15 @@ def _extract_manus_output(task_id: str) -> Dict[str, Any]:
         for m in messages
         if m.get("type") == "assistant_message" and m.get("assistant_message", {}).get("content")
     ]
-    if assistant_texts:
-        return {"manus_message": "\n\n".join(assistant_texts)}
+    if not assistant_texts:
+        return {}
 
-    return {}
+    combined_text = "\n\n".join(assistant_texts)
+    fenced_hooks = _hooks_from_fenced_json(combined_text)
+    if fenced_hooks is not None:
+        return {"hooks": fenced_hooks}
+
+    return {"manus_message": combined_text}
 
 
 def _resolve_dispatched() -> int:

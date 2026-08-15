@@ -351,6 +351,144 @@ class TestRunTick:
 
         assert mock_report.call_args[0][2]["hooks"] == good_hooks
 
+    # Real Manus output captured live 2026-08-15 (operator_task 17ee4d8b…): Manus wrote valid JSON
+    # inside a fenced code block within free-text assistant_message, not via structured_output_result.
+    _REAL_MANUS_FENCED_JSON_MESSAGE = (
+        "```json\n"
+        "{\n"
+        '  "hooks": [\n'
+        "    {\n"
+        '      "headline": "¿Ganaste en dólares este año? Tus consignaciones al banco también cuentan para la DIAN.",\n'
+        '      "body": "Si en 2025 recibiste más de $69,7 millones en tu cuenta, la DIAN ya exige declaración de renta.",\n'
+        '      "cta": "Revisa gratis si te toca declarar con Contexia",\n'
+        '      "pain_tag": "desconocimiento-obligacion-consignaciones"\n'
+        "    },\n"
+        "    {\n"
+        '      "headline": "Declarar renta no significa pagar impuesto.",\n'
+        '      "body": "Muchos freelancers evitan declarar pensando que les toca pagar millones.",\n'
+        '      "cta": "Aclara tu situación fiscal en minutos con Contexia",\n'
+        '      "pain_tag": "miedo-pago-innecesario"\n'
+        "    },\n"
+        "    {\n"
+        '      "headline": "Tu fecha de declaración depende de tu NIT. ¿Ya sabes cuál es?",\n'
+        '      "body": "La DIAN repartió los vencimientos de renta 2026 entre el 12 de agosto y el 26 de octubre.",\n'
+        '      "cta": "Consulta tu fecha y organiza tus soportes con Contexia",\n'
+        '      "pain_tag": "miedo-sancion-extemporaneidad"\n'
+        "    }\n"
+        "  ],\n"
+        '  "fuentes": ["Resolución DIAN 000238 del 15-12-2025"]\n'
+        "}\n"
+        "```\n\n"
+        "Entendido, Juan David. Arranco la investigación..."
+    )
+
+    def test_fenced_json_block_is_parsed_as_a_hooks_fallback(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        state.remember("t-1", "m-1")
+        finished = manus_client.ManusTask(task_id="m-1", status="stopped")
+        messages = [
+            {
+                "type": "assistant_message",
+                "assistant_message": {"content": self._REAL_MANUS_FENCED_JSON_MESSAGE},
+            }
+        ]
+        with patch("manus_client.get_task", return_value=finished), patch(
+            "manus_client.list_messages", return_value=messages
+        ), patch("backend_client.report_result", return_value=True) as mock_report, patch(
+            "backend_client.list_pending", return_value=[]
+        ):
+            poller.run_tick()
+
+        reported_result = mock_report.call_args[0][2]
+        assert len(reported_result["hooks"]) == 3
+        assert reported_result["hooks"][0]["pain_tag"] == "desconocimiento-obligacion-consignaciones"
+        assert "manus_message" not in reported_result
+
+    def test_no_fenced_block_falls_through_to_manus_message(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        state.remember("t-1", "m-1")
+        finished = manus_client.ManusTask(task_id="m-1", status="stopped")
+        messages = [
+            {"type": "assistant_message", "assistant_message": {"content": "Just prose, no JSON here."}},
+        ]
+        with patch("manus_client.get_task", return_value=finished), patch(
+            "manus_client.list_messages", return_value=messages
+        ), patch("backend_client.report_result", return_value=True) as mock_report, patch(
+            "backend_client.list_pending", return_value=[]
+        ):
+            poller.run_tick()
+
+        reported_result = mock_report.call_args[0][2]
+        assert "hooks" not in reported_result
+        assert reported_result["manus_message"] == "Just prose, no JSON here."
+
+    def test_invalid_json_in_fenced_block_falls_through_without_crashing(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        state.remember("t-1", "m-1")
+        finished = manus_client.ManusTask(task_id="m-1", status="stopped")
+        messages = [
+            {
+                "type": "assistant_message",
+                "assistant_message": {"content": "```json\n{not valid json\n```\nSome prose too."},
+            }
+        ]
+        with patch("manus_client.get_task", return_value=finished), patch(
+            "manus_client.list_messages", return_value=messages
+        ), patch("backend_client.report_result", return_value=True) as mock_report, patch(
+            "backend_client.list_pending", return_value=[]
+        ):
+            poller.run_tick()
+
+        reported_result = mock_report.call_args[0][2]
+        assert "hooks" not in reported_result
+        assert "manus_message" in reported_result
+
+    def test_fenced_json_without_well_shaped_hooks_falls_through(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        state.remember("t-1", "m-1")
+        finished = manus_client.ManusTask(task_id="m-1", status="stopped")
+        messages = [
+            {
+                "type": "assistant_message",
+                "assistant_message": {"content": '```json\n{"summary": "not hooks"}\n```'},
+            }
+        ]
+        with patch("manus_client.get_task", return_value=finished), patch(
+            "manus_client.list_messages", return_value=messages
+        ), patch("backend_client.report_result", return_value=True) as mock_report, patch(
+            "backend_client.list_pending", return_value=[]
+        ):
+            poller.run_tick()
+
+        reported_result = mock_report.call_args[0][2]
+        assert "hooks" not in reported_result
+        assert "manus_message" in reported_result
+
+    def test_structured_output_result_still_takes_priority_over_fenced_json(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        state.remember("t-1", "m-1")
+        finished = manus_client.ManusTask(task_id="m-1", status="stopped")
+        structured_hooks = [{"headline": "Structured", "body": "B", "cta": "C", "pain_tag": "p"}]
+        messages = [
+            {
+                "type": "structured_output_result",
+                "structured_output_result": {"success": True, "value": {"hooks": structured_hooks}, "error": None},
+            },
+            {
+                "type": "assistant_message",
+                "assistant_message": {"content": self._REAL_MANUS_FENCED_JSON_MESSAGE},
+            },
+        ]
+        with patch("manus_client.get_task", return_value=finished), patch(
+            "manus_client.list_messages", return_value=messages
+        ), patch("backend_client.report_result", return_value=True) as mock_report, patch(
+            "backend_client.list_pending", return_value=[]
+        ):
+            poller.run_tick()
+
+        reported_result = mock_report.call_args[0][2]
+        assert reported_result["hooks"] == structured_hooks
+
     def test_unstructured_output_is_surfaced_as_manus_message_not_hooks(self, monkeypatch):
         monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
         state.remember("t-1", "m-1")

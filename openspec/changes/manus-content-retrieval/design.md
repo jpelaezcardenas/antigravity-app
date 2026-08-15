@@ -87,10 +87,21 @@ non-creative research tasks.
 ## Risks / Trade-offs
 
 - **[Risk] Manus doesn't reliably honor the structured-output instruction** (it's prompt-based
-  compliance, not an enforced API parameter). **Mitigation**: this is exactly why
-  `get_latest_manus_draft()` already fails closed to `None` on a missing/malformed `hooks` key —
-  worst case, a real Manus run degrades to "no draft found, `run_creative_loop()` falls back to
-  internal generation," never a crash or a bad publish.
+  compliance, not an enforced API parameter). **Confirmed live, 2026-08-15**: a real creative-brief
+  `research` task (operator_task `17ee4d8b…`) produced excellent, well-sourced hooks (correct DIAN
+  citations, correct UVT-derived figures) but wrote them as a fenced ` ```json ` code block inside
+  free-form `assistant_message` text, not via a `structured_output_result` message — Manus followed
+  the JSON-shape instruction but not the API's native structured-output mechanism. The extraction
+  logic therefore fell into the `manus_message` fallback exactly as designed (fail-closed, no
+  fabricated `hooks` key) — proving the fail-closed contract works, but leaving a real, good draft
+  unusable by `get_latest_manus_draft()`. **Mitigation, added same-day**: `_extract_manus_output()`
+  gains a second fallback tier — before giving up and writing `manus_message`, it attempts to parse
+  a fenced ` ```json ... ``` ` block out of the concatenated `assistant_message` text and, if that
+  parses to a dict containing a well-shaped `hooks` list (same `_REQUIRED_HOOK_KEYS` check as the
+  structured-output path), writes `result["hooks"]` from it. Only on parse failure or a
+  non-matching shape does it fall through to `manus_message`. This keeps the same three-tier
+  fail-closed posture (structured output → fenced JSON in text → free text), just widening what
+  counts as "the agent gave us usable structure."
 - **[Trade-off] Polling instead of webhooks means output isn't available until the next 1-minute
   tick after Manus finishes**, not instantly. Accepted — same latency profile the poller already
   has for status resolution; not a regression.
