@@ -61,6 +61,39 @@ _KNOWN_COP_VALUES = {
 _PESO_PATTERN = re.compile(r"\$\s?([\d.,]+)")
 _UVT_PATTERN = re.compile(r"(\d[\d.,]*)\s*UVT", re.IGNORECASE)
 
+# claim-ledger-market-figures (2026-08-15): recognized Colombian market-research sources. A
+# peso/UVT figure that isn't a known fiscal constant is still accepted if it's visibly cited
+# alongside one of these — deliberately a small explicit allowlist, not "any parenthetical
+# passes", which would defeat the gate. Extend by adding a name here, nothing else.
+_RECOGNIZED_MARKET_SOURCES = [
+    "CCCE",
+    "DANE",
+    "Camara de Comercio Aburra Sur",
+    "Cámara de Comercio Aburrá Sur",
+    "Colombia Fintech",
+    "MinTIC",
+    "Superintendencia de Sociedades",
+]
+
+# Matches a parenthetical group within ~40 chars after a figure, e.g. "$191.850 (−7,6% anual,
+# CCCE)" — proximity-based, not full-sentence NLP (design.md Decision 2).
+_NEARBY_CITATION_WINDOW = 40
+
+
+def _has_nearby_citation(text: str, match_end: int) -> bool:
+    """A figure counts as sourced if a recognized source name appears either right next to it
+    (a `(... CCCE)`-style parenthetical within the proximity window) or anywhere else in the same
+    hook text — Manus's real output cites a source once per paragraph covering several stats,
+    not once per individual number (design.md Decision 2/3 accept this looseness; a fully
+    unsourced hook with no recognized name anywhere still fails, see design.md Risks)."""
+    window = text[match_end : match_end + _NEARBY_CITATION_WINDOW]
+    paren_close = window.find(")")
+    if paren_close != -1:
+        citation_text = window[: paren_close + 1]
+        if any(source in citation_text for source in _RECOGNIZED_MARKET_SOURCES):
+            return True
+    return any(source in text for source in _RECOGNIZED_MARKET_SOURCES)
+
 
 def _parse_cop_number(raw: str) -> int | None:
     """Parses a Colombian-formatted peso figure ('523.740' or '523,740') into an int."""
@@ -84,20 +117,22 @@ def check_claims(hook: Dict[str, Any]) -> str | None:
         value = _parse_cop_number(match.group(1))
         if value is None:
             continue
-        if value not in _KNOWN_COP_VALUES:
+        if value not in _KNOWN_COP_VALUES and not _has_nearby_citation(text, match.end()):
             return (
                 f"Claim Ledger violation: unsourced peso figure '${match.group(1)}' does not "
-                "match any known constant in core.constants."
+                "match any known constant in core.constants and has no nearby recognized-source "
+                "citation."
             )
 
     for match in _UVT_PATTERN.finditer(text):
         value = _parse_cop_number(match.group(1))
         if value is None:
             continue
-        if value not in {UVT_2025, UVT_2026}:
+        if value not in {UVT_2025, UVT_2026} and not _has_nearby_citation(text, match.end()):
             return (
                 f"Claim Ledger violation: unsourced UVT figure '{match.group(1)} UVT' does not "
-                "match UVT_2025 or UVT_2026 in core.constants."
+                "match UVT_2025 or UVT_2026 in core.constants and has no nearby recognized-source "
+                "citation."
             )
 
     return None
