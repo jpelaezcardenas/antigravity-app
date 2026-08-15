@@ -61,3 +61,28 @@ class TestLlmToneRejection:
             result = evaluate_hook(hook)
         assert result["approved"] is False
         assert "reason" in result
+
+
+class TestClaimLedgerGate:
+    """brand-voice-canonization: an unsourced peso/UVT figure is rejected unconditionally,
+    same non-overridable tier as the identity hard-bans — regardless of the (mocked) LLM tone
+    check's verdict, and never subject to its fail-open fallback."""
+
+    def test_rejects_an_unsourced_peso_figure_even_if_llm_would_approve(self):
+        hook = _hook(body="La sancion minima por no declarar es de $471.000.")
+        with patch("agents.content_evaluator._llm_tone_check", return_value={"approved": True, "reason": "looks fine"}):
+            result = evaluate_hook(hook)
+        assert result["approved"] is False
+        assert "471" in result["reason"]
+
+    def test_llm_failure_still_rejects_an_unsourced_peso_figure(self):
+        hook = _hook(body="La sancion minima por no declarar es de $471.000.")
+        with patch("agents.content_evaluator._llm_tone_check", side_effect=Exception("all providers failed")):
+            result = evaluate_hook(hook)
+        assert result["approved"] is False
+
+    def test_a_correctly_sourced_figure_is_unaffected_by_the_claim_ledger(self):
+        hook = _hook(body="La sancion minima por no declarar es de $523.740.")
+        with patch("agents.content_evaluator._llm_tone_check", return_value={"approved": True, "reason": "on-brand"}):
+            result = evaluate_hook(hook)
+        assert result["approved"] is True

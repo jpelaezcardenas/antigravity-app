@@ -131,6 +131,21 @@ class TestLlmGenerateHooksGrounding:
         assert len(result) == 1
 
 
+class TestFallbackHooksAreTuteoConsistent:
+    """brand-voice-canonization: the fallback CTA used to mix voseo ('salé de dudas') into
+    otherwise-tuteo copy. All fallback hook text must stay tuteo-consistent."""
+
+    _VOSEO_MARKERS = ("salé", "tené", "podés", "querés", "sabés", "hablá vos")
+
+    def test_no_fallback_hook_contains_voseo_conjugation(self):
+        from services.copywriter_service import _DETERMINISTIC_FALLBACK_HOOKS
+
+        for hook in _DETERMINISTIC_FALLBACK_HOOKS:
+            text = " ".join(str(hook.get(f, "")) for f in ("headline", "body", "cta")).lower()
+            for marker in self._VOSEO_MARKERS:
+                assert marker not in text, f"voseo marker '{marker}' found in fallback hook: {hook}"
+
+
 class TestRewriteHook:
     def test_returns_a_rewritten_hook_via_llm(self):
         original = {"headline": "H", "body": "B", "cta": "C", "pain_tag": "multa_dian"}

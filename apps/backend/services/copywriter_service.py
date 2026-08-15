@@ -2,6 +2,10 @@
 
 Generates marketing hooks and rewrites rejected ones (paired with agents/content_evaluator.py's
 Critic, orchestrated by services/sell_machine_service.py).
+
+_SYSTEM_PROMPT below shares its brand rubric source with agents/content_evaluator.py via
+agents/brand_rubric.py (brand-voice-canonization) rather than maintaining independent tone
+guidance that could drift from what the Critic actually enforces.
 """
 
 from __future__ import annotations
@@ -9,6 +13,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
+from agents.brand_rubric import BRAND_RUBRIC_SYSTEM_PROMPT
 from services.kb_seeding_service import retrieve_similar
 
 logger = logging.getLogger(__name__)
@@ -18,8 +23,10 @@ _GENERIC_GROUNDING_QUERY = "declarar renta, multas DIAN, obligación tributaria"
 _SYSTEM_PROMPT = (
     "Eres el equipo de copywriting de Contexia (GPS Financiero para PyMEs colombianas, NO una "
     "firma contable regulada). Genera hooks de marketing cortos: headline + body (1-2 lineas) + "
-    "CTA, en espanol, tono humano y empatico tipo 'amiga contadora con criterio', enfocados en "
-    "dolores fiscales reales (multas DIAN, declarar tarde, no saber si toca declarar). "
+    "CTA, en espanol (tuteo, nunca voseo), tono humano y empatico tipo 'amiga contadora con "
+    "criterio', enfocados en dolores fiscales reales (multas DIAN, declarar tarde, no saber si "
+    "toca declarar). Sigue ademas esta rubrica de marca:\n"
+    f"{BRAND_RUBRIC_SYSTEM_PROMPT}\n"
     "Responde en JSON como una lista de objetos {\"headline\", \"body\", \"cta\", \"pain_tag\"}."
 )
 
@@ -27,7 +34,7 @@ _DETERMINISTIC_FALLBACK_HOOKS: List[Dict[str, Any]] = [
     {
         "headline": "¿Sabes si te toca declarar renta este año?",
         "body": "Miles de personas no se enteran hasta que llega la sanción de la DIAN.",
-        "cta": "Habla con Taty y salé de dudas",
+        "cta": "Habla con Taty y sal de dudas",
         "pain_tag": "no_sabe_si_declara",
     },
     {
