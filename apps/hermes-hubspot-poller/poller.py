@@ -33,6 +33,8 @@ def _sync_lead(lead: Dict[str, Any]) -> bool:
         logger.error("Skipping a crm_leads row with no id: %s", str(lead)[:200])
         return False
 
+    is_first_sync = not lead.get("hubspot_contact_id")
+
     contact_properties = {
         "firstname": (lead.get("full_name") or "").split(" ", 1)[0] or None,
         "lastname": (lead.get("full_name") or "").split(" ", 1)[1] if " " in (lead.get("full_name") or "") else None,
@@ -44,6 +46,12 @@ def _sync_lead(lead: Dict[str, Any]) -> bool:
         logger.error("Failed to upsert HubSpot Contact for lead %s", lead_id)
         return False
 
+    # hubspot-activity-value-sync: log the conversation once, on first sync only (design.md
+    # Decision #1) — avoids spamming an identical Note every 5-min tick.
+    last_message = lead.get("last_message")
+    if is_first_sync and last_message:
+        hubspot_client.create_note(contact_id, last_message)
+
     wompi_tx = supabase_client.get_latest_wompi_transaction(lead_id)
     dealstage = resolve_dealstage(
         lead_stage=lead.get("stage") or "NUEVOS",
@@ -54,10 +62,18 @@ def _sync_lead(lead: Dict[str, Any]) -> bool:
         "pipeline": settings.HUBSPOT_DEAL_PIPELINE,
         "dealstage": dealstage,
     }
+    amount_cents = (wompi_tx or {}).get("amount_cents")
+    if amount_cents is not None:
+        deal_properties["amount"] = str(amount_cents / 100)
     deal_id = hubspot_client.upsert_deal(lead.get("hubspot_deal_id"), deal_properties)
     if deal_id is None:
         logger.error("Failed to upsert HubSpot Deal for lead %s", lead_id)
         return False
+
+    # hubspot-activity-value-sync: a lead awaiting payment approval gets a visible follow-up
+    # Task in HubSpot, gated on not already having one open (design.md Decision #3).
+    if lead.get("stage") == "POR_APROBAR" and not hubspot_client.has_open_task(deal_id):
+        hubspot_client.create_task(deal_id, f"Aprobar pago — {lead.get('full_name') or lead_id}")
 
     return supabase_client.mark_lead_synced(lead_id, contact_id, deal_id, _now_iso())
 

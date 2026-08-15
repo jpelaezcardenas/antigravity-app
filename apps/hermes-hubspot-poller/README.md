@@ -4,7 +4,17 @@ One-way sync worker: Supabase (`crm_leads`, `b2b_clients`) -> HubSpot (Contacts 
 Companies). Runs **local to Hermes only** — never on Railway/Vercel — so the HubSpot Private
 App Access Token and the Supabase service-role key never leave this machine.
 
-See `openspec/changes/hubspot-sync-renta-natural/` for the full proposal/design/specs.
+Every tick also:
+- Logs a HubSpot **Note** on a lead's Contact with `crm_leads.last_message`, once, the first
+  time that lead is synced.
+- Sets the Deal's **`amount`** from the lead's latest `crm_wompi_transactions.amount_cents`.
+- Creates a follow-up **Task** on the Deal when the lead reaches `POR_APROBAR`, skipping it if
+  an incomplete Task is already attached.
+- Self-heals a stale stored HubSpot id (e.g. after HubSpot's own contact dedup/merge) by
+  creating a fresh object instead of failing the sync.
+
+See `openspec/changes/archive/2026-08-15-hubspot-sync-renta-natural/` (base sync) and
+`openspec/changes/hubspot-activity-value-sync/` (notes/value/tasks) for the full design.
 
 ## Setup
 

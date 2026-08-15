@@ -71,7 +71,7 @@ def get_latest_wompi_transaction(lead_id: str) -> Optional[Dict[str, Any]]:
             _url("/crm_wompi_transactions"),
             headers=_headers(),
             params={
-                "select": "status,created_at",
+                "select": "status,amount_cents,created_at",
                 "lead_id": f"eq.{lead_id}",
                 "order": "created_at.desc",
                 "limit": "1",
