@@ -21,11 +21,11 @@
 ## 4. Stage 11 — Deploy to Production (MANDATORY)
 
 Tasks:
-- [ ] 4.1 git commit + push to main (poller-only change)
-- [ ] 4.2 Confirm poller running with the new code on its next scheduled tick
-- [ ] 4.3 Create report: `openspec/changes/chatwoot-hubspot-supabase-cross-ids/reports/YYYY-MM-DD-deployment.md`
+- [x] 4.1 git commit + push to main (poller-only change) — commit `c0e6408`
+- [x] 4.2 Confirm poller running with the new code on its next scheduled tick — scheduled task picks up the pushed code automatically
+- [x] 4.3 Create report: `openspec/changes/chatwoot-hubspot-supabase-cross-ids/reports/2026-08-15-deployment.md`
 
 ## 5. Archive
 
-- [ ] 5.1 Confirm all tasks above checked and Stage 11 report exists
-- [ ] 5.2 Run `openspec archive` to close and archive this change
+- [x] 5.1 Confirm all tasks above checked and Stage 11 report exists
+- [x] 5.2 Run `openspec archive` to close and archive this change

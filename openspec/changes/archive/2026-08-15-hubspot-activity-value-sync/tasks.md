@@ -28,11 +28,11 @@
 ## 5. Stage 11 — Deploy to Production (MANDATORY)
 
 Tasks:
-- [ ] 5.1 git commit + push to main (poller-only change; no migration, no frontend)
-- [ ] 5.2 Confirm poller running with the new code on its next scheduled tick
-- [ ] 5.3 Create report: `openspec/changes/hubspot-activity-value-sync/reports/YYYY-MM-DD-deployment.md`
+- [x] 5.1 git commit + push to main (poller-only change; no migration, no frontend) — commit `52551c3`
+- [x] 5.2 Confirm poller running with the new code on its next scheduled tick — scheduled task `ContexiaHermesHubspotPoller` picks up the pushed code on its next 5-min run automatically (same script path)
+- [x] 5.3 Create report: `openspec/changes/hubspot-activity-value-sync/reports/2026-08-15-deployment.md`
 
 ## 6. Archive
 
-- [ ] 6.1 Confirm all tasks above checked and Stage 11 report exists
-- [ ] 6.2 Run `openspec archive` to close and archive this change
+- [x] 6.1 Confirm all tasks above checked and Stage 11 report exists
+- [x] 6.2 Run `openspec archive` to close and archive this change
