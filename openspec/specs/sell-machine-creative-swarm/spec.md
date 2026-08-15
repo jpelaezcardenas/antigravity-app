@@ -39,7 +39,10 @@ list and the Claim Ledger's known-value allowlist SHALL live in a single tracked
 inline, and the Claim Ledger allowlist SHALL derive from `core.constants` (not a separate hardcoded
 copy of fiscal figures). A rewrite response that is not a well-shaped single hook (e.g. a list, or
 an object missing `headline`/`body`/`cta`) SHALL NOT crash evaluation — the original hook SHALL be
-used for re-evaluation instead, matching the existing LLM-unavailable fallback contract.
+used for re-evaluation instead, matching the existing LLM-unavailable fallback contract. **A
+peso/UVT figure that is not a known fiscal constant SHALL still be accepted if it is visibly cited
+alongside a recognized market-research source name (e.g. CCCE, DANE) — an unsourced figure with no
+such citation SHALL still be rejected.**
 
 #### Scenario: A hook violating a hard rule is rejected without a survivor
 - **WHEN** a submitted hook's text asserts that Contexia is a regulated accounting firm that signs
@@ -61,6 +64,16 @@ used for re-evaluation instead, matching the existing LLM-unavailable fallback c
 - **WHEN** a rejected hook's rewrite attempt returns a JSON array whose first element is a
   well-shaped hook object
 - **THEN** that first element is used as the rewritten hook for re-evaluation
+
+#### Scenario: A cited market figure is accepted even though it is not a fiscal constant
+- **WHEN** a hook cites a peso figure immediately followed by a parenthetical naming a recognized
+  market-research source (e.g. `"$105,4 billones (+26,7% vs 2023, CCCE)"`)
+- **THEN** the Claim Ledger does not reject that figure for being unsourced
+
+#### Scenario: An uncited figure from an unrecognized source is still rejected
+- **WHEN** a hook cites a peso figure with no adjacent citation, or with a parenthetical that does
+  not name a recognized source
+- **THEN** the Claim Ledger rejects it exactly as before this change
 
 #### Scenario: A rejected hook is rewritten once and re-evaluated
 - **WHEN** a submitted hook is rejected for a fixable tone issue (e.g. robotic phrasing, not a hard
