@@ -131,6 +131,25 @@ export function updateB2bClientContact(
   });
 }
 
+// Retention alerts (retention-loop): churn/risk signals computed from b2b_payments history.
+
+export interface RetentionAlert {
+  id: string;
+  client_id: string;
+  rule_id: "missed_payment" | "payment_drop";
+  severity: "info" | "warning" | "critical";
+  message: string;
+  created_at?: string;
+}
+
+export interface RetentionAlertsResponse {
+  items: RetentionAlert[];
+}
+
+export function getB2bRetentionAlerts(): Promise<RetentionAlertsResponse> {
+  return api<RetentionAlertsResponse>("/crm/b2b/retention-alerts");
+}
+
 // B2C Renta Natural lead funnel (Change B: crm-b2c-sell-machine-cockpit)
 
 export type CrmStage = "NUEVOS" | "PROSPECTOS" | "POR_APROBAR" | "LISTOS_CONTADORA";

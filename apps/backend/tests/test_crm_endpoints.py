@@ -96,3 +96,37 @@ class TestCrmB2bPaymentsEndpoint:
                 response = await client.get("/crm/b2b/payments")
 
         assert response.status_code == 200
+
+
+class TestCrmB2bRetentionAlertsEndpoint:
+    """retention-loop"""
+
+    @pytest.mark.asyncio
+    async def test_returns_200_and_expected_shape(self, crm_client) -> None:
+        fake_alerts = [
+            {
+                "id": "a1",
+                "client_id": "c1",
+                "rule_id": "missed_payment",
+                "severity": "warning",
+                "message": "Sin pago registrado para Medic en 2026-07-01.",
+            }
+        ]
+        async with crm_client as client:
+            with patch("presentation.crm_endpoints.get_retention_service") as mock_get_service:
+                mock_get_service.return_value.evaluate_and_persist.return_value = fake_alerts
+                response = await client.get("/crm/b2b/retention-alerts")
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["items"] == fake_alerts
+
+    @pytest.mark.asyncio
+    async def test_no_alerts_returns_an_empty_items_list(self, crm_client) -> None:
+        async with crm_client as client:
+            with patch("presentation.crm_endpoints.get_retention_service") as mock_get_service:
+                mock_get_service.return_value.evaluate_and_persist.return_value = []
+                response = await client.get("/crm/b2b/retention-alerts")
+
+        assert response.status_code == 200
+        assert response.json()["items"] == []

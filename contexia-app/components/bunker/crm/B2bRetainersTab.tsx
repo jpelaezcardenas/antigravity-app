@@ -7,8 +7,10 @@ import {
   setB2bClientStatus,
   upsertB2bPayment,
   updateB2bClientContact,
+  getB2bRetentionAlerts,
   type B2bPaymentsResponse,
   type B2bClient,
+  type RetentionAlert,
 } from "@/lib/crm-api";
 import { formatCop } from "@/lib/format";
 
@@ -54,6 +56,10 @@ export function B2bRetainersTab() {
   const [editingCell, setEditingCell] = useState<{ clientId: string; period: string } | null>(null);
   const [editingValue, setEditingValue] = useState("");
 
+  const [alerts, setAlerts] = useState<RetentionAlert[] | null>(null);
+  const [alertsError, setAlertsError] = useState("");
+  const [alertsLoading, setAlertsLoading] = useState(true);
+
   const load = async () => {
     setError("");
     setLoading(true);
@@ -72,8 +78,22 @@ export function B2bRetainersTab() {
     }
   };
 
+  const loadAlerts = async () => {
+    setAlertsError("");
+    setAlertsLoading(true);
+    try {
+      const res = await getB2bRetentionAlerts();
+      setAlerts(res.items);
+    } catch (e) {
+      setAlertsError(e instanceof Error ? e.message : "No se pudieron cargar las alertas de retención");
+    } finally {
+      setAlertsLoading(false);
+    }
+  };
+
   useEffect(() => {
     load();
+    loadAlerts();
   }, []);
 
   const handleAlta = async (event: React.FormEvent) => {
@@ -190,6 +210,37 @@ export function B2bRetainersTab() {
             </p>
           </div>
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-outline-variant/20 bg-white/5 p-4">
+        <p className="mb-3 text-xs uppercase tracking-[0.2em] text-on-surface-variant">
+          Alertas de retención
+        </p>
+        {alertsLoading ? (
+          <p className="text-sm text-on-surface-variant">Evaluando riesgo de retención…</p>
+        ) : alertsError ? (
+          <div className="rounded-xl border border-status-critical/40 bg-status-critical/10 p-3 text-status-critical text-sm">
+            {alertsError}
+          </div>
+        ) : !alerts || alerts.length === 0 ? (
+          <p className="text-sm text-on-surface-variant">
+            Sin alertas de retención por ahora.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {alerts.map((alert, index) => (
+              <li
+                key={`${alert.id}-${index}`}
+                className="flex items-center justify-between gap-3 rounded-xl border border-status-warning/30 bg-status-warning/10 px-3 py-2 text-sm"
+              >
+                <span className="text-on-surface">
+                  {clientsById[alert.client_id]?.name ?? alert.client_id}
+                </span>
+                <span className="text-xs text-status-warning">{alert.message}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {showAltaForm && (

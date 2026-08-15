@@ -13,6 +13,7 @@ from postgrest.exceptions import APIError
 
 from core.deps import get_current_user
 from services.crm_service import get_crm_service
+from services.retention_service import get_retention_service
 
 router = APIRouter(tags=["crm"], dependencies=[Depends(get_current_user)])
 
@@ -28,6 +29,14 @@ def get_b2b_payments_grid(
     to_period: Optional[str] = Query(default="2026-06-30"),
 ):
     return get_crm_service().b2b_payments_grid(from_period=from_period, to_period=to_period)
+
+
+@router.get("/b2b/retention-alerts")
+def get_retention_alerts():
+    """Evaluates the B2B roster for churn/risk signals (missed_payment, payment_drop) and
+    returns current alert history (retention-loop). Evaluation runs on-demand on each call,
+    same pattern as b2b_payments_grid's on-the-fly pivot."""
+    return {"items": get_retention_service().evaluate_and_persist()}
 
 
 class CreateB2bClientRequest(BaseModel):
