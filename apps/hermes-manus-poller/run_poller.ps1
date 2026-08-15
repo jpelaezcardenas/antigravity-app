@@ -11,6 +11,14 @@
 
 Set-Location -Path $PSScriptRoot
 
+# ── Hide console window immediately (no flash) ──────────────────────────
+Add-Type -Name Win32 -Namespace '' -MemberDefinition @'
+  [DllImport("kernel32.dll")] public static extern IntPtr GetConsoleWindow();
+  [DllImport("user32.dll")]   public static extern bool ShowWindow(IntPtr h, int n);
+'@ -ErrorAction SilentlyContinue
+$consoleHwnd = [Win32]::GetConsoleWindow()
+if ($consoleHwnd -ne [IntPtr]::Zero) { [Win32]::ShowWindow($consoleHwnd, 0) | Out-Null }  # 0 = SW_HIDE
+
 $logDir = Join-Path $PSScriptRoot "logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 

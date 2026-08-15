@@ -254,6 +254,33 @@ class TestRunTick:
         mock_create.assert_called_once()
         assert state.get_manus_task_id("t-1") == "m-1"
 
+    def test_research_task_dispatch_passes_the_native_hooks_schema(self, monkeypatch):
+        """manus-gtm-patches-b3-b4-b5 (B3): research dispatches request Manus's native
+        structured-output mechanism instead of relying on the fenced-JSON fallback alone."""
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        research_task = _task("t-1", task_type="research", payload={"creative_brief": "brief"})
+        with patch("backend_client.list_pending", return_value=[research_task]), patch(
+            "backend_client.mark_dispatched", return_value=True
+        ), patch(
+            "manus_client.create_task", return_value={"task_id": "m-1", "task_url": "u"}
+        ) as mock_create:
+            poller.run_tick()
+
+        _, kwargs = mock_create.call_args
+        assert kwargs["structured_output_schema"] == manus_client.RESEARCH_HOOKS_SCHEMA
+
+    def test_non_research_task_dispatch_omits_the_schema(self, monkeypatch):
+        monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")
+        with patch("backend_client.list_pending", return_value=[_task("t-1", task_type="post_content")]), patch(
+            "backend_client.mark_dispatched", return_value=True
+        ), patch(
+            "manus_client.create_task", return_value={"task_id": "m-1", "task_url": "u"}
+        ) as mock_create:
+            poller.run_tick()
+
+        _, kwargs = mock_create.call_args
+        assert kwargs["structured_output_schema"] is None
+
     def test_unclaimable_task_is_never_sent_to_manus(self, monkeypatch):
         """The double-post guard: if the backend refuses the claim, no Manus task is created."""
         monkeypatch.setattr(settings, "MANUS_API_KEY", "key-123")

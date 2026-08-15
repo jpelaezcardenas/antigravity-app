@@ -62,6 +62,33 @@ class ManusTask:
         return "failed" if self.status == "error" else "completed"
 
 
+# Brecha B3 (2026-08-15): native structured_output_schema for task_type=research.
+# Complies with Manus API v2 rules (root object, additionalProperties false, full
+# required set, max 5 levels). Delivery: listMessages messages[].structured_output_result
+# and webhook task_stopped.task_detail.structured_output, both with the zero-value fallback.
+RESEARCH_HOOKS_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "hooks": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "headline": {"type": "string"},
+                    "body": {"type": "string"},
+                    "cta": {"type": "string"},
+                    "pain_tag": {"type": ["string", "null"]},
+                },
+                "required": ["headline", "body", "cta", "pain_tag"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["hooks"],
+    "additionalProperties": False,
+}
+
+
 def is_configured() -> bool:
     """True only when a Manus API key is present. Checked before any task is claimed so an
     unconfigured node never half-processes work (design.md D3)."""
@@ -75,7 +102,8 @@ def _headers() -> Dict[str, str]:
     }
 
 
-def create_task(content: str, title: str) -> Optional[Dict[str, Any]]:
+def create_task(content: str, title: str,
+                    structured_output_schema: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
     """Create a Manus task. Returns the response dict (with `task_id`) or None on any failure."""
     if not is_configured():
         logger.error("MANUS_API_KEY is not set — refusing to call Manus.")
@@ -88,6 +116,8 @@ def create_task(content: str, title: str) -> Optional[Dict[str, Any]]:
     }
     if settings.MANUS_PROJECT_ID:
         payload["project_id"] = settings.MANUS_PROJECT_ID
+    if structured_output_schema:
+        payload["structured_output_schema"] = structured_output_schema
 
     try:
         response = httpx.post(

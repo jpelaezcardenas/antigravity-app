@@ -175,7 +175,18 @@ def _dispatch_pending(pending: List[Dict[str, Any]]) -> int:
             logger.warning("Could not claim %s — skipping (already claimed?).", operator_task_id)
             continue
 
-        created = manus_client.create_task(content=prompt, title=title)
+        # Brecha B3 (2026-08-15): native structured_output_schema for research tasks so
+        # hooks arrive via structured_output_result (deterministic) instead of the fenced
+        # JSON fallback alone. Non-research tasks keep the schema unset.
+        created = manus_client.create_task(
+            content=prompt,
+            title=title,
+            structured_output_schema=(
+                manus_client.RESEARCH_HOOKS_SCHEMA
+                if (task.get("task_type") or "") == "research"
+                else None
+            ),
+        )
         if created is None:
             # Claimed but not created. Left as `dispatched` with no sidecar entry, so it shows up
             # in list_orphans() for manual resolution rather than being silently re-run.

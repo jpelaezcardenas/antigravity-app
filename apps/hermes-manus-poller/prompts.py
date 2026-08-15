@@ -20,7 +20,13 @@ SIDE_EFFECTING_TASK_TYPES = {"post_content", "run_ads_ab"}
 _APPROVED_BANNER = (
     "IMPORTANTE: el contenido de abajo YA FUE APROBADO por un humano en el sistema de Contexia. "
     "Publícalo tal cual está escrito. NO reescribas, NO 'mejores' y NO cambies cifras, precios ni "
-    "datos de contacto. Si algo te parece incorrecto, DETENTE y repórtalo en vez de publicarlo."
+    "datos de contacto. Si algo te parece incorrecto, DETENTE y repórtalo en vez de publicarlo. "
+    "Brecha B4 (2026-08-15): IDEMPOTENCIA — si detectas un post idéntico (mismo contenido y misma "
+    "página) ya publicado en las últimas 24 h, NO lo publiques de nuevo; reporta "
+    'status "duplicate_detected". EVIDENCIA — al terminar reporta SIEMPRE el JSON: '
+    '{"post_url": ..., "post_id": ..., "published_at": ..., "status": '
+    '"published|failed|blocked|duplicate_detected"}. PII — si el payload contuviera datos '
+    "personales de clientes B2B, DETENTE y repórtalo sin despachar nada."
 )
 
 _NO_INVENTION_BANNER = (
@@ -55,7 +61,10 @@ def build_manus_prompt(task: Dict[str, Any]) -> str:
             "Tarea: publicar este paquete de campaña en las redes de Contexia "
             "(Facebook e Instagram).\n\n"
             f"Paquete aprobado:\n{body}\n\n"
-            "Al terminar, reporta: URL de cada publicación, hora de publicación y cualquier error."
+            "Al terminar, reporta SIEMPRE en el mensaje final (y también como structured output "
+            "si puedes) un JSON con: post_url, post_id, published_at (ISO 8601) y status. Si la "
+            "página no existe, el login de Meta caducó o la publicación falló, reporta status "
+            "\"failed\" o \"blocked\" con la evidencia — nunca un resultado silencioso."
         )
 
     if task_type == "run_ads_ab":
@@ -75,11 +84,15 @@ def build_manus_prompt(task: Dict[str, Any]) -> str:
             "Tarea de investigación creativa para Contexia (manus-first-creative-pipeline): "
             "investiga tendencias, dolores reales y contexto normativo DIAN vigente relevantes al "
             f"siguiente brief, y produce ganchos de marketing.\n\nBrief:\n{body}\n\n"
-            "IMPORTANTE: entrega tu resultado final como salida estructurada (structured output) "
-            "en este formato JSON exacto, sin texto adicional fuera del JSON:\n"
-            '{"hooks": [{"headline": "...", "body": "...", "cta": "...", "pain_tag": "..."}]}\n'
-            "Cada hook debe tener headline, body, cta y pain_tag. No inventes cifras fiscales ni "
-            "de contacto — si no encuentras un dato con fuente confiable, omítelo del hook."
+            "IMPORTANTE: esta tarea se envía con un structured_output_schema nativo (campo "
+            "structured_output_schema de task.create); escribe el JSON final conforme a ese "
+            'esquema: {"hooks": [{"headline": "...", "body": "...", "cta": "...", "pain_tag": '
+            '"..."}]} — cada hook con headline, body, cta y pain_tag, sin texto adicional fuera '
+            "del JSON. Si el esquema no llegara a aplicarse, usa el formato fenced como "
+            "respaldo. No inventes cifras fiscales ni de contacto — si no encuentras un dato con "
+            "fuente confiable, omítelo del hook. Brecha B5 (2026-08-15): ASSETS — si el brief "
+            "requiere imágenes, refiérelas solo por URLs públicas ya cargadas (file.upload); "
+            "nunca por rutas locales o privadas."
         )
 
     if task_type == "research":
