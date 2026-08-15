@@ -56,6 +56,66 @@ HANDOVER_FALLBACK_REPLY = (
     "Un miembro del equipo va a revisar tu mensaje pronto."
 )
 
+# chatwoot-auto-tagging: maps Taty's existing classification output (taty_lead_router.py) onto
+# the 16 Chatwoot custom attributes provisioned in chatwoot-mcp-and-attributes. Only covers what
+# Taty already classifies today — no new classification logic here. "unknown" intent is
+# deliberately absent from these maps so a low-signal message never overwrites a prior tag.
+_INTENT_TO_INTENCION = {
+    "sales_interest": "ventas",
+    "payment_confirmation": "cobranza",
+}
+_INTENT_TO_SERVICIO_INTERES = {
+    "sales_interest": "renta",
+}
+_INTENT_TO_SIGUIENTE_ACCION = {
+    "sales_interest": "Enviar link de pago",
+    "payment_confirmation": "Verificar estado de pago",
+}
+
+
+def _confidence_to_prioridad(confidence: float) -> str:
+    if confidence >= 0.8:
+        return "alta"
+    if confidence >= 0.6:
+        return "media"
+    return "baja"
+
+
+async def _auto_tag_chatwoot(
+    conversation_id: int,
+    contact_id: int | None,
+    taty_result: dict,
+) -> None:
+    """Fire-and-forget: tag the Chatwoot conversation/contact from Taty's classification.
+    Never raises — a tagging failure must never surface to the customer or block the reply
+    already sent by process_incoming_message."""
+    try:
+        intent = taty_result.get("intent", "unknown")
+        confidence = taty_result.get("confidence", 0.0)
+        persona_fields = taty_result.get("persona_fields") or {}
+
+        conversation_attrs: dict = {"prioridad": _confidence_to_prioridad(confidence)}
+        if intent in _INTENT_TO_INTENCION:
+            conversation_attrs["intencion"] = _INTENT_TO_INTENCION[intent]
+        if intent in _INTENT_TO_SIGUIENTE_ACCION:
+            conversation_attrs["siguiente_accion"] = _INTENT_TO_SIGUIENTE_ACCION[intent]
+        await chatwoot_client.set_conversation_attributes(conversation_id, conversation_attrs)
+
+        if contact_id is not None:
+            contact_attrs: dict = {}
+            if intent in _INTENT_TO_SERVICIO_INTERES:
+                contact_attrs["servicio_interes"] = _INTENT_TO_SERVICIO_INTERES[intent]
+            if "es_asalariado" in persona_fields:
+                contact_attrs["tipo_contribuyente"] = (
+                    "persona_natural" if persona_fields["es_asalariado"] else "regimen_simple"
+                )
+            if contact_attrs:
+                await chatwoot_client.set_contact_attributes(contact_id, contact_attrs)
+    except Exception:
+        logger.exception(
+            "auto_tag_chatwoot failed for conversation %s (non-fatal)", conversation_id
+        )
+
 
 def _check_webhook_token(token_param: str | None, token_header: str | None) -> None:
     provided = token_param or token_header
@@ -131,9 +191,14 @@ async def process_incoming_message(
         await chatwoot_client.send_reply(conversation_id, HANDOVER_FALLBACK_REPLY)
         return
 
-    reply_text = await backend_client.taty_reply(lead_id, content)
-    if reply_text is None:
+    taty_result = await backend_client.taty_reply(lead_id, content)
+    if taty_result is None:
         reply_text = HANDOVER_FALLBACK_REPLY
+    else:
+        reply_text = taty_result.get("reply") or HANDOVER_FALLBACK_REPLY
+        # chatwoot-auto-tagging: fire-and-forget so a Chatwoot API failure never blocks or
+        # delays the reply already computed above.
+        asyncio.create_task(_auto_tag_chatwoot(conversation_id, contact_id, taty_result))
 
     # The backend already delivered this exact reply to the customer's phone directly via Meta's
     # Graph API (taty_reply now sends deliver=True — see backend_client.taty_reply for why Chatwoot

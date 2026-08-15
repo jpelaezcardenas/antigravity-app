@@ -101,20 +101,36 @@ class TestTatyReply:
 
     @respx.mock
     @pytest.mark.asyncio
-    async def test_sends_deliver_false_and_returns_the_reply_text(self):
+    async def test_returns_the_full_result_dict(self):
+        """chatwoot-auto-tagging: taty_reply now returns the backend's full classification
+        payload (intent/confidence/persona_fields/stage), not just the reply string, so the
+        bridge can tag Chatwoot without a second backend call."""
         import backend_client
 
         route = respx.post(f"{BACKEND_URL}/channels/whatsapp/leads/lead-1/reply").mock(
             return_value=Response(
-                200, json={"intent": "unknown", "confidence": 0.0, "reply": "Hola!"}
+                200,
+                json={
+                    "intent": "unknown",
+                    "confidence": 0.0,
+                    "reply": "Hola!",
+                    "persona_fields": {},
+                    "stage": "NUEVOS",
+                },
             )
         )
 
         result = await backend_client.taty_reply("lead-1", "hola ayudame")
 
-        assert result == "Hola!"
+        assert result == {
+            "intent": "unknown",
+            "confidence": 0.0,
+            "reply": "Hola!",
+            "persona_fields": {},
+            "stage": "NUEVOS",
+        }
         body = json.loads(route.calls[0].request.content)
-        assert body == {"text": "hola ayudame", "deliver": False}
+        assert body["text"] == "hola ayudame"
 
     @respx.mock
     @pytest.mark.asyncio

@@ -75,7 +75,7 @@ async def whatsapp_intake(phone: str) -> Optional[dict[str, Any]]:
         return None
 
 
-async def taty_reply(lead_id: str, text: str) -> Optional[str]:
+async def taty_reply(lead_id: str, text: str) -> Optional[dict[str, Any]]:
     """Ask the backend's Taty sales router for this lead's reply.
 
     taty-channel-consolidation: replaces the bridge's previous raw Hermes chat completion so a
@@ -102,6 +102,11 @@ async def taty_reply(lead_id: str, text: str) -> Optional[str]:
 
     Same fail-soft contract as whatsapp_intake: returns None on any failure, never raises. The
     caller turns None into the human-takeover fallback rather than answering ungrounded.
+
+    Returns the full backend response dict ({"intent", "confidence", "reply", "persona_fields",
+    "stage"}), not just the reply text — chatwoot-auto-tagging needs the classification fields
+    to tag the Chatwoot contact/conversation. Callers that only need the reply read
+    result["reply"].
     """
     url = f"{settings.CONTEXIA_API_URL}/channels/whatsapp/leads/{lead_id}/reply"
     try:
@@ -114,7 +119,7 @@ async def taty_reply(lead_id: str, text: str) -> Optional[str]:
                 "taty_reply returned non-200: %s %s", response.status_code, response.text
             )
             return None
-        return response.json().get("reply")
+        return response.json()
     except Exception:
         logger.exception("taty_reply call failed")
         return None

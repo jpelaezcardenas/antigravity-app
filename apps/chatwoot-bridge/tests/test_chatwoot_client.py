@@ -227,3 +227,27 @@ class TestSetContactAttributes:
 
         body = json.loads(route.calls[0].request.content)
         assert body["custom_attributes"] == {"tipo_lead": "b2c", "estado": "nuevo"}
+
+
+class TestSetConversationAttributes:
+    """chatwoot-auto-tagging: unlike contacts, conversations have a dedicated custom_attributes
+    member route (config/routes.rb) — POST, not PATCH on the conversation itself."""
+
+    @respx.mock
+    @pytest.mark.asyncio
+    async def test_sets_custom_attributes(self):
+        import chatwoot_client
+
+        route = respx.post(
+            f"{CHATWOOT_URL}/api/v1/accounts/{ACCOUNT_ID}/conversations/42/custom_attributes"
+        ).mock(return_value=Response(200, json={}))
+
+        await chatwoot_client.set_conversation_attributes(
+            42, {"intencion": "ventas", "prioridad": "alta"}
+        )
+
+        assert route.called
+        import json
+
+        body = json.loads(route.calls[0].request.content)
+        assert body["custom_attributes"] == {"intencion": "ventas", "prioridad": "alta"}

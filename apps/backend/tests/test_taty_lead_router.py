@@ -157,6 +157,52 @@ class TestRouteLeadMessage:
         mock_service.advance_lead.assert_not_called()
 
 
+class TestRouteLeadMessageReturnsClassificationForAutoTagging:
+    """chatwoot-auto-tagging: the bridge needs persona_fields/stage alongside intent/confidence
+    to tag Chatwoot without a second backend call — both are already computed here for this
+    function's own CRM side effects, just not returned before this change."""
+
+    def test_sales_interest_branch_includes_persona_fields_and_stage(self):
+        mock_service = MagicMock()
+        mock_service.advance_lead.return_value = {"id": "lead-1", "stage": "PROSPECTOS"}
+        mock_service.get_tax_profile.return_value = {}
+        mock_service.update_tax_profile.return_value = {"lead_id": "lead-1"}
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="NUEVOS"
+        ), patch(
+            "services.taty_lead_router._enqueue_wompi_link_approval"
+        ), patch(
+            "services.taty_lead_router._create_empty_tax_profile"
+        ):
+            result = route_lead_message(
+                "lead-1", "Soy independiente, cuanto cuesta declarar renta"
+            )
+
+        assert result["stage"] == "NUEVOS"
+        assert result["persona_fields"] == {"es_asalariado": False}
+
+    def test_unknown_branch_includes_persona_fields_and_stage(self):
+        mock_service = MagicMock()
+        mock_service.get_tax_profile.return_value = {}
+        mock_taty = MagicMock()
+        mock_taty.ask.return_value = {"answer": "Hola", "error_code": None}
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="PROSPECTOS"
+        ), patch(
+            "services.taty_lead_router.resolve_cliente_cero_tenant_id", return_value="tenant-1"
+        ), patch(
+            "services.taty_lead_router.get_taty_service", return_value=mock_taty
+        ):
+            result = route_lead_message("lead-1", "hola")
+
+        assert result["stage"] == "PROSPECTOS"
+        assert result["persona_fields"] == {}
+
+
 class TestEnqueueWompiLinkApproval:
     """Real bug found live (taty-wompi-link-hitl-gate): a sales_interest message used to call
     generate_wompi_link and send a real, production Wompi checkout link with zero human review —

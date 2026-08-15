@@ -336,7 +336,10 @@ def route_lead_message(
     supplies it; older callers that omit it get the exact same behavior as before this parameter
     existed.
 
-    Returns: {"intent": str, "confidence": float, "reply": str}
+    Returns: {"intent": str, "confidence": float, "reply": str, "persona_fields": dict,
+    "stage": str | None}. persona_fields/stage were added for chatwoot-auto-tagging so the
+    bridge can tag Chatwoot contacts/conversations without a second backend call — this
+    function already computes both for its own CRM side effects.
     """
     intent, confidence = classify_lead_intent(message)
     service = get_crm_service()
@@ -365,6 +368,8 @@ def route_lead_message(
                 "¡Con gusto te ayudo! Un asesor de Contexia va a validar tu caso y te va a "
                 "escribir en un momento para continuar."
             ),
+            "persona_fields": persona_fields,
+            "stage": current_stage,
         }
 
     if intent == "payment_confirmation":
@@ -380,6 +385,8 @@ def route_lead_message(
                     "¡Perfecto! Ya confirmamos tu pago. Un asesor de Contexia revisará tu caso "
                     "en breve para continuar con tu declaración."
                 ),
+                "persona_fields": persona_fields,
+                "stage": current_stage,
             }
         if status == "PENDING":
             return {
@@ -389,6 +396,8 @@ def route_lead_message(
                     "Aún no hemos recibido la confirmación de tu pago. Dame un momento y te "
                     "aviso apenas se confirme."
                 ),
+                "persona_fields": persona_fields,
+                "stage": current_stage,
             }
         return {
             "intent": intent,
@@ -397,6 +406,8 @@ def route_lead_message(
                 "No tengo ningún pago pendiente registrado a tu nombre. ¿Quieres que te envíe el "
                 "link de pago?"
             ),
+            "persona_fields": persona_fields,
+            "stage": current_stage,
         }
 
     # unknown intent: hand off to the shared Taty brain rather than generating reply text here.
@@ -421,6 +432,8 @@ def route_lead_message(
         "intent": intent,
         "confidence": confidence,
         "reply": reply,
+        "persona_fields": persona_fields,
+        "stage": current_stage,
     }
 
 

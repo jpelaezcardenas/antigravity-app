@@ -112,6 +112,23 @@ async def set_contact_attributes(contact_id: int, attributes: dict[str, Any]) ->
         response.raise_for_status()
 
 
+async def set_conversation_attributes(conversation_id: int, attributes: dict[str, Any]) -> None:
+    """Set/merge custom attributes on a Chatwoot conversation (e.g. intencion, prioridad,
+    siguiente_accion — chatwoot-auto-tagging). Unlike contacts, conversations have a dedicated
+    custom_attributes member route (config/routes.rb), so this is a POST to that sub-resource,
+    not a PATCH on the conversation itself. Mirrors chatwoot_set_conversation_attributes in
+    contexia-mcp-servers/chatwoot/chatwoot_mcp/server.py.
+    """
+    url = f"{_base_url()}/conversations/{conversation_id}/custom_attributes"
+    async with _client() as client:
+        response = await client.post(
+            url,
+            headers=_headers(),
+            json={"custom_attributes": attributes},
+        )
+        response.raise_for_status()
+
+
 async def find_or_create_contact(phone: str, name: str | None) -> int:
     """Find a contact by phone, or create one (whatsapp-durable-inbox).
 
