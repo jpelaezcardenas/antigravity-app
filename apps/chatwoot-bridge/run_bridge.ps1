@@ -10,6 +10,16 @@
 
 Set-Location -Path $PSScriptRoot
 
+# ── Hide console window immediately (no flash) ──────────────────────────
+# When Task Scheduler launches powershell.exe without -WindowStyle Hidden,
+# a console window briefly appears. This P/Invoke hides it on the spot.
+Add-Type -Name Win32 -Namespace '' -MemberDefinition @'
+  [DllImport("kernel32.dll")] public static extern IntPtr GetConsoleWindow();
+  [DllImport("user32.dll")]   public static extern bool ShowWindow(IntPtr h, int n);
+'@ -ErrorAction SilentlyContinue
+$consoleHwnd = [Win32]::GetConsoleWindow()
+if ($consoleHwnd -ne [IntPtr]::Zero) { [Win32]::ShowWindow($consoleHwnd, 0) | Out-Null }  # 0 = SW_HIDE
+
 # Idempotent self-check, not Task Scheduler's RestartOnFailure: that setting was tested live
 # (kill the process, wait past its 1-minute RestartInterval) and Windows never re-launched the
 # action — the task just sat in the "Ready" state. This is a known, long-reported Task Scheduler
@@ -17,7 +27,16 @@ Set-Location -Path $PSScriptRoot
 # trigger that repeats every minute forever (see register_bridge_task.ps1) combined with this
 # script exiting immediately, doing nothing, whenever the bridge is already up — so a healthy
 # tick is a no-op and a dead one actually restarts it.
-$alreadyRunning = Test-NetConnection -ComputerName "127.0.0.1" -Port 8090 -InformationLevel Quiet -WarningAction SilentlyContinue
+#
+# NOTE: Test-NetConnection was replaced with TcpClient because Test-NetConnection creates a
+# visible console window every minute. TcpClient is fully silent and faster.
+$alreadyRunning = $false
+try {
+    $tcp = New-Object System.Net.Sockets.TcpClient
+    $tcp.Connect('127.0.0.1', 8090)
+    $alreadyRunning = $tcp.Connected
+    $tcp.Close()
+} catch { $alreadyRunning = $false }
 if ($alreadyRunning) {
     exit 0
 }
