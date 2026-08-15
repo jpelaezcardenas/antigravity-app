@@ -6,7 +6,7 @@
     "scope_source": "openspec/changes/<id>/tasks.md",
     "valid_status": ["pending", "in_progress", "done", "blocked"]
   },
-  "active": "taty-whatsapp-renta-sales-capability",
+  "active": null,
   "features": [
     {
       "id": "adopt-gbrain-second-brain",
@@ -25,8 +25,8 @@
     },
     {
       "id": "taty-whatsapp-renta-sales-capability",
-      "status": "in_progress",
-      "summary": "Fixes Taty's WhatsApp channel (repeats two static replies) and adds a declaración-de-renta-persona-natural sales capability. Root causes found live 2026-08-11: (1) knowledge_chunks table has 0 rows AND its schema doesn't match the code (missing client_id column, mismatched match_knowledge_chunks RPC signature); (2) taty_lead_router.py only reaches the LLM on the 'unknown' intent branch, defaulting through OpenRouter Free's meta-llama/llama-2-7b-chat since get_anonymized_ai_response has no profile parameter — the existing taty-v1/GLM profile is unreachable from WhatsApp; (3) WhatsApp is the only Taty channel NOT wired to the shared TatyAgentService (services/taty_service.py) that Telegram and the PWA already use — this change routes WhatsApp through it instead of building a second brain, keeping taty_lead_router.py as the funnel tools (persona detection, CRM stage advance, Wompi HITL approval) Taty invokes. Also moves Chatwoot delivery from inbox 3 (test injection channel) to inbox 1 ('Taty Contadora Amiga 24/7', real Meta-linked inbox) with Chatwoot as sole outbound sender. Plan: C:\\Users\\contexia\\.claude\\plans\\tengo-dos-hilos-de-cheeky-eagle.md. openspec/changes/taty-whatsapp-renta-sales-capability/ (to be created)."
+      "status": "done",
+      "summary": "COMPLETE (57/74 tasks; remaining 17 are founder actions — pricing tiers, physical-phone smoke test, Meta Business Verification — or genuinely deferred tooling gaps, none blocking), archived 2026-08-13 as openspec/changes/archive/2026-08-13-taty-whatsapp-renta-sales-capability. Fixed Taty's WhatsApp channel (was repeating two static replies) and added a declaración-de-renta-persona-natural sales capability: repaired the knowledge_chunks pgvector schema, routed WhatsApp through the shared TatyAgentService (same brain as Telegram/PWA) instead of a second, router-local raw-LLM path, and cut Chatwoot delivery over from inbox 3 (test) to inbox 1 (real Meta-linked). Four delta specs synced into openspec/specs/ 2026-08-13. See that report for the extensive live-incident history found and fixed during rollout (KB RLS/schema bugs, stale-process restart gotcha, Chatwoot incoming-message 422 on real inboxes, image-caption text loss)."
     },
     {
       "id": "hermes-task-queue-tenant-scoping",
