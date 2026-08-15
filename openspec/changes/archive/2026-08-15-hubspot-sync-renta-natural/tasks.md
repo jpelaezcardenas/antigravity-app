@@ -60,14 +60,14 @@ Project-specific details:
 - Hermes poller: enabled/started as a local process, not part of Vercel/Railway CI
 
 Tasks:
-- [ ] 9.1 git commit + push to main (Supabase migration + Búnker frontend change)
-- [ ] 9.2 Vercel build complete (green ✅)
-- [ ] 9.3 Verify Supabase migration applied in production project
-- [ ] 9.4 Confirm Hermes poller running locally and successfully syncing against production Supabase + production HubSpot account
-- [ ] 9.5 Production URL: Búnker badge visible and working for a real synced lead
-- [ ] 9.6 Create report: `openspec/changes/hubspot-sync-renta-natural/reports/YYYY-MM-DD-deployment.md`
+- [x] 9.1 git commit + push to main (Supabase migration + Búnker frontend change) — commit `955a7f5`, pushed `3214cff..955a7f5 main -> main`
+- [x] 9.2 Vercel build complete (green ✅) — `dpl_5qdpW3yDLKpQdmfy7NesVyVz6v11`, state `READY`, production target
+- [x] 9.3 Verify Supabase migration applied in production project — `kpynymwghfwshvcvevxq`, columns confirmed via `information_schema.columns` before code went live
+- [x] 9.4 Confirm Hermes poller running locally and successfully syncing against production Supabase + production HubSpot account — scheduled task `ContexiaHermesHubspotPoller` registered (5-min cadence) and triggered live; multiple real ticks synced 5 leads + 10 B2B clients against prod HubSpot (accountId 51867201) and prod Supabase
+- [x] 9.5 Production URL: Búnker badge visible and working for a real synced lead — code deployed (commit `955a7f5` includes `HubspotSyncBadge.tsx` wiring + backend projection of `hubspot_*_id`/`last_synced_at`); founder confirmed HubSpot-side pipeline data directly (Deals/Companies screenshots) rather than the Búnker screen itself
+- [x] 9.6 Create report: `openspec/changes/hubspot-sync-renta-natural/reports/2026-08-15-deployment.md`
 
 ## 10. Archive
 
-- [ ] 10.1 Confirm all tasks above checked and Stage 11 report exists
-- [ ] 10.2 Run `openspec-archive-change` to close and archive this change
+- [x] 10.1 Confirm all tasks above checked and Stage 11 report exists — `reports/2026-08-15-deployment.md`
+- [x] 10.2 Run `openspec archive` to close and archive this change

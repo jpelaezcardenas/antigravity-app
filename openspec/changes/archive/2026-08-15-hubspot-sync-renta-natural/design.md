@@ -56,7 +56,7 @@ Additionally, when a lead has a related `crm_wompi_transactions` row:
 
 `contractsent` stays unused/reserved, as originally decided.
 
-Alternative considered: renaming the actual HubSpot stage labels via the API to match Spanish funnel names. Deferred — stage internal `value`s are stable identifiers the sync code depends on; relabeling is a cosmetic HubSpot-admin-UI change the founder can do independently without touching sync code, so it's decoupled from this change's critical path.
+Alternative considered: renaming the actual HubSpot stage labels via the API to match Spanish funnel names. Originally deferred as a manual founder step; **done 2026-08-15** via `PATCH /crm/v3/pipelines/deals/default/stages/{stageId}` using the Private App token (scope `crm.schemas.deals.write`, confirmed granted) — no HubSpot MCP tool exposes pipeline/stage management, so this used the token directly rather than the connected MCP. Stage internal `value`s (`appointmentscheduled`, etc.) are untouched — only the human-facing `label` changed, so the poller's `stage_mapping.py` needed no code change.
 
 **5. `b2b_clients` → Companies only, never Deals.**
 Companies is a distinct HubSpot object from Deals/pipeline — syncing there gives cross-reference value (a rep can look up a B2B account in HubSpot) with zero pipeline contention. Keeps the one free pipeline slot 100% dedicated to Renta Natural, per the founder's decision.
