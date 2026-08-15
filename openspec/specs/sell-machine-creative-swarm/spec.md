@@ -37,7 +37,9 @@ hook, and SHALL return only the surviving hooks (rewritten where applicable). Th
 list and the Claim Ledger's known-value allowlist SHALL live in a single tracked module
 (`apps/backend/agents/brand_rubric.py`), imported by the Content Critic rather than duplicated
 inline, and the Claim Ledger allowlist SHALL derive from `core.constants` (not a separate hardcoded
-copy of fiscal figures).
+copy of fiscal figures). A rewrite response that is not a well-shaped single hook (e.g. a list, or
+an object missing `headline`/`body`/`cta`) SHALL NOT crash evaluation — the original hook SHALL be
+used for re-evaluation instead, matching the existing LLM-unavailable fallback contract.
 
 #### Scenario: A hook violating a hard rule is rejected without a survivor
 - **WHEN** a submitted hook's text asserts that Contexia is a regulated accounting firm that signs
@@ -48,6 +50,17 @@ copy of fiscal figures).
 #### Scenario: A hook that passes is returned unchanged
 - **WHEN** a submitted hook contains no rubric violations
 - **THEN** it appears in the surviving set with its original `headline`/`body`/`cta` unchanged
+
+#### Scenario: A malformed rewrite response falls back to the original hook
+- **WHEN** a rejected hook's rewrite attempt returns a response that is not a well-shaped single
+  hook object (e.g. a JSON array, or an object missing required fields)
+- **THEN** evaluation proceeds using the original (unrewritten) hook rather than crashing, and the
+  hook's survival is determined by re-evaluating that original hook
+
+#### Scenario: A list-wrapped rewrite response is unwrapped when its first element is well-shaped
+- **WHEN** a rejected hook's rewrite attempt returns a JSON array whose first element is a
+  well-shaped hook object
+- **THEN** that first element is used as the rewritten hook for re-evaluation
 
 #### Scenario: A rejected hook is rewritten once and re-evaluated
 - **WHEN** a submitted hook is rejected for a fixable tone issue (e.g. robotic phrasing, not a hard
