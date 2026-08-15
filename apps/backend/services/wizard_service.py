@@ -16,7 +16,7 @@ import logging
 import re
 
 from services.centinela_service import get_centinela_service
-from core.supabase_client import get_service_supabase
+from services.crm_service import CrmService
 from core.constants import UMBRAL_RENTA_COP, UMBRAL_PATRIMONIO_COP
 from agents.agent_6_analyst import AnalystAgent
 
@@ -241,17 +241,14 @@ def run_renta_diagnostico(
     fecha_corte = "Agosto - Octubre 2026"
 
     # 2. Guardar lead en Supabase CRM
+    # Corrected 2026-08-15 (fix-whatsapp-phone-normalization-dedup): the original direct
+    # .insert() used column names that don't exist on crm_leads and a hardcoded, invalid
+    # tenant_id — it silently failed on every call (verified live: zero rows in crm_leads ever
+    # came from this path). Routed through CrmService.whatsapp_intake, the same normalized,
+    # deduped, correctly tenant-scoped path the WhatsApp channel uses, so a quiz submission and
+    # a WhatsApp message from the same phone land in one crm_leads row, not two.
     try:
-        supabase = get_service_supabase()
-        lead_data = {
-            "tenant_id": "ctx-000000000", # Cliente Cero fallback
-            "name": nombre,
-            "whatsapp": whatsapp,
-            "lead_source": "renta_inbound_2026",
-            "crm_stage": "prospecting",
-            "notes": f"Ingresos: {ingresos_anuales}, Patrimonio: {patrimonio}, Compras: {compras}"
-        }
-        supabase.table("crm_leads").insert(lead_data).execute()
+        CrmService().whatsapp_intake(whatsapp, full_name=nombre)
         logger.info(f"Renta inbound lead saved: {whatsapp}")
     except Exception as e:
         logger.error(f"Failed to save renta lead to CRM: {e}")

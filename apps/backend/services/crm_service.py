@@ -58,12 +58,15 @@ RENTA_NATURAL_CURRENCY = "COP"
 
 
 def _normalize_whatsapp_phone(whatsapp_phone: str) -> str:
-    """Deterministic phone normalization: strip everything but digits and an optional
-    leading '+' (E.164-ish), so "+57 300 123 4567" and "573001234567" match the same
-    lead. There is no existing normalization helper in this codebase to reuse."""
-    digits = "".join(ch for ch in whatsapp_phone if ch.isdigit())
-    has_plus = whatsapp_phone.strip().startswith("+")
-    return f"+{digits}" if has_plus else digits
+    """Deterministic phone normalization: digits only, no leading '+', so "+57 300 123 4567"
+    and "573001234567" collapse to the same canonical value and match the same lead.
+
+    Correction (2026-08-15, fix-whatsapp-phone-normalization-dedup): the original version kept
+    whichever +-prefix state the caller happened to pass, so the two formats above never
+    actually matched — confirmed live to have split one real WhatsApp customer across two
+    crm_leads rows. Digits-only was chosen as the canonical form because it already matches the
+    majority of existing crm_leads.whatsapp_phone values."""
+    return "".join(ch for ch in whatsapp_phone if ch.isdigit())
 
 
 def _month_periods(from_period: str, to_period: str) -> List[str]:

@@ -17,7 +17,7 @@ import pytest
 from fastapi import FastAPI
 
 from config import settings
-from services.crm_service import CrmService
+from services.crm_service import CrmService, _normalize_whatsapp_phone
 
 
 def _fake_client(cliente_cero_id="cc-tenant"):
@@ -37,7 +37,52 @@ def _fake_client(cliente_cero_id="cc-tenant"):
     return client
 
 
+class TestNormalizeWhatsappPhone:
+    def test_plus_and_no_plus_forms_normalize_to_the_same_value(self):
+        """Regression test for the live bug found 2026-08-15 (fix-whatsapp-phone-normalization-
+        dedup): the normalizer used to preserve whichever +-prefix state the caller passed,
+        so "+573504187902" and "573504187902" never matched — two real crm_leads rows were
+        created for the same WhatsApp customer as a result."""
+        assert _normalize_whatsapp_phone("+573001234567") == _normalize_whatsapp_phone(
+            "573001234567"
+        )
+
+    def test_normalized_form_has_no_plus(self):
+        assert _normalize_whatsapp_phone("+573001234567") == "573001234567"
+
+    def test_strips_spaces_and_punctuation(self):
+        assert _normalize_whatsapp_phone("+57 300 123 4567") == "573001234567"
+
+
 class TestWhatsappIntakeService:
+    def test_existing_lead_found_regardless_of_plus_prefix_format(self):
+        """The lookup must use the SAME normalized value the original insert used, so a lead
+        created from one phone format is found when contacted via the other format."""
+        client = _fake_client()
+        leads_table = MagicMock()
+        leads_table.select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = (
+            MagicMock(data={"id": "existing-lead-id", "stage": "PROSPECTOS"})
+        )
+
+        original_side_effect = client.table.side_effect
+
+        def routed(name):
+            if name == "crm_leads":
+                return leads_table
+            return original_side_effect(name)
+
+        client.table.side_effect = routed
+
+        with patch("services.crm_service.get_service_supabase", return_value=client):
+            # Original lead was created from "+573001234567"; this call uses no "+".
+            result = CrmService().whatsapp_intake("573001234567")
+
+        assert result == {"lead_id": "existing-lead-id", "is_new": False, "stage": "PROSPECTOS"}
+        lookup_call = leads_table.select.return_value.eq.return_value.eq
+        assert lookup_call.call_args[0] == ("whatsapp_phone", "573001234567")
+        leads_table.insert.assert_not_called()
+
+
     def test_new_phone_creates_lead_in_nuevos_stage(self):
         client = _fake_client()
         leads_table = MagicMock()
@@ -64,7 +109,7 @@ class TestWhatsappIntakeService:
         insert_payload = leads_table.insert.call_args[0][0]
         assert insert_payload["stage"] == "NUEVOS"
         assert insert_payload["tenant_id"] == "cc-tenant"
-        assert insert_payload["whatsapp_phone"] == "+573001234567"
+        assert insert_payload["whatsapp_phone"] == "573001234567"
 
     def test_new_phone_with_full_name_creates_lead_with_that_name(self):
         client = _fake_client()

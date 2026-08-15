@@ -14,9 +14,13 @@ $ErrorActionPreference = "Stop"
 $taskName = "ContexiaHermesHubspotPoller"
 $scriptPath = Join-Path $PSScriptRoot "run_poller.ps1"
 
+# Launched via silent_runner.vbs (same pattern as ContexiaChatwootBridge / ContexiaHermesManusPoller)
+# so PowerShell starts with a hidden window from the outset — invoking powershell.exe directly
+# flashes a visible console for a split second before run_poller.ps1's own hide-trick can apply.
+$silentRunner = "$env:USERPROFILE\silent_runner.vbs"
 $action = New-ScheduledTaskAction `
-    -Execute "powershell.exe" `
-    -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
+    -Execute "wscript.exe" `
+    -Argument "`"$silentRunner`" `"$scriptPath`""
 
 $logonTrigger = New-ScheduledTaskTrigger -AtLogOn
 
