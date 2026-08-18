@@ -90,7 +90,15 @@ data, zero product dependency) rather than attempt a partial restore (an entries
 a partial snapshot would have left journal entries with no debit/credit lines — worse than absent).
 **Lesson carried forward:** before running any `RUN_SHADOW_GL=1` test file against the live
 project again, audit every class's cleanup fixture in that file first — finding one instance of
-"deletes more than it created" doesn't mean it's the only one.
+"deletes more than it created" doesn't mean it's the only one. (Both affected fixtures —
+`test_shadow_gl_siigo_csv.py::TestIngestSiigoCSVPersistence` and
+`test_shadow_gl_integration.py::TestShadowGLIntegrationWithDB` — were fixed in the same change to
+snapshot-then-diff instead of delete-all, so this specific failure mode cannot recur.)
+
+**`is_verified_real` is now live in production** (deployed 2026-08-18, commit `f984460`, verified
+via curl against `https://antigravity-app-production-175a.up.railway.app` for all three ingestion
+endpoints: omitting the flag persists `false`, `?is_verified_real=true` persists `true`). See
+`openspec/changes/shadow-gl-data-integrity-flag/` for full artifacts and the deployment report.
 
 **Why this matters:** a prior session's "Phase 5 COMPLETE — LIVE" reports declared this pipeline
 production-ready with real data. It wasn't — confirmed independently by the 2026-08-13 tech-debt

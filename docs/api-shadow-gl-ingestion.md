@@ -27,6 +27,7 @@ Content-Type: application/xml
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | body | XML | Yes | Raw DIAN UBL 2.1 XML document (invoice, credit note, or debit note) |
+| `is_verified_real` | query, boolean | No (default `false`) | Set `true` only when this is a genuine DIAN export, not a fixture/test. Persisted as `is_verified_real` on the row — see `docs/supabase-mcp-admin.md` §3. |
 
 #### Response: 200 OK
 
@@ -101,6 +102,7 @@ transaction_date,account_code,account_name,debit_amount,credit_amount,memo,exter
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | body | CSV | Yes | Siigo journal export (comma-separated, with headers) |
+| `is_verified_real` | query, boolean | No (default `false`) | Set `true` only when this is a genuine Siigo export, not a fixture/test. Persisted as `is_verified_real` on each row — see `docs/supabase-mcp-admin.md` §3. |
 
 #### CSV Format Requirements
 
@@ -347,6 +349,13 @@ Filter by:
 ---
 
 ## Changelog
+
+### v1.1 (2026-08-18)
+- Added `is_verified_real` query parameter to all three ingestion endpoints
+  (`dian-xml/ingest`, `siigo-csv/ingest`, `siigo-csv/upload`). Defaults to `false`. See
+  `openspec/changes/shadow-gl-data-integrity-flag/` and `docs/supabase-mcp-admin.md` §3 —
+  the tables held 100% synthetic data as of this date; the flag is the gate for distinguishing
+  future real Siigo/DIAN uploads from fixtures/tests.
 
 ### v1.0 (2026-06-25)
 - Initial release (Phase 5)

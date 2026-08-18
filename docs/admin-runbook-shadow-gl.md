@@ -18,11 +18,15 @@
 
 #### Option A: curl (Simple, Recommended for Manual)
 
+**Always add `?is_verified_real=true` when the file is a genuine Siigo/DIAN export** (not a test
+or fixture) — otherwise the upload defaults to `false` and won't count as real data in any report
+built on Shadow GL. See `docs/supabase-mcp-admin.md` §3.
+
 **Upload XML:**
 ```bash
 curl -X POST \
   -H "Content-Type: application/xml" \
-  https://antigravity-app-production-175a.up.railway.app/api/v1/shadow-gl/dian-xml/ingest \
+  "https://antigravity-app-production-175a.up.railway.app/api/v1/shadow-gl/dian-xml/ingest?is_verified_real=true" \
   --data @factura_20260625.xml
 ```
 
@@ -30,7 +34,7 @@ curl -X POST \
 ```bash
 curl -X POST \
   -H "Content-Type: text/csv" \
-  https://antigravity-app-production-175a.up.railway.app/api/v1/shadow-gl/siigo-csv/ingest \
+  "https://antigravity-app-production-175a.up.railway.app/api/v1/shadow-gl/siigo-csv/ingest?is_verified_real=true" \
   --data @siigo_journal_20260625.csv
 ```
 
@@ -45,19 +49,19 @@ BACKEND_URL="https://antigravity-app-production-175a.up.railway.app"
 DIAN_FOLDER="/home/admin/exports/dian"
 SIIGO_FOLDER="/home/admin/exports/siigo"
 
-# Upload XML files from DIAN
+# Upload XML files from DIAN (is_verified_real=true: these are real exports, not fixtures)
 for xml in "$DIAN_FOLDER"/*.xml; do
   echo "Uploading $xml..."
   curl -X POST -H "Content-Type: application/xml" \
-    "$BACKEND_URL/api/v1/shadow-gl/dian-xml/ingest" \
+    "$BACKEND_URL/api/v1/shadow-gl/dian-xml/ingest?is_verified_real=true" \
     --data @"$xml"
 done
 
-# Upload CSV from Siigo
+# Upload CSV from Siigo (is_verified_real=true: this is a real export, not a fixture)
 if [ -f "$SIIGO_FOLDER/journal.csv" ]; then
   echo "Uploading Siigo journal..."
   curl -X POST -H "Content-Type: text/csv" \
-    "$BACKEND_URL/api/v1/shadow-gl/siigo-csv/ingest" \
+    "$BACKEND_URL/api/v1/shadow-gl/siigo-csv/ingest?is_verified_real=true" \
     --data @"$SIIGO_FOLDER/journal.csv"
 fi
 
