@@ -65,12 +65,16 @@ async def _resolve_tenant_id() -> str:
 
 
 @router.post("/dian-xml/ingest", response_model=DianXmlIngestResponse)
-async def ingest_dian_xml_endpoint(request: Request):
+async def ingest_dian_xml_endpoint(request: Request, is_verified_real: bool = False):
     """
     Manually ingest a DIAN UBL 2.1 XML document (invoice, credit note, or
     debit note). Accepts the raw XML as the request body.
 
     Idempotent on CUFE: re-ingesting the same document does not duplicate it.
+
+    Pass ?is_verified_real=true when uploading a genuine DIAN export (vs. a
+    fixture/test document) — defaults to false so nothing is silently
+    treated as real (shadow-gl-data-integrity-flag).
     """
     raw_xml = (await request.body()).decode("utf-8")
 
@@ -79,7 +83,7 @@ async def ingest_dian_xml_endpoint(request: Request):
 
     tenant_id = await _resolve_tenant_id()
 
-    success, document, error = await ingest_dian_xml(tenant_id, raw_xml)
+    success, document, error = await ingest_dian_xml(tenant_id, raw_xml, is_verified_real)
 
     if not success:
         raise HTTPException(status_code=400, detail=error)
@@ -93,13 +97,17 @@ async def ingest_dian_xml_endpoint(request: Request):
 
 
 @router.post("/siigo-csv/ingest", response_model=SiigoCSVIngestResponse)
-async def ingest_siigo_csv_endpoint(request: Request):
+async def ingest_siigo_csv_endpoint(request: Request, is_verified_real: bool = False):
     """
     Manually ingest a Siigo journal CSV export (debit/credit double-entry format).
     Accepts the raw CSV as the request body.
 
     Idempotent on (tenant_id, external_reference_id, entry_date): re-ingesting
     the same batch does not duplicate entries.
+
+    Pass ?is_verified_real=true when uploading a genuine Siigo export (vs. a
+    fixture/test file) — defaults to false so nothing is silently treated as
+    real (shadow-gl-data-integrity-flag).
 
     Returns 200 with row_count and date_range on success, or 400 with error message
     if CSV is malformed or accounting entries are imbalanced.
@@ -111,7 +119,7 @@ async def ingest_siigo_csv_endpoint(request: Request):
 
     tenant_id = await _resolve_tenant_id()
 
-    success, summary, error = await ingest_siigo_csv(tenant_id, csv_text)
+    success, summary, error = await ingest_siigo_csv(tenant_id, csv_text, is_verified_real)
 
     if not success:
         raise HTTPException(status_code=400, detail=error)
@@ -125,7 +133,9 @@ async def ingest_siigo_csv_endpoint(request: Request):
 
 
 @router.post("/siigo-csv/upload", response_model=SiigoCSVIngestResponse)
-async def upload_siigo_csv_endpoint(request: Request, file: UploadFile = File(...)):
+async def upload_siigo_csv_endpoint(
+    request: Request, file: UploadFile = File(...), is_verified_real: bool = False
+):
     """
     Upload a Siigo journal CSV export via multipart form data (PWA file uploader).
 
@@ -134,6 +144,10 @@ async def upload_siigo_csv_endpoint(request: Request, file: UploadFile = File(..
 
     Idempotent on (tenant_id, external_reference_id, entry_date): duplicate rows
     are skipped.
+
+    Pass ?is_verified_real=true when uploading a genuine Siigo export (vs. a
+    fixture/test file) — defaults to false so nothing is silently treated as
+    real (shadow-gl-data-integrity-flag).
 
     Returns 200 with row_count and date_range on success, or 400 with error message
     if file upload, parsing, or DB insertion fails.
@@ -168,7 +182,7 @@ async def upload_siigo_csv_endpoint(request: Request, file: UploadFile = File(..
         raise HTTPException(status_code=500, detail="Failed to create batch record")
 
     # Parse and ingest CSV
-    success, summary, error = await ingest_siigo_csv(tenant_id, csv_text)
+    success, summary, error = await ingest_siigo_csv(tenant_id, csv_text, is_verified_real)
 
     # Update batch record
     try:

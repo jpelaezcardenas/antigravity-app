@@ -371,6 +371,11 @@ async def _persist_approved_entry(
         logger.error(error)
         return False, error
 
+    # is_verified_real intentionally not threaded through here (defaults to False on both
+    # ingest_* calls below) — the approval_queue payload doesn't carry the flag, and this is a
+    # narrow parse-error-recovery path, not the real-vs-synthetic ingestion entry point.
+    # See openspec/changes/shadow-gl-data-integrity-flag/design.md Non-Goals.
+
     # Detect type: CSV or XML
     if raw_input.strip().startswith("<"):
         # XML
@@ -401,7 +406,7 @@ async def _persist_approved_entry(
 
 
 async def ingest_siigo_csv(
-    tenant_id: str, csv_text: str
+    tenant_id: str, csv_text: str, is_verified_real: bool = False
 ) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
     """
     Parse and persist a Siigo CSV journal export for a tenant.
@@ -490,6 +495,7 @@ async def ingest_siigo_csv(
                 "memo": f"Siigo import: {ref_id}",
                 "source": "siigo_csv",
                 "uploaded_at": datetime.now(tz=None).isoformat(),
+                "is_verified_real": is_verified_real,
             }
             inserted_entry = supabase.table("erp_journal_entries").insert(entry_data).execute()
             entry_id = inserted_entry.data[0]["id"]
@@ -525,7 +531,7 @@ async def ingest_siigo_csv(
 
 
 async def ingest_dian_xml(
-    tenant_id: str, raw_xml: str
+    tenant_id: str, raw_xml: str, is_verified_real: bool = False
 ) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
     """
     Parse and persist a DIAN UBL 2.1 XML document for a tenant.
@@ -555,7 +561,12 @@ async def ingest_dian_xml(
         logger.info(f"CUFE {parsed['cufe']} already ingested for tenant {tenant_id}; skipping")
         return True, existing.data[0], None
 
-    row = {**parsed, "tenant_id": tenant_id, "raw_xml": raw_xml}
+    row = {
+        **parsed,
+        "tenant_id": tenant_id,
+        "raw_xml": raw_xml,
+        "is_verified_real": is_verified_real,
+    }
 
     try:
         inserted = supabase.table("dian_xml_documents").insert(row).execute()

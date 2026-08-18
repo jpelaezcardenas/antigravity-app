@@ -152,26 +152,41 @@ class TestIngestSiigoCSVPersistence:
 
     @pytest.fixture(autouse=True)
     def _cleanup(self, cliente_cero_tenant_id):
-        """Clean up test data after each test."""
+        """Clean up only the rows this test itself created.
+
+        Two bug fixes (shadow-gl-data-integrity-flag):
+        1. The previous version passed a single entry id string to
+           `.in_("entry_id", ...)`, which iterates a bare string character-by-character —
+           Postgres then rejected the first character as an invalid UUID.
+        2. The previous version deleted ALL erp_journal_entries for the Cliente Cero tenant
+           on teardown, including unrelated pre-existing rows from other sessions/fixtures.
+           Snapshot ids before the test runs and delete only what's new, so this class never
+           destroys data it didn't create.
+        """
         supabase = get_supabase()
+        pre_existing_ids = {
+            row["id"]
+            for row in supabase.table("erp_journal_entries")
+            .select("id")
+            .eq("tenant_id", cliente_cero_tenant_id)
+            .execute()
+            .data
+        }
         yield
-        # Delete all entries/lines created during test
-        supabase.table("erp_journal_lines").delete().eq(
-            "tenant_id", cliente_cero_tenant_id
-        ).in_("entry_id",
-            supabase.table("erp_journal_entries")
+        new_entry_ids = [
+            row["id"]
+            for row in supabase.table("erp_journal_entries")
             .select("id")
             .eq("tenant_id", cliente_cero_tenant_id)
             .execute()
-            .data[0]["id"] if supabase.table("erp_journal_entries")
-            .select("id")
-            .eq("tenant_id", cliente_cero_tenant_id)
-            .execute()
-            .data else []
-        ).execute()
-        supabase.table("erp_journal_entries").delete().eq(
-            "tenant_id", cliente_cero_tenant_id
-        ).execute()
+            .data
+            if row["id"] not in pre_existing_ids
+        ]
+        if new_entry_ids:
+            supabase.table("erp_journal_lines").delete().eq(
+                "tenant_id", cliente_cero_tenant_id
+            ).in_("entry_id", new_entry_ids).execute()
+            supabase.table("erp_journal_entries").delete().in_("id", new_entry_ids).execute()
 
     @pytest.mark.asyncio
     async def test_ingest_creates_entries_and_lines(self, cliente_cero_tenant_id) -> None:
@@ -216,3 +231,54 @@ class TestIngestSiigoCSVPersistence:
         # Should return success=False with error message about imbalance
         assert success is False
         assert "imbalanced" in (error or "").lower() or "imbalance" in (error or "").lower()
+
+    @pytest.mark.asyncio
+    async def test_ingest_without_flag_defaults_unverified(self, cliente_cero_tenant_id) -> None:
+        """Omitting is_verified_real persists is_verified_real=False (shadow-gl-data-integrity-flag).
+
+        Uses an inline CSV with the current Spanish header format that
+        parse_siigo_csv/ingest_siigo_csv actually expect today (fecha, referencia externa,
+        código de cuenta, descripción, débito, crédito) — the module-level SIIGO_JOURNAL_CSV
+        fixture predates that rewrite and uses stale English headers (pre-existing drift,
+        tracked separately, out of scope for this change).
+        """
+        csv_text = (
+            "fecha,referencia externa,código de cuenta,descripción,débito,crédito\n"
+            "2026-08-18,FLAG-TEST-001,1105,Caja,100000.00,\n"
+            "2026-08-18,FLAG-TEST-001,4105,Revenue,,100000.00\n"
+        )
+        success, summary, error = await ingest_siigo_csv(cliente_cero_tenant_id, csv_text)
+        assert success is True
+        supabase = get_supabase()
+        rows = (
+            supabase.table("erp_journal_entries")
+            .select("is_verified_real")
+            .eq("tenant_id", cliente_cero_tenant_id)
+            .eq("external_reference_id", "FLAG-TEST-001")
+            .execute()
+        )
+        assert len(rows.data) == 1
+        assert rows.data[0]["is_verified_real"] is False
+
+    @pytest.mark.asyncio
+    async def test_ingest_with_flag_marks_verified(self, cliente_cero_tenant_id) -> None:
+        """is_verified_real=True persists is_verified_real=True (shadow-gl-data-integrity-flag)."""
+        csv_text = (
+            "fecha,referencia externa,código de cuenta,descripción,débito,crédito\n"
+            "2026-08-18,FLAG-TEST-002,1105,Caja,100000.00,\n"
+            "2026-08-18,FLAG-TEST-002,4105,Revenue,,100000.00\n"
+        )
+        success, summary, error = await ingest_siigo_csv(
+            cliente_cero_tenant_id, csv_text, is_verified_real=True
+        )
+        assert success is True
+        supabase = get_supabase()
+        rows = (
+            supabase.table("erp_journal_entries")
+            .select("is_verified_real")
+            .eq("tenant_id", cliente_cero_tenant_id)
+            .eq("external_reference_id", "FLAG-TEST-002")
+            .execute()
+        )
+        assert len(rows.data) == 1
+        assert rows.data[0]["is_verified_real"] is True

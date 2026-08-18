@@ -120,3 +120,21 @@ class TestIngestDianXmlPersistence:
         assert success is False
         assert document is None
         assert error is not None
+
+    @pytest.mark.asyncio
+    async def test_ingest_without_flag_defaults_unverified(self, cliente_cero_tenant_id) -> None:
+        """Omitting is_verified_real persists is_verified_real=False (shadow-gl-data-integrity-flag)."""
+        success, document, error = await ingest_dian_xml(
+            cliente_cero_tenant_id, SAMPLE_INVOICE_XML
+        )
+        assert success is True
+        assert document["is_verified_real"] is False
+
+    @pytest.mark.asyncio
+    async def test_ingest_with_flag_marks_verified(self, cliente_cero_tenant_id) -> None:
+        """is_verified_real=True persists is_verified_real=True (shadow-gl-data-integrity-flag)."""
+        success, document, error = await ingest_dian_xml(
+            cliente_cero_tenant_id, SAMPLE_INVOICE_XML, is_verified_real=True
+        )
+        assert success is True
+        assert document["is_verified_real"] is True

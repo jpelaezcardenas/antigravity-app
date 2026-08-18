@@ -74,21 +74,61 @@ class TestShadowGLIntegrationWithDB:
 
     @pytest.fixture(autouse=True)
     def _cleanup(self, cliente_cero_tenant_id):
-        """Clean up test data after each test."""
+        """Clean up only the rows this test itself created.
+
+        Incident fix (2026-08-18, shadow-gl-data-integrity-flag): the previous version
+        unconditionally deleted ALL erp_journal_entries/erp_journal_lines/dian_xml_documents
+        rows for the Cliente Cero tenant on teardown, including unrelated pre-existing rows —
+        and pytest runs this even when the test body fails. That deleted 44 erp_journal_entries
+        + 3 dian_xml_documents rows that predated this test run. Snapshot ids before the test
+        runs and delete only what's new, so this class can never destroy data it didn't create.
+        See docs/supabase-mcp-admin.md §3 incident note.
+        """
         from core.supabase_client import get_supabase
 
         supabase = get_supabase()
+        pre_entry_ids = {
+            row["id"]
+            for row in supabase.table("erp_journal_entries")
+            .select("id")
+            .eq("tenant_id", cliente_cero_tenant_id)
+            .execute()
+            .data
+        }
+        pre_doc_ids = {
+            row["id"]
+            for row in supabase.table("dian_xml_documents")
+            .select("id")
+            .eq("tenant_id", cliente_cero_tenant_id)
+            .execute()
+            .data
+        }
         yield
-        # Delete DIAN and ERP data created during test
-        supabase.table("erp_journal_lines").delete().eq(
-            "tenant_id", cliente_cero_tenant_id
-        ).execute()
-        supabase.table("erp_journal_entries").delete().eq(
-            "tenant_id", cliente_cero_tenant_id
-        ).execute()
-        supabase.table("dian_xml_documents").delete().eq(
-            "tenant_id", cliente_cero_tenant_id
-        ).execute()
+        new_entry_ids = [
+            row["id"]
+            for row in supabase.table("erp_journal_entries")
+            .select("id")
+            .eq("tenant_id", cliente_cero_tenant_id)
+            .execute()
+            .data
+            if row["id"] not in pre_entry_ids
+        ]
+        if new_entry_ids:
+            supabase.table("erp_journal_lines").delete().eq(
+                "tenant_id", cliente_cero_tenant_id
+            ).in_("entry_id", new_entry_ids).execute()
+            supabase.table("erp_journal_entries").delete().in_("id", new_entry_ids).execute()
+        new_doc_ids = [
+            row["id"]
+            for row in supabase.table("dian_xml_documents")
+            .select("id")
+            .eq("tenant_id", cliente_cero_tenant_id)
+            .execute()
+            .data
+            if row["id"] not in pre_doc_ids
+        ]
+        if new_doc_ids:
+            supabase.table("dian_xml_documents").delete().in_("id", new_doc_ids).execute()
 
     @pytest.mark.asyncio
     async def test_ingest_xml_and_csv_same_day(self, cliente_cero_tenant_id) -> None:
