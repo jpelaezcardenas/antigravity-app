@@ -36,7 +36,7 @@ class TestShadowGLIntegration:
 
         parsed = parse_siigo_csv(SAMPLE_CSV)
         assert len(parsed) > 0
-        assert all("external_reference_id" in entry for entry in parsed)
+        assert all("referencia_externa" in row for row in parsed)
 
     def test_xml_and_csv_both_valid(self) -> None:
         """Both formats parse without errors (can be loaded same day)."""
@@ -182,10 +182,11 @@ class TestShadowGLIntegrationWithDB:
         assert success1 is True
         count1 = summary1["row_count"]
 
-        # Second upload (same data)
+        # Second upload (same data) — every entry already exists, so ingest_siigo_csv skips
+        # all of them; row_count reflects newly-inserted entries only, so it's 0 here, not count1.
         success2, summary2, error2 = await ingest_siigo_csv(
             cliente_cero_tenant_id, SAMPLE_CSV
         )
         assert success2 is True
-        # Should not create new rows
-        assert summary2["row_count"] == count1
+        assert summary2["row_count"] == 0
+        assert count1 > 0
