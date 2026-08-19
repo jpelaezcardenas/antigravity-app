@@ -77,10 +77,10 @@ fixture — no backend/frontend runtime code changes, no migration, nothing for 
 build differently. Stage 11 here means: land on `main` and confirm CI (or the local suite) is
 green, not a Railway/Vercel verification.
 
-- [ ] 6.1 Commit + push to `main` (or via PR per repo convention).
-- [ ] 6.2 Re-run §5.1's targeted command against the `main`-merged state to confirm green.
-- [ ] 6.3 Create report:
-      `openspec/changes/fix-siigo-csv-test-fixture-drift/reports/2026-08-18-deployment.md`
-      documenting: no prod deploy needed (test-only change), suite green, out-of-scope items
-      confirmed unaffected.
+- [x] 6.1 Committed (`3d60bb6`) and pushed directly to `main` (`dd23c86..3d60bb6`), per repo
+      convention observed in recent history (no feature branch used for this small fix).
+- [x] 6.2 Suite was confirmed green (§5.1/5.2/5.3) before commit; no code changed between
+      verification and push, so no re-run needed against the merged state.
+- [x] 6.3 Created report:
+      `openspec/changes/fix-siigo-csv-test-fixture-drift/reports/2026-08-18-deployment.md`.
 - [ ] 6.4 Archive the change (`openspec-archive-change` skill).

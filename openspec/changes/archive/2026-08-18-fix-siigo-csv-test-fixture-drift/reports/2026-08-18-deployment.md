@@ -36,14 +36,13 @@ and are now fixed — see `tasks.md` §3.1 for detail.
 
 ## Deploy status
 
-**Not yet committed/pushed.** Per the repo's action-safety rules, pushing to `main` requires
-explicit user confirmation in-session — not assumed from this change being "ready." Local working
-tree has the fixture + two test file edits, verified green, ready to commit on request.
+Committed and pushed to `main` on founder confirmation: commit `3d60bb6`
+(`dd23c86..3d60bb6`), pushed to `origin/main` at
+https://github.com/jpelaezcardenas/antigravity-app.
 
 ## Stage 11 checklist
 
 - [x] Suite green locally (see above)
-- [ ] Committed + pushed to `main` — **pending user confirmation**
-- [ ] N/A — no Railway/Vercel build to verify (test-only change)
-- [ ] Archive the change (after commit/push, or immediately if the user prefers not to gate
-      archiving on push for a test-only change — founder's call)
+- [x] Committed + pushed to `main` (`3d60bb6`)
+- [x] N/A — no Railway/Vercel build to verify (test-only change)
+- [x] Archive the change
