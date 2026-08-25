@@ -160,9 +160,10 @@ not acted on, just recorded so it isn't lost:
   `0033_*.sql` for unrelated changes (approval_queue tenant scoping vs. Centinela rescoping) on
   2026-07-23; one was renamed to `0034` after the fact. Worth checking the next migration number
   against `apps/backend/migrations/` directly before creating a new one, not just against memory.
-- Local Bitwarden master password rotated 2026-07-05 (`Lindafea0712*` → `Lindafea0712!`) per
-  `ARCHITECTURE.md` Decision #11/#12 — the Supabase PAT rotation in §2 above follows the same
-  pattern (Bitwarden-managed, not hardcoded).
+- Local Bitwarden master password was rotated 2026-07-05 per `ARCHITECTURE.md` Decision #11/#12.
+  **The value is deliberately not recorded here** — see the hard rule in Decision #12: credential
+  values never go into a versioned file, only the variable name (`BW_MASTER_PASSWORD`). The
+  Supabase PAT rotation in §2 above follows the same pattern (Bitwarden-managed, not hardcoded).
 
 ## 7. Maintenance rule for this document
 

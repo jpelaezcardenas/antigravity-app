@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """
-T6: API Key Validation Script
-Validates all 6 LLM provider keys from Bitwarden vault.
-Generates report in openspec/changes/keeper-migration-2026-06-15/reports/
+API Key Validation Script — validates LLM provider keys stored in the Bitwarden vault.
+
+Originally task T6 of the Keeper -> Bitwarden migration (archived 2026-08-13). Keeper itself is
+retired; this script is kept because validating the vault's LLM keys is still useful on demand.
+
+Writes its report to scripts/reports/. It previously wrote to
+openspec/changes/keeper-migration-2026-06-15/reports/ and created that directory if missing,
+which would have resurrected an archived change's folder and broken the
+one-change-at-a-time invariant that init.sh enforces.
 """
 
 import subprocess
@@ -138,7 +144,7 @@ def main():
     print("=" * 80)
 
     # Generate report
-    report_path = Path("openspec/changes/keeper-migration-2026-06-15/reports")
+    report_path = Path("scripts/reports")
     report_path.mkdir(parents=True, exist_ok=True)
 
     report_file = report_path / f"T6-API-VALIDATION-{datetime.now().strftime('%Y-%m-%d')}.md"
