@@ -136,6 +136,13 @@ class TestFinancialsEndpointTenantScoping:
             "compute_pulso_daily_snapshot",
             lambda tenant_id, as_of: {"caja_real": 0, "dinero_disponible": 0, "ventas_ayer": 0, "gastos_ayer": 0, "status": "empty"},
         )
+        # plan-tier-feature-gating: isolate the new plan_tier lookup the same way the two
+        # stubs above isolate this test from real Supabase data — "fake-cliente-cero-tenant-id"
+        # is not a real row/valid UUID, so a real _resolve_plan_tier query would error.
+        async def fake_resolve_plan_tier(tenant_id):
+            return "starter"
+
+        monkeypatch.setattr(endpoints_module, "_resolve_plan_tier", fake_resolve_plan_tier)
 
         snapshot = run(get_financials(user=dict(_STAGING_USER)))
 

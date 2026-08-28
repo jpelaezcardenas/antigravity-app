@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TenantInfoCard } from "@/components/config/TenantInfoCard";
 
 interface NotificationToggle {
   id: string;
@@ -56,24 +57,7 @@ export default function ConfigPage() {
         </p>
       </section>
 
-      <section className="bg-surface-elevated rounded-xl border border-primary/20 p-5 flex items-center gap-4 shadow-[0_0_20px_rgba(45,212,191,0.08)]">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-[#8B5CF6] flex items-center justify-center flex-shrink-0 shadow-[0_0_20px_rgba(45,212,191,0.3)]">
-          <span className="material-symbols-outlined text-white text-[28px]">
-            store
-          </span>
-        </div>
-        <div className="flex flex-col flex-1 min-w-0">
-          <p className="font-title-md text-title-md text-white truncate">
-            Mi Empresa
-          </p>
-          <p
-            className="text-[10px] text-primary font-bold uppercase tracking-widest"
-            style={{ fontFamily: "Rajdhani, sans-serif" }}
-          >
-            Plan Starter · Activo
-          </p>
-        </div>
-      </section>
+      <TenantInfoCard />
 
       <section className="flex flex-col gap-3">
         <h3

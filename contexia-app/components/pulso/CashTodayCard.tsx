@@ -34,6 +34,9 @@ export function CashTodayCard() {
           setStatus("empty");
           return;
         }
+        // plan-tier-feature-gating: `pulso_diario` is included in every tier, including
+        // freemium, so `snapshot.status === "not_in_plan"` is not reachable today — no
+        // branch added here. See openspec/changes/plan-tier-feature-gating/design.md D3/D4.
         setCash(toCashToday(snapshot));
         setStatus("ready");
       })

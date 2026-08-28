@@ -17,6 +17,7 @@ from presentation.whatsapp_endpoints import router as whatsapp_router
 from presentation.tiktok_endpoints import router as tiktok_router
 from presentation.linkedin_endpoints import router as linkedin_router
 from presentation.financials_endpoints import router as financials_router
+from presentation.tenant_endpoints import router as tenant_router
 from presentation.critic_endpoints import router as critic_router
 from presentation.approval_queue_endpoints import router as approval_queue_router
 from presentation.shadow_gl_endpoints import router as shadow_gl_router
@@ -50,6 +51,7 @@ api_router.include_router(kb_router, prefix="/kb", tags=["knowledge-base"])
 api_router.include_router(radar_router, prefix="/agents/radar-predictivo", tags=["radar"])
 api_router.include_router(wizard_router, prefix="/wizard", tags=["wizard"])
 api_router.include_router(financials_router, prefix="/financials", tags=["financials"])
+api_router.include_router(tenant_router, prefix="/tenant", tags=["tenant"])
 api_router.include_router(critic_router, prefix="/critic", tags=["critic"])
 api_router.include_router(approval_queue_router, prefix="/approval-queue", tags=["approval-queue"])
 api_router.include_router(shadow_gl_router, prefix="/shadow-gl", tags=["shadow-gl"])

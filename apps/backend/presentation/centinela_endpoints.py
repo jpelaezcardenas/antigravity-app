@@ -16,6 +16,7 @@ from services.centinela_service import CentinelaService, get_centinela_service
 from core.supabase_client import get_supabase, get_service_supabase
 from core.deps import get_current_user
 from core.tenant_context import resolve_request_tenant_scope
+from core.plan_features import has_feature
 
 logger = logging.getLogger(__name__)
 
@@ -259,6 +260,12 @@ class CentinelaAlertsScopedResponse(BaseModel):
     warning_count: int
     risk_level: str
     source: str = Field(..., description="'supabase' — this route never demo-falls-back")
+    status: Optional[str] = Field(
+        None,
+        description="Additive (plan-tier-feature-gating): 'not_in_plan' when the resolved "
+        "tenant's plan_tier excludes the centinela_alerts feature; omitted/None otherwise, "
+        "so existing callers see no shape change.",
+    )
 
 
 def _empty_alerts_scoped_response() -> CentinelaAlertsScopedResponse:
@@ -272,6 +279,35 @@ def _empty_alerts_scoped_response() -> CentinelaAlertsScopedResponse:
         risk_level="none",
         source="supabase",
     )
+
+
+def _not_in_plan_alerts_scoped_response() -> CentinelaAlertsScopedResponse:
+    """Response for a resolved tenant whose plan_tier excludes centinela_alerts
+    (plan-tier-feature-gating) — same empty shape as `_empty_alerts_scoped_response`,
+    distinguished by `status="not_in_plan"` so the PWA can tell "not in your plan"
+    apart from "genuinely zero alerts today"."""
+    return CentinelaAlertsScopedResponse(
+        alerts=[],
+        alert_count=0,
+        critical_count=0,
+        warning_count=0,
+        risk_level="none",
+        source="supabase",
+        status="not_in_plan",
+    )
+
+
+async def _resolve_plan_tier(client, tenant_id: str) -> Optional[str]:
+    """Look up `tenants.plan_tier` for a resolved tenant (migration 0043) — a new query,
+    since `resolve_request_tenant_scope`'s only `tenants` lookup selects just `id`."""
+    result = (
+        client.table("tenants")
+        .select("plan_tier")
+        .eq("id", tenant_id)
+        .maybe_single()
+        .execute()
+    )
+    return result.data["plan_tier"] if result and result.data else None
 
 
 @router.get(
@@ -304,6 +340,10 @@ async def get_my_alerts(
         tenant_id = scope.tenant_id if scope else None
         if tenant_id is None:
             return _empty_alerts_scoped_response()
+
+        plan_tier = await _resolve_plan_tier(supabase, tenant_id)
+        if not has_feature(plan_tier, "centinela_alerts"):
+            return _not_in_plan_alerts_scoped_response()
 
         result = (
             supabase.table("centinela_alerts")

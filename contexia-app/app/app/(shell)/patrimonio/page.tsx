@@ -6,12 +6,14 @@ import { StrategicPatrimonyInsightCard } from "@/components/patrimonio/Strategic
 import { DividendShieldCard } from "@/components/patrimonio/DividendShieldCard";
 import { WithdrawalSimulatorCard } from "@/components/patrimonio/WithdrawalSimulatorCard";
 import { EquityMovementHistoryCard } from "@/components/patrimonio/EquityMovementHistoryCard";
+import { UpgradePlanBanner } from "@/components/shared/UpgradePlanBanner";
 
 export default function PatrimonioPage() {
   const data = patrimonio;
 
   return (
     <div className="px-container-margin-mobile md:px-container-margin-desktop max-w-7xl mx-auto flex flex-col gap-6 w-full mt-2">
+      <UpgradePlanBanner />
       <section className="flex flex-col gap-4">
         <div>
           <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-primary-container">

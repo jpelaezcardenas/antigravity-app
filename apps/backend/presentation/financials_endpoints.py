@@ -4,6 +4,7 @@ from typing import Optional
 from services.financials_service import compute_pulso_daily_snapshot, compute_liquidity_bridge
 from core.supabase_client import get_supabase
 from core.deps import get_current_user, _STAGING_USER
+from core.plan_features import has_feature
 
 router = APIRouter()
 
@@ -56,6 +57,24 @@ async def _resolve_caller_tenant_id(user: dict) -> Optional[str]:
     return None
 
 
+async def _resolve_plan_tier(tenant_id: str) -> Optional[str]:
+    """Look up `tenants.plan_tier` for a resolved tenant (migration 0043).
+
+    A new query, deliberately not reusing `_resolve_caller_tenant_id`'s Cliente Cero lookup
+    (which selects only `id`) — see plan-tier-feature-gating/design.md, "Backend endpoint
+    insertion points": no existing query in this module already has `plan_tier` in hand.
+    """
+    supabase = get_supabase()
+    result = (
+        supabase.table("tenants")
+        .select("plan_tier")
+        .eq("id", tenant_id)
+        .maybe_single()
+        .execute()
+    )
+    return result.data["plan_tier"] if result and result.data else None
+
+
 def _empty_snapshot() -> dict:
     """Zeroed snapshot for an authenticated caller with no resolved tenant —
     NEVER Cliente Cero, so an unwired client login can't see Contexia's own data."""
@@ -65,6 +84,19 @@ def _empty_snapshot() -> dict:
         "ventas_ayer": 0,
         "gastos_ayer": 0,
         "status": "empty",
+    }
+
+
+def _not_in_plan_snapshot() -> dict:
+    """Zeroed snapshot for a resolved tenant whose plan_tier lacks the pulso_diario
+    feature (plan-tier-feature-gating) — distinct `status` from `_empty_snapshot`'s
+    `"empty"` so the PWA can tell "no data yet" apart from "not in your plan"."""
+    return {
+        "caja_real": 0,
+        "dinero_disponible": 0,
+        "ventas_ayer": 0,
+        "gastos_ayer": 0,
+        "status": "not_in_plan",
     }
 
 
@@ -79,6 +111,21 @@ def _empty_liquidity_bridge() -> dict:
         "final_balance": 0,
         "period": f"{today.year:04d}-{today.month:02d}",
         "status": "empty",
+    }
+
+
+def _not_in_plan_liquidity_bridge() -> dict:
+    """Zeroed liquidity bridge for a resolved tenant whose plan_tier lacks the
+    liquidity_bridge feature (plan-tier-feature-gating) — same non-leak shape as
+    `_empty_liquidity_bridge`, distinct `status`."""
+    today = date.today()
+    return {
+        "initial_balance": 0,
+        "inflows": 0,
+        "outflows": 0,
+        "final_balance": 0,
+        "period": f"{today.year:04d}-{today.month:02d}",
+        "status": "not_in_plan",
     }
 
 
@@ -115,6 +162,10 @@ async def get_financials(user: dict = Depends(get_current_user)):
         tenant_id = await _resolve_caller_tenant_id(user)
         if tenant_id is None:
             return _empty_snapshot()
+
+        plan_tier = await _resolve_plan_tier(tenant_id)
+        if not has_feature(plan_tier, "pulso_diario"):
+            return _not_in_plan_snapshot()
 
         today = date.today()
         snapshot = compute_pulso_daily_snapshot(tenant_id, today)
@@ -154,6 +205,10 @@ async def get_liquidity_bridge(user: dict = Depends(get_current_user)):
         tenant_id = await _resolve_caller_tenant_id(user)
         if tenant_id is None:
             return _empty_liquidity_bridge()
+
+        plan_tier = await _resolve_plan_tier(tenant_id)
+        if not has_feature(plan_tier, "liquidity_bridge"):
+            return _not_in_plan_liquidity_bridge()
 
         today = date.today()
         bridge = compute_liquidity_bridge(tenant_id, today.year, today.month)

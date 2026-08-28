@@ -7,7 +7,7 @@ import {
   type LiquidityBridgeSnapshot,
 } from "@/lib/api-client";
 
-type CardStatus = "loading" | "ready" | "unavailable";
+type CardStatus = "loading" | "ready" | "unavailable" | "not_in_plan";
 
 export function MonthlyLiquidityBridgeCard() {
   const [bridge, setBridge] = useState<LiquidityBridgeSnapshot | null>(null);
@@ -21,6 +21,12 @@ export function MonthlyLiquidityBridgeCard() {
         if (cancelled) return;
         if (snapshot.status === "empty") {
           setStatus("unavailable");
+          return;
+        }
+        // plan-tier-feature-gating: distinct from "unavailable" — that means "we tried,
+        // no data"; this means "this feature isn't in your plan" (design.md D4).
+        if (snapshot.status === "not_in_plan") {
+          setStatus("not_in_plan");
           return;
         }
         setBridge(snapshot);
@@ -52,6 +58,19 @@ export function MonthlyLiquidityBridgeCard() {
           <div className="h-9 w-full bg-white/10 rounded" />
           <div className="h-9 w-full bg-white/10 rounded" />
         </div>
+      </section>
+    );
+  }
+
+  if (status === "not_in_plan") {
+    return (
+      <section className="bg-surface-elevated border border-white/5 rounded-xl p-6 flex flex-col gap-4">
+        <h3 className="font-label-caps text-label-caps text-primary-container uppercase tracking-wider mb-2">
+          Puente de Liquidez (Mensual)
+        </h3>
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          Esta función no está incluida en tu plan.
+        </p>
       </section>
     );
   }

@@ -10,7 +10,7 @@ export interface FinancialsSnapshot {
   dinero_disponible: number; // COP minor units
   ventas_ayer: number; // COP minor units — income dated exactly yesterday
   gastos_ayer: number; // COP minor units — expenses dated exactly yesterday
-  status: "healthy" | "empty";
+  status: "healthy" | "empty" | "not_in_plan";
 }
 
 export class ApiError extends Error {
@@ -56,6 +56,7 @@ export interface CentinelaAlertsResponse {
   warning_count: number;
   risk_level: string; // "none" | "low" | "medium" | "high" | "critical"
   source: string; // "supabase" — this route never demo-falls-back
+  status?: "not_in_plan"; // additive (plan-tier-feature-gating) — absent for every tier that includes this feature
 }
 
 export interface LiquidityBridgeSnapshot {
@@ -64,7 +65,13 @@ export interface LiquidityBridgeSnapshot {
   outflows: number; // COP minor units
   final_balance: number; // COP minor units
   period: string; // "YYYY-MM"
-  status: "ready" | "empty";
+  status: "ready" | "empty" | "not_in_plan";
+}
+
+export interface TenantMeSnapshot {
+  legal_name: string | null;
+  plan_tier: string | null;
+  status?: "empty";
 }
 
 export async function fetchCentinelaAlerts(): Promise<CentinelaAlertsResponse> {
@@ -94,6 +101,22 @@ export async function fetchLiquidityBridge(): Promise<LiquidityBridgeSnapshot> {
   if (!response.ok) {
     const error = await response.text();
     throw new ApiError(response.status, `Failed to fetch liquidity bridge: ${error}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchTenantMe(): Promise<TenantMeSnapshot> {
+  const response = await authenticatedFetch(API_ENDPOINTS.tenantMe, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new ApiError(response.status, `Failed to fetch tenant identity: ${error}`);
   }
 
   return response.json();

@@ -40,7 +40,7 @@ function AlertsSkeleton() {
 
 export function ActiveAlerts() {
   const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "not_in_plan">("loading");
 
   useEffect(() => {
     let cancelled = false;
@@ -48,6 +48,14 @@ export function ActiveAlerts() {
     fetchCentinelaAlerts()
       .then((response) => {
         if (cancelled) return;
+        // plan-tier-feature-gating: unlike a genuine empty result (which renders
+        // nothing, per this component's existing philosophy), "not in your plan" is
+        // a distinct signal worth surfacing — design.md D4.
+        if (response.status === "not_in_plan") {
+          setAlerts([]);
+          setStatus("not_in_plan");
+          return;
+        }
         setAlerts(response.alerts.map(toActiveAlert));
         setStatus("ready");
       })
@@ -67,6 +75,19 @@ export function ActiveAlerts() {
 
   if (status === "loading") {
     return <AlertsSkeleton />;
+  }
+
+  if (status === "not_in_plan") {
+    return (
+      <section className="flex flex-col gap-1">
+        <h3 className="font-title-md text-title-md text-primary-container mb-1">
+          Alertas Activas
+        </h3>
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          Centinela Fiscal no está en tu plan actual.
+        </p>
+      </section>
+    );
   }
 
   if (alerts.length === 0) return null;

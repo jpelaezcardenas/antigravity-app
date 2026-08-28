@@ -8,6 +8,7 @@ import { CashProjectionCard } from "@/components/radar/CashProjectionCard";
 import { EstimatedTaxProvisionCard } from "@/components/radar/EstimatedTaxProvisionCard";
 import { StrategicInsightCard } from "@/components/radar/StrategicInsightCard";
 import { UpcomingMilestonesCard } from "@/components/radar/UpcomingMilestonesCard";
+import { UpgradePlanBanner } from "@/components/shared/UpgradePlanBanner";
 
 export default function RadarPage() {
   const [scenario, setScenario] = useState<Scenario>("base");
@@ -15,6 +16,7 @@ export default function RadarPage() {
 
   return (
     <div className="px-container-margin-mobile md:px-container-margin-desktop max-w-7xl mx-auto flex flex-col gap-6 w-full mt-2">
+      <UpgradePlanBanner />
       <section className="flex flex-col gap-4">
         <div>
           <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-primary-container">
