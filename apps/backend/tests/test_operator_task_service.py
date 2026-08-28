@@ -17,9 +17,11 @@ from services.operator_task_service import (
     SIDE_EFFECTING_TASK_TYPES,
     create_task,
     dispatch_campaign_package,
+    list_completed_tasks,
     list_pending_tasks,
     mark_dispatched,
     report_result,
+    submit_completed_insight,
 )
 
 
@@ -411,3 +413,74 @@ class TestDispatchCampaignPackage:
         insert_call_args = mock_client.table.return_value.insert.call_args[0][0]
         assert insert_call_args["tenant_id"] == "cliente-cero-tenant"
         assert any("no tenant_id" in record.message for record in caplog.records)
+
+
+class TestSubmitCompletedInsight:
+    def test_creates_completed_task_directly(self):
+        mock_client = MagicMock()
+        mock_client.table.return_value.insert.return_value.execute.return_value.data = [
+            {"id": "task-1", "task_type": "pulso_diario_insight", "status": "completed"}
+        ]
+        with patch(
+            "services.operator_task_service.get_service_supabase", return_value=mock_client
+        ), patch("services.operator_task_service.tenant_exists", return_value=True):
+            success, row, error = submit_completed_insight(
+                tenant_id="tenant-1",
+                result={
+                    "caja_real": 500_000,
+                    "dinero_disponible": 500_000,
+                    "ventas_ayer": 0,
+                    "gastos_ayer": 0,
+                },
+            )
+
+        assert success is True
+        assert error is None
+        insert_call_args = mock_client.table.return_value.insert.call_args[0][0]
+        assert insert_call_args["tenant_id"] == "tenant-1"
+        assert insert_call_args["task_type"] == "pulso_diario_insight"
+        assert insert_call_args["status"] == "completed"
+        assert insert_call_args["result"]["caja_real"] == 500_000
+
+    def test_rejects_unknown_tenant_id(self):
+        mock_client = MagicMock()
+        with patch(
+            "services.operator_task_service.get_service_supabase", return_value=mock_client
+        ), patch("services.operator_task_service.tenant_exists", return_value=False):
+            success, row, error = submit_completed_insight(
+                tenant_id="unknown-tenant", result={"caja_real": 1}
+            )
+
+        assert success is False
+        assert row is None
+        assert error is not None
+        mock_client.table.return_value.insert.assert_not_called()
+
+
+class TestListCompletedTasksTenantFilter:
+    def test_filters_by_task_type_and_tenant_id(self):
+        mock_client = MagicMock()
+        query = mock_client.table.return_value.select.return_value.eq.return_value.eq.return_value.eq.return_value.order.return_value
+        query.execute.return_value.data = [{"id": "task-1", "tenant_id": "tenant-1"}]
+
+        with patch(
+            "services.operator_task_service.get_service_supabase", return_value=mock_client
+        ):
+            result = list_completed_tasks(task_type="pulso_diario_insight", tenant_id="tenant-1")
+
+        assert result == [{"id": "task-1", "tenant_id": "tenant-1"}]
+
+    def test_tenant_isolation_no_filter_leak(self):
+        """Without a tenant_id filter applied for a different tenant, the query must not
+        return another tenant's rows -- verified by asserting the eq('tenant_id', ...) call
+        actually happened with the requested tenant, not merely that *a* result came back."""
+        mock_client = MagicMock()
+        # status -> task_type -> tenant_id: three chained .eq() calls
+        second_eq = mock_client.table.return_value.select.return_value.eq.return_value.eq
+        third_eq = second_eq.return_value.eq
+        with patch(
+            "services.operator_task_service.get_service_supabase", return_value=mock_client
+        ):
+            list_completed_tasks(task_type="pulso_diario_insight", tenant_id="tenant-2")
+
+        third_eq.assert_any_call("tenant_id", "tenant-2")

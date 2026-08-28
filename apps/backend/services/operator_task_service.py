@@ -102,16 +102,50 @@ def list_pending_tasks(tenant_id: Optional[str] = None) -> List[Dict[str, Any]]:
     return result.data
 
 
-def list_completed_tasks(task_type: Optional[str] = None) -> List[Dict[str, Any]]:
+def list_completed_tasks(
+    task_type: Optional[str] = None, tenant_id: Optional[str] = None
+) -> List[Dict[str, Any]]:
     """List all operator_tasks rows with status='completed', oldest first, optionally filtered
-    by task_type. The read-back capability for Change F's operator-task results, deferred to
-    sell-machine-telemetry-loop (Change G)."""
+    by task_type and/or tenant_id. The read-back capability for Change F's operator-task results
+    (extended by pulso-diario-agent-insight-bridge with the tenant_id filter, required so one
+    tenant's insight can never be read as another's)."""
     client = get_service_supabase()
     query = client.table("operator_tasks").select("*").eq("status", "completed")
     if task_type:
         query = query.eq("task_type", task_type)
+    if tenant_id:
+        query = query.eq("tenant_id", tenant_id)
     result = query.order("created_at").execute()
     return result.data
+
+
+def submit_completed_insight(tenant_id: str, result: Dict[str, Any]) -> Result:
+    """Creates an already-`completed` `pulso_diario_insight` operator task directly, skipping
+    the pending -> dispatched state machine entirely (pulso-diario-agent-insight-bridge).
+
+    Unlike `create_task`, this is unsolicited push data from a local Hermes agent running on its
+    own schedule — there is no prior 'pending' request this responds to, so forcing it through
+    mark_dispatched/report_result would model a request/response relationship that doesn't exist
+    here. `tenant_id` is required and validated (never falls back to Cliente Cero — an insight
+    with no tenant is a caller bug, not something to guess about)."""
+    try:
+        client = get_service_supabase()
+        if not tenant_exists(client, tenant_id):
+            return False, None, f"tenant {tenant_id} not found"
+
+        row = {
+            "id": str(uuid.uuid4()),
+            "tenant_id": tenant_id,
+            "task_type": "pulso_diario_insight",
+            "payload": {},
+            "status": "completed",
+            "result": result,
+        }
+        inserted = client.table("operator_tasks").insert(row).execute()
+        return True, inserted.data[0], None
+    except Exception as e:
+        logger.error("operator_task_service.submit_completed_insight error: %s", str(e))
+        return False, None, str(e)
 
 
 def mark_dispatched(task_id: str) -> Result:

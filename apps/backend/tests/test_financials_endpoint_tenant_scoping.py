@@ -143,6 +143,9 @@ class TestFinancialsEndpointTenantScoping:
             return "starter"
 
         monkeypatch.setattr(endpoints_module, "_resolve_plan_tier", fake_resolve_plan_tier)
+        # pulso-diario-agent-insight-bridge: isolate the new empty-snapshot fallback lookup
+        # from real Supabase, same reason as the two stubs above.
+        monkeypatch.setattr(endpoints_module, "list_completed_tasks", lambda **kwargs: [])
 
         snapshot = run(get_financials(user=dict(_STAGING_USER)))
 

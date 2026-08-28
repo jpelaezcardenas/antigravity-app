@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from datetime import date
 from typing import Optional
 from services.financials_service import compute_pulso_daily_snapshot, compute_liquidity_bridge
+from services.operator_task_service import list_completed_tasks
 from core.supabase_client import get_supabase
 from core.deps import get_current_user, _STAGING_USER
 from core.plan_features import has_feature
@@ -73,6 +74,29 @@ async def _resolve_plan_tier(tenant_id: str) -> Optional[str]:
         .execute()
     )
     return result.data["plan_tier"] if result and result.data else None
+
+
+def _latest_agent_insight_snapshot(tenant_id: str) -> Optional[dict]:
+    """pulso-diario-agent-insight-bridge: when Shadow GL has nothing for a resolved tenant,
+    check for a Hermes-pushed pulso_diario_insight before returning a zeroed empty snapshot.
+    Never called for the "no tenant resolved" case — only for a real, resolved tenant whose
+    Shadow GL itself is empty."""
+    tasks = list_completed_tasks(task_type="pulso_diario_insight", tenant_id=tenant_id)
+    if not tasks:
+        return None
+    latest = max(tasks, key=lambda t: t.get("created_at") or "")
+    result = latest.get("result") or {}
+    required_keys = {"caja_real", "dinero_disponible", "ventas_ayer", "gastos_ayer"}
+    if not required_keys.issubset(result.keys()):
+        return None
+    return {
+        "caja_real": result["caja_real"],
+        "dinero_disponible": result["dinero_disponible"],
+        "ventas_ayer": result["ventas_ayer"],
+        "gastos_ayer": result["gastos_ayer"],
+        "status": "healthy",
+        "source": "agent_insight",
+    }
 
 
 def _empty_snapshot() -> dict:
@@ -169,6 +193,10 @@ async def get_financials(user: dict = Depends(get_current_user)):
 
         today = date.today()
         snapshot = compute_pulso_daily_snapshot(tenant_id, today)
+        if snapshot.get("status") == "empty":
+            insight_snapshot = _latest_agent_insight_snapshot(tenant_id)
+            if insight_snapshot is not None:
+                return insight_snapshot
         return snapshot
     except Exception as e:
         raise HTTPException(
