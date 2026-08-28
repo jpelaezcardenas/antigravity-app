@@ -45,19 +45,29 @@ class CreateB2bClientRequest(BaseModel):
     phone: Optional[str] = None
     contact_name: Optional[str] = None
     monthly_fee_cents: Optional[int] = Field(default=None, ge=0)
+    plan_tier: Optional[str] = None
 
 
 @router.post("/b2b/clients")
 def create_b2b_client(payload: CreateB2bClientRequest):
     """Alta: add a client to the roster (own tenant + best-effort login provisioning
-    if an email is given). See B2bRetainersTab.tsx's alta form."""
-    return get_crm_service().create_b2b_client(
+    if an email is given). See B2bRetainersTab.tsx's alta form.
+
+    plan_tier (plan-tier-feature-gating): omitted -> service-layer default ("starter");
+    an invalid value raises ValueError -> 400, not a raw Postgres CHECK violation."""
+    kwargs: Dict[str, Any] = dict(
         name=payload.name,
         email=payload.email,
         phone=payload.phone,
         contact_name=payload.contact_name,
         monthly_fee_cents=payload.monthly_fee_cents,
     )
+    if payload.plan_tier is not None:
+        kwargs["plan_tier"] = payload.plan_tier
+    try:
+        return get_crm_service().create_b2b_client(**kwargs)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 class SetB2bClientStatusRequest(BaseModel):

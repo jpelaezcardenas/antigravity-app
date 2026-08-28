@@ -79,13 +79,16 @@ class TestCreateB2bClient:
         client.table.side_effect = routed
 
         service = CrmService()
-        service._provision_b2b_client_login = MagicMock(return_value="new-user-id")
+        service._provision_b2b_client_login = MagicMock(
+            return_value=("new-user-id", "https://supabase.example/invite?token=abc")
+        )
 
         with patch("services.crm_service.get_service_supabase", return_value=client):
             result = service.create_b2b_client(name="Con Email", email="nuevo@cliente.co")
 
         service._provision_b2b_client_login.assert_called_once()
         assert result["provision_status"] == "provisioned"
+        assert result["invite_link"] == "https://supabase.example/invite?token=abc"
 
     def test_login_provisioning_failure_does_not_fail_the_alta(self):
         """A client is still created even if login provisioning blows up — the roster
@@ -111,6 +114,111 @@ class TestCreateB2bClient:
             result = service.create_b2b_client(name="Fallo Login", email="fallo@cliente.co")
 
         assert result["id"] == "client-3"  # alta still succeeded
+
+    def test_explicit_plan_tier_is_written_to_tenants_and_b2b_clients(self):
+        client = _fake_client()
+        tenants_table = client.table("tenants")  # capture the mock created for "tenants"
+        b2b_clients_table = MagicMock()
+        b2b_clients_table.insert.return_value.execute.return_value = MagicMock(
+            data=[{"id": "client-4", "name": "Con Tier", "status": "activo"}]
+        )
+
+        def routed(name):
+            if name == "b2b_clients":
+                return b2b_clients_table
+            if name == "tenants":
+                return tenants_table
+            return MagicMock()
+
+        client.table.side_effect = routed
+        client.table.reset_mock()  # clear the setup call above before the real assertions
+
+        service = CrmService()
+        service._provision_b2b_client_login = MagicMock()
+
+        with patch("services.crm_service.get_service_supabase", return_value=client):
+            service.create_b2b_client(name="Con Tier", plan_tier="growth")
+
+        tenants_insert_call = tenants_table.insert.call_args[0][0]
+        assert tenants_insert_call["plan_tier"] == "growth"
+
+        b2b_insert_call = b2b_clients_table.insert.call_args[0][0]
+        assert b2b_insert_call["plan_tier"] == "growth"
+
+    def test_default_plan_tier_is_starter(self):
+        client = _fake_client()
+        b2b_clients_table = MagicMock()
+        b2b_clients_table.insert.return_value.execute.return_value = MagicMock(
+            data=[{"id": "client-5", "name": "Sin Tier", "status": "activo"}]
+        )
+        original_side_effect = client.table.side_effect
+
+        def routed(name):
+            if name == "b2b_clients":
+                return b2b_clients_table
+            return original_side_effect(name)
+
+        client.table.side_effect = routed
+
+        service = CrmService()
+        service._provision_b2b_client_login = MagicMock()
+
+        with patch("services.crm_service.get_service_supabase", return_value=client):
+            service.create_b2b_client(name="Sin Tier")
+
+        b2b_insert_call = b2b_clients_table.insert.call_args[0][0]
+        assert b2b_insert_call["plan_tier"] == "starter"
+
+    def test_rejects_invalid_plan_tier(self):
+        service = CrmService()
+        with pytest.raises(ValueError):
+            service.create_b2b_client(name="Tier Invalido", plan_tier="platinum")
+
+
+class TestProvisionB2bClientLogin:
+    def test_writes_generate_link_invite_not_a_password(self):
+        client = MagicMock()
+        client.auth.admin.generate_link.return_value = MagicMock(
+            user=MagicMock(id="new-user-id"),
+            properties=MagicMock(action_link="https://supabase.example/invite?token=abc"),
+        )
+
+        service = CrmService()
+        user_id, invite_link = service._provision_b2b_client_login(
+            client, "b2b-client-1", "tenant-x", "Cliente Nuevo", "nuevo@cliente.co",
+            "SYN-ABC123", plan_tier="enterprise",
+        )
+
+        client.auth.admin.generate_link.assert_called_once_with(
+            {"type": "invite", "email": "nuevo@cliente.co"}
+        )
+        client.auth.admin.create_user.assert_not_called()
+        assert user_id == "new-user-id"
+        assert invite_link == "https://supabase.example/invite?token=abc"
+
+    def test_writes_plan_tier_to_usuarios_plan_not_hardcoded_starter(self):
+        client = MagicMock()
+        client.auth.admin.generate_link.return_value = MagicMock(
+            user=MagicMock(id="new-user-id"),
+            properties=MagicMock(action_link="https://supabase.example/invite?token=xyz"),
+        )
+        usuarios_table = MagicMock()
+
+        def table_side_effect(name):
+            if name == "usuarios":
+                return usuarios_table
+            return MagicMock()
+
+        client.table.side_effect = table_side_effect
+
+        service = CrmService()
+        service._provision_b2b_client_login(
+            client, "b2b-client-1", "tenant-x", "Cliente Nuevo", "nuevo@cliente.co",
+            "SYN-ABC123", plan_tier="enterprise",
+        )
+
+        upsert_call = usuarios_table.upsert.call_args[0][0]
+        assert upsert_call["plan"] == "enterprise"
 
 
 class TestSetB2bClientStatus:

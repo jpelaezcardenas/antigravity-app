@@ -20,6 +20,7 @@ from postgrest.exceptions import APIError
 
 from channels.whatsapp import send_whatsapp_message
 from config import settings
+from core.plan_features import PLAN_FEATURES
 from core.supabase_client import get_service_supabase
 from services.wompi_signature import compute_integrity_signature, verify_event_checksum
 
@@ -211,18 +212,29 @@ class CrmService:
         phone: Optional[str] = None,
         contact_name: Optional[str] = None,
         monthly_fee_cents: Optional[int] = None,
+        plan_tier: str = "starter",
     ) -> Dict[str, Any]:
         """Alta: add a client to the roster with its OWN tenant (per-tenant-client-access),
         so its future Shadow GL data never mixes with Cliente Cero's. If an email is given,
         best-effort provisions a PWA login (never blocks the alta itself on that failure —
-        the roster row is the source of truth; a failed login can be retried later)."""
+        the roster row is the source of truth; a failed login can be retried later).
+
+        `plan_tier` (plan-tier-feature-gating, migration 0043) is validated against
+        core/plan_features.py's known tiers and written explicitly to both the new tenants
+        row and the new b2b_clients row — not left to the column's DB-level default, so the
+        alta response always reports the tier that was actually chosen."""
+        if plan_tier not in PLAN_FEATURES:
+            raise ValueError(
+                f"Invalid plan_tier {plan_tier!r}; must be one of {sorted(PLAN_FEATURES)}"
+            )
+
         client = get_service_supabase()
         cliente_cero_id = self._resolve_cliente_cero_tenant_id(client)
 
         nit = f"SYN-{uuid.uuid4().hex[:12].upper()}"
         tenant_result = (
             client.table("tenants")
-            .insert({"nit": nit, "legal_name": name, "is_cliente_cero": False})
+            .insert({"nit": nit, "legal_name": name, "is_cliente_cero": False, "plan_tier": plan_tier})
             .execute()
         )
         client_tenant_id = tenant_result.data[0]["id"]
@@ -236,6 +248,7 @@ class CrmService:
             "phone": phone,
             "contact_name": contact_name,
             "monthly_fee_cents": monthly_fee_cents,
+            "plan_tier": plan_tier,
             "provision_status": "not_provisioned" if email else "pending_email",
         }
         inserted = client.table("b2b_clients").insert(row).execute()
@@ -243,31 +256,37 @@ class CrmService:
 
         if email:
             try:
-                self._provision_b2b_client_login(
-                    client, b2b_client["id"], client_tenant_id, name, email, nit
+                _user_id, invite_link = self._provision_b2b_client_login(
+                    client, b2b_client["id"], client_tenant_id, name, email, nit,
+                    plan_tier=plan_tier,
                 )
                 b2b_client["provision_status"] = "provisioned"
+                b2b_client["invite_link"] = invite_link
             except Exception as exc:  # best-effort — alta itself already succeeded
                 logger.warning("CRM alta: login provisioning failed for %r: %s", name, exc)
 
         return b2b_client
 
     def _provision_b2b_client_login(
-        self, client, b2b_client_id: str, tenant_id: str, name: str, email: str, nit: str
-    ) -> str:
+        self,
+        client,
+        b2b_client_id: str,
+        tenant_id: str,
+        name: str,
+        email: str,
+        nit: str,
+        plan_tier: str = "starter",
+    ) -> tuple[str, str]:
         """Creates a Supabase Auth login for a client and wires it to the client's OWN
-        tenant. No email is sent — the temporary password is generated but not
-        persisted anywhere; distribution is the founder's responsibility (same policy
-        as the bulk provisioning migration, 0029)."""
-        admin_result = client.auth.admin.create_user(
-            {
-                "email": email,
-                "email_confirm": True,
-                "password": secrets.token_urlsafe(12),
-                "app_metadata": {"role": "cliente", "roles": ["cliente"]},
-            }
-        )
-        user_id = admin_result.user.id
+        tenant. Uses generate_link(type="invite") rather than a discarded random password
+        (plan-tier-feature-gating follow-up) — Supabase sends nothing itself, so this has
+        no dependency on the project's SMTP configuration; the returned action_link is
+        handed back to create_b2b_client so the vendor can deliver it manually (WhatsApp/
+        email), same "distribution is the vendor's responsibility" policy as before, now
+        with a link that actually works."""
+        link_result = client.auth.admin.generate_link({"type": "invite", "email": email})
+        user_id = link_result.user.id
+        invite_link = link_result.properties.action_link
 
         client.table("usuarios").upsert(
             {
@@ -275,7 +294,7 @@ class CrmService:
                 "email": email,
                 "nombre_empresa": name,
                 "nit": nit,
-                "plan": "starter",
+                "plan": plan_tier,
                 "password_hash": secrets.token_hex(32),
             }
         ).execute()
@@ -289,7 +308,7 @@ class CrmService:
             {"login_user_id": user_id, "provision_status": "provisioned"}
         ).eq("id", b2b_client_id).execute()
 
-        return user_id
+        return user_id, invite_link
 
     def set_b2b_client_status(self, client_id: str, status: str) -> Dict[str, Any]:
         """Baja/reactivar: flips b2b_clients.status and, in lockstep, activates or

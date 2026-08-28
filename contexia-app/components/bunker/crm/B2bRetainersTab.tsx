@@ -8,10 +8,19 @@ import {
   upsertB2bPayment,
   updateB2bClientContact,
   getB2bRetentionAlerts,
+  PLAN_TIERS,
   type B2bPaymentsResponse,
   type B2bClient,
+  type PlanTier,
   type RetentionAlert,
 } from "@/lib/crm-api";
+
+const PLAN_TIER_OPTION_LABEL: Record<PlanTier, string> = {
+  freemium: "Freemium",
+  starter: "Starter",
+  growth: "Growth",
+  enterprise: "Enterprise",
+};
 import { formatCop } from "@/lib/format";
 import { HubspotSyncBadge } from "./HubspotSyncBadge";
 
@@ -53,6 +62,8 @@ export function B2bRetainersTab() {
   const [altaEmail, setAltaEmail] = useState("");
   const [altaPhone, setAltaPhone] = useState("");
   const [altaFeeCop, setAltaFeeCop] = useState("");
+  const [altaPlanTier, setAltaPlanTier] = useState<PlanTier>("starter");
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
 
   const [editingCell, setEditingCell] = useState<{ clientId: string; period: string } | null>(null);
   const [editingValue, setEditingValue] = useState("");
@@ -101,19 +112,26 @@ export function B2bRetainersTab() {
     event.preventDefault();
     if (!altaName.trim()) return;
     setError("");
+    setInviteLink(null);
     setBusyId("alta");
     try {
-      await createB2bClient({
+      const created = await createB2bClient({
         name: altaName.trim(),
         email: altaEmail.trim() || undefined,
         phone: altaPhone.trim() || undefined,
         monthly_fee_cents: altaFeeCop ? Math.round(Number(altaFeeCop) * 100) : undefined,
+        plan_tier: altaPlanTier,
       });
       setAltaName("");
       setAltaEmail("");
       setAltaPhone("");
       setAltaFeeCop("");
-      setShowAltaForm(false);
+      setAltaPlanTier("starter");
+      if (created.invite_link) {
+        setInviteLink(created.invite_link);
+      } else {
+        setShowAltaForm(false);
+      }
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo crear el cliente");
@@ -197,7 +215,10 @@ export function B2bRetainersTab() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setShowAltaForm((v) => !v)}
+            onClick={() => {
+              setShowAltaForm((v) => !v);
+              setInviteLink(null);
+            }}
             className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary-container hover:bg-primary/20"
           >
             {showAltaForm ? "Cancelar" : "+ Nuevo cliente"}
@@ -277,6 +298,17 @@ export function B2bRetainersTab() {
             onChange={(e) => setAltaFeeCop(e.target.value)}
             className="rounded-lg border border-outline-variant/30 bg-transparent px-3 py-2 text-sm text-on-surface"
           />
+          <select
+            value={altaPlanTier}
+            onChange={(e) => setAltaPlanTier(e.target.value as PlanTier)}
+            className="rounded-lg border border-outline-variant/30 bg-transparent px-3 py-2 text-sm text-on-surface"
+          >
+            {PLAN_TIERS.map((tier) => (
+              <option key={tier} value={tier} className="bg-surface-container text-on-surface">
+                {PLAN_TIER_OPTION_LABEL[tier]}
+              </option>
+            ))}
+          </select>
           <button
             type="submit"
             disabled={busyId === "alta"}
@@ -284,6 +316,28 @@ export function B2bRetainersTab() {
           >
             {busyId === "alta" ? "Creando…" : "Crear cliente"}
           </button>
+          {inviteLink && (
+            <div className="sm:col-span-4 rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm text-on-surface">
+              <p className="mb-1 font-semibold text-primary-container">
+                Cliente creado. Copia y envía este link de acceso:
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  readOnly
+                  value={inviteLink}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="flex-1 rounded-lg border border-outline-variant/30 bg-transparent px-3 py-2 text-xs text-on-surface-variant"
+                />
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard?.writeText(inviteLink)}
+                  className="rounded-lg border border-primary/30 px-3 py-2 text-xs font-semibold text-primary-container hover:bg-primary/20"
+                >
+                  Copiar
+                </button>
+              </div>
+            </div>
+          )}
         </form>
       )}
 

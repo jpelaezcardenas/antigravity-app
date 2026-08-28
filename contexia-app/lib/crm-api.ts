@@ -19,7 +19,14 @@ export interface B2bClient {
   provision_status?: "not_provisioned" | "provisioned" | "pending_email";
   hubspot_company_id?: string | null;
   last_synced_at?: string | null;
+  plan_tier?: PlanTier;
+  invite_link?: string | null;
 }
+
+// Mirrors core/plan_features.py's PLAN_FEATURES keys (plan-tier-feature-gating) — kept in
+// sync by convention, same pattern as TenantInfoCard.tsx's PLAN_TIER_LABEL.
+export type PlanTier = "freemium" | "starter" | "growth" | "enterprise";
+export const PLAN_TIERS: PlanTier[] = ["freemium", "starter", "growth", "enterprise"];
 
 export interface B2bClientsResponse {
   source: "supabase" | "demo_fallback";
@@ -81,6 +88,7 @@ export interface CreateB2bClientInput {
   phone?: string;
   contact_name?: string;
   monthly_fee_cents?: number;
+  plan_tier?: PlanTier;
 }
 
 export function createB2bClient(input: CreateB2bClientInput): Promise<B2bClient> {
