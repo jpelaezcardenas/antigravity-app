@@ -6,7 +6,7 @@
     "scope_source": "openspec/changes/<id>/tasks.md",
     "valid_status": ["pending", "in_progress", "done", "blocked"]
   },
-  "active": "hermes-bridge-token-production-hardening",
+  "active": null,
   "pending_implementation": [
     "taty-wompi-link-hitl-gate",
     "metrics-dashboard-phase9"
@@ -51,6 +51,11 @@
       "id": "centinela-tenant-scoped-alerts",
       "status": "done",
       "summary": "Archived 2026-07-23 as openspec/changes/archive/2026-07-23-centinela-tenant-scoped-alerts (this entry was stale — still said 'pending' after archival; corrected by agent-endpoints-real-tenant-filtering). CentinelaService.save_alerts() no longer silently stamps Cliente Cero; fail-loud require_tenant_id helper in core/tenant_context.py, 3-branch caller resolution on both Centinela endpoints, tenant-scoped reads, Pulso/Radar reader fixes."
+    },
+    {
+      "id": "hermes-bridge-token-production-hardening",
+      "status": "done",
+      "summary": "COMPLETE (26/26 tasks). HERMES_BRIDGE_TOKEN generated and set live in Railway production-175a; poller (apps/hermes-manus-poller) switched from a dead self-signed-JWT auth path (CONTEXIA_JWT_SECRET, never verified by the backend) to sending the matching bearer token, removing python-jose. Live-verified 401 (no/wrong token) / 200 (correct token) across two deploys (manual env-var redeploy + git-push auto-deploy), poller tick confirmed succeeding end-to-end via logs. Reviewed leader->implementer->reviewer per HARNESS.md: first pass CHANGES_REQUESTED (stale CONTEXIA_JWT_SECRET survived in .env.example, missing progress/impl_*.md), both fixed, second pass APPROVED. Corrected AGENTES.md's stale 'fail-open until configured' claim; added docs/runbooks/hermes-bridge-token-rotation.md. Commits 891f0bc + 130a6ba."
     },
     {
       "id": "agent-endpoints-real-tenant-filtering",
