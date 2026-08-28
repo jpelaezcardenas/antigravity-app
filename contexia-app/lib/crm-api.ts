@@ -89,6 +89,7 @@ export interface CreateB2bClientInput {
   contact_name?: string;
   monthly_fee_cents?: number;
   plan_tier?: PlanTier;
+  opening_balance_cents?: number;
 }
 
 export function createB2bClient(input: CreateB2bClientInput): Promise<B2bClient> {

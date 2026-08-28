@@ -46,6 +46,7 @@ class CreateB2bClientRequest(BaseModel):
     contact_name: Optional[str] = None
     monthly_fee_cents: Optional[int] = Field(default=None, ge=0)
     plan_tier: Optional[str] = None
+    opening_balance_cents: Optional[int] = Field(default=None, ge=0)
 
 
 @router.post("/b2b/clients")
@@ -64,6 +65,8 @@ def create_b2b_client(payload: CreateB2bClientRequest):
     )
     if payload.plan_tier is not None:
         kwargs["plan_tier"] = payload.plan_tier
+    if payload.opening_balance_cents is not None:
+        kwargs["opening_balance_cents"] = payload.opening_balance_cents
     try:
         return get_crm_service().create_b2b_client(**kwargs)
     except ValueError as exc:

@@ -22,6 +22,7 @@ from channels.whatsapp import send_whatsapp_message
 from config import settings
 from core.plan_features import PLAN_FEATURES
 from core.supabase_client import get_service_supabase
+from services.shadow_gl_seed_service import seed_freemium_opening_balance
 from services.wompi_signature import compute_integrity_signature, verify_event_checksum
 
 logger = logging.getLogger(__name__)
@@ -213,6 +214,7 @@ class CrmService:
         contact_name: Optional[str] = None,
         monthly_fee_cents: Optional[int] = None,
         plan_tier: str = "starter",
+        opening_balance_cents: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Alta: add a client to the roster with its OWN tenant (per-tenant-client-access),
         so its future Shadow GL data never mixes with Cliente Cero's. If an email is given,
@@ -222,7 +224,12 @@ class CrmService:
         `plan_tier` (plan-tier-feature-gating, migration 0043) is validated against
         core/plan_features.py's known tiers and written explicitly to both the new tenants
         row and the new b2b_clients row — not left to the column's DB-level default, so the
-        alta response always reports the tier that was actually chosen."""
+        alta response always reports the tier that was actually chosen.
+
+        `opening_balance_cents` (freemium-tenant-minimum-seed) seeds a single synthetic
+        opening-balance Shadow GL entry into the new tenant, but ONLY when plan_tier is
+        "freemium" — paid tiers onboard real Siigo/DIAN data instead, so the field is
+        silently ignored (not an error) for any other tier."""
         if plan_tier not in PLAN_FEATURES:
             raise ValueError(
                 f"Invalid plan_tier {plan_tier!r}; must be one of {sorted(PLAN_FEATURES)}"
@@ -253,6 +260,15 @@ class CrmService:
         }
         inserted = client.table("b2b_clients").insert(row).execute()
         b2b_client = inserted.data[0]
+
+        if plan_tier == "freemium" and opening_balance_cents:
+            seed_freemium_opening_balance(
+                client,
+                tenant_id=client_tenant_id,
+                nit=nit,
+                name=name,
+                opening_balance_cents=opening_balance_cents,
+            )
 
         if email:
             try:

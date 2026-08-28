@@ -115,6 +115,91 @@ class TestCreateB2bClient:
 
         assert result["id"] == "client-3"  # alta still succeeded
 
+    def test_freemium_with_opening_balance_seeds_shadow_gl(self):
+        client = _fake_client()
+        b2b_clients_table = MagicMock()
+        b2b_clients_table.insert.return_value.execute.return_value = MagicMock(
+            data=[{"id": "client-5", "name": "Freemium Seed", "status": "activo"}]
+        )
+        original_side_effect = client.table.side_effect
+
+        def routed(name):
+            if name == "b2b_clients":
+                return b2b_clients_table
+            return original_side_effect(name)
+
+        client.table.side_effect = routed
+
+        service = CrmService()
+        service._provision_b2b_client_login = MagicMock()
+
+        with patch("services.crm_service.get_service_supabase", return_value=client), patch(
+            "services.crm_service.seed_freemium_opening_balance"
+        ) as mock_seed:
+            service.create_b2b_client(
+                name="Freemium Seed", email=None, plan_tier="freemium",
+                opening_balance_cents=500_000,
+            )
+
+        mock_seed.assert_called_once()
+        call_kwargs = mock_seed.call_args.kwargs
+        assert call_kwargs["tenant_id"] == "new-tenant-id"
+        assert call_kwargs["opening_balance_cents"] == 500_000
+
+    def test_freemium_without_opening_balance_does_not_seed(self):
+        client = _fake_client()
+        b2b_clients_table = MagicMock()
+        b2b_clients_table.insert.return_value.execute.return_value = MagicMock(
+            data=[{"id": "client-6", "name": "Freemium No Seed", "status": "activo"}]
+        )
+        original_side_effect = client.table.side_effect
+
+        def routed(name):
+            if name == "b2b_clients":
+                return b2b_clients_table
+            return original_side_effect(name)
+
+        client.table.side_effect = routed
+
+        service = CrmService()
+        service._provision_b2b_client_login = MagicMock()
+
+        with patch("services.crm_service.get_service_supabase", return_value=client), patch(
+            "services.crm_service.seed_freemium_opening_balance"
+        ) as mock_seed:
+            service.create_b2b_client(name="Freemium No Seed", email=None, plan_tier="freemium")
+
+        mock_seed.assert_not_called()
+
+    def test_non_freemium_tier_ignores_opening_balance(self):
+        client = _fake_client()
+        b2b_clients_table = MagicMock()
+        b2b_clients_table.insert.return_value.execute.return_value = MagicMock(
+            data=[{"id": "client-7", "name": "Starter Ignora Seed", "status": "activo"}]
+        )
+        original_side_effect = client.table.side_effect
+
+        def routed(name):
+            if name == "b2b_clients":
+                return b2b_clients_table
+            return original_side_effect(name)
+
+        client.table.side_effect = routed
+
+        service = CrmService()
+        service._provision_b2b_client_login = MagicMock()
+
+        with patch("services.crm_service.get_service_supabase", return_value=client), patch(
+            "services.crm_service.seed_freemium_opening_balance"
+        ) as mock_seed:
+            result = service.create_b2b_client(
+                name="Starter Ignora Seed", email=None, plan_tier="starter",
+                opening_balance_cents=500_000,
+            )
+
+        mock_seed.assert_not_called()
+        assert result["id"] == "client-7"
+
     def test_explicit_plan_tier_is_written_to_tenants_and_b2b_clients(self):
         client = _fake_client()
         tenants_table = client.table("tenants")  # capture the mock created for "tenants"

@@ -63,6 +63,7 @@ export function B2bRetainersTab() {
   const [altaPhone, setAltaPhone] = useState("");
   const [altaFeeCop, setAltaFeeCop] = useState("");
   const [altaPlanTier, setAltaPlanTier] = useState<PlanTier>("starter");
+  const [altaOpeningBalanceCop, setAltaOpeningBalanceCop] = useState("");
   const [inviteLink, setInviteLink] = useState<string | null>(null);
 
   const [editingCell, setEditingCell] = useState<{ clientId: string; period: string } | null>(null);
@@ -121,12 +122,17 @@ export function B2bRetainersTab() {
         phone: altaPhone.trim() || undefined,
         monthly_fee_cents: altaFeeCop ? Math.round(Number(altaFeeCop) * 100) : undefined,
         plan_tier: altaPlanTier,
+        opening_balance_cents:
+          altaPlanTier === "freemium" && altaOpeningBalanceCop
+            ? Math.round(Number(altaOpeningBalanceCop) * 100)
+            : undefined,
       });
       setAltaName("");
       setAltaEmail("");
       setAltaPhone("");
       setAltaFeeCop("");
       setAltaPlanTier("starter");
+      setAltaOpeningBalanceCop("");
       if (created.invite_link) {
         setInviteLink(created.invite_link);
       } else {
@@ -309,6 +315,16 @@ export function B2bRetainersTab() {
               </option>
             ))}
           </select>
+          {altaPlanTier === "freemium" && (
+            <input
+              type="number"
+              min="0"
+              placeholder="Saldo de apertura (COP)"
+              value={altaOpeningBalanceCop}
+              onChange={(e) => setAltaOpeningBalanceCop(e.target.value)}
+              className="rounded-lg border border-outline-variant/30 bg-transparent px-3 py-2 text-sm text-on-surface"
+            />
+          )}
           <button
             type="submit"
             disabled={busyId === "alta"}
