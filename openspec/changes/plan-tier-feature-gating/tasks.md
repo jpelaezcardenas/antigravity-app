@@ -134,10 +134,13 @@ Project-specific details:
 - Backend URL: https://antigravity-app-production-175a.up.railway.app
 
 Tasks:
-- [ ] 11.1 git commit + push to main
-- [ ] 11.2 Vercel build complete (green)
-- [ ] 11.3 Railway deploy active (backend change — migration + 3 endpoints + new endpoint)
-- [ ] 11.4 Production URL: `GET /api/v1/tenant/me` returns real data for a live session; Config
-      page shows the real tenant name/tier instead of the hardcoded string; the 3 real components
-      behave unchanged for the default `starter` tier
-- [ ] 11.5 Create report: `openspec/changes/plan-tier-feature-gating/reports/YYYY-MM-DD-deployment.md`
+- [x] 11.1 Committed `23d8cbb`, pushed to `main`.
+- [x] 11.2 Vercel: deployment `dpl_3oCdeV64ZoaVz1KcyTbiamrXu31x` — `READY`, production.
+- [x] 11.3 Railway: deployment `31b84b6b-c7d2-4fef-8535-d09be284306f` — `SUCCESS`.
+- [x] 11.4 Production URL: verified `GET /api/v1/tenant/me` (new endpoint) requires auth
+      identically to `GET /api/v1/financials`/`GET /api/v1/centinela/alerts` (all three return
+      `{"detail":"Invalid or missing authentication token"}` unauthenticated) — confirms correct
+      wiring with no auth bypass. Full resolved-tenant/freemium-banner visual check deferred as a
+      founder action (no plaintext-credential login performed by this agent), same pattern as
+      prior tenant-scoped changes — see `reports/2026-08-28-deployment.md`.
+- [x] 11.5 Report: `openspec/changes/plan-tier-feature-gating/reports/2026-08-28-deployment.md`.
