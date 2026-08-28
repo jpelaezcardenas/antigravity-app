@@ -108,7 +108,11 @@
 
 ## 10. Commit + push
 
-- [ ] 10.1 Commit the poller code changes and doc updates (Sections 1, 6) to `main`.
+- [x] 10.1 Commit the poller code changes and doc updates (Sections 1, 6) to `main`. (Commit
+      `891f0bc`. Staged surgically — `AGENTES.md` had a second, unrelated hunk from a parallel
+      session; isolated my paragraph via a HEAD-relative patch built with `git apply --cached`
+      rather than staging the whole file, confirmed via `git diff --cached`/`git diff` that only my
+      hunk was staged and the other session's hunk stayed untouched in the working tree.)
 
 ## 11. Deploy to Production (MANDATORY — CLOSES THE LOOP)
 
@@ -121,8 +125,13 @@ Project-specific details:
   deploy required.
 
 Tasks:
-- [ ] 11.1 git commit + push to main (poller code + doc corrections).
-- [ ] 11.2 Railway env var (`HERMES_BRIDGE_TOKEN`) set and service redeployed/restarted (Section 4).
-- [ ] 11.3 Production URL: live verification from Section 5 passed (401 unauthenticated, 200
-      authenticated, poller tick succeeds).
-- [ ] 11.4 Create report: `openspec/changes/hermes-bridge-token-production-hardening/reports/YYYY-MM-DD-deployment.md`.
+- [x] 11.1 git commit + push to main (poller code + doc corrections). (Commit `891f0bc`, pushed
+      `0cb165a..891f0bc`.)
+- [x] 11.2 Railway env var (`HERMES_BRIDGE_TOKEN`) set and service redeployed/restarted (Section 4).
+      (The push itself triggered a second auto-deploy, `e621b8e7`, SUCCESS — confirming the env var
+      persisted through a full rebuild, not just the manual redeploy from Section 4.)
+- [x] 11.3 Production URL: live verification from Section 5 passed (401 unauthenticated, 200
+      authenticated, poller tick succeeds). (Re-verified after the push-triggered redeploy
+      `e621b8e7` too, post cold-start: 401 without token, 200 with token — both deploys confirm
+      correctly.)
+- [x] 11.4 Create report: `openspec/changes/hermes-bridge-token-production-hardening/reports/YYYY-MM-DD-deployment.md`.
