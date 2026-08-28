@@ -1,48 +1,44 @@
 """
-Test suite for profile-based LLM routing.
-Verifies that profiles are correctly recognized and fallback chains work.
+Test suite for the LLM engine's free-tier failover cascade.
+Cascade: Groq -> OpenRouter free -> Cerebras -> NVIDIA NIM (order reflects what's
+actually confirmed working live against production keys — see config.py).
 """
 
 import pytest
 from unittest.mock import patch, MagicMock
-from apps.backend.agents.llm_engine import LLMEngine, PROFILE_CONFIGS, LLMProvider, AllProvidersFailedError
+from apps.backend.agents.llm_engine import LLMEngine, LLMProvider, AllProvidersFailedError
 
 
-class TestProfileConfigurations:
-    """Test that all profiles are properly configured."""
-
-    def test_all_profiles_exist(self):
-        """Verify all expected profiles are defined."""
-        expected_profiles = {
-            "taty-v1",
-            "centinela-v1",
-            "pulso-v1",
-            "radar-v1",
-            "auditoria-v1",
-            "social-ops-v1",
-            "kb-v1",
-            "maestro-v1",
-        }
-        assert set(PROFILE_CONFIGS.keys()) == expected_profiles, "Profile set mismatch"
-
-    def test_each_profile_has_fallback_chain(self):
-        """Verify each profile has a fallback chain defined."""
-        for profile_name, config in PROFILE_CONFIGS.items():
-            assert "fallback_chain" in config, f"Profile {profile_name} missing fallback_chain"
-            assert isinstance(config["fallback_chain"], list), f"Profile {profile_name} fallback_chain not a list"
-            assert len(config["fallback_chain"]) > 0, f"Profile {profile_name} fallback_chain is empty"
-
-
-class TestGetAiResponseWithProfile:
-    """Test the new get_ai_response_with_profile() method."""
+class TestProviderOrder:
+    """Verify the default failover order matches the documented cascade."""
 
     @pytest.fixture
     def engine(self):
-        """Create a LLMEngine instance for testing."""
+        return LLMEngine()
+
+    def test_provider_order_is_free_tier_cascade(self, engine):
+        assert engine.provider_order == [
+            LLMProvider.GROQ,
+            LLMProvider.OPENROUTER_FREE,
+            LLMProvider.CEREBRAS,
+            LLMProvider.NVIDIA,
+        ]
+
+    def test_minimax_and_glm_are_not_providers(self):
+        """MiniMax M3 and GLM 5.3 are not paid for by this backend — must not exist as options."""
+        provider_names = {p.value for p in LLMProvider}
+        assert "minimax" not in provider_names
+        assert "glm" not in provider_names
+
+
+class TestGetAiResponseWithProfile:
+    """profile_name is accepted for backward compatibility but no longer changes routing."""
+
+    @pytest.fixture
+    def engine(self):
         return LLMEngine()
 
     def test_profile_name_none_uses_default(self, engine):
-        """Test that profile_name=None falls back to default routing."""
         with patch.object(engine, 'get_ai_response', return_value="test response") as mock_get:
             result = engine.get_ai_response_with_profile(
                 prompt="Test",
@@ -51,89 +47,55 @@ class TestGetAiResponseWithProfile:
             mock_get.assert_called_once()
             assert result == "test response"
 
-    def test_unknown_profile_uses_default(self, engine):
-        """Test that unknown profile falls back to default routing."""
-        with patch.object(engine, 'get_ai_response', return_value="test response") as mock_get:
-            result = engine.get_ai_response_with_profile(
-                prompt="Test",
-                profile_name="nonexistent-profile",
-            )
-            mock_get.assert_called_once()
-            assert result == "test response"
-
-    def test_valid_profile_uses_custom_order(self, engine):
-        """Test that valid profile uses custom provider order."""
-        with patch.object(engine, '_call_with_failover_custom_order', return_value="test response") as mock_failover:
+    def test_any_profile_name_routes_to_same_cascade(self, engine):
+        with patch.object(engine, '_call_with_failover', return_value="test response") as mock_failover:
             result = engine.get_ai_response_with_profile(
                 prompt="Test",
                 profile_name="taty-v1",
                 response_format="text",
             )
             mock_failover.assert_called_once()
-            # Verify fallback chain was passed
-            call_kwargs = mock_failover.call_args[1]
-            assert "provider_order" in call_kwargs
-            assert call_kwargs["provider_order"] == PROFILE_CONFIGS["taty-v1"]["fallback_chain"]
-
-    def test_json_format_uses_custom_retry(self, engine):
-        """Test that JSON format uses custom retry method."""
-        with patch.object(engine, '_get_json_with_retry_custom_order', return_value={"key": "value"}) as mock_retry:
-            result = engine.get_ai_response_with_profile(
-                prompt="Test",
-                profile_name="centinela-v1",
-                response_format="json",
-            )
-            mock_retry.assert_called_once()
-            assert result == {"key": "value"}
-
-    def test_all_profiles_have_groq_in_fallback(self, engine):
-        """Verify Groq is in fallback chain for all profiles (critical provider)."""
-        for profile_name, config in PROFILE_CONFIGS.items():
-            fallback = config["fallback_chain"]
-            assert LLMProvider.GROQ in fallback, f"Profile {profile_name} missing Groq in fallback chain"
+            assert result == "test response"
 
 
-class TestGLMRouting:
-    """Test that GLM 5.2 (subscription) is the primary for interactive agents."""
-
-    INTERACTIVE_PROFILES = {"taty-v1", "radar-v1", "auditoria-v1", "maestro-v1"}
-    BATCH_PROFILES = {"centinela-v1", "pulso-v1", "social-ops-v1", "kb-v1"}
+class TestFailoverCascade:
+    """Verify each provider is tried in order and failures fall through."""
 
     @pytest.fixture
     def engine(self):
         return LLMEngine()
 
-    def test_interactive_profiles_use_glm_primary(self):
-        """Interactive agents must route to GLM 5.2 first, not Groq."""
-        for profile_name in self.INTERACTIVE_PROFILES:
-            primary = PROFILE_CONFIGS[profile_name]["primary"]
-            assert primary == LLMProvider.GLM, (
-                f"Interactive profile {profile_name} should use GLM primary, got {primary}"
-            )
+    def test_groq_success_short_circuits_cascade(self, engine):
+        with patch.object(engine, '_call_groq', return_value="groq answer") as mock_groq, \
+             patch.object(engine, '_call_openrouter_free') as mock_or:
+            result = engine._call_with_failover("prompt", "", 100, 0.7, 30)
+            mock_groq.assert_called_once()
+            mock_or.assert_not_called()
+            assert result == "groq answer"
 
-    def test_interactive_profiles_fallback_to_groq(self):
-        """GLM-primary profiles must keep Groq reachable so a GLM outage never drops a request."""
-        for profile_name in self.INTERACTIVE_PROFILES:
-            chain = PROFILE_CONFIGS[profile_name]["fallback_chain"]
-            assert chain[0] == LLMProvider.GLM, f"{profile_name} should try GLM first"
-            assert LLMProvider.GROQ in chain, f"{profile_name} must keep Groq as fallback"
+    def test_falls_through_to_openrouter_on_groq_failure(self, engine):
+        with patch.object(engine, '_call_groq', side_effect=ValueError("no key")), \
+             patch.object(engine, '_call_openrouter_free', return_value="openrouter answer") as mock_or:
+            result = engine._call_with_failover("prompt", "", 100, 0.7, 30)
+            mock_or.assert_called_once()
+            assert result == "openrouter answer"
 
-    def test_batch_profiles_stay_on_groq(self):
-        """Batch agents stay on Groq until local Ollama lands in Mitad B."""
-        for profile_name in self.BATCH_PROFILES:
-            assert PROFILE_CONFIGS[profile_name]["primary"] == LLMProvider.GROQ
+    def test_falls_through_to_nvidia_as_last_resort(self, engine):
+        with patch.object(engine, '_call_groq', side_effect=ValueError("no key")), \
+             patch.object(engine, '_call_openrouter_free', side_effect=ValueError("no key")), \
+             patch.object(engine, '_call_cerebras', side_effect=ValueError("no key")), \
+             patch.object(engine, '_call_nvidia', return_value="nvidia answer") as mock_nvidia:
+            result = engine._call_with_failover("prompt", "", 100, 0.7, 30)
+            mock_nvidia.assert_called_once()
+            assert result == "nvidia answer"
 
-    def test_taty_invokes_glm_call(self, engine):
-        """taty-v1 must dispatch to _call_glm, exercising the GLM subscription."""
-        with patch.object(engine, "_call_glm", return_value="glm answer") as mock_glm:
-            engine.glm_client = MagicMock()  # pretend GLM is configured
-            result = engine.get_ai_response_with_profile(
-                prompt="¿Cuál es el UVT 2026?",
-                profile_name="taty-v1",
-                response_format="text",
-            )
-            mock_glm.assert_called_once()
-            assert result == "glm answer"
+    def test_all_providers_failing_raises(self, engine):
+        with patch.object(engine, '_call_groq', side_effect=ValueError("no key")), \
+             patch.object(engine, '_call_openrouter_free', side_effect=ValueError("no key")), \
+             patch.object(engine, '_call_cerebras', side_effect=ValueError("no key")), \
+             patch.object(engine, '_call_nvidia', side_effect=ValueError("no key")):
+            with pytest.raises(AllProvidersFailedError):
+                engine._call_with_failover("prompt", "", 100, 0.7, 30)
 
 
 if __name__ == "__main__":

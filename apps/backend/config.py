@@ -40,20 +40,45 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://localhost:3002,https://contexia.online,https://www.contexia.online"
 
-    # LLM Provider API Keys & Settings
+    # LLM Provider API Keys & Settings — free-tier cascade (2026-08-18, model names
+    # verified live 2026-08-28). MiniMax M3, GLM 5.3, and MiMo were all dropped: this
+    # backend serves production/automated requests, none of the paid plans are being
+    # kept for it, and MiMo's ToS explicitly forbids "application backend" use (it's
+    # reserved for Hermes/Houston, which are interactive coding-tool sessions).
+    #
+    # Cascade order reflects what was CONFIRMED WORKING via live curl against the
+    # actual Railway production keys on 2026-08-28, not aspirational ordering:
+    #   1. Groq (openai/gpt-oss-120b) — confirmed 200.
+    #   2. OpenRouter free (nvidia/nemotron-3-super-120b-a12b:free) — confirmed 200.
+    #      The old default (openai/gpt-oss-120b:free) was retired from OpenRouter's
+    #      free tier (404 "use the paid slug instead").
+    #   3. Cerebras (gpt-oss-120b) — confirmed reachable but the account still returns
+    #      402 Payment required (verified again 2026-08-28 with a freshly-generated
+    #      key — it's the account's billing/tier status, not a stale key). Needs a
+    #      human to activate/pay for the free tier in the Cerebras dashboard.
+    #      (The old model name, llama-3.3-70b, no longer exists in Cerebras's
+    #      catalog either — /v1/models now only lists gpt-oss-120b and gemma-4-31b.)
+    #   4. NVIDIA NIM (openai/gpt-oss-120b) — fixed 2026-08-28: NVIDIA_API_KEY added
+    #      to Railway, and the old model (meta/llama-3.3-70b-instruct) was swapped
+    #      out after it hit end-of-life 2026-08-26 (410 Gone). Confirmed 200 live.
     GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
+
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    OPENROUTER_MODEL: str = "nvidia/nemotron-3-super-120b-a12b:free"
+
     CEREBRAS_API_KEY: str = ""
+    CEREBRAS_MODEL: str = "gpt-oss-120b"
+
+    NVIDIA_API_KEY: str = ""
+    NVIDIA_BASE_URL: str = "https://integrate.api.nvidia.com/v1"
+    NVIDIA_MODEL: str = "openai/gpt-oss-120b"
+
+    # Legacy keys — retained for backward compatibility, no longer in active cascade
     MISTRAL_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
-    OPENROUTER_API_KEY: str = ""
-    LLM_MODEL: str = "llama-3.3-70b-versatile"
-
-    # GLM (Z.AI / Zhipu) — interactive agents via GLM 5.2 subscription.
-    # Endpoint/model mirror the validated local Hermes config (open.bigmodel.cn).
-    # The endpoint is OpenAI-compatible, so the OpenAI SDK calls it via base_url.
-    GLM_API_KEY: str = ""
-    GLM_BASE_URL: str = "https://open.bigmodel.cn/api/paas/v4"
-    GLM_MODEL: str = "glm-5.2"
+    LLM_MODEL: str = "openai/gpt-oss-120b"
 
     # Feature Flags (Task 4.4: Social Ops canonical endpoints)
     SOCIAL_OPS_CANONICAL: bool = False
@@ -175,12 +200,12 @@ class Settings(BaseSettings):
     def __init__(self, **data):
         # Ensure environment variables always take precedence.
         # In Railway/production, .env may not exist or be outdated.
-        # Explicitly check os.environ for critical values like GLM_API_KEY.
-        if not data.get('GLM_API_KEY'):
-            env_glm_key = os.environ.get('GLM_API_KEY')
-            if env_glm_key:
-                data['GLM_API_KEY'] = env_glm_key
-                logger.info("✓ GLM_API_KEY loaded from environment variable")
+        # Explicitly check os.environ for critical values like GROQ_API_KEY.
+        if not data.get('GROQ_API_KEY'):
+            env_groq_key = os.environ.get('GROQ_API_KEY')
+            if env_groq_key:
+                data['GROQ_API_KEY'] = env_groq_key
+                logger.info("✓ GROQ_API_KEY loaded from environment variable")
         super().__init__(**data)
 
 

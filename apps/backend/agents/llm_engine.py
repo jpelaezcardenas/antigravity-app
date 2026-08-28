@@ -1,19 +1,26 @@
 """
-LLM Engine with failover support across multiple providers.
-Implements automatic fallback chain: OpenRouter Free → Groq → Cerebras → Mistral → Gemini →
-OpenRouter (paid). Cloud-only — no local model provider.
+LLM Engine — free-tier failover cascade for automated backend requests.
+Order (reordered 2026-08-28 to match what's actually confirmed working against
+production Railway keys — see config.py for the full verification notes):
+  1. Groq (openai/gpt-oss-120b) — confirmed live.
+  2. OpenRouter free (nvidia/nemotron-3-super-120b-a12b:free) — confirmed live.
+  3. Cerebras (gpt-oss-120b) — code correct, but the account still 402s (no active
+     free tier, confirmed again with a fresh key 2026-08-28); fixing that is an
+     account action, not a code fix.
+  4. NVIDIA NIM (openai/gpt-oss-120b) — fixed 2026-08-28: key added to Railway,
+     model swapped after the old one hit end-of-life. Confirmed live.
+MiniMax M3, GLM 5.3, and MiMo are not used here — this backend serves
+automated/production traffic, none of those plans are paid for it, and MiMo's ToS
+explicitly forbids "application backend" use (2026-08-18 / 2026-08-28).
 Auto-heals malformed JSON responses with intelligent parsing and recovery strategies.
 """
 
 import json
-import os
 import re
 import logging
 from typing import Dict, Optional, Any, Union
 from enum import Enum
-import time
 
-# Third-party imports
 try:
     from groq import Groq
 except ImportError:
@@ -37,72 +44,10 @@ logger = logging.getLogger(__name__)
 
 
 class LLMProvider(Enum):
-    """Available LLM providers in failover order (Cloud-Only, no local models)"""
-    OPENROUTER_FREE = "openrouter_free"
     GROQ = "groq"
+    OPENROUTER_FREE = "openrouter_free"
     CEREBRAS = "cerebras"
-    MISTRAL = "mistral"
-    GEMINI = "gemini"
-    OPENROUTER = "openrouter"
-    GLM = "glm"  # Z.AI / Zhipu GLM 5.2 (subscription) — interactive agents
-
-
-# Profile Configurations: Maps profile_name → [primary_provider, fallback_chain]
-# Hybrid routing (Mitad A — Railway/cloud):
-#   Interactive agents (taty/radar/auditoria/maestro) → GLM 5.2 primary (subscription),
-#   Groq as first fallback. Batch agents (centinela/pulso/social-ops/kb) stay on Groq;
-#   they move to local Ollama on the on-prem worker in Mitad B.
-# Every chain keeps Groq as a reachable fallback so a GLM outage never drops a request.
-PROFILE_CONFIGS = {
-    "taty-v1": {
-        "primary": LLMProvider.GROQ,
-        "fallback_chain": [LLMProvider.GROQ, LLMProvider.GEMINI, LLMProvider.OPENROUTER],
-        "model_overrides": {LLMProvider.GROQ: "openai/gpt-oss-120b"},
-        "description": (
-            "Fiscal advisor / WhatsApp renta sales — Groq openai/gpt-oss-120b primary "
-            "(repointed 2026-08-11, taty-whatsapp-renta-sales-capability: GLM 5.2 was the most "
-            "expensive option evaluated at list price with no quality advantage confirmed via "
-            "A/B, and was unreachable from the WhatsApp channel anyway since taty_lead_router.py "
-            "never used this profile — see design.md). Gemini fallback (DeepSeek deferred, no "
-            "DEEPSEEK_API_KEY exists yet — see tasks.md 3.4)."
-        ),
-    },
-    "centinela-v1": {
-        "primary": LLMProvider.GROQ,
-        "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER_FREE],
-        "description": "Financial monitoring agent — batch processing, ~25s acceptable (local Ollama in Mitad B)"
-    },
-    "pulso-v1": {
-        "primary": LLMProvider.GROQ,
-        "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER_FREE],
-        "description": "Daily cash flow — nightly batch, ~85s acceptable (local Ollama in Mitad B)"
-    },
-    "radar-v1": {
-        "primary": LLMProvider.GLM,
-        "fallback_chain": [LLMProvider.GLM, LLMProvider.GROQ, LLMProvider.CEREBRAS],
-        "description": "Predictive analytics — accuracy critical; GLM 5.2 primary, Groq fallback"
-    },
-    "auditoria-v1": {
-        "primary": LLMProvider.GLM,
-        "fallback_chain": [LLMProvider.GLM, LLMProvider.GROQ, LLMProvider.CEREBRAS],
-        "description": "Compliance auditing — regulatory, never risk quality; GLM 5.2 primary"
-    },
-    "social-ops-v1": {
-        "primary": LLMProvider.GROQ,
-        "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER_FREE],
-        "description": "Social content generation — batch mode (local Ollama in Mitad B)"
-    },
-    "kb-v1": {
-        "primary": LLMProvider.GROQ,
-        "fallback_chain": [LLMProvider.GROQ, LLMProvider.OPENROUTER_FREE],
-        "description": "Knowledge base RAG — simple formatting (local Ollama in Mitad B)"
-    },
-    "maestro-v1": {
-        "primary": LLMProvider.GLM,
-        "fallback_chain": [LLMProvider.GLM, LLMProvider.GROQ, LLMProvider.CEREBRAS],
-        "description": "Orchestrator agent — complex coordination; GLM 5.2 primary, Groq fallback"
-    },
-}
+    NVIDIA = "nvidia"
 
 
 class AllProvidersFailedError(Exception):
@@ -113,36 +58,23 @@ class AllProvidersFailedError(Exception):
 class LLMEngine:
     """
     LLM orchestrator with automatic failover and JSON auto-healing.
-
-    Provides intelligent LLM access with guaranteed response through
-    automatic fallback to alternative providers.
+    Free-tier cascade: Groq -> Cerebras -> OpenRouter free -> NVIDIA NIM.
     """
 
     def __init__(self):
-        """Initialize LLM clients and configuration"""
         self.groq_client = None
-        self.openai_client = None
-        self.mistral_client = None
-        self.glm_client = None
-        self.gemini_api_key = None
-        self.openrouter_api_key = None
-        self.openrouter_free_api_key = None
-
+        self.cerebras_client = None
+        self.openrouter_client = None
+        self.nvidia_client = None
         self.provider_order = [
-            LLMProvider.OPENROUTER_FREE,
             LLMProvider.GROQ,
+            LLMProvider.OPENROUTER_FREE,
             LLMProvider.CEREBRAS,
-            LLMProvider.MISTRAL,
-            LLMProvider.GEMINI,
-            LLMProvider.OPENROUTER,
+            LLMProvider.NVIDIA,
         ]
         self._initialize_clients()
 
     def _initialize_clients(self):
-        """Initialize all available LLM clients (Cloud-Only, no local models)"""
-        # OpenRouter Free (Gratis)
-        self.openrouter_free_api_key = settings.OPENROUTER_API_KEY
-
         groq_key = settings.GROQ_API_KEY
         if groq_key and Groq:
             self.groq_client = Groq(api_key=groq_key)
@@ -151,32 +83,22 @@ class LLMEngine:
         if cerebras_key and OpenAI:
             self.cerebras_client = OpenAI(
                 api_key=cerebras_key,
-                base_url="https://api.cerebras.ai/v1"
+                base_url="https://api.cerebras.ai/v1",
             )
-        else:
-            self.cerebras_client = None
 
-        mistral_key = settings.MISTRAL_API_KEY
-        if mistral_key and OpenAI:
-            self.mistral_client = OpenAI(
-                api_key=mistral_key,
-                base_url="https://api.mistral.ai/v1"
+        openrouter_key = settings.OPENROUTER_API_KEY
+        if openrouter_key and OpenAI:
+            self.openrouter_client = OpenAI(
+                api_key=openrouter_key,
+                base_url=settings.OPENROUTER_BASE_URL,
             )
-        else:
-            self.mistral_client = None
 
-        # GLM (Z.AI / Zhipu) — OpenAI-compatible endpoint, GLM 5.2 subscription.
-        glm_key = settings.GLM_API_KEY
-        if glm_key and OpenAI:
-            self.glm_client = OpenAI(
-                api_key=glm_key,
-                base_url=settings.GLM_BASE_URL,
+        nvidia_key = settings.NVIDIA_API_KEY
+        if nvidia_key and OpenAI:
+            self.nvidia_client = OpenAI(
+                api_key=nvidia_key,
+                base_url=settings.NVIDIA_BASE_URL,
             )
-        else:
-            self.glm_client = None
-
-        self.gemini_api_key = settings.GEMINI_API_KEY
-        self.openrouter_api_key = settings.OPENROUTER_API_KEY
 
     def get_ai_response(
         self,
@@ -202,12 +124,9 @@ class LLMEngine:
             temperature: Sampling temperature (0-1)
             timeout: Request timeout in seconds
             synonyms: Optional alias-to-canonical map applied after JSON parse
-                (e.g., {"hallazgos": "riesgos", "resumen": "resumen_ejecutivo"})
             list_keys: Optional set of keys whose values must be lists
-                (dict values are wrapped: {"x": {...}} -> {"x": [{...}]})
             required_keys: Optional set of keys whose absence triggers re-prompt
-            max_json_retries: How many times to re-prompt the LLM with the
-                parsing error context if json validation fails. Default 1.
+            max_json_retries: How many times to re-prompt on json validation failure
 
         Returns:
             Dict if response_format="json", str if response_format="text"
@@ -215,7 +134,6 @@ class LLMEngine:
         Raises:
             AllProvidersFailedError: If all providers fail
         """
-
         if response_format == "json":
             return self._get_json_with_retry(
                 prompt=prompt,
@@ -248,75 +166,24 @@ class LLMEngine:
         max_json_retries: int = 1,
     ) -> Union[Dict, str]:
         """
-        Get AI response using a Hermes-managed profile for provider selection.
-        Falls back to task-tier routing if profile_name is None.
-
-        Args:
-            prompt: User message/query
-            profile_name: Agent profile name (e.g., "taty-v1", "centinela-v1")
-                         If None, uses default task-tier routing
-            system_prompt: System message for model context
-            response_format: "json" or "text"
-            max_tokens: Maximum tokens in response
-            temperature: Sampling temperature (0-1)
-            timeout: Request timeout in seconds
-            synonyms: Optional alias map for JSON parsing
-            list_keys: Optional set of keys whose values must be lists
-            required_keys: Optional set of required keys
-            max_json_retries: JSON retry count
-
-        Returns:
-            Dict if response_format="json", str if response_format="text"
-
-        Raises:
-            AllProvidersFailedError: If all providers in fallback chain fail
+        Get AI response using a profile name. All profiles now route to the
+        same Groq -> Cerebras -> OpenRouter free -> NVIDIA cascade; profile_name
+        is accepted for backward compatibility but does not change routing.
         """
-
-        if profile_name and profile_name in PROFILE_CONFIGS:
-            # Use profile-based fallback chain
-            profile = PROFILE_CONFIGS[profile_name]
-            fallback_chain = profile.get("fallback_chain", self.provider_order)
-            logger.info(f"Using profile '{profile_name}' with fallback chain: {[p.value for p in fallback_chain]}")
-
-            if response_format == "json":
-                return self._get_json_with_retry_custom_order(
-                    prompt=prompt,
-                    system_prompt=system_prompt,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    timeout=timeout,
-                    provider_order=fallback_chain,
-                    synonyms=synonyms or {},
-                    list_keys=list_keys or set(),
-                    required_keys=required_keys or set(),
-                    max_retries=max_json_retries,
-                )
-            else:
-                return self._call_with_failover_custom_order(
-                    prompt=prompt,
-                    system_prompt=system_prompt,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    timeout=timeout,
-                    provider_order=fallback_chain,
-                    model_overrides=profile.get("model_overrides"),
-                )
-        else:
-            # Fall back to default task-tier routing (backward compatibility)
-            if profile_name:
-                logger.warning(f"Profile '{profile_name}' not found. Using default routing.")
-            return self.get_ai_response(
-                prompt=prompt,
-                system_prompt=system_prompt,
-                response_format=response_format,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                timeout=timeout,
-                synonyms=synonyms,
-                list_keys=list_keys,
-                required_keys=required_keys,
-                max_json_retries=max_json_retries,
-            )
+        if profile_name:
+            logger.info(f"Profile '{profile_name}' requested — routing to default free-tier cascade")
+        return self.get_ai_response(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            response_format=response_format,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            timeout=timeout,
+            synonyms=synonyms,
+            list_keys=list_keys,
+            required_keys=required_keys,
+            max_json_retries=max_json_retries,
+        )
 
     def _get_json_with_retry(
         self,
@@ -331,8 +198,8 @@ class LLMEngine:
         max_retries: int,
     ) -> Dict:
         """Run JSON request with up to `max_retries` re-prompts on validation failure."""
-        last_error: Optional[str] = None
         current_prompt = prompt
+        parsed: Dict = {}
 
         for attempt in range(max_retries + 1):
             raw = self._call_with_failover(
@@ -364,134 +231,7 @@ class LLMEngine:
                     f"No prose, no markdown fences."
                 )
 
-        return parsed  # Return last (possibly fallback) parsed result
-
-    def _call_with_failover_custom_order(
-        self,
-        prompt: str,
-        system_prompt: str,
-        max_tokens: int,
-        temperature: float,
-        timeout: int,
-        provider_order: list,
-        model_overrides: Optional[Dict["LLMProvider", str]] = None,
-    ) -> str:
-        """Run the provider failover loop with a custom provider order.
-
-        `model_overrides` lets a single profile pin a specific model for a given provider
-        (e.g. taty-v1 -> Groq's openai/gpt-oss-120b) without changing that provider's default
-        model for every other profile that also routes through it."""
-        errors_log = []
-        model_overrides = model_overrides or {}
-
-        for provider in provider_order:
-            try:
-                logger.info(f"Attempting LLM request via {provider.value}")
-
-                if provider == LLMProvider.OPENROUTER_FREE:
-                    response = self._call_openrouter_free(
-                        prompt, system_prompt, max_tokens, temperature
-                    )
-                elif provider == LLMProvider.GLM:
-                    response = self._call_glm(
-                        prompt, system_prompt, max_tokens, temperature
-                    )
-                elif provider == LLMProvider.GROQ:
-                    groq_kwargs = {}
-                    if LLMProvider.GROQ in model_overrides:
-                        groq_kwargs["model"] = model_overrides[LLMProvider.GROQ]
-                    response = self._call_groq(
-                        prompt, system_prompt, max_tokens, temperature, **groq_kwargs
-                    )
-                elif provider == LLMProvider.CEREBRAS:
-                    response = self._call_cerebras(
-                        prompt, system_prompt, max_tokens, temperature
-                    )
-                elif provider == LLMProvider.MISTRAL:
-                    response = self._call_mistral(
-                        prompt, system_prompt, max_tokens, temperature
-                    )
-                elif provider == LLMProvider.GEMINI:
-                    response = self._call_gemini(
-                        prompt, system_prompt, max_tokens, temperature, timeout
-                    )
-                elif provider == LLMProvider.OPENROUTER:
-                    response = self._call_openrouter(
-                        prompt, system_prompt, max_tokens, temperature
-                    )
-                else:
-                    continue
-
-                logger.info(f"[OK] Success with {provider.value}")
-                return response
-
-            except (RateLimitError, APIError, APIConnectionError, requests.RequestException, TimeoutError) as e:
-                error_msg = f"{provider.value}: {str(e)}"
-                errors_log.append(error_msg)
-                logger.warning(f"Provider {provider.value} failed: {str(e)}, trying next...")
-                continue
-            except Exception as e:
-                error_msg = f"{provider.value}: {str(e)}"
-                errors_log.append(error_msg)
-                logger.warning(f"Unexpected error with {provider.value}: {str(e)}")
-                continue
-
-        # All providers exhausted
-        error_summary = "\n".join(errors_log)
-        logger.error(f"All LLM providers failed:\n{error_summary}")
-        raise AllProvidersFailedError(f"All LLM providers exhausted. Errors:\n{error_summary}")
-
-    def _get_json_with_retry_custom_order(
-        self,
-        prompt: str,
-        system_prompt: str,
-        max_tokens: int,
-        temperature: float,
-        timeout: int,
-        provider_order: list,
-        synonyms: Dict[str, str],
-        list_keys: set,
-        required_keys: set,
-        max_retries: int,
-    ) -> Dict:
-        """Get JSON response with custom provider order, retrying on validation failure.
-        Mirrors _get_json_with_retry's parse-then-validate pattern exactly (bugfix:
-        fix-llm-engine-required-keys — _parse_llm_response never accepted required_keys nor
-        returned a tuple; validation is a separate step via _validate_required)."""
-        current_prompt = prompt
-        parsed: Dict = {}
-
-        for attempt in range(max_retries + 1):
-            raw_response = self._call_with_failover_custom_order(
-                current_prompt, system_prompt, max_tokens, temperature, timeout, provider_order
-            )
-            parsed = self._parse_llm_response(raw_response, synonyms=synonyms, list_keys=list_keys)
-
-            valid, missing = self._validate_required(parsed, required_keys)
-            parse_failed = isinstance(parsed, dict) and parsed.get("parsing_error") is True
-
-            if valid and not parse_failed:
-                return parsed
-
-            last_error = (
-                f"Missing required keys: {sorted(missing)}"
-                if missing
-                else "Response was not valid JSON; fallback structure returned"
-            )
-            logger.warning(
-                f"JSON validation failed (attempt {attempt + 1}/{max_retries + 1}): {last_error}"
-            )
-
-            if attempt < max_retries:
-                current_prompt = (
-                    f"{prompt}\n\n"
-                    f"IMPORTANT: Your previous response failed validation: {last_error}. "
-                    f"Return ONLY a valid JSON object containing keys "
-                    f"{sorted(required_keys) if required_keys else 'as specified above'}. "
-                    f"No prose, no markdown fences."
-                )
-
-        return parsed  # Return last (possibly fallback) parsed result
+        return parsed
 
     @staticmethod
     def _validate_required(parsed: Dict, required_keys: set) -> tuple:
@@ -516,15 +256,7 @@ class LLMEngine:
             try:
                 logger.info(f"Attempting LLM request via {provider.value}")
 
-                if provider == LLMProvider.OPENROUTER_FREE:
-                    response = self._call_openrouter_free(
-                        prompt, system_prompt, max_tokens, temperature
-                    )
-                elif provider == LLMProvider.GLM:
-                    response = self._call_glm(
-                        prompt, system_prompt, max_tokens, temperature
-                    )
-                elif provider == LLMProvider.GROQ:
+                if provider == LLMProvider.GROQ:
                     response = self._call_groq(
                         prompt, system_prompt, max_tokens, temperature
                     )
@@ -532,18 +264,16 @@ class LLMEngine:
                     response = self._call_cerebras(
                         prompt, system_prompt, max_tokens, temperature
                     )
-                elif provider == LLMProvider.MISTRAL:
-                    response = self._call_mistral(
+                elif provider == LLMProvider.OPENROUTER_FREE:
+                    response = self._call_openrouter_free(
                         prompt, system_prompt, max_tokens, temperature
                     )
-                elif provider == LLMProvider.GEMINI:
-                    response = self._call_gemini(
-                        prompt, system_prompt, max_tokens, temperature, timeout
-                    )
-                elif provider == LLMProvider.OPENROUTER:
-                    response = self._call_openrouter(
+                elif provider == LLMProvider.NVIDIA:
+                    response = self._call_nvidia(
                         prompt, system_prompt, max_tokens, temperature
                     )
+                else:
+                    continue
 
                 logger.info(f"[OK] Success with {provider.value}")
                 return response
@@ -559,64 +289,17 @@ class LLMEngine:
                 logger.warning(f"Unexpected error with {provider.value}: {str(e)}")
                 continue
 
-        # All providers exhausted
         error_summary = "\n".join(errors_log)
         logger.error(f"All LLM providers failed:\n{error_summary}")
         raise AllProvidersFailedError(f"All LLM providers exhausted. Errors:\n{error_summary}")
 
-    def _call_openrouter_free(self, prompt: str, system_prompt: str, max_tokens: int, temp: float) -> str:
-        """Call OpenRouter Free API"""
-        if not self.openrouter_free_api_key:
-            raise ValueError("OpenRouter Free API key not configured")
-
-        if not OpenAI:
-            raise ValueError("OpenAI client not available")
-
-        client = OpenAI(
-            api_key=self.openrouter_free_api_key,
-            base_url="https://openrouter.ai/api/v1",
-        )
-
-        response = client.chat.completions.create(
-            model="meta-llama/llama-2-7b-chat",  # Free model
-            messages=[
-                {"role": "system", "content": system_prompt or "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=max_tokens,
-            temperature=temp,
-        )
-        return response.choices[0].message.content
-
-    def _call_groq(
-        self, prompt: str, system_prompt: str, max_tokens: int, temp: float,
-        model: str = "llama-3.3-70b-versatile",
-    ) -> str:
-        """Call Groq API. `model` defaults to the shared task-tier model so every profile
-        without an explicit override (centinela-v1, pulso-v1, social-ops-v1, kb-v1) keeps its
-        exact current behavior — only a profile's own `model_overrides` (PROFILE_CONFIGS) changes
-        which model it gets."""
+    def _call_groq(self, prompt: str, system_prompt: str, max_tokens: int, temp: float) -> str:
+        """Call Groq API — openai/gpt-oss-120b, free tier."""
         if not self.groq_client:
-            raise ValueError("Groq client not initialized")
+            raise ValueError("Groq client not initialized (GROQ_API_KEY not configured)")
 
         response = self.groq_client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system_prompt or "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=max_tokens,
-            temperature=temp,
-        )
-        return response.choices[0].message.content
-
-    def _call_glm(self, prompt: str, system_prompt: str, max_tokens: int, temp: float) -> str:
-        """Call GLM (Z.AI / Zhipu) — OpenAI-compatible endpoint, GLM 5.2 subscription."""
-        if not self.glm_client:
-            raise ValueError("GLM client not initialized (GLM_API_KEY not configured)")
-
-        response = self.glm_client.chat.completions.create(
-            model=settings.GLM_MODEL,
+            model=settings.GROQ_MODEL,
             messages=[
                 {"role": "system", "content": system_prompt or "You are a helpful assistant."},
                 {"role": "user", "content": prompt}
@@ -627,12 +310,12 @@ class LLMEngine:
         return response.choices[0].message.content
 
     def _call_cerebras(self, prompt: str, system_prompt: str, max_tokens: int, temp: float) -> str:
-        """Call Cerebras API (OpenAI-compatible)"""
+        """Call Cerebras API (OpenAI-compatible), free tier."""
         if not self.cerebras_client:
-            raise ValueError("Cerebras client not initialized")
+            raise ValueError("Cerebras client not initialized (CEREBRAS_API_KEY not configured)")
 
         response = self.cerebras_client.chat.completions.create(
-            model="llama-3.3-70b",
+            model=settings.CEREBRAS_MODEL,
             messages=[
                 {"role": "system", "content": system_prompt or "You are a helpful assistant."},
                 {"role": "user", "content": prompt}
@@ -642,13 +325,13 @@ class LLMEngine:
         )
         return response.choices[0].message.content
 
-    def _call_mistral(self, prompt: str, system_prompt: str, max_tokens: int, temp: float) -> str:
-        """Call Mistral API (OpenAI-compatible)"""
-        if not self.mistral_client:
-            raise ValueError("Mistral client not initialized")
+    def _call_openrouter_free(self, prompt: str, system_prompt: str, max_tokens: int, temp: float) -> str:
+        """Call OpenRouter free-tier model."""
+        if not self.openrouter_client:
+            raise ValueError("OpenRouter client not initialized (OPENROUTER_API_KEY not configured)")
 
-        response = self.mistral_client.chat.completions.create(
-            model="mistral-large-latest",
+        response = self.openrouter_client.chat.completions.create(
+            model=settings.OPENROUTER_MODEL,
             messages=[
                 {"role": "system", "content": system_prompt or "You are a helpful assistant."},
                 {"role": "user", "content": prompt}
@@ -658,70 +341,13 @@ class LLMEngine:
         )
         return response.choices[0].message.content
 
-    def _call_gemini(self, prompt: str, system_prompt: str, max_tokens: int, temp: float, timeout: int) -> str:
-        """Call Google Gemini API (REST)"""
-        if not self.gemini_api_key:
-            raise ValueError("Gemini API key not configured")
+    def _call_nvidia(self, prompt: str, system_prompt: str, max_tokens: int, temp: float) -> str:
+        """Call NVIDIA NIM API (OpenAI-compatible), free tier."""
+        if not self.nvidia_client:
+            raise ValueError("NVIDIA client not initialized (NVIDIA_API_KEY not configured)")
 
-        headers = {
-            "Content-Type": "application/json",
-            # Pass the key via header, never in the URL query string (keys in URLs
-            # leak into server/proxy logs and Referer headers).
-            "x-goog-api-key": self.gemini_api_key,
-        }
-
-        # gemini-2.0-flash and gemini-2.5-flash were both retired (404 "no longer available")
-        # as of this fix (2026-08-11, taty-whatsapp-renta-sales-capability) — found while wiring
-        # Gemini into taty-v1's fallback chain; this call site was silently broken for every
-        # profile that could reach it. gemini-3.1-flash-lite confirmed working live.
-        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent"
-
-        payload = {
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [
-                        {"text": f"{system_prompt}\n\n{prompt}" if system_prompt else prompt}
-                    ]
-                }
-            ],
-            "generationConfig": {
-                "maxOutputTokens": max_tokens,
-                "temperature": temp,
-            }
-        }
-
-        response = requests.post(
-            url,
-            json=payload,
-            headers=headers,
-            timeout=timeout
-        )
-        response.raise_for_status()
-
-        result = response.json()
-        if "candidates" in result and len(result["candidates"]) > 0:
-            content = result["candidates"][0].get("content", {}).get("parts", [])
-            if content:
-                return content[0].get("text", "")
-
-        raise ValueError("Invalid response from Gemini API")
-
-    def _call_openrouter(self, prompt: str, system_prompt: str, max_tokens: int, temp: float) -> str:
-        """Call OpenRouter API (OpenAI-compatible)"""
-        if not self.openrouter_api_key:
-            raise ValueError("OpenRouter API key not configured")
-
-        if not OpenAI:
-            raise ValueError("OpenAI client not available")
-
-        client = OpenAI(
-            api_key=self.openrouter_api_key,
-            base_url="https://openrouter.ai/api/v1",
-        )
-
-        response = client.chat.completions.create(
-            model="meta-llama/llama-3.3-70b-instruct",
+        response = self.nvidia_client.chat.completions.create(
+            model=settings.NVIDIA_MODEL,
             messages=[
                 {"role": "system", "content": system_prompt or "You are a helpful assistant."},
                 {"role": "user", "content": prompt}
@@ -748,14 +374,6 @@ class LLMEngine:
         5. Synonym key remapping (caller-provided)
         6. Type coercion (dict -> [dict] for list_keys)
         7. Safe fallback structure with parsing_error=True
-
-        Args:
-            response: Raw LLM response text
-            synonyms: Map from alias keys to canonical keys
-            list_keys: Keys whose values should be lists (wrap dicts)
-
-        Returns:
-            Parsed JSON dictionary (always a dict; never raises)
         """
         synonyms = synonyms or {}
         list_keys = list_keys or set()
