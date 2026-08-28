@@ -6,7 +6,11 @@
     "scope_source": "openspec/changes/<id>/tasks.md",
     "valid_status": ["pending", "in_progress", "done", "blocked"]
   },
-  "active": null,
+  "active": "hermes-bridge-token-production-hardening",
+  "pending_implementation": [
+    "taty-wompi-link-hitl-gate",
+    "metrics-dashboard-phase9"
+  ],
   "features": [
     {
       "id": "adopt-gbrain-second-brain",

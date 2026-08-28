@@ -6,10 +6,10 @@ Consumes the unmodified surface built by hermes-manus-execution-bridge (archived
   POST /api/v1/sell-machine/tasks/{id}/status      {"status": "dispatched"}
   POST /api/v1/sell-machine/tasks/{id}/result      {"status": "completed"|"failed", "result": {...}}
 
-Those routes are currently unauthenticated by design (Hermes has no browser session). The JWT is
-sent anyway so gating them later needs no change here (design.md D5). The signing shape is copied
-— deliberately, not imported — from apps/chatwoot-bridge/backend_client.py so the two local
-services can be released independently.
+Authenticates with a static shared bearer token (`HERMES_BRIDGE_TOKEN`), matched by
+`require_hermes_bridge_token` on the backend (see hermes-bridge-token-production-hardening). When
+the token is unset, no `Authorization` header is sent and the routes remain open — matching the
+backend guard's own no-op-when-unset behavior, so local development without the token still works.
 
 Fail-soft: nothing raises. Failures return None/False and are logged, so a backend blip costs one
 tick rather than crashing the scheduled run.
@@ -18,8 +18,7 @@ tick rather than crashing the scheduled run.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import httpx
 
@@ -27,39 +26,11 @@ from config import settings
 
 logger = logging.getLogger(__name__)
 
-# Matches the literal default `workspace_id` Contexia's own create_access_token uses for the
-# Cliente Cero deployment (apps/backend/core/identity_resolver.py), so TenantContextMiddleware
-# and Supabase RLS need zero backend-side changes.
-_TENANT_ID = "contexia-org-1"
-
-
-def sign_tenant_jwt() -> Optional[str]:
-    """HS256 JWT for the backend, or None when no secret is configured (routes are open today)."""
-    if not settings.CONTEXIA_JWT_SECRET:
-        return None
-    try:
-        from jose import jwt
-
-        return jwt.encode(
-            {
-                "sub": "hermes-manus-poller",
-                "tenant_id": _TENANT_ID,
-                "workspace_id": _TENANT_ID,
-                "exp": datetime.now(timezone.utc) + timedelta(minutes=15),
-            },
-            settings.CONTEXIA_JWT_SECRET,
-            algorithm="HS256",
-        )
-    except Exception as exc:
-        logger.error("Failed to sign backend JWT: %s", exc)
-        return None
-
 
 def _headers() -> Dict[str, str]:
     headers = {"Content-Type": "application/json"}
-    token = sign_tenant_jwt()
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
+    if settings.HERMES_BRIDGE_TOKEN:
+        headers["Authorization"] = f"Bearer {settings.HERMES_BRIDGE_TOKEN}"
     return headers
 
 

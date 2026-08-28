@@ -23,9 +23,10 @@ class Settings(BaseSettings):
 
     # --- Contexia backend (Railway) ---
     CONTEXIA_API_URL: str = "https://antigravity-app-production-175a.up.railway.app"
-    # Sent even though /tasks/* is currently unauthenticated, so gating those routes later
-    # needs no poller change (design.md D5).
-    CONTEXIA_JWT_SECRET: str = ""
+    # Shared secret matching the backend's `HERMES_BRIDGE_TOKEN` (require_hermes_bridge_token).
+    # Empty means the /tasks/* routes are called with no Authorization header, matching the
+    # backend guard's own no-op-when-unset behavior.
+    HERMES_BRIDGE_TOKEN: str = ""
 
     # --- Behavior ---
     # Max operator tasks claimed per tick. Small by default: each one costs Manus credits, and

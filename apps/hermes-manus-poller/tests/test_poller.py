@@ -102,6 +102,21 @@ class TestPrompts:
         assert "abcdef12" in title
 
 
+# --------------------------------------------------------------------------- backend client
+
+
+class TestBackendClientHeaders:
+    def test_headers_include_bearer_token_when_configured(self, monkeypatch):
+        monkeypatch.setattr(settings, "HERMES_BRIDGE_TOKEN", "secret-abc")
+        headers = backend_client._headers()
+        assert headers["Authorization"] == "Bearer secret-abc"
+
+    def test_headers_omit_authorization_when_token_unset(self, monkeypatch):
+        monkeypatch.setattr(settings, "HERMES_BRIDGE_TOKEN", "")
+        headers = backend_client._headers()
+        assert "Authorization" not in headers
+
+
 # --------------------------------------------------------------------------- manus client
 
 

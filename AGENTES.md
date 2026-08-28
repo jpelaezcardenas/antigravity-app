@@ -335,14 +335,17 @@ Starting **Phase 5+**, all agent invocations are governed by:
   reconciled onto it in the same change) and returns 404 (not 403) for an unresolved tenant on
   every write/ownership-checked path. None of this restores cost logging or execution
   gating — that remains the open item below.
-  **Exception (2026-07-23, `hermes-task-queue-tenant-scoping`):** the Hermes operator-task bridge
+  **Exception (2026-07-23, `hermes-task-queue-tenant-scoping`; hardened 2026-08-28,
+  `hermes-bridge-token-production-hardening`):** the Hermes operator-task bridge
   (`/api/v1/sell-machine/tasks/*`, `/campaigns/{id}/dispatch`, `/tasks/{id}/status`,
-  `/tasks/{id}/result`) is no longer fully ungoverned — it now has (a) an optional
-  `HERMES_BRIDGE_TOKEN` bearer-auth gate on those 5 routes (fail-open until the env var is set —
-  see `openspec/changes/hermes-task-queue-tenant-scoping/design.md` Decisions D5/D7), (b)
-  audit-parity logging to `agent_operations` on every successful mutation, with
-  `agent_name="hermes-bridge"`, and (c) write-time tenant validation (`tenant_exists()` /
-  decision-derived `tenant_id`) on every mutation.
+  `/tasks/{id}/result`) is no longer fully ungoverned — it now has (a) a `HERMES_BRIDGE_TOKEN`
+  bearer-auth gate on those 5 routes, **live and enforced in production** as of 2026-08-28 (the
+  local Hermes/Manus poller sends a matching bearer token; the mechanism stays technically
+  optional/no-op-when-unset for local dev — see
+  `openspec/changes/hermes-bridge-token-production-hardening/design.md`), (b) audit-parity logging
+  to `agent_operations` on every successful mutation, with `agent_name="hermes-bridge"`, and (c)
+  write-time tenant validation (`tenant_exists()` / decision-derived `tenant_id`) on every
+  mutation.
 
 #### 5. **Multi-Tenant Isolation**
 - Row-level security (RLS) on `agent_operations` table
