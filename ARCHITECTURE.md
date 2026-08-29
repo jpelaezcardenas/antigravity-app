@@ -168,6 +168,16 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
     "Sincronizado ✓" — sin ninguna acción de escritura hacia HubSpot desde la UI. Ver
     `openspec/changes/hubspot-sync-renta-natural/`.
 
+    **Houston (app de escritorio externa, agente "Vendedor") consume este mismo puente en modo
+    solo-lectura** (`houston-lead-scoring-read-only-bridge`, 2026-08-29) — vía su propio conector
+    Composio→HubSpot, apuntando al mismo portal `51867201`. Houston nunca escribe de vuelta a
+    HubSpot ni a Contexia; se usa hoy exclusivamente para lead-scoring/visibilidad de pipeline
+    ("por ahora autotag only"), no para generar outreach que necesite pasar por el loop de Content
+    Critic del Sell Machine. Gap conocido: la clasificación de Taty en Chatwoot (intención/
+    prioridad/servicio_interés) no llega a HubSpot hoy, así que Houston no la ve — desarrollo
+    futuro si se decide que aporta valor. Ver `docs/integrations/houston-plan-integracion.md` y
+    `docs/integrations/houston-playbook-ventas.md`.
+
 ## Enlaces canónicos
 
 - Identidad / legal / semántica → [`.antigravity/GROUND_TRUTH.md`](.antigravity/GROUND_TRUTH.md) (manda)
