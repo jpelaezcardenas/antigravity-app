@@ -37,12 +37,13 @@ class TestPassThrough:
             result = evaluate_hook(hook)
         assert result["approved"] is True
 
-    def test_llm_provider_failure_falls_back_to_hard_ban_check_only(self):
+    def test_llm_provider_failure_rejects_fail_closed(self):
         hook = _hook()
         with patch("agents.content_evaluator._llm_tone_check", side_effect=Exception("all providers failed")):
             result = evaluate_hook(hook)
-        # No hard-ban violation present -> deterministic fallback approves it
-        assert result["approved"] is True
+        # Modo A: sin evaluación completa, la pieza no entra a Approval Queue.
+        assert result["approved"] is False
+        assert "fail-closed" in result["reason"]
 
     def test_llm_provider_failure_still_rejects_a_hard_banned_hook(self):
         hook = _hook(body="Firmamos tus estados financieros como firma contable regulada.")

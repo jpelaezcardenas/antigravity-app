@@ -27,36 +27,64 @@ def _well_shaped_hook(candidate: Any) -> Optional[Dict[str, Any]]:
         return candidate
     return None
 
-_GENERIC_GROUNDING_QUERY = "declarar renta, multas DIAN, obligación tributaria"
+_GENERIC_GROUNDING_QUERY = (
+    "margen real dropshipping ecommerce, comisiones pasarelas devoluciones, "
+    "ingresos por plataformas creadores, honorarios anticipos freelancers, "
+    "caja disponible y separación plata personal negocio"
+)
 
 _SYSTEM_PROMPT = (
-    "Eres el equipo de copywriting de Contexia (GPS Financiero para PyMEs colombianas, NO una "
-    "firma contable regulada). Genera hooks de marketing cortos: headline + body (1-2 lineas) + "
-    "CTA, en espanol (tuteo, nunca voseo), tono humano y empatico tipo 'amiga contadora con "
-    "criterio', enfocados en dolores fiscales reales (multas DIAN, declarar tarde, no saber si "
-    "toca declarar). Sigue ademas esta rubrica de marca:\n"
+    "Eres el equipo de copywriting de Contexia: contadoras tituladas con licencia + tecnología "
+    "para que los negocios entiendan su margen, caja e ingresos. Genera hooks de marketing cortos: "
+    "headline + body (1-2 lineas) + CTA, en espanol (tuteo, nunca voseo), tono humano y empatico "
+    "tipo 'amiga contadora con criterio'.\n"
+    "\n"
+    "Distribución objetivo por lote: 60% hooks de nicho/valor, 25% claridad financiera transversal "
+    "y 15% protección/cumplimiento. Prioriza dropshippers/e-commerce, creadores y freelancers. "
+    "La DIAN puede aparecer como contexto práctico, pero no como protagonista para provocar miedo. "
+    "No abras con disclaimers regulatorios: el posicionamiento lidera con contadoras tituladas "
+    "con licencia + tecnología.\n"
+    "\n"
+    "Sigue además esta rúbrica de marca:\n"
     f"{BRAND_RUBRIC_SYSTEM_PROMPT}\n"
-    "Responde en JSON como una lista de objetos {\"headline\", \"body\", \"cta\", \"pain_tag\"}."
+    "Responde en JSON como una lista de objetos {\"headline\", \"body\", \"cta\", \"pain_tag\", \"hook_type\"}."
 )
 
 _DETERMINISTIC_FALLBACK_HOOKS: List[Dict[str, Any]] = [
     {
-        "headline": "¿Sabes si te toca declarar renta este año?",
-        "body": "Miles de personas no se enteran hasta que llega la sanción de la DIAN.",
-        "cta": "Habla con Taty y sal de dudas",
-        "pain_tag": "no_sabe_si_declara",
+        "headline": "¿Dropshipper? ¿Cuánto margen te queda después de pasarela y devoluciones?",
+        "body": "Contadoras tituladas con licencia + tecnología para separar venta, costos y plata disponible.",
+        "cta": "Revisa tu margen antes de volver a comprar inventario",
+        "pain_tag": "margen_dropshipping",
+        "hook_type": "NICHO_VALOR",
     },
     {
-        "headline": "Declarar tarde te puede costar mucho más de lo que crees",
-        "body": "Las multas de la DIAN crecen rápido. Mejor prevenir que pagar de más.",
-        "cta": "Averigua tu situación hoy",
-        "pain_tag": "multa_dian",
+        "headline": "Si eres creador, tus ingresos de varias plataformas necesitan una sola vista",
+        "body": "Ordena lo que entra, lo que gastas y lo que realmente puedes retirar.",
+        "cta": "Guarda esta idea y revisa tus ingresos por plataforma",
+        "pain_tag": "ingresos_creador",
+        "hook_type": "NICHO_VALOR",
     },
     {
-        "headline": "Tu contador no siempre te avisa a tiempo",
-        "body": "Nosotros sí: te acompañamos paso a paso para que no se te pase nada.",
-        "cta": "Empieza gratis",
-        "pain_tag": "falta_acompanamiento",
+        "headline": "Freelancer: ese anticipo no es plata libre todavía",
+        "body": "Separa honorarios, gastos y compromisos antes de decidir cuánto puedes gastar.",
+        "cta": "¿Qué parte de tus honorarios te cuesta más ordenar?",
+        "pain_tag": "honorarios_freelance",
+        "hook_type": "NICHO_VALOR",
+    },
+    {
+        "headline": "Facturar más no siempre significa tener más plata disponible",
+        "body": "Mira la diferencia entre venta bruta, comisiones, costos y caja real.",
+        "cta": "Haz la cuenta con tus últimos 30 días",
+        "pain_tag": "claridad_caja",
+        "hook_type": "CLARIDAD_FINANCIERA",
+    },
+    {
+        "headline": "Una obligación tributaria se planea mejor cuando conoces tu caja",
+        "body": "La DIAN es contexto; la primera decisión es saber qué plata está comprometida.",
+        "cta": "Revisa fechas y caja sin alarmismo",
+        "pain_tag": "proteccion_cumplimiento",
+        "hook_type": "PROTECCION_CUMPLIMIENTO",
     },
 ]
 
@@ -76,7 +104,8 @@ def _format_telemetry_report(report: Dict[str, Any]) -> str:
 def _build_grounding_query(report: Optional[Dict[str, Any]] = None) -> str:
     """Derives a KB retrieval query for hook grounding (copywriter-rag). Favors a report's
     hook_performance pain_tags when present (Change G feedback-loop flavor, design.md Decision 2);
-    falls back to a generic DIAN-pains query for cold-start generation with no prior signal."""
+    falls back to a niche/value query for dropshippers, creators and freelancers when no prior
+    signal exists. DIAN is not the cold-start protagonist."""
     hook_performance = (report or {}).get("hook_performance") or {}
     if hook_performance:
         return ", ".join(hook_performance.keys())
@@ -95,7 +124,14 @@ def _llm_generate_hooks(count: int, report: Optional[Dict[str, Any]] = None) -> 
     from agents.llm_engine import get_llm_engine
 
     llm_engine = get_llm_engine()
-    prompt = f"Genera {count} hooks de marketing distintos."
+    niche_count = round(count * 0.60)
+    clarity_count = round(count * 0.25)
+    protection_count = max(0, count - niche_count - clarity_count)
+    prompt = (
+        f"Genera exactamente {count} hooks de marketing distintos. "
+        f"Distribución objetivo: {niche_count} NICHO_VALOR, {clarity_count} CLARIDAD_FINANCIERA "
+        f"y {protection_count} PROTECCION_CUMPLIMIENTO."
+    )
     if report:
         prompt += _format_telemetry_report(report)
 

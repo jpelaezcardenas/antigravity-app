@@ -77,9 +77,12 @@ class TestGenerateHooksWithTelemetryReport(object):
 
 
 class TestBuildGroundingQuery:
-    def test_no_report_returns_generic_dian_query(self):
+    def test_no_report_returns_generic_niche_value_query(self):
         query = _build_grounding_query()
-        assert "renta" in query.lower() or "dian" in query.lower()
+        assert "dropshipping" in query.lower()
+        assert "creadores" in query.lower()
+        assert "freelancers" in query.lower()
+        assert "dian" not in query.lower()
 
     def test_report_with_hook_performance_mentions_its_pain_tags(self):
         report = {"hook_performance": {"multa_dian": {"count": 3}}, "funnel_snapshot": {}}

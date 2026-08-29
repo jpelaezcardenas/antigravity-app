@@ -65,7 +65,8 @@ def evaluate_hook(hook: Dict[str, Any]) -> Dict[str, Any]:
 
     Returns {"approved": bool, "reason": str}. The hard-ban check and the Claim Ledger both run
     first and can only reject, never be overridden by an LLM's "approved: true" — they are
-    non-overridable gates. If the LLM call fails, falls back to the deterministic checks alone.
+    non-overridable gates. If the LLM call fails, Modo A rejects fail-closed so the hook cannot
+    reach the Approval Queue without a complete Content Critic evaluation.
     """
     hard_ban_reason = _hard_ban_violation(hook)
     if hard_ban_reason:
@@ -81,5 +82,7 @@ def evaluate_hook(hook: Dict[str, Any]) -> Dict[str, Any]:
         reason = str(llm_result.get("reason") or ("Passed brand rubric" if approved else "Rejected by tone check"))
         return {"approved": approved, "reason": reason}
     except Exception as exc:
-        logger.warning("content_evaluator: LLM tone check unavailable, using hard-ban-only fallback: %s", exc)
-        return {"approved": True, "reason": "No hard-rule violations (LLM tone check unavailable)."}
+        # Modo A es fail-closed: sin evaluación completa no se puede entregar el hook a la
+        # Approval Queue. Los checks deterministas previos siguen rechazando hard-bans y claims.
+        logger.warning("content_evaluator: LLM tone check unavailable; rejecting fail-closed: %s", exc)
+        return {"approved": False, "reason": "Content Critic unavailable; held for review (fail-closed)."}
