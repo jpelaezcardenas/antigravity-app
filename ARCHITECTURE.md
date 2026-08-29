@@ -204,36 +204,34 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
     big-pickle`); hay 5 API keys separadas por servicio (Hermes/backend/n8n/Claude Code
     dev/admin); y existe una política de clasificación de datos explícita (PÚBLICO/INTERNO
     pueden usar routing gratuito, CONFIDENCIAL solo con anonimización vía `contexia-private-local`,
-    RESTRINGIDO nunca sale del modelo local). El handoff propone además integrar OmniRoute al
-    **backend** (`apps/backend/config.py`) para la cascada de LLM del producto — **esto NO está
-    aprobado**: contradice directamente el alcance de esta decisión (solo infraestructura de
-    Hermes) y la restricción de ToS de la Decisión #7; requiere una decisión explícita aparte del
-    fundador antes de tocar el backend, no se asume por extensión de esta.
+    RESTRINGIDO nunca sale del modelo local).
 
-    **Dos hallazgos de gobernanza, no resueltos, que preceden a este documento**:
-    1. El handoff cita *"reduce LLM costs... for 16 freemium clients"* — cifra sin respaldo:
-       ningún cliente freemium real ha sido aprovisionado todavía en este proyecto (los 6
-       subdominios de `freemium-onboarding` dejaron el camino técnico listo, no un cliente real).
-       Tratar esa cifra como no verificada, no como un hecho de negocio.
-    2. El MCP global de Claude Code Desktop (`C:\Users\contexia\.claude\.mcp.json`, fuera de
-       cualquier repo versionado) ya tenía un servidor `omniroute` agregado, con un bearer token
-       en texto plano — modificado sin pasar por el protocolo del §12 de
-       `docs/integrations/hermes-autoconfig-instruction-2026-08-29.md` (probablemente porque ese
-       protocolo no existía todavía cuando se hizo). No se tocó ese archivo desde aquí; el
-       fundador debe decidir si ese acceso MCP directo de Claude Code Desktop a OmniRoute es
-       intencional y debe quedar documentado, o si debe retirarse.
+    **Tres decisiones del fundador, tomadas el 2026-08-29, cerrando los hallazgos de gobernanza
+    de esta investigación:**
 
-    **Hallazgo de gobernanza adicional — divergencia de clones confirmada**: ambos archivos
-    fuente existían solo en un **segundo clon completo del repo** en
-    `C:\Users\contexia\antigravity-app` (`git log` local con 3 commits nunca empujados a
-    GitHub), distinto del clon canónico en `C:\Users\contexia\Projects\antigravity-app` donde
-    corre esta sesión de Claude Code. Ese segundo clon también contiene
-    `KEEPER_MIGRATION_HANDOFF.md` en la raíz — un artefacto de una migración ya cerrada y
-    archivada hace tiempo, señal de que ese clon lleva un buen tiempo sin sincronizarse. Confirma
-    exactamente el riesgo que motivó el §12 del documento de instrucción de Hermes: mientras
-    existan dos clones activos sin protocolo, esto se va a repetir. Recomendación: decidir cuál
-    de los dos es el clon "de trabajo" de Hermes/Claude Code Desktop de forma permanente, y
-    borrar o archivar el otro.
+    1. **Clon canónico**: `C:\Users\contexia\Projects\antigravity-app` es el ÚNICO clon activo
+       para Hermes y Claude Code Desktop de aquí en adelante. Se confirmó que el segundo clon
+       (`C:\Users\contexia\antigravity-app`, desincronizado desde junio de 2026, con un artefacto
+       de la migración de Keeper ya cerrada) no tenía trabajo único sin recuperar — sus 3
+       commits no empujados (OmniRoute) ya fueron extraídos y persistidos aquí. Ese clon quedó
+       marcado `DEPRECATED-USE-OTHER-CLONE.md` en su raíz, pendiente de archivar/borrar por
+       completo una vez se confirme que ninguna app lo tiene abierto (bloqueado por Windows al
+       intentar renombrarlo — algo, probablemente Claude Code Desktop, lo tenía en uso).
+    2. **Token MCP `omniroute`**: el fundador confirmó que ya lo está usando activamente desde
+       Claude Code Desktop y decidió mantenerlo — queda aceptado como acceso MCP directo de
+       Claude Code Desktop a OmniRoute (`http://localhost:20128/api/mcp/stream`, ver
+       `C:\Users\contexia\.claude\.mcp.json`, fuera de este repo por diseño — nunca versionar esa
+       ruta ni su token).
+    3. **Integración de OmniRoute al backend** (`apps/backend/config.py`, Fase 3 del handoff):
+       NO aprobada por extensión — el fundador pidió evaluarla como un cambio OpenSpec formal
+       propio (`evaluate-omniroute-backend-integration`), con investigación real de fiabilidad/
+       ToS de los proveedores detrás de OmniRoute antes de cualquier cambio de código. Ver ese
+       change para el estado actual de la evaluación.
+
+    **Hallazgo aún sin resolver, de menor prioridad**: el handoff original citaba *"reduce LLM
+    costs... for 16 freemium clients"* — cifra sin respaldo, ningún cliente freemium real ha sido
+    aprovisionado todavía en este proyecto. Pendiente de aclarar con Hermes de dónde salió; no
+    bloquea nada de lo anterior.
 
 ## Enlaces canónicos
 
