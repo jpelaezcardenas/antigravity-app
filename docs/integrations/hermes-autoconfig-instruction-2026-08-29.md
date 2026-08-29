@@ -229,6 +229,95 @@ sin valores de token. Si algo del backend no se comporta como este documento dic
 como una discrepancia a investigar, no lo "arregles" adivinando — ese tipo de arreglo le
 corresponde a Claude Code sobre el repo `antigravity-app`.
 
+## 12. Protocolo de integración Hermes ↔ Claude Code (mismo repo, mismos estándares)
+
+Se pidió que Hermes y Claude Code trabajen con el mismo estándar sobre `antigravity-app`, que
+todo quede documentado, y que ninguno de los dos invente ni diverja del otro. Esto resuelve dos
+problemas reales encontrados en la primera ronda de configuración de Hermes (§11 arriba):
+Hermes reportó haber creado `HANDOFF-OMNIRROUTE.md`/`OMNIRROUTE_SETUP.md` en `antigravity-app`,
+pero esos archivos **no existen en el repo real** (ni local en la máquina de Claude Code, ni en
+GitHub) — Hermes aclaró después que están "local, sin push". Eso confirma un riesgo estructural:
+Hermes probablemente opera sobre **otro checkout del repo** (su propio clon en WSL), distinto
+del que usa Claude Code en Windows. Dos clones del mismo repo, editados por separado, sin un
+protocolo claro, divergen — es peor que el problema de "archivos sueltos de sesiones paralelas"
+que ya se resolvió varias veces en este proyecto con `git status --short` antes de cada commit.
+
+### Regla dura #1 — GitHub `main` es la única fuente de verdad del código, nunca un checkout local
+
+Ni Hermes ni Claude Code confían en "lo que tengo en mi disco". Antes de decir que algo "está
+hecho" en `antigravity-app`:
+1. `git status --short` en tu propio checkout — ¿qué tienes sin commitear?
+2. `git log --oneline -5 origin/main` (requiere `git fetch` primero) — ¿está eso en GitHub?
+3. Si no está en GitHub, **no está hecho** — solo existe en tu disco. No lo reportes como
+   completado; repórtalo como "pendiente de push" o, mejor, no lo escribas hasta que sepas si
+   debe ir al repo o no (ver Regla #2).
+
+### Regla dura #2 — Hermes NO escribe directamente código ni docs en `antigravity-app`
+
+Esto no cambió respecto al documento original (§0): Hermes sigue sin autoridad para tocar el
+repo directamente. Lo que sí cambia es el mecanismo de traspaso, para que quede documentado y
+trazable en vez de perderse en un chat:
+
+1. Cuando Hermes necesite que algo cambie en `antigravity-app` (código, doc nuevo, config), NO
+   escribe el archivo directamente en su propio clon esperando que alguien lo empuje después.
+   En vez de eso, **redacta la propuesta completa** (qué archivo, qué contenido, por qué) y se
+   la entrega al fundador en el chat — exactamente como se hizo con los documentos de Houston y
+   de Renta Natural 2026 (el fundador los generó, Claude Code los verificó y los persistió en
+   `docs/integrations/` con un OpenSpec change de por medio).
+2. El fundador pega esa propuesta en Claude Code (aquí, o en una sesión nueva de Claude Code).
+3. Claude Code decide si es un **cambio de código** (requiere OpenSpec completo: propose→
+   design→specs→tasks→apply con TDD→revisor independiente→Stage 11→archive, igual que los 7
+   subdominios del plan freemium) o un **doc de referencia pura** (como este mismo archivo:
+   verificación + commit directo, sin necesidad de todo el ciclo OpenSpec si no cambia
+   comportamiento del sistema).
+4. Nada se considera "terminado" hasta que Claude Code confirma que está en `origin/main` — la
+   misma regla de la Regla #1, aplicada al proceso completo.
+
+**Por qué así y no al revés (Hermes empujando directo a GitHub):** Hermes no tiene el harness de
+revisión (reviewer independiente, TDD, Stage 11 con verificación en Railway/Vercel) que
+`antigravity-app` exige para cualquier cambio real — intentar replicarlo dentro de Hermes sería
+reinventar lo que Claude Code ya hace bien. El valor de Hermes es local/operativo (crons,
+roles, memoria); el valor de Claude Code es el ciclo de vida completo del código versionado.
+
+### Regla dura #3 — Nunca archivos de handoff sueltos en la raíz del repo
+
+`HANDOFF-OMNIRROUTE.md` en la raíz de `antigravity-app` es exactamente el patrón que este
+proyecto **ya eliminó una vez** (memoria de sesión: se borraron `CURSOR_GO_NOW.txt` y
+`START_HERE_KEEPER_MIGRATION.txt` de la raíz por ser "handoffs sueltos, nunca versionados,
+que generan confusión"). Si Hermes tiene algo que documentar de forma duradera, el lugar es
+`docs/integrations/` (como este archivo) o `progress/` (si es un reporte de una tarea puntual
+del harness) — nunca un archivo nuevo a nivel raíz.
+
+### Regla dura #4 — GBrain no duplica OpenSpec, lo referencia
+
+Las páginas `omniroute-setup-contexia` y `contexia-hermes-configuration` que Hermes dice haber
+creado en GBrain deben apuntar (link) al change de OpenSpec correspondiente una vez exista, no
+contener una copia paralela de la misma decisión — evita que GBrain y `openspec/changes/`
+cuenten historias distintas de lo mismo.
+
+### Regla dura #5 — Resolver OmniRoute ANTES de seguir integrando, no después
+
+OmniRoute (`localhost:20128`, "476+ modelos gratuitos") es una herramienta que Hermes introdujo
+por su cuenta — la instrucción original (§1, fila "MiMo") pedía usar el fallback YA configurado
+(Ollama local + GLM/ZAI), no traer una pieza nueva sin nombre previo en ningún documento de este
+proyecto. Antes de que esto se considere parte de la integración:
+1. El fundador decide explícitamente si OmniRoute se adopta o se descarta — no es una decisión
+   técnica de Hermes ni de Claude Code, es una decisión de negocio/infraestructura del fundador.
+2. Si se adopta: Hermes entrega la propuesta completa (qué es, qué reemplaza, costo, riesgo) al
+   fundador → Claude Code la documenta en `ARCHITECTURE.md` (nuevo container/dependencia
+   externa, mismo patrón que cualquier otra pieza de infraestructura) → recién ahí se considera
+   parte del stack real de Contexia.
+3. Si se descarta: Hermes revierte a usar Ollama/GLM como fallback, tal como decía la
+   instrucción original.
+
+### Próximo paso concreto (en orden)
+
+1. El fundador le pide a Hermes el contenido completo (no solo la ruta) de
+   `HANDOFF-OMNIRROUTE.md` y `OMNIRROUTE_SETUP.md`.
+2. El fundador decide OmniRoute (Regla #5) antes de avanzar con cualquier otra integración.
+3. Con esas dos cosas resueltas, el fundador trae el contenido a una sesión de Claude Code (aquí
+   o nueva) para que se documente/implemente siguiendo el proceso real de este repo — no antes.
+
 ## 9. ANEXO — Base Normativa de Campaña: Declaración de Renta Persona Natural 2026
 
 > Fuente de verdad para cualquier cifra fiscal que Taty o el contenido de campaña mencionen.
