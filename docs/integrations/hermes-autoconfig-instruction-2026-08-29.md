@@ -27,6 +27,78 @@
   publicación en redes), el gate humano (HITL) sigue siendo obligatorio — la Approval Queue de
   Contexia es el único punto donde algo se publica de verdad. No la saltes nunca.
 
+## 0.5. Capacidades nativas de Hermes que hoy NO se están usando (investigación 2026-08-29)
+
+Se investigó el repo real de Hermes Agent (Nous Research, `github.com/NousResearch/hermes-agent`,
+238k+ stars, actualizado hoy mismo) para confirmar si Contexia le está sacando todo el provecho.
+**Respuesta corta: no.** Contexia construyó por fuera, a mano, tres cosas que Hermes ya trae
+nativas. Esto no es una crítica al trabajo hecho — es una oportunidad real de simplificar y
+ganar resiliencia (self-healing, memoria que mejora sola, paralelización real).
+
+> **Regla de verificación**: lo de abajo es lo que el proyecto upstream documenta que existe.
+> Tu fuente de verdad sobre qué está REALMENTE activo en tu instalación es lo que veas en tu
+> propio Dashboard (`localhost:9119`) y en el Desktop/TUI — no asumas que una feature está
+> encendida solo porque el proyecto la ofrece. Verifica cada punto contra tu propia instancia
+> antes de tocar nada, y si algo no coincide, repórtalo como hallazgo, no lo fuerces.
+
+1. **Cron scheduler nativo (`hermes cron`, "Scheduled Automations")** — Hermes trae un
+   programador de tareas integrado ("Daily reports, nightly backups, weekly audits — all in
+   natural language, running unattended", con entrega directa a cualquier plataforma
+   conectada). Contexia hoy usa **Scheduled Tasks de Windows** (`ContexiaHermesManusPoller`,
+   `ContexiaChatwootBridge`, `ContexiaHermesHubspotPoller`) como workaround externo — una
+   investigación anterior ya había confirmado que `~/.hermes/cron/` existe pero está vacío,
+   cero jobs registrados. **Acción**: evalúa migrar estos 3 pollers (y el nuevo cron de Pulso
+   Diario insight de §3) al cron nativo de Hermes en vez de depender de Task Scheduler de
+   Windows — sobrevive mejor a reinicios de Hermes y es lo que el propio sistema espera que uses.
+   No lo migres a ciegas: primero confirma en tu Dashboard si `hermes cron list` ya tiene algo,
+   y si migrar rompe algo que hoy funciona, quédate con Task Scheduler para ese caso puntual.
+
+2. **Sistema de Skills auto-mejorables (compatible con el estándar abierto `agentskills.io`)**
+   — Hermes crea skills automáticamente después de tareas complejas y las mejora solo con el
+   uso ("Autonomous skill creation after complex tasks. Skills self-improve during use").
+   Los 3 roles reales de Contexia (`centinela-monitor`, `auditoria-runner`,
+   `resolucion-executor`) hoy son entradas estáticas en `agents.yaml`, escritas a mano una vez.
+   **Acción**: evalúa formalizarlos como Skills reales de Hermes (no solo roles de config) para
+   que entren al loop de auto-mejora — en vez de que tú los reescribas a mano cada vez que algo
+   cambia en Contexia.
+
+3. **Subagentes paralelos reales (`Spawn isolated subagents for parallel workstreams`)** —
+   Hermes puede lanzar subagentes aislados que trabajan en paralelo, y scripts Python que llaman
+   herramientas vía RPC para colapsar pipelines de varios pasos. **Acción concreta para el
+   cron de Pulso Diario (tarea #1 de §3)**: si hay N tenants freemium sin Shadow GL, no los
+   proceses uno por uno en un loop serial — usa la capacidad nativa de subagentes paralelos
+   para calcular y empujar el insight de cada tenant simultáneamente. Esto es exactamente lo
+   que el "swarm" debería ser en la práctica — no el modo fantasma de 10 roles genéricos que
+   descartamos en §0, sino esta capacidad real y soportada.
+
+4. **Aclaración de una duda pendiente**: lo que ves en el dropdown "Agent Profile" del Desktop
+   (`taty-v1`, `centinela-v1`, `pulso-v1`, `radar-v1`, `auditoria-v1`, `kb-v1`, `social-ops-v1`,
+   más `contexia` y `default`) **es la feature nativa `/personality` de Hermes** — perfiles de
+   enrutamiento de modelo/personalidad, no los roles de ejecución de `agents.yaml`. Son dos
+   capas distintas del mismo sistema, ambas reales. El hallazgo de que `taty-v1` sigue en
+   `glm-5.2·zhipu` mientras el Taty real de producción (backend) ya migró a Groq por costo
+   sigue siendo válido — decide tú si ese personality local necesita el mismo repunteo o si
+   solo lo usas para pruebas internas donde el costo no importa.
+
+5. **Memoria agente-curada + búsqueda de sesiones + modelado de usuario (Honcho)** — Hermes
+   trae de fábrica memoria persistente que se cura sola, búsqueda FTS5 de conversaciones
+   pasadas, y modelado incremental de quién eres a través de sesiones. Contexia construyó
+   **GBrain** como un segundo cerebro aparte (esquema propio en Supabase, grafo de
+   conocimiento, Dream Cycle). **Esto NO se resuelve solo — es una decisión que le corresponde
+   al fundador**: ¿GBrain está indexando algo que la memoria nativa de Hermes no cubre (el
+   grafo de `contexia-brain/` y los canon docs de `antigravity-app`), o hay solapamiento real
+   que valdría la pena simplificar? No fusiones ni apagues nada por tu cuenta — repórtalo como
+   pregunta abierta para el fundador.
+
+6. **Mensajería nativa multi-canal** — el gateway de Hermes soporta Telegram, Discord, Slack,
+   WhatsApp, Signal y Email nativamente desde un solo proceso. Contexia usa Telegram
+   directamente desde el backend (`TELEGRAM_BOT_TOKEN`) y un bridge custom para WhatsApp vía
+   Chatwoot (`apps/chatwoot-bridge`). El bridge de Chatwoot para WhatsApp sigue siendo la
+   decisión correcta — da un inbox real con historial y pausa HITL vía etiqueta `bot_off`, algo
+   que el gateway nativo de Hermes no reemplaza sin más trabajo — no lo toques. Pero vale la
+   pena verificar si el bot de Telegram debería pasar por el gateway nativo de Hermes en vez de
+   vivir aparte en el backend, para tener continuidad de conversación cross-plataforma nativa.
+
 ## 1. Mapa de sistemas reales (no asumir nada fuera de esto)
 
 | Sistema | Qué es | Quién lo toca |
@@ -127,11 +199,763 @@ recuérdaselas explícitamente si no puedes tú:
 - Construir el puente Chatwoot→HubSpot para que Houston vea la clasificación de Taty — quedó
   documentado como gap futuro, no se construye todavía.
 - Radar Predictivo/Patrimonio reales — siguen siendo mock, no tienes nada que conectar ahí hoy.
+- Rotación de secretos, fusión de 3 PRs de seguridad, retiro de política RLS permisiva sobre
+  la Approval Queue, control humano antes de emitir un enlace de pago por Taty, migración de
+  re-etiquetado de ~40 alertas, decomiso del backend Railway secundario — todo esto es
+  "Horizonte 1" del roadmap oficial (ver §9, informe del Hub de Innovación anexo). Le
+  corresponde a Claude Code/el fundador, no es tuyo.
 
-## 8. Cómo reportar de vuelta
+## 8. Contexto de negocio adicional (para que Taty y tus roles nunca inventen nada)
+
+Se anexan dos documentos completos al final de este archivo (§9 y §10) — son fuente de verdad,
+no resúmenes tuyos para reinterpretar:
+
+- **§9 — Base normativa de la campaña Renta Natural 2026**: topes UVT oficiales, calendario de
+  vencimientos por cédula, régimen sancionatorio, tabla progresiva del Art. 241. Cualquier cifra
+  fiscal que Taty o el contenido de campaña mencionen DEBE venir de esta tabla — nunca proyectar
+  con la UVT del año equivocado (regla anti-alucinación explícita en el documento).
+- **§10 — Informe técnico para el Hub de Innovación (Cámara de Comercio Aburrá Sur)**: estado
+  verificado del producto al 21 de agosto de 2026, deuda técnica declarada con nombre propio, y
+  el roadmap de 5 horizontes (Horizonte 0 = cerrar el go-live comercial, que es exactamente lo
+  que las Fases 1-2 de este documento están operacionalizando). Úsalo para entender el contexto
+  completo de negocio detrás de cada cron que configures — no eres solo un ejecutor de tareas
+  sueltas, estás cerrando el Horizonte 0 del roadmap real de la empresa.
+
+## 11. Cómo reportar de vuelta
 
 Cuando termines de configurar tus crons/roles, reporta en este mismo chat (Hermes Desktop):
 qué cron creaste, con qué cadencia, y qué endpoint del backend llama cada uno — en texto claro,
 sin valores de token. Si algo del backend no se comporta como este documento dice, repórtalo
 como una discrepancia a investigar, no lo "arregles" adivinando — ese tipo de arreglo le
 corresponde a Claude Code sobre el repo `antigravity-app`.
+
+## 9. ANEXO — Base Normativa de Campaña: Declaración de Renta Persona Natural 2026
+
+> Fuente de verdad para cualquier cifra fiscal que Taty o el contenido de campaña mencionen.
+> Copiada tal cual del documento original — no reinterpretar los números.
+
+**Rol:** Fuente de verdad normativa de toda la campaña Renta 2026 (Facebook, Instagram, WhatsApp/Taty, Landing Page).
+**Fuente íntegra:** `fuentes/informe-renta-2026-fuente.txt` (no modificar; cualquier dato nuevo se valida contra este archivo).
+**Contexto fiscal:** Año gravable **2025**, declarado y pagado en **2026**. Ley 2277 de 2022.
+
+---
+
+### 1. Parámetros Maestros (usar en TODO el contenido)
+
+| Parámetro | Valor oficial | Cálculo |
+| :--- | :--- | :--- |
+| UVT año gravable 2025 | **$49.799** | Res. 000193 de 2024 |
+| UVT para sanciones/obligaciones desde 01-01-2026 | **$52.374** | Res. 238 de 2025 (+5,17%) |
+| Tope obligatoriedad (Art. 592) | **$69.718.600** | 1.400 UVT × $49.799 |
+| Tope patrimonio bruto | **$224.095.500** | 4.500 UVT × $49.799 |
+| Sanción mínima (extemporaneidad) | **$523.740** | 10 UVT × $52.374 |
+| Techo deducciones cédula general | **$66.730.660** | 1.340 UVT × $49.799 |
+| Tope renta exenta laboral 25% | **$39.341.210** | 790 UVT × $49.799 |
+| Facturación electrónica obligatoria (personas naturales) | desde **$174.296.500** de ingresos brutos | 3.500 UVT × $49.799 |
+
+> **Regla anti-alucinación:** todo número fiscal en copy, infografía o respuesta de Taty debe venir de esta tabla o de la fuente íntegra. Prohibido "proyectar" topes con la UVT 2026 para criterios de obligatoriedad: los topes del Art. 592 se calculan SIEMPRE con la UVT del año gravable ($49.799).
+
+**Corrección aplicada:** los activos previos de la campaña usaban $73.3M (error: cálculo con UVT 2026). El tope real y oficial es **$69.7M**. Todos los activos deben actualizarse.
+
+### 2. Los 5 Criterios de Obligatoriedad (Art. 592 ET)
+
+Basta **UNO** de estos para que una persona natural esté obligada a declarar, aunque su depuración dé impuesto en cero o saldo a favor:
+
+1. **Ingresos brutos totales** ≥ $69.7M
+2. **Compras y consumos totales** ≥ $69.7M
+3. **Consignaciones bancarias / depósitos / inversiones** ≥ $69.7M
+4. **Consumos con tarjeta de crédito** ≥ $69.7M
+5. **Patrimonio bruto al 31-dic-2025** ≥ $224.1M
+6. **Cualquier persona natural que haya sido responsable de IVA en 2025** declara sin importar montos.
+
+> **Gancho de campaña #1:** mover plata (consignaciones, tarjeta) es lo que dispara la obligación. Un asalariado que gana $50M pero rota fondos de terceros por su cuenta también está obligado. Esto conecta con el "colombiano promedio".
+
+### 3. Calendario de Vencimientos 2026 (personas naturales)
+
+Presentación y pago entre **12 de agosto y 26 de octubre de 2026**, según los **dos últimos dígitos del NIT/cédula**:
+
+| Últimos 2 dígitos | Fecha límite 2026 |
+| :--- | :--- |
+| 01 - 02 | 12 de agosto |
+| 11 - 12 | 20 de agosto |
+| 23 - 24 | 28 de agosto |
+| 35 - 36 | 7 de septiembre |
+| 55 - 56 | 21 de septiembre |
+| 75 - 76 | 7 de octubre |
+| 89 - 90 | 19 de octubre |
+| 99 - 00 | 26 de octubre |
+
+> **Gancho de campaña #2 (urgencia con fecha):** "Si tu cédula termina en 01 o 02, te queda poco tiempo". El calendario escalonado permite contenido recurrente semanal hasta octubre.
+
+### 4. Régimen Sancionatorio (dolor de campaña)
+
+*   **Extemporaneidad:** recargo del **5% del saldo a pagar por cada mes** (o fracción) de retraso, más intereses de usura fiscal.
+*   **Sanción mínima:** **$523.740 COP** incluso si el saldo a pagar es $0 (omisión meramente formal).
+*   **Inexactitud:** aplica si hay concurrencia injustificada de costos + renta exenta del 25%.
+
+### 5. Temas Avanzados (usar en contenido educativo, no en hooks masivos)
+
+*   **Sistema cedular (Ley 2277/2022):** cédula general (trabajo + capital + no laborales), cédulas de pensiones, dividendos y ganancias ocasionales. Techo de deducciones recortado a 1.340 UVT.
+*   **Independientes (Art. 206, par. 5):** elegir entre costos/gastos soportados con factura electrónica **O** renta exenta del 25% (tope 790 UVT) — mutuamente excluyentes.
+*   **Anticipo de renta (Art. 807):** 25% (1ª vez) / 50% / 75% del impuesto previsible, según historial de declaraciones.
+*   **Beneficio de auditoría (Art. 689-3):** firmeza acelerada a 12 o 6 meses si el impuesto neto creció ≥25% / ≥35% vs año anterior. No aplica correcciones tardías del año base (Conceptos DIAN 404 y 4223 de 2026).
+*   **Renta mundial (Art. 254):** freelancers que trabajan remoto para el exterior tributan en Colombia; el Art. 254 aplica solo a rentas de **fuente extranjera** real (Sentencia 26644 Consejo de Estado: si el trabajo se ejecuta en Colombia, la retención extranjera no descuenta impuesto en Colombia, salvo deducción por Art. 107 ET).
+*   **Impuesto al patrimonio:** permanente, umbral 72.000 UVT (~$3.600M+), no relevante para el ICP promedio.
+*   **Declaración sugerida DIAN:** el Estado ya tiene la info exógena (bancos, facturas electrónicas, notarías). Mensaje de campaña: "la DIAN ya sabe cuánto moviste".
+*   **No residentes:** tarifa plana 35%.
+
+### 6. Tabla Progresiva Art. 241 (referencia para Taty)
+
+| Base gravable (UVT) | Tarifa marginal | Impuesto base acumulado |
+| :--- | :--- | :--- |
+| 0 – 1.090 | 0% | 0 |
+| 1.090 – 1.700 | 19% | (base − 1.090) × 19% |
+| 1.700 – 4.100 | 28% | +116 UVT |
+| 4.100 – 8.670 | 33% | +788 UVT |
+| 8.670 – 18.970 | 35% | +2.296 UVT |
+| 18.970 – 31.000 | 37% | +5.901 UVT |
+| > 31.000 | 39% | +10.352 UVT |
+
+### 7. Mapeo a Contenido de Campaña
+
+| Tema | Pilar | Gancho coloquial |
+| :--- | :--- | :--- |
+| Topes Art. 592 | Urgencia/Miedo | "¿Te toca declarar ante la DIAN? Si moviste $69.7M en tu cuenta, sí." |
+| Calendario por cédula | Urgencia/FOMO | "Tu cédula termina en 01-02? Vencimiento: 12 de agosto." |
+| Sanción mínima | Miedo | "La multa arranca en $523.740 aunque no debas ni un peso." |
+| Independientes 25% vs costos | Educación | "¿Cobras honorarios? Este truco del 25% puede ahorrarte millones (pero elige solo una)." |
+| Freelancers del exterior | Nicho (freelancers) | "Trabajas remoto para USA/España y te retuvieron impuestos allá? Ojo: en Colombia eso NO descuenta automáticamente." |
+| DIAN ya sabe todo | Conciencia | "La DIAN ya ve tus consignaciones y compras con tarjeta. La pregunta no es si sabe, sino si tú estás listo." |
+
+---
+
+*Documento generado por Manus — Proyecto CTX Strategy & Market Intelligence. Mantener sincronizado con el repo antigravity-app (`constants.py`, `kb/dian_chunks.json`) para que Taty responda con estos mismos valores.*
+
+## 10. ANEXO — Informe Técnico para el Hub de Innovación (Cámara de Comercio Aburrá Sur), v3.0, 21-ago-2026
+
+> Contexto de negocio completo. El Horizonte 0 de este roadmap ES lo que las Fases 1-2 de
+> este documento operacionalizan. Imágenes del original omitidas (capturas de pantalla de
+> Hermes Desktop/Dashboard, no aportan al texto).
+
+Infraestructura, estado verificado y roadmap de construcción
+
+**--- · ---**
+
+**Preparado para el Hub de Innovación**
+
+Cámara de Comercio Aburrá Sur
+
+  --------------------------------------------------
+  **Documento**    Informe técnico de
+                   infraestructura, estado y roadmap
+  ---------------- ---------------------------------
+  **Versión**      3.0
+
+  **Fecha**        21 de agosto de 2026
+
+  **Elaborado      Juan David Peláez Cárdenas
+  por**            
+
+  **Con la         Tatiana Marcela Barbosa Villegas
+  participación    
+  de**             
+
+  **Contacto**     jpelaezcardenas@gmail.com
+  --------------------------------------------------
+
+*Documento de uso interno para el proceso de acompañamiento del Hub de
+Innovación.*
+
+**Contenido**
+
+[1. ¿Qué es Contexia?](#qué-es-contexia)2
+
+[2. Qué construimos: los dos dominios del
+producto](#qué-construimos-los-dos-dominios-del-producto)3
+
+[3. Arquitectura técnica](#arquitectura-técnica)3
+
+[4. Estado actual verificado (21 de agosto de
+2026)](#estado-actual-verificado-21-de-agosto-de-2026)4
+
+[5. Deuda técnica abierta y riesgos
+declarados](#deuda-técnica-abierta-y-riesgos-declarados)5
+
+[6. Hacia dónde vamos: roadmap de
+construcción](#hacia-dónde-vamos-roadmap-de-construcción)6
+
+[7. Cómo trabajamos: entorno de desarrollo con agentes
+IA](#cómo-trabajamos-entorno-de-desarrollo-con-agentes-ia)7
+
+[8. Enlaces y acceso a la demo](#enlaces-y-acceso-a-la-demo)8
+
+[9. ¿Cómo nos puede ayudar el Hub?](#cómo-nos-puede-ayudar-el-hub)9
+
+[10. ¿Cómo nos puede ayudar el desarrollador
+asignado?](#cómo-nos-puede-ayudar-el-desarrollador-asignado)9
+
+[11. Contacto y siguiente paso](#contacto-y-siguiente-paso)10
+
+### **1. ¿Qué es Contexia?**
+
+Contexia es una AAA (AI Automation Agency) y empresa TIC enfocada en
+automatización contable-financiera, fintech e inteligencia financiera
+aplicada a PyMEs y a negocios digitales.
+
+Contexia opera como la capa tecnológica del ecosistema ---propiedad
+intelectual, código fuente, infraestructura de servidores y marca--- y
+presta servicios B2B: SaaS, licenciamiento, implementación y
+mantenimiento. La fortaleza del modelo es la combinación de tecnología
+propia con contadoras públicas tituladas y con tarjeta profesional. El
+límite legal se mantiene explícito: **Contexia no es una firma contable
+regulada** --- no está adscrita a la Junta Central de Contadores, no
+ejerce contaduría pública regulada y no firma estados financieros,
+declaraciones tributarias ni dictámenes.
+
+Esa función la cumple Tatiana Marcela Barbosa Villegas, contadora
+pública graduada y socia de Juan David en Contexia, a través de la firma
+contable registrada (Entidad A), con la que Contexia (Entidad B) se
+integra tecnológicamente.
+
+**Qué cambió desde la versión 2.0 (14 de julio de 2026):** este
+documento reemplaza al informe anterior. En las seis semanas
+transcurridas se cerraron y desplegaron **52 cambios de producto
+adicionales** bajo el estándar OpenSpec, el producto pasó de un módulo a
+dos dominios, y la brecha de autenticación que el informe v2 declaraba
+abierta **quedó cerrada**: la API de datos financieros ya exige sesión
+válida. Las secciones 4 y 5 detallan qué está verificado y qué sigue
+abierto; la sección 6 es el roadmap de construcción.
+
+### **2. Qué construimos: los dos dominios del producto**
+
+El producto creció de un módulo único a dos dominios que comparten
+infraestructura pero no se mezclan: uno mira al cliente, el otro es la
+sala de máquinas comercial.
+
+**Dominio A --- GPS Financiero (lo que ve el cliente):**
+
+- **Pulso Diario** --- Caja Real del día, ingresos y gastos del día
+  anterior, calculados sobre el libro mayor sombra, no sobre
+  estimaciones.
+
+- **Centinela Fiscal** --- vigilancia ex-ante de obligaciones
+  tributarias y alertas, aisladas por cliente.
+
+- **Radar Predictivo** --- proyección de flujo de caja y riesgos
+  financieros.
+
+- **Auditoría Sombra (Shadow GL)** --- conciliación automática entre lo
+  declarado y lo real.
+
+- **Patrimonio y Detalle de flujo** --- desglose estructural de la salud
+  financiera.
+
+- **Taty** --- la contadora conversacional 24/7. Un solo cerebro, tres
+  canales: la app, Telegram y WhatsApp.
+
+**Dominio B --- Búnker (la sala de máquinas):**
+
+El Búnker es el panel de operación. Es la misma base de código de la app
+del cliente, diferenciada por ruta y por rol: el equipo Contexia ve las
+siete secciones; un cliente B2B ve solo tres (Dashboard, Agentic OS y
+Configuración).
+
+- **CRM y Ventas** --- embudo B2C de Renta Natural y cartera B2B, con
+  alertas automáticas de riesgo de fuga de cliente.
+
+- **Sell Machine** --- pipeline creativo: investigación → redacción →
+  crítica de marca → cola de aprobación humana → publicación.
+
+- **Social Content Ops y Onboarding** --- operación de contenido y alta
+  de clientes nuevos.
+
+- **Agentic OS** --- estado, trazabilidad y control de los agentes.
+
+**Dos líneas de ingreso:** B2B (PyMEs con contabilidad recurrente) y B2C
+(Renta Natural para persona natural, temporada 2026, con cobro por
+pasarela de pagos).
+
+### **3. Arquitectura técnica**
+
+Stack de producción, de extremo a extremo:
+
+  -------------------------------------------------------------------------
+  **Capa**         **Tecnología**           **Función**
+  ---------------- ------------------------ -------------------------------
+  **Frontend       Next.js 16, React 19,    Una sola base de código: 6
+  (app + Búnker)** TypeScript, Tailwind v4  pantallas móviles para el
+                                            cliente + 7 secciones de
+                                            escritorio filtradas por rol
+
+  **Backend /      Python 3.11, FastAPI     Libro mayor sombra, endpoints
+  API**                                     /api/v1/\*, resolución de
+                                            cliente por sesión
+
+  **Base de        Supabase (PostgreSQL +   Datos financieros aislados por
+  datos**          pgvector)                cliente, autenticación, RLS y
+                                            búsqueda semántica del
+                                            normograma DIAN
+
+  **Despliegue     Vercel                   Auto-deploy desde main hacia
+  frontend**                                contexia.online
+
+  **Despliegue     Railway                  Un único backend canónico,
+  backend**                                 auto-deploy desde main
+
+  **Modelos de     Cascada Groq → Cerebras  Failover automático entre
+  IA**             → OpenRouter → NVIDIA    proveedores; cascada revisada
+                   NIM                      el 18 de agosto de 2026
+
+  **Orquestación   Hermes Workspace (local  Coordina los 9 agentes; los
+  de agentes**     / on-prem)               datos financieros se procesan
+                                            localmente por soberanía de
+                                            datos, nunca en un VPS de
+                                            terceros
+
+  **Memoria de     GBrain (local / on-prem) Búsqueda híbrida y grafo de
+  agentes**                                 conocimiento del proyecto para
+                                            que los agentes no empiecen de
+                                            cero en cada sesión
+
+  **Canal          Chatwoot + bridge        Bandeja real de Meta Cloud API;
+  WhatsApp**       (local, Docker)          las credenciales nunca salen de
+                                            la máquina local
+
+  **CRM            HubSpot + sincronizador  Sincronización unidireccional
+  comercial**      local                    cada 5 minutos; capa de
+                                            reporte, no reemplazo del CRM
+                                            propio
+
+  **Pagos**        Wompi                    Cobro del embudo B2C,
+                                            credenciales de producción
+                                            activas
+
+  **Secretos**     Bitwarden Secrets        Bóveda única; ninguna
+                   Manager                  credencial vive en el código
+  -------------------------------------------------------------------------
+
+**Flujo de datos operativo en producción:** ingesta de CSV (Siigo) y XML
+(facturación electrónica DIAN) → libro mayor sombra por cliente → API de
+datos financieros que resuelve a qué cliente pertenece la sesión →
+tablero en vivo. Desde el 18 de agosto cada asiento contable lleva una
+bandera de verificación que separa los datos reales de los de prueba,
+para que ninguna cifra de demostración pueda confundirse con una cifra
+de cliente.
+
+### **4. Estado actual verificado (21 de agosto de 2026)**
+
+Cada punto de esta sección fue verificado contra el sistema en vivo o
+contra el repositorio el día de la fecha, no copiado de documentación
+previa.
+
+- **Autenticación activa --- cierra la brecha declarada en el informe
+  v2:** el backend canónico responde 401 ("token de autenticación
+  inválido o ausente") a la API de datos financieros cuando no hay
+  sesión. En julio ese endpoint era abierto. Hoy las pantallas cargan,
+  pero no muestran cifras sin credenciales.
+
+- **Aislamiento por cliente de extremo a extremo:** un único contrato de
+  resolución de cliente gobierna las seis superficies de agentes. Un
+  usuario autenticado cuyo cliente no resuelve recibe una respuesta
+  vacía o un 404 --- nunca los datos de otro.
+
+- **Login único y control de acceso por rol:** existe un solo punto de
+  entrada válido; un middleware en el borde de Vercel valida el token de
+  sesión y las rutas de administración exigen rol de administrador.
+
+- **Gobernanza por especificación, con evidencia:** 72 cambios OpenSpec
+  archivados con su rastro completo ---propuesta, diseño,
+  especificación, tareas, implementación y despliegue verificado en
+  producción---. Solo 3 cambios activos, y ninguno bloquea la operación.
+
+- **Cobertura de pruebas:** 116 archivos de pruebas automatizadas en el
+  backend.
+
+- **Taty omnicanal en producción:** los mensajes de WhatsApp entran a
+  una bandeja real, se enrutan al mismo servicio que atiende Telegram y
+  la app, y pueden pausarse con una etiqueta para que responda una
+  persona.
+
+- **Motor comercial operativo:** el circuito de contenido
+  ---investigación, crítica de marca, cola de aprobación humana y
+  publicación--- está cerrado de punta a punta, con un filtro
+  determinista que rechaza cualquier cifra en pesos o UVT que no cite
+  una fuente reconocida. Hoy corre en modo de ensayo, a la espera del
+  interruptor de publicación real.
+
+- **CRM sincronizado:** el embudo B2C se refleja en HubSpot cada 5
+  minutos desde un proceso que corre en la máquina local; la
+  sincronización es unidireccional y el Búnker solo lee su estado.
+
+- **Presencia digital estructurada:** robots.txt, sitemap.xml y marcado
+  Schema.org geolocalizado en Envigado, dirigido tanto a buscadores
+  tradicionales como a motores de respuesta con IA.
+
+- **Financiación en curso:** además de la ronda ángel / capital semilla,
+  Contexia participa en Envigado Emprende 2026, cuyo plan de inversión
+  financia la estación de trabajo de inferencia local descrita en el
+  Horizonte 2 del roadmap.
+
+### **5. Deuda técnica abierta y riesgos declarados**
+
+Un informe técnico que solo muestra logros no sirve para pedir ayuda.
+Esto es lo que está abierto hoy, con nombre propio y con horizonte
+asignado en la sección 6.
+
+  -----------------------------------------------------------------------
+  **Ítem**               **Riesgo**                     **Estado**
+  ---------------------- ------------------------------ -----------------
+  **Rotación de          Credenciales señaladas en la   Vencida \~60
+  secretos**             auditoría interna de junio     días. Prioridad
+                         siguen sin rotar en su         alta
+                         totalidad                      
+
+  **Tres PRs de          27 correcciones de junio nunca Abierto
+  seguridad sin          llegaron a producción          
+  fusionar**                                            
+
+  **Política de base de  Acceso anónimo residual sobre  Identificada y
+  datos permisiva**      la cola de aprobación a nivel  documentada;
+                         de RLS                         pendiente de
+                                                        retirar
+
+  **Enlace de pago sin   Una rama del flujo comercial   Cambio congelado
+  revisión humana**      de Taty puede emitir un enlace a propósito; el
+                         de cobro por WhatsApp sin      control está
+                         aprobación previa              especificado, no
+                                                        implementado
+
+  **Comerciante de       El cobro de un servicio        Decisión
+  registro**             contable debe salir de la      estructural
+                         Entidad A, no de la Entidad B  pendiente
+
+  **Alertas históricas   \~40 alertas antiguas quedaron Migración
+  mal etiquetadas**      asociadas al cliente           escrita, no
+                         equivocado                     aplicada;
+                                                        requiere
+                                                        aprobación
+                                                        explícita
+
+  **Backend secundario   Un segundo proyecto en Railway Por decomisionar
+  en desuso**            sin tráfico real, con un       
+                         chequeo de salud               
+                         silenciosamente roto           
+
+  **Tarifas de Renta     Taty tiene prohibido enunciar  Decisión de
+  Natural sin definir**  precio mientras no existan las negocio pendiente
+                         dos tarifas                    
+  -----------------------------------------------------------------------
+
+Ninguno de estos ítems bloquea la operación actual. Todos están
+priorizados, y varios son exactamente el tipo de trabajo acotado en el
+que el acompañamiento del Hub rinde más.
+
+### **6. Hacia dónde vamos: roadmap de construcción**
+
+El roadmap está organizado en cinco horizontes. Cada ítem corresponde a
+un cambio OpenSpec ---existente o por abrir---, no a una intención
+general.
+
+**Horizonte 0 --- Cerrar el go-live comercial (agosto -- septiembre
+2026)**
+
+- Activar la publicación real del motor de contenido y correr un ciclo
+  completo verificable de punta a punta.
+
+- Completar una transacción real de Renta Natural por la pasarela de
+  pagos y registrar su referencia.
+
+- Definir las dos tarifas de Renta Natural (asalariado / independiente)
+  y cablearlas en el cobro.
+
+- Resolver el comerciante de registro: cuenta de cobro de la Entidad A
+  para servicios contables.
+
+- Verificación en producción del cambio de SEO, optimización para
+  motores de IA y grafo de conocimiento local.
+
+**Horizonte 1 --- Endurecimiento y confianza (septiembre -- octubre
+2026)**
+
+- Rotación completa de secretos y fusión de los tres PRs de seguridad
+  pendientes.
+
+- Retirar la política de base de datos permisiva y cerrar las fases
+  restantes del aislamiento por cliente.
+
+- Implementar el control humano obligatorio antes de emitir cualquier
+  enlace de pago.
+
+- Aplicar la migración de re-etiquetado de alertas y decomisionar el
+  backend secundario.
+
+- **Auditoría externa de seguridad y arquitectura** --- aquí es donde el
+  acompañamiento del Hub tiene el mayor efecto multiplicador, porque el
+  respaldo de un tercero pesa frente a clientes e inversionistas.
+
+**Horizonte 2 --- Nodo soberano de inferencia local (octubre --
+noviembre 2026)**
+
+- Adquisición de la estación de trabajo contemplada en el plan de
+  inversión: AMD Ryzen 9 9900X, NVIDIA RTX 5060 Ti de 16 GB, 32 GB DDR5,
+  NVMe Gen5, refrigeración líquida y UPS con regulación de voltaje.
+
+- Migrar a inferencia local el procesamiento por lotes de datos
+  sensibles: conciliación bancaria nocturna, clasificación de
+  transacciones, generación de alertas fiscales, embeddings del
+  normograma y transcripción de notas de voz.
+
+- Dejar en la nube únicamente lo sensible a latencia ---la conversación
+  con Taty---, siempre con anonimización previa al envío, según el
+  protocolo interno de seguridad.
+
+- Red, firewall, segmentación, respaldos y monitoreo del nodo local: el
+  aporte técnico más concreto que puede hacer el desarrollador asignado.
+
+- Túnel persistente y autenticado entre el Búnker en la nube y el
+  orquestador local. Hoy funciona, pero sobre un túnel efímero que hay
+  que reconfigurar en cada reinicio.
+
+**Horizonte 3 --- Integraciones de datos reales (noviembre 2026 -- enero
+2027)**
+
+- Cliente de integración con Siigo por API REST. Hoy la ingesta se hace
+  con el archivo CSV exportado.
+
+- Cliente DIAN (XML UBL 2.1 y MUISCA), primero en ambiente de pruebas y
+  luego en producción.
+
+- Evaluar un middleware de terceros que evite la integración directa con
+  la DIAN, comparando su costo de instalación y mensualidad contra el de
+  construir y mantener la integración propia.
+
+- Con datos reales fluyendo, desbloquear la ingesta masiva del libro
+  mayor sombra: un cambio de \~100 tareas ya especificado y hoy en pausa
+  por falta de fuente.
+
+**Horizonte 4 --- Escala (2027)**
+
+- Tablero de métricas y observabilidad por agente: costo, latencia y
+  trazabilidad de cada decisión.
+
+- Ajuste fino de modelos pequeños sobre patrones fiscales del cliente,
+  ejecutado localmente y sin subir datos a ningún proveedor externo.
+
+- De un cliente cero y diez clientes aprovisionados a la primera cartera
+  de clientes de pago recurrente.
+
+- Ruta de crecimiento del hardware ya prevista sin cambiar tarjeta madre
+  ni fuente: más memoria, segundo disco y GPU de mayor capacidad cuando
+  el número de usuarios lo exija.
+
+### **7. Cómo trabajamos: entorno de desarrollo con agentes IA**
+
+Contexia se construye con un flujo de desarrollo agent-first: en el lado
+tecnológico, Juan David ---apoyado en agentes--- usa varios copilotos de
+código de forma combinada (Claude Code de Anthropic, Codex de OpenAI y
+Antigravity de Google) como implementadores, siempre bajo especificación
+escrita antes de tocar código.
+
+- **Gobernanza por especificación (OpenSpec):** cada cambio pasa por
+  propuesta → diseño → especificación → tareas → implementación →
+  despliegue. El despliegue a producción es una etapa obligatoria: nada
+  se archiva sin estar en vivo y verificado. Los 72 cambios archivados
+  son el rastro auditable de ese estándar.
+
+- **Harness de subagentes:** los cambios se ejecutan con un patrón líder
+  → implementador → revisor, para que haya una revisión estructurada
+  antes de llegar a producción.
+
+- **Hermes Workspace:** orquesta los 9 agentes operativos del producto.
+  Corre local / on-prem, nunca en un VPS de terceros, por la regla de
+  soberanía de datos.
+
+- **Modelos de IA:** cascada de proveedores con failover automático
+  (Groq, Cerebras, OpenRouter y NVIDIA NIM), revisada el 18 de agosto de
+  2026 para operar sobre capas gratuitas mientras el volumen lo permita.
+  Para datos financieros sensibles la ruta es inferencia local sobre el
+  nodo soberano del Horizonte 2, replicando en la infraestructura propia
+  los controles de un entorno cloud: aislamiento de procesos, control de
+  salida de red y mínimo privilegio.
+
+- **GBrain (memoria de los agentes):** capa de memoria persistente y
+  grafo de conocimiento que consolida contexto, decisiones y entidades
+  del proyecto para que los agentes no partan de cero en cada sesión.
+
+- **Investigación y producción de contenido:** los borradores generados
+  por agentes de investigación nunca se publican solos. Pasan por el
+  crítico de marca y por la cola de aprobación humana en el Búnker.
+  Mantener ese control fue una decisión explícita y está documentada.
+
+**Hermes Workspace, en detalle** --- corre local (WSL/Ubuntu), no
+expuesto a internet:
+
+  ---------------------------------------------------------------------------
+  **Componente**        **Función**                  **Acceso (solo local)**
+  --------------------- ---------------------------- ------------------------
+  **Hermes Gateway**    API del agente:              127.0.0.1:8644 --- solo
+                        orquestación, herramientas,  API, con webhook firmado
+                        sesiones y planificador de   
+                        tareas interno               
+
+  **Hermes Workspace**  Interfaz de chat con el      http://localhost:3000/
+                        agente principal y sus       
+                        sub-agentes                  
+
+  **Hermes Dashboard**  Configuración, sesiones,     http://localhost:9119/
+                        llaves y observabilidad      
+  ---------------------------------------------------------------------------
+
+Como hoy solo es accesible desde la máquina local del equipo, se
+incluyen capturas reales de estas dos interfaces a continuación para que
+el desarrollador entienda el entorno sin necesitar acceso remoto.
+
+height="2.7395833333333335in"}
+
+*Hermes Workspace --- interfaz web del agente principal (chat, memoria,
+herramientas, ejecución en vivo).*
+
+
+*Hermes Agent --- vista de terminal del agente (herramientas y skills
+disponibles, sesión activa, modelo en uso).*
+
+### **8. Enlaces y acceso a la demo**
+
+**Estado actual del acceso --- cambió respecto del informe v2:** la API
+de datos financieros ya exige sesión. Sin credenciales, las pantallas
+del producto cargan pero no muestran cifras. Para que el equipo del Hub
+recorra el producto con datos, creamos una cuenta dedicada con
+contraseña que podemos rotar o revocar al terminar el proceso de
+asesoría; solo necesitamos el correo del evaluador.
+
+**Canal en vivo que no requiere credenciales:** se puede probar a Taty
+ahora mismo escribiendo por WhatsApp al +57 310 622 9289. Es el número
+de producción y responde el mismo agente que atiende a los clientes.
+
+**Sitio web público (landing):**
+
+- [[https://contexia.online/landing.html]{.underline}](https://contexia.online/landing.html)
+  --- presentación comercial del GPS Financiero y captación de leads
+
+**Portal de acceso (login):**
+
+- [[https://contexia.online/login.html]{.underline}](https://contexia.online/login.html)
+  --- único punto de entrada válido; aquí se habilitará la cuenta del
+  Hub
+
+**Producto en vivo (requiere sesión):**
+
+- [[https://contexia.online/app/overview]{.underline}](https://contexia.online/app/overview)
+  --- Pulso Diario
+
+- [[https://contexia.online/app/fiscal]{.underline}](https://contexia.online/app/fiscal)
+  --- Centinela Fiscal
+
+- [[https://contexia.online/app/radar]{.underline}](https://contexia.online/app/radar)
+  --- Radar Predictivo
+
+- [[https://contexia.online/app/patrimonio]{.underline}](https://contexia.online/app/patrimonio)
+  --- Patrimonio
+
+- [[https://contexia.online/app/flujo-detalle]{.underline}](https://contexia.online/app/flujo-detalle)
+  --- Detalle de flujo de caja
+
+- [[https://contexia.online/app/bunker]{.underline}](https://contexia.online/app/bunker)
+  --- Búnker; las secciones visibles dependen del rol de la cuenta
+
+**Repositorio técnico (GitHub):** actualmente privado. Con gusto damos
+acceso de lectura al desarrollador asignado si nos confirman el usuario
+de GitHub a invitar.
+
+### **9. ¿Cómo nos puede ayudar el Hub?**
+
+Puntos concretos donde el acompañamiento institucional del Hub tendría
+mayor impacto, ordenados por prioridad real:
+
+- **Auditoría externa de seguridad y arquitectura** antes de sumar más
+  clientes (Horizonte 1). Es hoy nuestra mayor necesidad: la revisión de
+  un tercero da respaldo frente a clientes e inversionistas.
+
+- **Mentoría técnica** en arquitectura multi-cliente y en el diseño del
+  nodo local de inferencia (Horizonte 2).
+
+- **Horas de desarrollador y revisión de código** para acelerar el
+  Horizonte 1. Son tareas acotadas y ya especificadas, no exploración.
+
+- **Acompañamiento en la ronda de inversión** ángel o de capital
+  semilla: métricas, pitch y materiales.
+
+- **Conexión con PyMEs de la red de la Cámara de Comercio Aburrá Sur**
+  como clientes piloto del GPS Financiero.
+
+- **Conexión con otras startups o empresas del Hub** para alianzas,
+  clientes cruzados o proveedores.
+
+- **Capacitación empresarial complementaria** (legal y comercial) para
+  el equipo fundador, que hoy opera con estructura reducida ---dos
+  socios--- apoyado en agentes en el lado tecnológico.
+
+- **Espacio de coworking** o uso de instalaciones de CCAS para el
+  equipo.
+
+- **Orientación legal y regulatoria** sobre el modelo dual y, en
+  concreto, sobre el comerciante de registro para el cobro de servicios
+  contables: es un ítem abierto de la sección 5 y una decisión que no es
+  puramente técnica.
+
+### **10. ¿Cómo nos puede ayudar el desarrollador asignado?**
+
+Más allá del acompañamiento institucional, estas son las áreas técnicas
+concretas donde el desarrollador asignado puede aportar directamente,
+mapeadas contra el roadmap:
+
+- **Seguridad aplicada (Horizonte 1):** cerrar los tres primeros ítems
+  de la sección 5 --- rotación de secretos, fusión de los PRs pendientes
+  y retiro de la política permisiva de base de datos.
+
+- **APIs (Horizonte 1):** endurecimiento de la API REST ---versionado,
+  límites de uso, validación de esquemas y manejo de errores--- y
+  revisión del contrato de resolución de cliente.
+
+- **Flujos con humano en el loop (Horizonte 1):** pair programming sobre
+  el control de aprobación previo a emitir cualquier enlace de pago.
+
+- **Soberanía de datos (Horizonte 2):** asesoría para replicar
+  localmente los controles de un entorno cloud --- aislamiento de
+  procesos, control de salida de red y mínimo privilegio.
+
+- **Redes locales (Horizonte 2):** segmentación, firewall y acceso
+  remoto seguro para el nodo de inferencia; en particular, reemplazar el
+  túnel efímero actual por uno persistente y autenticado.
+
+- **Manejo de servidores (Horizonte 2):** administración y
+  endurecimiento del equipo on-prem --- respaldos, monitoreo y
+  actualizaciones.
+
+- **Equipos AI-first (Horizonte 2):** validación de la configuración
+  adquirida y de la ruta de crecimiento en memoria, almacenamiento y GPU
+  a medida que crece el cómputo local.
+
+- **Observabilidad (Horizonte 4):** instrumentación de costo y latencia
+  por agente, que es la base del tablero de métricas.
+
+### **11. Contacto y siguiente paso**
+
+**Siguiente paso concreto:** díganos (a) el correo del evaluador para
+crear la cuenta del Hub y (b) el usuario de GitHub del desarrollador
+asignado. Con esos dos datos queda habilitado el acceso completo
+---producto y código--- el mismo día.
+
+**Demo en vivo:** además del acceso directo de la sección 8, con gusto
+coordinamos una videollamada para recorrer el producto juntos.
+
+**Contacto:**
+
+- Juan David Peláez Cárdenas --- Fundador (tecnología), Contexia
+
+- jpelaezcardenas@gmail.com, 3504187902
+
+- Tatiana Marcela Barbosa Villegas --- Socia y Contadora Pública,
+  Contexia
+
+- tatybarbosav91@gmail.com, 3018948151
