@@ -109,7 +109,7 @@ ganar resiliencia (self-healing, memoria que mejora sola, paralelización real).
 | Chatwoot | Inbox real de WhatsApp (Meta Cloud API), inbox `1` | `apps/chatwoot-bridge` (local, tuyo), reenvía a Taty vía el backend |
 | Manus | Genera contenido/copy para Renta Natural | Poller local `ContexiaHermesManusPoller` (Scheduled Task de Windows) — lee `operator_tasks` pendientes del backend, Manus produce, tú reportas el resultado |
 | Houston | App de escritorio externa, agente "Vendedor", conecta a HubSpot vía su propio Composio — **solo lectura, lead-scoring/pipeline**. No genera outreach que necesite pasar por tu Content Critic. No requiere ninguna configuración tuya — confirmado y cerrado (`houston-lead-scoring-read-only-bridge`) |
-| MiMo | Tu LLM de pago (el que usas para razonar en este chat) | **Riesgo confirmado**: tu `~/.hermes/config.yaml` usa un proxy externo (`token-plan-sgp.xiaomimimo.com`) con `fallback_providers: []` vacío — si ese proxy cae, te quedas sin respaldo pese a tener Ollama local y una key de GLM/ZAI ya configuradas y sin usar. Configura ese fallback tú mismo como parte de este trabajo (no es negociable, es resiliencia operativa) |
+| MiMo | Tu LLM de pago (el que usas para razonar en este chat) | **Actualizado 2026-08-29 (ver §12 Regla #5)**: el riesgo original (`fallback_providers: []` vacío en `~/.hermes/config.yaml`) llevó a que configuraras **OmniRoute** (`localhost:20128`, "476+ modelos gratuitos") como reemplazo del fallback — confirmado y aprobado por el fundador, ya no es Ollama/GLM. Pendiente: documentar el detalle completo en `ARCHITECTURE.md` (§12 Regla #5, paso 2) para que quede en el canon, no solo en tu config local |
 
 ## 2. Pricing real — cópialo tal cual, no lo inventes ni lo parafrasees hacia otro número
 
@@ -295,28 +295,30 @@ creado en GBrain deben apuntar (link) al change de OpenSpec correspondiente una 
 contener una copia paralela de la misma decisión — evita que GBrain y `openspec/changes/`
 cuenten historias distintas de lo mismo.
 
-### Regla dura #5 — Resolver OmniRoute ANTES de seguir integrando, no después
+### Regla dura #5 — OmniRoute: DECISIÓN DEL FUNDADOR YA TOMADA (2026-08-29)
 
-OmniRoute (`localhost:20128`, "476+ modelos gratuitos") es una herramienta que Hermes introdujo
-por su cuenta — la instrucción original (§1, fila "MiMo") pedía usar el fallback YA configurado
-(Ollama local + GLM/ZAI), no traer una pieza nueva sin nombre previo en ningún documento de este
-proyecto. Antes de que esto se considere parte de la integración:
-1. El fundador decide explícitamente si OmniRoute se adopta o se descarta — no es una decisión
-   técnica de Hermes ni de Claude Code, es una decisión de negocio/infraestructura del fundador.
-2. Si se adopta: Hermes entrega la propuesta completa (qué es, qué reemplaza, costo, riesgo) al
-   fundador → Claude Code la documenta en `ARCHITECTURE.md` (nuevo container/dependencia
-   externa, mismo patrón que cualquier otra pieza de infraestructura) → recién ahí se considera
-   parte del stack real de Contexia.
-3. Si se descarta: Hermes revierte a usar Ollama/GLM como fallback, tal como decía la
-   instrucción original.
+**Resuelto.** El fundador confirmó explícitamente: OmniRoute es real y **reemplaza** los
+fallbacks anteriores (Ollama local + GLM/ZAI) que la instrucción original pedía activar. Esto
+ya no es una pregunta abierta — es la decisión de infraestructura vigente. Lo que sigue
+pendiente, y sí requiere el ciclo de la Regla #2 antes de darse por "integrado":
+
+1. Hermes entrega a Claude Code (vía el fundador) el detalle completo de OmniRoute: qué es
+   exactamente (¿un proxy propio, un servicio de terceros, algo instalado por Hermes?), qué
+   proveedor/modelos hay detrás de esos "476+ modelos gratuitos", el `contenido` real de
+   `HANDOFF-OMNIRROUTE.md`/`OMNIRROUTE_SETUP.md` (no solo la ruta), y qué tan estable/confiable
+   es como fallback de producción (¿qué pasa si `localhost:20128` no responde?).
+2. Con eso, Claude Code documenta OmniRoute en `ARCHITECTURE.md` como el fallback real de MiMo
+   en Hermes (reemplazando la mención actual de "Ollama local + GLM/ZAI sin usar" en la Decisión
+   correspondiente) — mismo patrón que cualquier otra pieza de infraestructura del stack.
+3. Hasta que ese paso 2 ocurra, OmniRoute existe pero **no está documentado en el canon** —
+   cualquier otra sesión de Claude Code seguirá viendo la info vieja hasta que se actualice.
 
 ### Próximo paso concreto (en orden)
 
 1. El fundador le pide a Hermes el contenido completo (no solo la ruta) de
-   `HANDOFF-OMNIRROUTE.md` y `OMNIRROUTE_SETUP.md`.
-2. El fundador decide OmniRoute (Regla #5) antes de avanzar con cualquier otra integración.
-3. Con esas dos cosas resueltas, el fundador trae el contenido a una sesión de Claude Code (aquí
-   o nueva) para que se documente/implemente siguiendo el proceso real de este repo — no antes.
+   `HANDOFF-OMNIRROUTE.md` y `OMNIRROUTE_SETUP.md`, y el detalle de OmniRoute (Regla #5, punto 1).
+2. El fundador trae ese contenido a una sesión de Claude Code (aquí o nueva) para que
+   `ARCHITECTURE.md` se actualice con OmniRoute como el fallback real — cerrando la Regla #5.
 
 ## 9. ANEXO — Base Normativa de Campaña: Declaración de Renta Persona Natural 2026
 
