@@ -16,6 +16,15 @@ this change, every plan tier (including `freemium`) includes `pulso_diario`, so 
 no-op in practice today — it exists so a future tier that excludes `pulso_diario` does not require
 touching this endpoint again.
 
+When the Shadow GL computation itself yields `status: "empty"` for a resolved tenant (the tenant
+exists and was resolved, but has no `erp_journal_lines` rows), the system SHALL check for that
+tenant's latest completed `pulso_diario_insight` operator task (see the `pulso-diario-agent-
+insight` capability) before returning the zeroed snapshot. If one exists, the system SHALL return
+its payload instead, with `status: "healthy"` and an additional `source: "agent_insight"` field.
+This fallback SHALL NOT apply to the "no tenant resolved" case (an authenticated caller whose
+tenant never resolved SHALL still receive the zeroed, non-leaking `_empty_snapshot()` regardless
+of any operator task data that may exist for any tenant).
+
 #### Scenario: Caja Real equals bank account balance
 - **WHEN** the Cliente Cero ledger has lines on account `1110` (Bancos) totaling 11,250,000.00 in debits and 7,730,000.00 in credits
 - **THEN** `caja_real` SHALL equal `352000000` (i.e., 3,520,000.00 COP) expressed in minor units (`sum(debit_minor) - sum(credit_minor)` for account `1110`)
@@ -42,6 +51,23 @@ touching this endpoint again.
   `has_feature`)
 - **THEN** the endpoint returns a `not_in_plan`-shaped response instead of computing a snapshot,
   and does not query `erp_journal_lines`
+
+#### Scenario: An empty Shadow GL tenant with a completed agent insight gets that insight instead
+- **WHEN** a resolved tenant's Shadow GL computation returns `status: "empty"` AND a completed
+  `pulso_diario_insight` operator task exists for that tenant
+- **THEN** the endpoint returns that task's result payload with `status: "healthy"` and
+  `source: "agent_insight"`, instead of the zeroed empty snapshot
+
+#### Scenario: An empty Shadow GL tenant with no agent insight still gets the zeroed empty snapshot
+- **WHEN** a resolved tenant's Shadow GL computation returns `status: "empty"` AND no completed
+  `pulso_diario_insight` operator task exists for that tenant
+- **THEN** the endpoint returns the original zeroed `status: "empty"` snapshot, unchanged from
+  prior behavior
+
+#### Scenario: An unresolved tenant never receives an agent insight fallback
+- **WHEN** an authenticated caller's tenant does not resolve at all
+- **THEN** the endpoint returns the zeroed, non-leaking empty snapshot regardless of whether any
+  operator task data exists for any tenant
 
 ### Requirement: Snapshot status classification
 
