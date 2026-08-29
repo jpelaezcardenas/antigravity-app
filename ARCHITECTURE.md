@@ -178,6 +178,30 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
     futuro si se decide que aporta valor. Ver `docs/integrations/houston-plan-integracion.md` y
     `docs/integrations/houston-playbook-ventas.md`.
 
+21. **OmniRoute reemplaza Ollama/GLM como fallback local del LLM de Hermes** (2026-08-29,
+    decisión del fundador) — Hermes usa MiMo (`mimo-v2.5-pro`) como modelo principal para
+    razonar; el fallback ante una caída de ese proveedor pasó de "Ollama local + GLM/ZAI
+    configurados y sin usar" (riesgo identificado en una investigación previa) a
+    **OmniRoute** (`diegosouzapw/OmniRoute`, MIT, verificado en vivo en GitHub el 2026-08-29:
+    ~58k estrellas, activo, gateway multi-proveedor con auto-fallback por cuota, compatible con
+    Claude Code/Codex/Cursor/OpenCode/Cline/Copilot). Corre local en la máquina de Hermes
+    (`localhost:20128`, instalado vía `npm install -g omniroute`, versión reportada `3.8.50`),
+    agregando decenas de proveedores gratuitos de terceros (OpenCode Free, Felo, AI Horde, DVA,
+    entre otros — cada uno con sus propios términos de servicio, algunos marcados por el propio
+    proyecto como "avoid" en riesgo). Config de fallback en `~/.hermes/config.yaml`:
+    `fallback_providers: [{provider: custom, model: auto, base_url: http://localhost:20128/v1,
+    api_key: not-required}]` — **sin un tercer fallback**: si OmniRoute tampoco responde, la
+    solicitud falla igual. Esto es exclusivamente infraestructura de Hermes (local/on-prem, por
+    la misma soberanía de datos de la Decisión #1) — el backend de `antigravity-app` sigue sin
+    tocar MiMo/OmniRoute por la restricción de ToS ya documentada en la Decisión #7.
+
+    **Pendiente de verificación directa (no confirmado por Claude Code, solo reportado por
+    Hermes)**: el contenido completo de `HANDOFF-OMNIRROUTE.md`/`OMNIRROUTE_SETUP.md` (Hermes
+    los describió pero nunca pegó su texto real en la conversación), el detalle exacto de los
+    "6 combos por tarea" mencionados, y si alguno de los 16 proveedores usados cae en la lista
+    "avoid" del propio proyecto OmniRoute — verificar antes de depender de esto para una demo
+    en vivo.
+
 ## Enlaces canónicos
 
 - Identidad / legal / semántica → [`.antigravity/GROUND_TRUTH.md`](.antigravity/GROUND_TRUTH.md) (manda)
