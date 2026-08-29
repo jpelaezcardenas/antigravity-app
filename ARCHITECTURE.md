@@ -195,12 +195,45 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
     la misma soberanía de datos de la Decisión #1) — el backend de `antigravity-app` sigue sin
     tocar MiMo/OmniRoute por la restricción de ToS ya documentada en la Decisión #7.
 
-    **Pendiente de verificación directa (no confirmado por Claude Code, solo reportado por
-    Hermes)**: el contenido completo de `HANDOFF-OMNIRROUTE.md`/`OMNIRROUTE_SETUP.md` (Hermes
-    los describió pero nunca pegó su texto real en la conversación), el detalle exacto de los
-    "6 combos por tarea" mencionados, y si alguno de los 16 proveedores usados cae en la lista
-    "avoid" del propio proyecto OmniRoute — verificar antes de depender de esto para una demo
-    en vivo.
+    **Actualizado 2026-08-29 tras leer el contenido real** (`docs/integrations/
+    OMNIRROUTE_SETUP.md` y `docs/integrations/HANDOFF-OMNIRROUTE.md`, obtenidos directamente de
+    un segundo clon local del repo — ver hallazgo de gobernanza abajo, no del reporte de Hermes):
+    los 6 combos por tarea son reales y nombrados explícitamente
+    (`contexia-fast-free`/`docs-free`/`tools-free`/`dev-free`/`private-local`/`critical-review`),
+    cada uno con su propia cadena de fallback de modelos (ej. `mimo-v2.5 → deepseek-v4 →
+    big-pickle`); hay 5 API keys separadas por servicio (Hermes/backend/n8n/Claude Code
+    dev/admin); y existe una política de clasificación de datos explícita (PÚBLICO/INTERNO
+    pueden usar routing gratuito, CONFIDENCIAL solo con anonimización vía `contexia-private-local`,
+    RESTRINGIDO nunca sale del modelo local). El handoff propone además integrar OmniRoute al
+    **backend** (`apps/backend/config.py`) para la cascada de LLM del producto — **esto NO está
+    aprobado**: contradice directamente el alcance de esta decisión (solo infraestructura de
+    Hermes) y la restricción de ToS de la Decisión #7; requiere una decisión explícita aparte del
+    fundador antes de tocar el backend, no se asume por extensión de esta.
+
+    **Dos hallazgos de gobernanza, no resueltos, que preceden a este documento**:
+    1. El handoff cita *"reduce LLM costs... for 16 freemium clients"* — cifra sin respaldo:
+       ningún cliente freemium real ha sido aprovisionado todavía en este proyecto (los 6
+       subdominios de `freemium-onboarding` dejaron el camino técnico listo, no un cliente real).
+       Tratar esa cifra como no verificada, no como un hecho de negocio.
+    2. El MCP global de Claude Code Desktop (`C:\Users\contexia\.claude\.mcp.json`, fuera de
+       cualquier repo versionado) ya tenía un servidor `omniroute` agregado, con un bearer token
+       en texto plano — modificado sin pasar por el protocolo del §12 de
+       `docs/integrations/hermes-autoconfig-instruction-2026-08-29.md` (probablemente porque ese
+       protocolo no existía todavía cuando se hizo). No se tocó ese archivo desde aquí; el
+       fundador debe decidir si ese acceso MCP directo de Claude Code Desktop a OmniRoute es
+       intencional y debe quedar documentado, o si debe retirarse.
+
+    **Hallazgo de gobernanza adicional — divergencia de clones confirmada**: ambos archivos
+    fuente existían solo en un **segundo clon completo del repo** en
+    `C:\Users\contexia\antigravity-app` (`git log` local con 3 commits nunca empujados a
+    GitHub), distinto del clon canónico en `C:\Users\contexia\Projects\antigravity-app` donde
+    corre esta sesión de Claude Code. Ese segundo clon también contiene
+    `KEEPER_MIGRATION_HANDOFF.md` en la raíz — un artefacto de una migración ya cerrada y
+    archivada hace tiempo, señal de que ese clon lleva un buen tiempo sin sincronizarse. Confirma
+    exactamente el riesgo que motivó el §12 del documento de instrucción de Hermes: mientras
+    existan dos clones activos sin protocolo, esto se va a repetir. Recomendación: decidir cuál
+    de los dos es el clon "de trabajo" de Hermes/Claude Code Desktop de forma permanente, y
+    borrar o archivar el otro.
 
 ## Enlaces canónicos
 
