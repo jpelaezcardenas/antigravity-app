@@ -137,6 +137,13 @@ CONTEXIA SWARM (Hermes Workspace)
 | **Cadencia** | Continua (24/7) |
 | **Cliente Cero** | ✅ Público en Telegram de Contexia (@contexia_bot) y WhatsApp (+57 310 6229289, inbox `1` "Taty Contadora Amiga 24/7" en Chatwoot) |
 
+**Regla operativa — línea de WhatsApp exclusivamente inbound (2026-08-16):** el número
++57 310 6229289 (inbox `1` en Chatwoot) es **solo para atención entrante de clientes**.
+Ningún agente ni humano debe usarlo para enviar mensajes salientes (outbound) — cotizaciones
+a proveedores, contacto comercial, o cualquier comunicación que no sea respuesta a un cliente
+que escribió primero. Para comunicaciones salientes de negocio (ej. solicitar cotizaciones a
+proveedores), usar la línea personal de Juan David: +57 350 4187902.
+
 **Casos de uso:**
 - "¿Cuánta caja tengo hoy?" → Taty consulta Pulso
 - "/ops conectar Stripe" → Taty crea draft en Approval Queue
