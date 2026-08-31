@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
@@ -234,6 +235,11 @@ async def data_deletion():
 
 
 app.include_router(api_router, prefix="/api/v1")
+
+# Internal aggregator endpoints — Hermes bridge token auth only, no Supabase JWT
+if os.environ.get("HERMES_BRIDGE_TOKEN"):
+    from routers.internal import router as internal_router
+    app.include_router(internal_router)
 
 
 if __name__ == "__main__":
