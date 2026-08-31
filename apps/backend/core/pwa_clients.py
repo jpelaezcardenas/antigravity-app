@@ -27,7 +27,7 @@ def get_active_pwa_clients(supabase_client: Any) -> list[ActiveClient]:
     result = (
         supabase_client
         .table("b2b_clients")
-        .select("id, tenant_id, nombre")
+        .select("id, tenant_id, name")
         .eq("status", "activo")
         .eq("provision_status", "provisioned")
         .execute()
@@ -36,7 +36,7 @@ def get_active_pwa_clients(supabase_client: Any) -> list[ActiveClient]:
         ActiveClient(
             company_id=row["id"],
             tenant_id=row["tenant_id"],
-            nombre=row.get("nombre") or row.get("id"),
+            nombre=row.get("name") or row.get("id"),
         )
         for row in (result.data or [])
     ]
