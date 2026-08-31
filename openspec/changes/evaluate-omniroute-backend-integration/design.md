@@ -1,58 +1,70 @@
 # Design: evaluate-omniroute-backend-integration
 
-**Status: IN PROGRESS — preliminary findings only, not a final recommendation.**
+**Status: CLOSED — NO-GO. OmniRoute is not suitable for the antigravity-app backend.**
 
-## Context
+## Final recommendation (2026-08-31)
 
-`docs/integrations/OMNIRROUTE_SETUP.md` lists the providers actually wired into Contexia's
-OmniRoute combos (not the full 476+ catalog OmniRoute exposes in general — only what's
-configured): OpenCode Free, Felo, AI Horde, DVA, plus several unnamed short-coded providers
-(`aug`, `cxa`, `tllm`, `cfp`, `zc`, `no-think`, `ddgw`, `unc`, `veo-free`, `veoaifree-web`,
-`pepper`). A full per-provider ToS + reliability review of all of these was not completed in
-this pass — this design.md documents what was checked and flags what remains open.
+**NO-GO.** OmniRoute must not be integrated into the antigravity-app backend cascade. Hermes
+continues to use it for its own local/non-customer-facing automation per Decision #21 — that
+use-case is unaffected by this conclusion.
 
-## Preliminary finding #1 — AI Horde: reliability disqualifies it for backend production traffic,
-independent of ToS
+---
 
-Verified directly (`stablehorde.net/mission/`, `aihorde.net`): AI Horde is a **crowdsourced,
-volunteer-powered compute network** — image/text generation capacity comes from community
-members donating GPU time, not a hosted service with an SLA. The project is explicitly
-community-first, not opposed to commercial use, but capacity and latency are inherently
-unpredictable (volunteer nodes join/leave at will).
+## Finding #1 — AI Horde: reliability disqualifier (pre-existing)
 
-**Conclusion**: even if AI Horde's ToS technically permits commercial/application use, it is
-**not suitable** for any backend path that serves real customer requests (`/financials`, Taty
-responses, Centinela alerts) — those need bounded, predictable latency. This is a reliability
-disqualifier, not a ToS one. AI Horde may still be fine for Hermes' own internal/non-customer-
-facing reasoning (where it already lives, per Decision #21) — that distinction matters: Hermes
-using it for its own local automation is a different risk profile than the backend using it for
-paying-customer traffic.
+AI Horde is a crowdsourced volunteer-powered compute network with no SLA. Disqualified on
+reliability grounds for any customer-facing backend path, independent of ToS.
 
-## Preliminary finding #2 — the backend's existing MiMo exclusion (Decision #7) sets the bar
+## Finding #2 — OmniRoute's own FREE_TIERS.md explicitly flags the providers as "Avoid" or "Caution"
 
-The backend already excluded MiMo specifically because its ToS prohibits "application backend"
-use, even though it's a paid, presumably more reliable service than most of OmniRoute's free
-tier. Any OmniRoute-routed provider considered for the backend needs to clear a **higher** bar
-than MiMo failed to clear, not a lower one — free-tier ToS for aggregated third-party APIs
-tends to be more restrictive about redistribution/backend use, not less.
+OmniRoute's own documentation (`docs/reference/FREE_TIERS.md`, reviewed 2026-08-31) categorizes
+its providers with explicit ToS warnings:
 
-## Open — not yet investigated
+**"Avoid" (explicit proxy/resale prohibition):**
+- `opencode` — prohibits proxy/resale/third-party access
+- `duckduckgo-web` (`ddgw`) — prohibits automated querying and developing AI services
+- `blackbox`, `coze`, `friendliai`, `kiro`, `modal`, `nlpcloud` — same prohibition class
+- `fireworks`, `iflytek` — prohibit automated/programmatic relay use
+- `mistral` — APIs limited to "personal needs"
+- `agy` — "prohibits using third-party software, tools, or services (including proxies)"
 
-- OpenCode Free, Felo, DVA, and the 11 short-coded providers: no ToS review done yet for any of
-  them individually. Do not assume any are backend-safe without checking.
-- Whether OmniRoute's own gateway ToS (as the aggregator/redistributor) imposes its own
-  restriction on backend/application use, separate from each underlying provider's terms.
-- Actual measured latency/failure rate of the OmniRoute combos already in Hermes use — no
-  benchmark has been run against backend-realistic traffic patterns.
-- Whether it's worth pursuing at all given the backend's existing free cascade (Groq/Cerebras/
-  OpenRouter/NVIDIA NIM) already covers 3-4 real hops with acceptable reliability — the actual
-  cost problem this would solve for the backend (as opposed to Hermes' own usage) hasn't been
-  quantified.
+**"Caution" (sublicensing/redistribution prohibited):**
+- `groq` — sublicensing/redistribution prohibited (this is already in the backend cascade; its
+  direct API use is fine, but routing it via OmniRoute would be a ToS violation)
+- `cerebras`, `deepseek`, `sambanova`, `together` — same class
+- `gemini`, `nvidia`, `vertex` — free tier restricted to development/prototyping only
 
-## Preliminary recommendation (subject to revision once the above is investigated)
+**Short-coded providers (partial identification):**
+- `ddgw` = DuckDuckGo Web — Avoid
+- `unc` = likely UncloseAI — prohibits building competing ML services
+- `veo-free`, `veoaifree-web` — prohibit "inhuman speeds" (automated batch use)
+- `aug`, `cxa`, `tllm`, `cfp`, `zc`, `no-think`, `pepper` — not identified in FREE_TIERS.md;
+  unknown ToS, cannot assume safe
 
-**Lean no-go for now, pending the remaining research.** The one provider checked in detail (AI
-Horde) is disqualified on reliability grounds for customer-facing traffic, and the backend's
-existing cascade isn't obviously under-served by comparison. This isn't a final answer — it's
-the honest state of a partial evaluation. Do not treat this as closing the question; the
-remaining 13+ providers and the OmniRoute gateway's own terms are still unverified.
+## Finding #3 — OmniRoute gateway ToS (MIT, but upstream terms still apply)
+
+OmniRoute itself is MIT-licensed — the software can be used commercially. However, the MIT
+license does not grant rights to use the *upstream providers* it routes to. OmniRoute's own
+documentation acknowledges this: upstream provider ToS apply to every routed API call.
+Routing through OmniRoute does not create a shield against a provider's ToS.
+
+## Finding #4 — No cost problem exists for the backend to solve
+
+The backend's existing cascade (Groq → OpenRouter free → NVIDIA NIM) is already 100% free with
+three real fallback hops. OmniRoute would not reduce cost (already $0) nor meaningfully increase
+reliability (adding providers that are explicitly restricted for backend use would add legal risk,
+not resilience). The "cost problem" cited in prior session notes referred to Hermes/Houston usage,
+not the backend.
+
+## Finding #5 — The bar set by Decision #7 (MiMo exclusion) makes this a non-starter
+
+MiMo (a paid, presumably reliable service) was excluded because its ToS prohibits "application
+backend" use. Every OmniRoute provider reviewed in detail either (a) has the same prohibition
+explicitly, (b) is categorized "Avoid" in OmniRoute's own docs, or (c) has an unknown/unverified
+ToS. None cleared the bar MiMo failed.
+
+## Decision: NO-GO — do not integrate OmniRoute into antigravity-app backend
+
+Hermes continues to use OmniRoute for its own local automation per Decision #21. That is a
+separate, lower-risk use case (internal tooling, not serving customer financial data). No code
+changes to the backend are warranted from this evaluation.
