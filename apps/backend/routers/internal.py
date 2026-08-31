@@ -35,7 +35,7 @@ async def get_centinela_alerts(company_id: str, tenant_id: str) -> dict[str, Any
         supabase.table("centinela_alerts")
         .select("*")
         .eq("tenant_id", tenant_id)
-        .eq("resolved", False)
+        .order("created_at", desc=True)
         .execute()
     )
     return {"alerts": result.data or []}
