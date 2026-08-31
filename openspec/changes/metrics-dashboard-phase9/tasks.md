@@ -83,6 +83,6 @@
 
 ## Pending (non-blocking, not required to archive)
 
-- [ ] Configure nightly snapshot job (n8n or cron)
-- [ ] Trigger first manual snapshot per tenant to populate data
-- [ ] Verify cards display data in Búnker after snapshot is populated
+- [x] Configure nightly snapshot job — Hermes cron `metrics-snapshot.sh` @ 00:05 COT (`5 5 * * *`), `no_agent: true`, `deliver: local` (manage dashboard). Job id `a3f9c2d1e4b7` in `~/.hermes/profiles/contexia/cron/jobs.json`. Backend endpoint: `POST /internal/metrics/snapshot/all-active`. ✅ 2026-08-31
+- [x] Trigger first manual snapshot per tenant — all 11 clients: `2026-08-31` ✅ E2E verified
+- [ ] Verify cards display data in Búnker after snapshot is populated (visual check)
