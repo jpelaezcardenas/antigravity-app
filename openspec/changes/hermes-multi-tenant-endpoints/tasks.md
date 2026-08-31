@@ -28,6 +28,7 @@
 - [x] 5.1 Write failing test for `GET /internal/centinela/all-active`
 - [x] 5.2 Implement `GET /internal/centinela/all-active` calling `CentinelaService` per client
 - [x] 5.3 Confirm test passes
+- [x] 5.4 Fix production 500: `centinela_alerts` has no `resolved` boolean column — `.eq("resolved", False)` caused postgrest error. Fix: remove the filter; use `.order("created_at", desc=True)` instead (matches `centinela_endpoints.py` pattern). Commit `0b38927`.
 
 ## 6. Radar Aggregator Endpoint
 
@@ -63,9 +64,9 @@
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
 - [x] 11.1 `git commit + git push` to `main` — commit 4ec10ab
-- [ ] 11.2 Railway deploy active for `antigravity-app-production-175a` (green ✅)
-- [ ] 11.3 Smoke test production: `curl https://antigravity-app-production-175a.up.railway.app/internal/health -H "Authorization: Bearer <HERMES_BRIDGE_TOKEN>"` → 200
-- [ ] 11.4 Smoke test production: `GET /internal/pulso/all-active` → founder's company in `clientes`
+- [x] 11.2 Railway deploy active for `antigravity-app-production-175a` (green ✅) — commit a00089c
+- [x] 11.3 Smoke test production: `GET /internal/health` → 200 ✅
+- [x] 11.4 Smoke test production: `GET /internal/pulso/all-active` → 200 ✅, 11 active clients returned
 - [ ] 11.5 Confirm existing `/api/v1/*` endpoints unaffected in production
 - [ ] 11.6 Trigger Hermes cron jobs manually on WSL; confirm multi-client output
-- [ ] 11.7 Create deployment report: `openspec/changes/hermes-multi-tenant-endpoints/reports/YYYY-MM-DD-deployment.md`
+- [x] 11.7 Create deployment report: `openspec/changes/hermes-multi-tenant-endpoints/reports/2026-08-31-deployment.md` ✅
