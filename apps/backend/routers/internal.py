@@ -135,6 +135,26 @@ async def auditoria_sombra_all_active():
     return {"clientes": results, "total": len(results), "timestamp": _ts()}
 
 
+@router.post("/metrics/snapshot/all-active", dependencies=[Depends(verify_hermes_token)])
+async def metrics_snapshot_all_active():
+    """Compute and upsert daily metrics snapshot for all active PWA clients.
+
+    Pure data aggregation — no LLM involved. Idempotent: safe to re-run same day.
+    """
+    from services.metrics_service import compute_and_upsert_snapshot
+    supabase = get_service_supabase()
+    clients: list[ActiveClient] = get_active_pwa_clients(supabase)
+    results = []
+    for c in clients:
+        try:
+            payload = compute_and_upsert_snapshot(c.tenant_id, None)
+            results.append({"company_id": c.company_id, "nombre": c.nombre, "snapshot": payload, "ok": True})
+        except Exception as exc:
+            results.append({"company_id": c.company_id, "nombre": c.nombre, "snapshot": None, "ok": False, "error": str(exc)})
+    ok_count = sum(1 for r in results if r["ok"])
+    return {"clientes": results, "total": len(results), "ok": ok_count, "failed": len(results) - ok_count, "timestamp": _ts()}
+
+
 @router.get("/social-ops/all-active", dependencies=[Depends(verify_hermes_token)])
 async def social_ops_all_active():
     """Return Social Ops briefing for all active PWA clients.
