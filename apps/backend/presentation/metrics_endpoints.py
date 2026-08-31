@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from core.deps import get_current_user
+from core.supabase_client import get_service_supabase
 from core.tenant_context import resolve_request_tenant_scope
 from models.metrics import (
     AutoApprovalMetricsResponse,
@@ -11,7 +12,6 @@ from models.metrics import (
     SnapshotComputeResponse,
     VendorEntry,
 )
-from models.user import User
 from services.metrics_service import (
     compute_and_upsert_snapshot,
     get_auto_approval_metrics,
@@ -23,8 +23,10 @@ from services.metrics_service import (
 router = APIRouter(prefix="/metrics", tags=["metrics"])
 
 
-def _tenant(user: Annotated[User, Depends(get_current_user)]) -> str:
-    scope = resolve_request_tenant_scope(user, None)
+def _tenant(user: dict = Depends(get_current_user)) -> str:
+    scope = resolve_request_tenant_scope(user, get_service_supabase())
+    if scope is None:
+        raise HTTPException(status_code=404, detail="No tenant resolved for caller")
     return str(scope.tenant_id)
 
 
