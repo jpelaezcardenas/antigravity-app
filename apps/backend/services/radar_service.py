@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Any, Optional
 
 from core.supabase_client import get_supabase
 
@@ -32,14 +32,16 @@ def _count_centinela_alerts_this_month(supabase, tenant_id: str, month_start, to
     tenant's Radar score is never inflated by another tenant's alerts sharing
     the same company_id (centinela-tenant-scoped-alerts).
     """
-    tenant_row = (
+    tenant_rows = (
         supabase.table("tenants")
         .select("company_id")
         .eq("id", tenant_id)
-        .single()
+        .limit(1)
         .execute()
     )
-    company_id = tenant_row.data.get("company_id")
+    if not tenant_rows.data:
+        return 0
+    company_id = tenant_rows.data[0].get("company_id")
     if not company_id:
         return 0
 
@@ -56,7 +58,7 @@ def _count_centinela_alerts_this_month(supabase, tenant_id: str, month_start, to
     return len(alerts_this_month.data)
 
 
-async def calculate_risk_score(tenant_id: str, date: Optional[str] = None) -> int:
+async def calculate_risk_score(tenant_id: str, date: Optional[str] = None, supabase_client: Optional[Any] = None) -> int:
     """
     Calculate a deterministic risk score (0-100) for a tenant based on Shadow GL history.
 
@@ -76,7 +78,7 @@ async def calculate_risk_score(tenant_id: str, date: Optional[str] = None) -> in
     if date is None:
         date = datetime.utcnow().strftime("%Y-%m-%d")
 
-    supabase = get_supabase()
+    supabase = supabase_client if supabase_client is not None else get_supabase()
 
     # Factor 1: Discrepancy Rate (40 pts)
     # Count total DIAN invoices and invoices with discrepancies
@@ -184,7 +186,7 @@ async def calculate_risk_score(tenant_id: str, date: Optional[str] = None) -> in
     return int(total_score)
 
 
-async def calculate_cashflow_forecast(tenant_id: str, days: int = 30) -> int:
+async def calculate_cashflow_forecast(tenant_id: str, days: int = 30, supabase_client: Optional[Any] = None) -> int:
     """
     Calculate a 30-day cashflow forecast (minor units) based on historical net flux.
 
@@ -199,7 +201,7 @@ async def calculate_cashflow_forecast(tenant_id: str, days: int = 30) -> int:
         int: Projected net cashflow for the next N days in minor units. >= 0.
              Returns 0 if no historical data.
     """
-    supabase = get_supabase()
+    supabase = supabase_client if supabase_client is not None else get_supabase()
 
     try:
         # Calculate lookback window (last 30 days)

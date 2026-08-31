@@ -16,7 +16,7 @@ from core.supabase_client import get_supabase
 logger = logging.getLogger(__name__)
 
 
-def _count_alerts_generated(supabase, tenant_id: str, date: str) -> int:
+def _count_alerts_generated(supabase: Any, tenant_id: str, date: str) -> int:
     """Count this tenant's SHADOW_GL_DISCREPANCY alerts for the given date.
 
     Resolves tenant_id -> tenants.company_id (centinela_alerts is keyed on the
@@ -25,14 +25,16 @@ def _count_alerts_generated(supabase, tenant_id: str, date: str) -> int:
     the count can't be inflated by another tenant sharing the same
     company_id (centinela-tenant-scoped-alerts).
     """
-    tenant_row = (
+    tenant_rows = (
         supabase.table("tenants")
         .select("company_id")
         .eq("id", tenant_id)
-        .single()
+        .limit(1)
         .execute()
     )
-    company_id = tenant_row.data.get("company_id")
+    if not tenant_rows.data:
+        return 0
+    company_id = tenant_rows.data[0].get("company_id")
     if not company_id:
         return 0
 
@@ -49,7 +51,11 @@ def _count_alerts_generated(supabase, tenant_id: str, date: str) -> int:
     return len(alerts.data)
 
 
-async def get_daily_summary(tenant_id: str, date: Optional[str] = None) -> Dict[str, Any]:
+async def get_daily_summary(
+    tenant_id: str,
+    date: Optional[str] = None,
+    supabase_client: Optional[Any] = None,
+) -> Dict[str, Any]:
     """
     Get Pulso Diario summary for a given date (default: today).
 
@@ -72,7 +78,7 @@ async def get_daily_summary(tenant_id: str, date: Optional[str] = None) -> Dict[
     if date is None:
         date = datetime.utcnow().strftime("%Y-%m-%d")
 
-    supabase = get_supabase()
+    supabase = supabase_client if supabase_client is not None else get_supabase()
 
     # Query DIAN XML documents for the date
     dian_rows = (

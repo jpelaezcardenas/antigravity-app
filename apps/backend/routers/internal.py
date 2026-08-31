@@ -26,7 +26,7 @@ router = APIRouter(prefix="/internal", tags=["internal"])
 
 async def get_pulso_summary(company_id: str, tenant_id: str) -> dict[str, Any]:
     from services.pulso_diario_service import get_daily_summary
-    return await get_daily_summary(tenant_id=tenant_id)
+    return await get_daily_summary(tenant_id=tenant_id, supabase_client=get_service_supabase())
 
 
 async def get_centinela_alerts(company_id: str, tenant_id: str) -> dict[str, Any]:
@@ -43,8 +43,9 @@ async def get_centinela_alerts(company_id: str, tenant_id: str) -> dict[str, Any
 
 async def get_radar_summary(company_id: str, tenant_id: str) -> dict[str, Any]:
     from services.radar_service import calculate_risk_score, calculate_cashflow_forecast
-    risk_score = await calculate_risk_score(tenant_id=tenant_id)
-    cashflow = await calculate_cashflow_forecast(tenant_id=tenant_id)
+    svc_sb = get_service_supabase()
+    risk_score = await calculate_risk_score(tenant_id=tenant_id, supabase_client=svc_sb)
+    cashflow = await calculate_cashflow_forecast(tenant_id=tenant_id, supabase_client=svc_sb)
     return {"risk_score": risk_score, "cashflow_forecast_30d": cashflow}
 
 
