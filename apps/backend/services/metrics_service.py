@@ -105,9 +105,10 @@ def compute_and_upsert_snapshot(tenant_id: str, date: Optional[str] = None) -> d
     today = date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     # Auto-approval counts from approval_queue
+    # rule_type lives in data JSONB (data->>'rule_type'), not a top-level column
     aq = (
         supabase.table("approval_queue")
-        .select("id,rule_type,status")
+        .select("id,action_type,status,data")
         .eq("tenant_id", tenant_id)
         .gte("created_at", f"{today}T00:00:00Z")
         .lt("created_at", f"{today}T23:59:59Z")
@@ -115,9 +116,14 @@ def compute_and_upsert_snapshot(tenant_id: str, date: Optional[str] = None) -> d
     )
     aq_rows = aq.data or []
     approved = [r for r in aq_rows if r.get("status") == "approved"]
-    auto_approved_recurring = sum(1 for r in approved if r.get("rule_type") == "recurring")
-    auto_approved_vendor = sum(1 for r in approved if r.get("rule_type") == "vendor")
-    auto_approved_micro = sum(1 for r in approved if r.get("rule_type") == "micro")
+
+    def _rule(r: dict) -> str:
+        data = r.get("data") or {}
+        return data.get("rule_type") or data.get("auto_approval_rule") or r.get("action_type") or ""
+
+    auto_approved_recurring = sum(1 for r in approved if "recurring" in _rule(r))
+    auto_approved_vendor = sum(1 for r in approved if "vendor" in _rule(r))
+    auto_approved_micro = sum(1 for r in approved if "micro" in _rule(r))
     false_positive_count = sum(1 for r in aq_rows if r.get("status") == "rejected")
     queue_pending = sum(1 for r in aq_rows if r.get("status") == "pending")
 
