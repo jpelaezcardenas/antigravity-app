@@ -132,6 +132,14 @@ except Exception as e:
     logger.error(f"Failed to include approval_queue_router: {e}", exc_info=True)
 
 
+# Operational metrics endpoints — auto-approval, CSV ingestion, queue health, top vendors
+try:
+    from presentation.metrics_endpoints import router as operational_metrics_router
+    api_router.include_router(operational_metrics_router)
+    logger.info("Operational metrics router registered successfully")
+except Exception as e:
+    logger.error(f"Failed to include operational_metrics_router: {e}", exc_info=True)
+
 # --- Public Privacy Policy page (required by Meta to publish WhatsApp app) ---
 PRIVACY_HTML = """<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

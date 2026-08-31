@@ -182,6 +182,30 @@ presentacional y no implica que la pantalla tenga datos reales.
   freemium) — ver `design.md` D3/D4 para el razonamiento completo por
   componente.
 
+### Búnker → Dashboard · Métricas Operacionales (novena excepción data-bound, `metrics-dashboard-phase9`)
+
+`components/bunker/metrics/MetricsDashboardSection.tsx` ensambla 4 tarjetas self-feeding en la
+sección Dashboard del Búnker (debajo de `InfrastructureDashboard`):
+
+- **`AutoApprovalCard`** — `GET /api/v1/metrics/auto-approval/last-7-days`: total auto-aprobado,
+  desglose por regla (recurrentes/vendor/micro), tasa de falsos positivos, mini bar chart de los
+  últimos 7 días.
+- **`QueueHealthCard`** — `GET /api/v1/metrics/queue-health`: pendientes en cola + tiempo promedio
+  de revisión. Cambia color según urgencia (verde/amarillo/rojo).
+- **`CSVIngestionCard`** — `GET /api/v1/metrics/csv-ingestion/last-7-days`: archivos procesados,
+  filas OK vs filas con error, tasa de error por día.
+- **`TopVendorsCard`** — `GET /api/v1/metrics/top-vendors`: top 10 proveedores con bar chart
+  proporcional al volumen de transacciones.
+
+- **Cliente tipado**: `lib/metrics-client.ts` (`fetchAutoApprovalMetrics`, `fetchCSVIngestionMetrics`,
+  `fetchQueueHealth`, `fetchTopVendors`).
+- **Solo lectura** — no escribe al backend.
+- **Estado vacío explícito**: si no hay snapshots en DB aún, cada tarjeta muestra
+  "Sin datos disponibles" — nunca datos inventados.
+- **Backend**: tabla `metrics_snapshots` (migración `0045`), `services/metrics_service.py`,
+  `presentation/metrics_endpoints.py` registrado en `main.py`. RLS: cada tenant ve solo sus datos;
+  el rol `service_role` escribe los snapshots nocturnos.
+
 Esto es una excepción escoped al charter "sin backend" — pantallas data-bound son
 un puente hacia el MVP data-driven; mocks aplican para todo lo demás.
 

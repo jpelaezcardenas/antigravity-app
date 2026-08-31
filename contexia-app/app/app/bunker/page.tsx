@@ -8,6 +8,7 @@ import { ComingSoonSection } from "@/components/bunker/ComingSoonSection";
 import { SocialContentOpsSection } from "@/components/bunker/social-ops/SocialContentOpsSection";
 import { OnboardingSection } from "@/components/bunker/onboarding/OnboardingSection";
 import { SellMachineSection } from "@/components/bunker/sell-machine/SellMachineSection";
+import { MetricsDashboardSection } from "@/components/bunker/metrics/MetricsDashboardSection";
 
 const PLACEHOLDER_LABELS: Partial<Record<BunkerSection, string>> = {
   "agentic-os": "Agentic OS",
@@ -101,7 +102,12 @@ export default function BunkerPage() {
 
         <main className="flex-1 pb-24 md:pb-8">
           <div className="px-4 lg:px-8 max-w-6xl mx-auto w-full mt-6">
-            {activeSection === "dashboard" && <InfrastructureDashboard />}
+            {activeSection === "dashboard" && (
+              <div className="flex flex-col gap-10">
+                <InfrastructureDashboard />
+                <MetricsDashboardSection />
+              </div>
+            )}
             {activeSection === "crm-ventas" && <CrmVentasSection />}
             {activeSection === "social-content-ops" && <SocialContentOpsSection />}
             {activeSection === "onboarding" && <OnboardingSection />}
