@@ -21,7 +21,11 @@
 - [ ] 4. Setear env vars en Railway: `TELEGRAM_BOT_TOKEN_JARVIS`, `TELEGRAM_WEBHOOK_SECRET_JARVIS`, `TELEGRAM_JUAN_DAVID_CHAT_ID`
 - [ ] 5. Registrar webhook de Telegram apuntando al endpoint de Railway
 - [ ] 6. Crear skill `~/.hermes/profiles/contexia/skills/jarvis-personal.md`
-- [ ] 7. Crear cron Hermes `jarvis-morning-brief.sh` + registrar en `jobs.json`
+- [ ] 7. Crear cron Hermes `jarvis-morning-brief.sh` + registrar en `jobs.json` (9:00 AM COT):
+  - [ ] 7a. Confirmar con Manus el endpoint y shape del `GET /api/brief/context` (HubSpot pipeline + Gmail priority + Meta performance) — acción previa del fundador/Manus
+  - [ ] 7b. Implementar llamada al backend Railway (`POST /api/v1/jarvis/brief`) para contexto financiero (Caja Real + alertas + Approval Queue)
+  - [ ] 7c. Implementar llamada al API HTTP interno de Manus para contexto comercial (fail-graceful: si Manus no responde, omite sección sin fallar)
+  - [ ] 7d. Hermes agrega ambos payloads y redacta el brief unificado → envía a `TELEGRAM_JUAN_DAVID_CHAT_ID`
 - [ ] 8. Smoke test Fase A: mensaje al bot → respuesta de Hermes visible en Telegram
 
 ---

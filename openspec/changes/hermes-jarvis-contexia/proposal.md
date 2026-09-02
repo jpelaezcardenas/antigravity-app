@@ -34,9 +34,25 @@ El backend extrae el mensaje, llama al gateway de Hermes (resuelto dinámicament
 operativo con auto-start vía VBS en Windows Startup). La URL se guarda en
 `hermes_tunnel[id='current']` — Railway la lee con `SUPABASE_ANON_KEY` en cada request.
 
-**Brief matutino proactivo:** nuevo cron Hermes `jarvis-morning-brief.sh` (9:00 AM COT),
-llama a `POST /api/v1/jarvis/brief` → Hermes genera resumen de Caja Real + alertas Centinela
-+ tareas pendientes → envía al `TELEGRAM_JUAN_DAVID_CHAT_ID`.
+**Brief matutino proactivo:** nuevo cron Hermes `jarvis-morning-brief.sh` (9:00 AM COT).
+El brief tiene dos fuentes de contexto que se agregan en paralelo antes de que Hermes redacte:
+
+1. **Contexto financiero** — llama a `POST /api/v1/jarvis/brief` en Railway:
+   - Caja Real del día (`/api/v1/financials`, todos los tenants vía service-role)
+   - Alertas Centinela activas (`/api/v1/centinela/alerts`)
+   - Tareas pendientes de la Approval Queue
+
+2. **Contexto comercial** — llama al API HTTP interno de Manus:
+   - Pipeline HubSpot (deals en cada etapa del funnel Renta Natural B2C)
+   - Prioridad de Gmail (mensajes de alta prioridad sin responder)
+   - Performance de Meta Ads (últimas 24h: gasto, alcance, conversiones)
+
+Hermes recibe ambos payloads, redacta el resumen unificado y lo envía al `TELEGRAM_JUAN_DAVID_CHAT_ID`.
+
+**Endpoint de Manus:** `GET http://localhost:<MANUS_INTERNAL_PORT>/api/brief/context` (o el
+path que expondrá Manus — confirmar con el equipo de Manus antes de implementar el call).
+Las tres fuentes comerciales (HubSpot/Gmail/Meta) son opcionales en la respuesta: si Manus
+no tiene datos frescos de alguna, el brief omite esa sección sin fallar.
 
 **Nuevas env vars en Railway:**
 - `TELEGRAM_BOT_TOKEN_JARVIS`
@@ -198,4 +214,6 @@ a Taty básico. **No requiere un nuevo bot.** Esta fase tiene su propio OpenSpec
 
 ## Notas sobre Manus y el brief matutino
 
-El brief matutino de Jarvis puede agregar contexto de Manus (pipeline de HubSpot, resumen de Gmail, performance de Meta) vía una llamada HTTP al API interno de Manus. El alcance de este change es exclusivamente el roundtrip Telegram → Hermes → response y el brief básico (Caja Real + alertas). La integración bidireccional completa Hermes ↔ Manus es un change separado.
+El brief matutino de Jarvis **incluye** contexto de Manus (HubSpot pipeline + Gmail priority + Meta performance) vía HTTP call al API interno de Manus. Este es el primer paso natural antes del GTM: el fundador necesita visibilidad integrada (financiera + comercial) en un solo mensaje diario, sin tener que abrir múltiples dashboards.
+
+**El Command Center bidireccional completo (Hermes ↔ Manus, escritura + encolamiento de acciones)** es un change separado que vendrá después de que este Jarvis personal quede validado en producción. Este change solo lee de Manus (sin write-back).
