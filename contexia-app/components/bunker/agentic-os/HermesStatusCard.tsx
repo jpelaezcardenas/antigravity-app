@@ -1,96 +1,68 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { jarvisClient } from "@/lib/jarvis-client";
+import { jarvisClient, type HermesStatusResponse } from "@/lib/jarvis-client";
 
-interface HermesStatus {
-  online: boolean;
-  url: string;
-  uptime_seconds?: number;
-}
+type CardState = "loading" | "online" | "offline" | "error";
 
 export function HermesStatusCard() {
-  const [status, setStatus] = useState<HermesStatus | null>(null);
-  const [loadingState, setLoadingState] = useState<"loading" | "ready" | "error">("loading");
+  const [state, setState] = useState<CardState>("loading");
+  const [data, setData] = useState<HermesStatusResponse | null>(null);
 
   useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const data = await jarvisClient.status();
-        setStatus(data);
-        setLoadingState("ready");
-      } catch {
-        setLoadingState("error");
-      }
-    };
+    let cancelled = false;
 
-    checkStatus();
-    const interval = setInterval(checkStatus, 30000);
-    return () => clearInterval(interval);
+    jarvisClient
+      .status()
+      .then((res) => {
+        if (cancelled) return;
+        setData(res);
+        setState(res.online ? "online" : "offline");
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setState("error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const statusColor = status?.online
-    ? "text-status-success"
-    : "text-status-warning";
+  const dot =
+    state === "online"
+      ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]"
+      : state === "loading"
+        ? "bg-white/20 animate-pulse"
+        : "bg-red-400";
 
-  const statusLabel = status?.online ? "En línea" : "Desconectado";
+  const label =
+    state === "loading"
+      ? "Verificando..."
+      : state === "online"
+        ? "Hermes · En línea"
+        : "Hermes · Sin conexión";
+
+  const sub =
+    state === "online" && data?.uptime_seconds
+      ? `Uptime ${Math.floor(data.uptime_seconds / 60)} min`
+      : state === "online" && data?.url
+        ? data.url.replace("https://", "").slice(0, 30)
+        : state === "error" || state === "offline"
+          ? "Gateway no alcanzable"
+          : "";
 
   return (
-    <div className="bg-surface-container-low rounded-xl p-4 flex flex-col gap-3">
-      <span className="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wide">
-        Estado Hermes
-      </span>
-
-      {loadingState === "loading" && (
-        <div className="h-20 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-6 w-6 border border-on-surface-variant border-t-on-surface" />
-        </div>
-      )}
-
-      {loadingState === "error" && (
-        <div className="text-on-surface-variant text-sm">
-          No se pudo conectar al gateway
-        </div>
-      )}
-
-      {loadingState === "ready" && status && (
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${status.online ? "bg-status-success" : "bg-status-warning"}`} />
-            <span className={`text-sm font-medium ${statusColor}`}>
-              {statusLabel}
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-1 text-xs">
-            <span className="text-on-surface-variant">
-              Gateway:
-            </span>
-            <span className="font-mono text-on-surface break-all">
-              {status.url || "—"}
-            </span>
-          </div>
-
-          {status.uptime_seconds !== undefined && (
-            <div className="flex flex-col gap-1 text-xs">
-              <span className="text-on-surface-variant">Uptime:</span>
-              <span className="text-on-surface">
-                {formatUptime(status.uptime_seconds)}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
+    <div className="bg-surface-elevated rounded-xl border border-outline-variant/20 p-4 flex items-center gap-3">
+      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${dot}`} />
+      <div className="flex flex-col min-w-0">
+        <p className="font-body-md text-body-md text-white text-sm font-semibold truncate">
+          {label}
+        </p>
+        {sub && (
+          <p className="text-[11px] text-on-surface-variant truncate">{sub}</p>
+        )}
+      </div>
     </div>
   );
-}
-
-function formatUptime(seconds: number): string {
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${mins}m`;
-  return `${mins}m`;
 }

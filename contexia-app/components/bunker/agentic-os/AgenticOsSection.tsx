@@ -1,78 +1,115 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { hasFeature } from "@/lib/plan-features";
-import { fetchTenantMe, type TenantMeSnapshot as Tenant } from "@/lib/api-client";
+import { fetchTenantMe, type TenantMeSnapshot } from "@/lib/api-client";
 import { HermesStatusCard } from "./HermesStatusCard";
 import { JarvisChatInterface } from "./JarvisChatInterface";
 import { CronJobsMonitor } from "./CronJobsMonitor";
-import { VoiceToggle } from "./VoiceToggle";
+
+type LoadState = "loading" | "ready" | "empty";
+
+function readRoleFromJwt(): string {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie
+    .split("; ")
+    .find((c) => c.startsWith("sb-access-token="));
+  if (!match) return "";
+  const token = match.split("=").slice(1).join("=");
+  const parts = token.split(".");
+  if (parts.length !== 3) return "";
+  try {
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    const appMeta = payload.app_metadata ?? {};
+    const userMeta = payload.user_metadata ?? {};
+    return String(
+      appMeta.role ?? appMeta.account_role ?? userMeta.role ?? userMeta.account_role ?? ""
+    ).toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function JarvisLockedState({ tier }: { tier: string | null }) {
+  const msg =
+    tier === "freemium" || tier === "starter"
+      ? "Disponible desde el plan GPS Financiero. Habla con tu asesor para actualizar."
+      : "Disponible en el plan Contexia Total.";
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+      <span className="material-symbols-outlined text-primary text-[48px]">lock</span>
+      <p className="text-white font-semibold text-base">Jarvis no disponible en tu plan</p>
+      <p className="text-on-surface-variant text-sm max-w-xs">{msg}</p>
+    </div>
+  );
+}
 
 export function AgenticOsSection() {
-  const [tenant, setTenant] = useState<Tenant | null>(null);
-  const [tenantStatus, setTenantStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [loadState, setLoadState] = useState<LoadState>("loading");
+  const [tenant, setTenant] = useState<TenantMeSnapshot | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    const role = readRoleFromJwt();
+    setIsAdmin(["admin", "superadmin", "contexia_admin"].includes(role));
+
+    let cancelled = false;
     fetchTenantMe()
-      .then((t) => { setTenant(t); setTenantStatus("ready"); })
-      .catch(() => setTenantStatus("error"));
+      .then((snapshot) => {
+        if (cancelled) return;
+        setTenant(snapshot);
+        setLoadState("ready");
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoadState("empty");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const canUseJarvis = tenant?.plan_tier && hasFeature(tenant.plan_tier as import("@/lib/plan-features").PlanTier, "jarvis_chat");
-  const canUseVoice = tenant?.plan_tier && hasFeature(tenant.plan_tier as import("@/lib/plan-features").PlanTier, "jarvis_voice");
+  const tier = tenant?.plan_tier ?? null;
+  const hasJarvisChat = isAdmin || tier === "growth" || tier === "enterprise";
+  const hasVoice = isAdmin || tier === "enterprise";
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Section header */}
       <div className="flex items-center gap-2">
         <span className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wide whitespace-nowrap">
-          Agentic OS
+          Agentic OS · Hermes
         </span>
         <div className="flex-1 h-px bg-outline-variant/30" />
         <span className="text-[10px] text-on-surface-variant">
-          Hermes Personal · Comandos por voz
+          Powered by Hermes · Torre Tauret
         </span>
       </div>
 
-      {tenantStatus === "error" && (
-        <div className="bg-surface-container-low rounded-xl p-4 text-center text-on-surface-variant">
-          No se pudo cargar la configuración de plan
+      {/* Loading skeleton */}
+      {loadState === "loading" && (
+        <div className="flex flex-col gap-4">
+          <div className="h-12 bg-white/5 rounded-xl animate-pulse" />
+          <div className="h-[420px] bg-white/5 rounded-xl animate-pulse" />
         </div>
       )}
 
-      {tenantStatus === "loading" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-surface-container-low rounded-xl p-4 h-32 animate-pulse" />
-          <div className="bg-surface-container-low rounded-xl p-4 h-32 animate-pulse" />
+      {/* Content */}
+      {loadState !== "loading" && (
+        <div className="flex flex-col gap-4">
+          {/* Hermes status — always visible */}
+          <HermesStatusCard />
+
+          {/* Admin-only: cron monitor */}
+          {isAdmin && <CronJobsMonitor />}
+
+          {/* Feature-gated chat */}
+          {hasJarvisChat ? (
+            <JarvisChatInterface withVoice={hasVoice} />
+          ) : (
+            <JarvisLockedState tier={tier} />
+          )}
         </div>
-      )}
-
-      {tenantStatus === "ready" && !canUseJarvis && (
-        <div className="bg-surface-container-low rounded-xl p-6 text-center">
-          <p className="text-on-surface font-medium mb-2">
-            Jarvis está disponible en planes Growth y superior
-          </p>
-          <p className="text-on-surface-variant text-sm">
-            Actualiza tu plan para acceder a esta funcionalidad
-          </p>
-        </div>
-      )}
-
-      {tenantStatus === "ready" && canUseJarvis && (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-1">
-              <HermesStatusCard />
-            </div>
-            <div className="lg:col-span-2">
-              <JarvisChatInterface />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <CronJobsMonitor />
-            {canUseVoice && <VoiceToggle />}
-          </div>
-        </>
       )}
     </div>
   );

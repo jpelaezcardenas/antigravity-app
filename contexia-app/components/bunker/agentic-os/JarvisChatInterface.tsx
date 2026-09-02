@@ -1,126 +1,148 @@
 "use client";
 
-import { useState } from "react";
-import { jarvisClient } from "@/lib/jarvis-client";
+import { useRef, useState } from "react";
+import { VoiceToggle } from "./VoiceToggle";
 
-interface ChatMessage {
-  id: string;
+interface Message {
   role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
+  text: string;
 }
 
-export function JarvisChatInterface() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+interface JarvisChatInterfaceProps {
+  withVoice?: boolean;
+}
+
+export function JarvisChatInterface({ withVoice = false }: JarvisChatInterfaceProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  async function sendMessage(text: string) {
+    if (!text.trim() || loading) return;
 
-    const userMessage: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      role: "user",
-      content: input,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    const userMsg: Message = { role: "user", text: text.trim() };
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
-    setIsLoading(true);
-    setError(null);
+    setLoading(true);
+
+    // SSE streaming via fetch
+    const token =
+      typeof localStorage !== "undefined" ? localStorage.getItem("token") : null;
 
     try {
-      const response = await jarvisClient.chat(input);
-      const assistantMessage: ChatMessage = {
-        id: `msg-${Date.now()}-response`,
-        role: "assistant",
-        content: response.message || "Sin respuesta",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
+      const res = await fetch("/api/v1/jarvis/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ message: text.trim() }),
+      });
+
+      if (!res.ok || !res.body) {
+        throw new Error(`${res.status} ${res.statusText}`);
+      }
+
+      const assistantMsg: Message = { role: "assistant", text: "" };
+      setMessages((prev) => [...prev, assistantMsg]);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (payload === "[DONE]") break;
+          try {
+            const chunk = JSON.parse(payload) as { text?: string; error?: string };
+            if (chunk.error) throw new Error(chunk.error);
+            if (chunk.text) {
+              setMessages((prev) => {
+                const next = [...prev];
+                const last = next[next.length - 1];
+                if (last.role === "assistant") {
+                  next[next.length - 1] = { ...last, text: last.text + chunk.text };
+                }
+                return next;
+              });
+            }
+          } catch {
+            // malformed chunk — skip
+          }
+        }
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-      const errorMessage: ChatMessage = {
-        id: `msg-${Date.now()}-error`,
-        role: "assistant",
-        content: "Hubo un error al procesar tu mensaje. Intenta de nuevo.",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      const errText = err instanceof Error ? err.message : "Error al contactar a Jarvis";
+      setMessages((prev) => [...prev, { role: "assistant", text: `⚠️ ${errText}` }]);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     }
-  };
+  }
 
   return (
-    <div className="bg-surface-container-low rounded-xl p-4 flex flex-col gap-3 h-96">
-      <span className="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wide">
-        Chat con Jarvis
-      </span>
-
-      <div className="flex-1 overflow-y-auto flex flex-col gap-3 mb-3">
+    <div className="flex flex-col h-[420px] bg-surface-elevated rounded-xl border border-outline-variant/20 overflow-hidden">
+      {/* Message list */}
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
         {messages.length === 0 && (
-          <div className="flex items-center justify-center h-full text-on-surface-variant text-sm">
-            <p>Inicia una conversación con Jarvis</p>
-          </div>
+          <p className="text-on-surface-variant text-sm text-center mt-8">
+            Escríbele a Jarvis — tu asistente Contexia
+          </p>
         )}
-
-        {messages.map((msg) => (
+        {messages.map((msg, i) => (
           <div
-            key={msg.id}
-            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            key={i}
+            className={[
+              "max-w-[85%] px-3 py-2 rounded-xl text-sm leading-relaxed whitespace-pre-wrap",
+              msg.role === "user"
+                ? "self-end bg-primary/20 text-white border border-primary/30"
+                : "self-start bg-white/5 text-white/90 border border-outline-variant/10",
+            ].join(" ")}
           >
-            <div
-              className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
-                msg.role === "user"
-                  ? "bg-primary text-on-primary"
-                  : "bg-surface-container text-on-surface"
-              }`}
-            >
-              <p>{msg.content}</p>
-            </div>
+            {msg.text || (loading && msg.role === "assistant" ? "▋" : "")}
           </div>
         ))}
-
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-surface-container text-on-surface px-3 py-2 rounded-lg">
-              <div className="flex gap-1">
-                <div className="w-2 h-2 rounded-full bg-on-surface animate-bounce" style={{ animationDelay: "0ms" }} />
-                <div className="w-2 h-2 rounded-full bg-on-surface animate-bounce" style={{ animationDelay: "100ms" }} />
-                <div className="w-2 h-2 rounded-full bg-on-surface animate-bounce" style={{ animationDelay: "200ms" }} />
-              </div>
-            </div>
-          </div>
-        )}
+        <div ref={bottomRef} />
       </div>
 
-      {error && (
-        <div className="text-xs text-status-warning">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSendMessage} className="flex gap-2">
+      {/* Input row */}
+      <div className="border-t border-outline-variant/20 px-3 py-2 flex items-center gap-2">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Pregunta a Jarvis..."
-          disabled={isLoading}
-          className="flex-1 bg-surface border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface placeholder-on-surface-variant focus:outline-none focus:border-primary disabled:opacity-50"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              sendMessage(input);
+            }
+          }}
+          placeholder="Pregúntale algo a Jarvis..."
+          disabled={loading}
+          className="flex-1 bg-transparent text-sm text-white placeholder:text-on-surface-variant outline-none py-1"
         />
+        {withVoice && (
+          <VoiceToggle onTranscript={(t) => sendMessage(t)} disabled={loading} />
+        )}
         <button
-          type="submit"
-          disabled={isLoading || !input.trim()}
-          className="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+          type="button"
+          onClick={() => sendMessage(input)}
+          disabled={!input.trim() || loading}
+          className="w-8 h-8 rounded-full bg-primary/20 border border-primary/40 text-primary flex items-center justify-center hover:bg-primary/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          Enviar
+          <span className="material-symbols-outlined text-[16px]">send</span>
         </button>
-      </form>
+      </div>
     </div>
   );
 }
