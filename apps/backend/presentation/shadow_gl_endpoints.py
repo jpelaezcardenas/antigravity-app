@@ -5,17 +5,21 @@ POST /api/v1/shadow-gl/dian-xml/ingest - Manually ingest a DIAN UBL 2.1 XML docu
 POST /api/v1/shadow-gl/siigo-csv/ingest - Manually ingest a Siigo journal CSV export
 """
 
+import csv as _csv_module
+import io
 import json
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from datetime import datetime
 import uuid
 
-from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect, UploadFile, File
 from pydantic import BaseModel
 
+from core.deps import get_current_user
 from core.hermes_client import HermesClient, HermesClientError
 from core.supabase_client import get_supabase
+from core.tenant_context import resolve_request_tenant_scope
 from services.shadow_gl_service import (
     ingest_dian_xml,
     ingest_siigo_csv,
@@ -26,8 +30,6 @@ from services.shadow_gl_service import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-CLIENTE_CERO_TENANT_ID = "__cliente_cero__"
 
 
 class DianXmlIngestResponse(BaseModel):
@@ -44,28 +46,25 @@ class SiigoCSVIngestResponse(BaseModel):
     error: str = ""
 
 
-async def _resolve_tenant_id() -> str:
-    """
-    Resolve the tenant for this ingestion call.
+def _resolve_tenant_from_scope(user: dict) -> str:
+    """Resolve the tenant_id for an ingestion call using the caller's JWT scope.
 
-    Multi-tenant routing (per-caller tenant resolution) isn't wired yet --
-    every agent endpoint currently operates against Cliente Cero only.
+    Operators (Contexia staff) get Cliente Cero. B2B clients get their own tenant.
+    Raises 403 if the scope cannot be resolved (unauthenticated with AUTH_ENFORCED=True).
     """
-    from core.supabase_client import get_supabase
-
     supabase = get_supabase()
-    result = (
-        supabase.table("tenants")
-        .select("id")
-        .eq("is_cliente_cero", True)
-        .single()
-        .execute()
-    )
-    return result.data["id"]
+    scope = resolve_request_tenant_scope(user, supabase)
+    if scope is None:
+        raise HTTPException(status_code=403, detail="Tenant not resolved — valid authentication required")
+    return scope.tenant_id
 
 
 @router.post("/dian-xml/ingest", response_model=DianXmlIngestResponse)
-async def ingest_dian_xml_endpoint(request: Request, is_verified_real: bool = False):
+async def ingest_dian_xml_endpoint(
+    request: Request,
+    is_verified_real: bool = False,
+    user: dict = Depends(get_current_user),
+):
     """
     Manually ingest a DIAN UBL 2.1 XML document (invoice, credit note, or
     debit note). Accepts the raw XML as the request body.
@@ -81,7 +80,7 @@ async def ingest_dian_xml_endpoint(request: Request, is_verified_real: bool = Fa
     if not raw_xml.strip():
         raise HTTPException(status_code=400, detail="Request body must contain XML")
 
-    tenant_id = await _resolve_tenant_id()
+    tenant_id = _resolve_tenant_from_scope(user)
 
     success, document, error = await ingest_dian_xml(tenant_id, raw_xml, is_verified_real)
 
@@ -97,7 +96,11 @@ async def ingest_dian_xml_endpoint(request: Request, is_verified_real: bool = Fa
 
 
 @router.post("/siigo-csv/ingest", response_model=SiigoCSVIngestResponse)
-async def ingest_siigo_csv_endpoint(request: Request, is_verified_real: bool = False):
+async def ingest_siigo_csv_endpoint(
+    request: Request,
+    is_verified_real: bool = False,
+    user: dict = Depends(get_current_user),
+):
     """
     Manually ingest a Siigo journal CSV export (debit/credit double-entry format).
     Accepts the raw CSV as the request body.
@@ -117,7 +120,7 @@ async def ingest_siigo_csv_endpoint(request: Request, is_verified_real: bool = F
     if not csv_text.strip():
         raise HTTPException(status_code=400, detail="Request body must contain CSV")
 
-    tenant_id = await _resolve_tenant_id()
+    tenant_id = _resolve_tenant_from_scope(user)
 
     success, summary, error = await ingest_siigo_csv(tenant_id, csv_text, is_verified_real)
 
@@ -134,7 +137,9 @@ async def ingest_siigo_csv_endpoint(request: Request, is_verified_real: bool = F
 
 @router.post("/siigo-csv/upload", response_model=SiigoCSVIngestResponse)
 async def upload_siigo_csv_endpoint(
-    request: Request, file: UploadFile = File(...), is_verified_real: bool = False
+    file: UploadFile = File(...),
+    is_verified_real: bool = False,
+    user: dict = Depends(get_current_user),
 ):
     """
     Upload a Siigo journal CSV export via multipart form data (PWA file uploader).
@@ -152,7 +157,7 @@ async def upload_siigo_csv_endpoint(
     Returns 200 with row_count and date_range on success, or 400 with error message
     if file upload, parsing, or DB insertion fails.
     """
-    tenant_id = await _resolve_tenant_id()
+    tenant_id = _resolve_tenant_from_scope(user)
     supabase = get_supabase()
 
     # Create batch record
@@ -215,6 +220,121 @@ async def upload_siigo_csv_endpoint(
         date_range=summary.get("date_range", ""),
         error="",
     )
+
+
+@router.post("/upload", response_model=SiigoCSVIngestResponse)
+async def upload_any_format_endpoint(
+    file: UploadFile = File(...),
+    is_verified_real: bool = False,
+    user: dict = Depends(get_current_user),
+):
+    """
+    Upload any supported file format (CSV, XLSX, XLS, XML, PDF) for ingestion into the Shadow GL.
+
+    Accepts Siigo CSV exports, Excel workbooks, DIAN UBL 2.1 XML files, and PDF invoices
+    (electronic with embedded XML, or non-electronic processed via LLM extraction).
+
+    Idempotent on (tenant_id, external_reference_id, entry_date): duplicate rows are skipped.
+    Pass ?is_verified_real=true for genuine client data (defaults to false for test uploads).
+    """
+    from services.multi_format_parser import parse_any_to_siigo_rows, UnsupportedFormatError
+
+    tenant_id = _resolve_tenant_from_scope(user)
+    supabase = get_supabase()
+
+    batch_id = str(uuid.uuid4())
+    file_content = await file.read()
+    file_size = len(file_content)
+    filename = file.filename or "upload"
+
+    batch_data = {
+        "id": batch_id,
+        "tenant_id": tenant_id,
+        "data_source": "multi_format_upload",
+        "file_name": filename,
+        "file_size_bytes": file_size,
+        "row_count": 0,
+        "status": "pending",
+        "error_count": 0,
+        "error_summary": None,
+        "uploaded_at": datetime.now(tz=None).isoformat(),
+    }
+
+    try:
+        supabase.table("ingestion_batches").insert(batch_data).execute()
+    except Exception as exc:
+        logger.error(f"Failed to create ingestion_batch: {exc}")
+        raise HTTPException(status_code=500, detail="Failed to create batch record")
+
+    # Parse the file into Shadow GL rows
+    try:
+        rows = await parse_any_to_siigo_rows(filename, file_content)
+    except UnsupportedFormatError as exc:
+        supabase.table("ingestion_batches").update(
+            {"status": "error", "error_count": 1, "error_summary": {"error": str(exc)}}
+        ).eq("id", batch_id).execute()
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        supabase.table("ingestion_batches").update(
+            {"status": "error", "error_count": 1, "error_summary": {"parsing_error": str(exc)}}
+        ).eq("id", batch_id).execute()
+        raise HTTPException(status_code=400, detail=f"Could not parse file: {exc}")
+
+    # Reconstruct CSV text from parsed rows and delegate to ingest_siigo_csv
+    # (reuses its idempotency guarantee on (tenant_id, external_reference_id, entry_date))
+    success, summary, error = await ingest_siigo_csv(tenant_id, _rows_to_csv_text(rows), is_verified_real)
+
+    try:
+        if success:
+            supabase.table("ingestion_batches").update({
+                "status": "completed",
+                "row_count": summary.get("row_count", 0),
+                "processed_at": datetime.now(tz=None).isoformat(),
+                "completed_at": datetime.now(tz=None).isoformat(),
+            }).eq("id", batch_id).execute()
+        else:
+            supabase.table("ingestion_batches").update({
+                "status": "error",
+                "error_count": 1,
+                "error_summary": {"ingestion_error": error},
+                "processed_at": datetime.now(tz=None).isoformat(),
+            }).eq("id", batch_id).execute()
+    except Exception as exc:
+        logger.error(f"Failed to update ingestion_batch {batch_id}: {exc}")
+
+    if not success:
+        raise HTTPException(status_code=400, detail=error)
+
+    return SiigoCSVIngestResponse(
+        success=True,
+        row_count=summary.get("row_count", 0),
+        date_range=summary.get("date_range", ""),
+        error="",
+    )
+
+
+def _rows_to_csv_text(rows: list[dict]) -> str:
+    """Convert parsed rows back to Siigo CSV format for ingest_siigo_csv() reuse."""
+    import csv as _csv
+    buf = io.StringIO()
+    if not rows:
+        return ""
+    writer = _csv.DictWriter(
+        buf,
+        fieldnames=["Fecha", "Referencia Externa", "Código de Cuenta", "Descripción", "Débito", "Crédito"],
+        extrasaction="ignore",
+    )
+    writer.writeheader()
+    for row in rows:
+        writer.writerow({
+            "Fecha": row.get("fecha", ""),
+            "Referencia Externa": row.get("referencia_externa", ""),
+            "Código de Cuenta": row.get("codigo_cuenta", ""),
+            "Descripción": row.get("descripcion", ""),
+            "Débito": row.get("debito_cents", 0) / 100 if row.get("debito_cents") else 0,
+            "Crédito": row.get("credito_cents", 0) / 100 if row.get("credito_cents") else 0,
+        })
+    return buf.getvalue()
 
 
 @router.websocket("/approval-callback")

@@ -17,4 +17,13 @@ export const API_ENDPOINTS = {
   metricsCsvIngestion: `${API_BASE_URL}/api/v1/metrics/csv-ingestion/last-7-days`,
   metricsQueueHealth: `${API_BASE_URL}/api/v1/metrics/queue-health`,
   metricsTopVendors: `${API_BASE_URL}/api/v1/metrics/top-vendors`,
+  jarvisChat: `${API_BASE_URL}/api/v1/jarvis/chat`,
+  jarvisStatus: `${API_BASE_URL}/api/v1/jarvis/status`,
+  uploadData: `${API_BASE_URL}/api/v1/shadow-gl/upload`,
+};
+
+export const config = {
+  API_BASE_URL,
+  JARVIS_CHAT_URL: API_ENDPOINTS.jarvisChat,
+  JARVIS_STATUS_URL: API_ENDPOINTS.jarvisStatus,
 };

@@ -1,6 +1,7 @@
 import { pulsoMock } from "@/lib/mock/pulso";
 import { NoteOfDayCard } from "@/components/pulso/NoteOfDayCard";
 import { CashTodayCard } from "@/components/pulso/CashTodayCard";
+import { DataUploadCard } from "@/components/pulso/DataUploadCard";
 import { HealthQuadrant } from "@/components/pulso/HealthQuadrant";
 import { ActiveAlerts } from "@/components/pulso/ActiveAlerts";
 import { StructuralBreakdownCTA } from "@/components/pulso/StructuralBreakdownCTA";
@@ -11,6 +12,7 @@ export default function OverviewPage() {
       <div className="px-container-margin-mobile md:px-container-margin-desktop flex flex-col gap-6 max-w-4xl mx-auto w-full mt-2">
         <NoteOfDayCard note={pulsoMock.note} />
         <CashTodayCard />
+        <DataUploadCard />
         <HealthQuadrant kpis={pulsoMock.health} />
         <StructuralBreakdownCTA />
         <ActiveAlerts />

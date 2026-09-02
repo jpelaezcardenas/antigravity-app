@@ -9,13 +9,14 @@ import { SocialContentOpsSection } from "@/components/bunker/social-ops/SocialCo
 import { OnboardingSection } from "@/components/bunker/onboarding/OnboardingSection";
 import { SellMachineSection } from "@/components/bunker/sell-machine/SellMachineSection";
 import { MetricsDashboardSection } from "@/components/bunker/metrics/MetricsDashboardSection";
+import { AgenticOsSection } from "@/components/bunker/agentic-os/AgenticOsSection";
 
 const PLACEHOLDER_LABELS: Partial<Record<BunkerSection, string>> = {
   "agentic-os": "Agentic OS",
   configuracion: "Configuración",
 };
 
-const PLACEHOLDER_SECTIONS: BunkerSection[] = ["agentic-os", "configuracion"];
+const PLACEHOLDER_SECTIONS: BunkerSection[] = ["configuracion"];
 
 const ADMIN_ROLES = ["admin", "superadmin", "contexia_admin"];
 
@@ -112,6 +113,7 @@ export default function BunkerPage() {
             {activeSection === "social-content-ops" && <SocialContentOpsSection />}
             {activeSection === "onboarding" && <OnboardingSection />}
             {activeSection === "sell-machine" && <SellMachineSection />}
+            {activeSection === "agentic-os" && <AgenticOsSection />}
             {PLACEHOLDER_SECTIONS.includes(activeSection) && (
               <ComingSoonSection label={PLACEHOLDER_LABELS[activeSection] ?? ""} />
             )}
