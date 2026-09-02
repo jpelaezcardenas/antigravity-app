@@ -27,13 +27,13 @@ Watchdog pattern: **silent on clean state, output only when action is needed.**
 
 | ID | Name | Schedule (COT) | Script | Delivery |
 |----|------|----------------|--------|----------|
-| `766179c9c73a` | Pulso Diario | 8:00 AM Mon-Fri | `pulso-diario.sh` | bot-chat → Taty |
+| `766179c9c73a` | Pulso Diario | 8:00 AM Mon-Fri | `pulso.sh` | bot-chat → Taty |
 | `00d1f51e3e65` | Conciliacion Shadow GL | 3:00 AM daily | `conciliacion-shadow-gl.sh` | local |
-| `f33d5bf666a7` | Insight Bridge | 9:00 AM Mon-Fri | `pulso-diario-insight-bridge.sh` | bot-chat → Taty |
-| `4b62dc638909` | Radar Predictivo | 6:00 AM Mon-Fri | `radar-predictivo.sh` | bot-chat |
-| `e1d727ec5f45` | Centinela Fiscal | 12:00 PM Mon-Fri | `centinela-fiscal.sh` | bot-chat |
+| `f33d5bf666a7` | Insight Bridge | 9:00 AM Mon-Fri | `pulso-insight.sh` | bot-chat → Taty |
+| `4b62dc638909` | Radar Predictivo | 6:00 AM Mon-Fri | `radar.sh` | bot-chat |
+| `e1d727ec5f45` | Centinela Fiscal | 12:00 PM Mon-Fri | `centinela.sh` | bot-chat |
 | `d02cede71b87` | Auditoria Sombra | 2:00 AM daily | `auditoria-sombra.sh` | local |
-| `5ee336482311` | Social Ops | 8:00 AM Mon-Fri | `social-ops-briefing.sh` | bot-chat |
+| `5ee336482311` | Social Ops | 8:00 AM Mon-Fri | `social-ops.sh` | bot-chat |
 
 Scripts live in WSL at: `~/.hermes/profiles/contexia/scripts/`
 Backup copies are in this repo at: `docs/hermes/scripts/`
@@ -42,24 +42,24 @@ Backup copies are in this repo at: `docs/hermes/scripts/`
 
 | Script | Primary endpoint | Fallback |
 |--------|-----------------|---------|
-| pulso-diario | `POST /api/v1/agents/pulso-diario/summary` | `GET /api/v1/financials` |
-| conciliacion-shadow-gl | `GET /api/v1/agents/centinela-fiscal/alerts` | `GET /api/v1/centinela/alerts` |
-| radar-predictivo | `GET /api/v1/radar?company_id=...` | `GET /api/v1/agents/radar/predictions` |
-| centinela-fiscal | `GET /api/v1/centinela/alerts?company_id=...` | `GET /api/v1/agents/centinela-fiscal/alerts` |
-| auditoria-sombra | `POST /api/v1/wizard/auditoria-sombra` | `GET /api/v1/agents/auditoria-sombra/run` |
-| social-ops-briefing | `GET /api/v1/social-ops/briefing?company_id=...` | `GET /api/v1/channels/social-ops/pipeline` |
+| pulso.sh | `GET /api/v1/internal/pulso/all-active` | `GET /api/v1/financials` |
+| conciliacion-shadow-gl.sh | `GET /api/v1/agents/centinela-fiscal/alerts` | `GET /api/v1/centinela/alerts` |
+| radar.sh | `GET /api/v1/internal/radar/all-active` | `GET /api/v1/agents/radar/predictions` |
+| centinela.sh | `GET /api/v1/internal/centinela/all-active` | `GET /api/v1/agents/centinela-fiscal/alerts` |
+| auditoria-sombra.sh | `POST /api/v1/wizard/auditoria-sombra` | `GET /api/v1/agents/auditoria-sombra/run` |
+| pulso-insight.sh | `GET /api/v1/internal/pulso/all-active` (freemium) | `GET /api/v1/financials` |
+| social-ops.sh | `GET /api/v1/internal/social-ops/all-active` | `GET /api/v1/channels/social-ops/pipeline` |
 
-## Current Limitation — Single Tenant
+## Multi-Tenant Architecture (Live)
 
-All scripts are hardcoded to `company_id=ff1a8b7c-b0a1-422e-bc48-fac6242be027` (Contexia founder).
+**Resolved 2026-08-31:** All scripts now call `/internal/*/all-active` aggregator endpoints that return data for ALL active PWA clients in a single authenticated call.
 
-**Pending:** Implement `/internal/*` aggregator endpoints that return data for ALL active PWA clients
-in a single authenticated call. See OpenSpec proposal for multi-tenant aggregator.
-
-Access criteria for a client to appear in aggregated results:
+Access criteria (who appears in results):
 1. Active B2B client with Contexia
 2. Client in trial/onboarding with PWA access
 3. Manually enabled by founder (founder override flag)
+
+Each job iterates all clients automatically — no hardcoding per client.
 
 ## HITL Rules (Non-Negotiable)
 
@@ -81,13 +81,13 @@ All financial actions require: `Hermes produces → approval_queue → founder c
    - `OMNI_API_KEY` — get from OmniRoute dashboard at `localhost:20128`
 4. Re-register the 7 cron jobs:
    ```bash
-   hermes cron create "0 13 * * 1-5" "Pulso Diario — 8:00 AM COT" --script pulso-diario.sh --deliver bot-chat
+   hermes cron create "0 13 * * 1-5" "Pulso Diario — 8:00 AM COT" --script pulso.sh --deliver bot-chat
    hermes cron create "0 8 * * *"    "Conciliacion Shadow GL — 3:00 AM COT" --script conciliacion-shadow-gl.sh --deliver local
-   hermes cron create "0 14 * * 1-5" "Insight Bridge — 9:00 AM COT" --script pulso-diario-insight-bridge.sh --deliver bot-chat
-   hermes cron create "0 11 * * 1-5" "Radar Predictivo — 6:00 AM COT" --script radar-predictivo.sh --deliver bot-chat
-   hermes cron create "0 17 * * 1-5" "Centinela Fiscal — 12:00 PM COT" --script centinela-fiscal.sh --deliver bot-chat
+   hermes cron create "0 14 * * 1-5" "Insight Bridge — 9:00 AM COT" --script pulso-insight.sh --deliver bot-chat
+   hermes cron create "0 11 * * 1-5" "Radar Predictivo — 6:00 AM COT" --script radar.sh --deliver bot-chat
+   hermes cron create "0 17 * * 1-5" "Centinela Fiscal — 12:00 PM COT" --script centinela.sh --deliver bot-chat
    hermes cron create "0 7 * * *"    "Auditoria Sombra — 2:00 AM COT" --script auditoria-sombra.sh --deliver local
-   hermes cron create "0 13 * * 1-5" "Social Ops — 8:00 AM COT" --script social-ops-briefing.sh --deliver bot-chat
+   hermes cron create "0 13 * * 1-5" "Social Ops — 8:00 AM COT" --script social-ops.sh --deliver bot-chat
    ```
 5. Verify: `hermes cron list` — should show 7 jobs with `[active]` status
 6. Verify dashboard: `http://127.0.0.1:9119/cron?profile=contexia`
