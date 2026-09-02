@@ -97,6 +97,17 @@ class Settings(BaseSettings):
     # design.md D5/D7). Activation requires coordinating the Hermes-side poller first.
     HERMES_BRIDGE_TOKEN: Optional[str] = None
 
+    # Jarvis personal bot (change hermes-jarvis-contexia, Fase A).
+    # TELEGRAM_BOT_TOKEN_JARVIS: token for the founder's personal Jarvis bot (separate from Taty).
+    # TELEGRAM_WEBHOOK_SECRET_JARVIS: X-Telegram-Bot-Api-Secret-Token value set via setWebhook.
+    # TELEGRAM_JUAN_DAVID_CHAT_ID: founder's personal chat_id — messages from other chat_ids are
+    #   silently ignored (200 OK, no action) so unknown users cannot query Hermes via the bot.
+    # All fail-open (empty string): the webhook handler logs a warning and skips auth rather than
+    #   crashing, letting Railway deploy succeed even before the Telegram bot exists.
+    TELEGRAM_BOT_TOKEN_JARVIS: str = ""
+    TELEGRAM_WEBHOOK_SECRET_JARVIS: str = ""
+    TELEGRAM_JUAN_DAVID_CHAT_ID: str = ""
+
     # WHATSAPP_CANONICAL was retired by taty-channel-consolidation. The flag guarded a public
     # webhook that is now the production ingress from Meta (reachable as
     # contexia.online/api/v1/channels/whatsapp/webhook via vercel.json's rewrite), so gating it

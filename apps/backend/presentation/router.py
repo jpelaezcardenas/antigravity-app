@@ -8,6 +8,7 @@ from presentation.cobro_endpoints import router as cobro_router
 from presentation.agents_endpoints import router as agents_router
 from presentation.taty_endpoints import router as taty_router
 from presentation.telegram_endpoints import router as telegram_router
+from presentation.jarvis_endpoints import webhook_router as jarvis_webhook_router, api_router as jarvis_api_router
 from presentation.kb_endpoints import router as kb_router
 from presentation.radar_endpoints import router as radar_router
 from presentation.wizard_endpoints import router as wizard_router
@@ -40,6 +41,8 @@ api_router.include_router(agents_router, prefix="/agents", tags=["agents"])
 # /agents/taty/ask wrapper route was deleted — taty-per-tenant-profiles, task 5.)
 api_router.include_router(taty_router, prefix="/agents", tags=["taty"])
 api_router.include_router(telegram_router, prefix="/channels", tags=["telegram"])
+api_router.include_router(jarvis_webhook_router, prefix="/channels/jarvis", tags=["jarvis-telegram"])
+api_router.include_router(jarvis_api_router, prefix="/jarvis", tags=["jarvis-api"])
 
 # Social Ops canonical endpoints — feature flag gated (default off, n8n still routes)
 if settings.SOCIAL_OPS_CANONICAL:
