@@ -43,11 +43,13 @@ This change adds three things on top of that foundation:
 
 **Why not a static `HERMES_GATEWAY_URL` env var?** The cloudflared tunnel rotates on restart. A static env var requires a Railway redeploy every time the tunnel restarts — which defeats the purpose of the auto-restart VBS in Windows Startup. The Supabase lookup adds ~50ms per cache miss (every 30s), negligible compared to Hermes inference latency (~2-10s).
 
+**Auth for the lookup:** uses `SUPABASE_SERVICE_ROLE_KEY` (already present in Railway as `SUPABASE_SERVICE_ROLE_KEY`). No new env var needed. `hermes_tunnel` contains only the gateway URL — no client data — so service-role is acceptable here.
+
 **Implementation:**
 ```python
 # apps/backend/core/hermes_gateway.py  (new helper, ~30 lines)
 import time, httpx
-from core.supabase_client import get_supabase_anon
+from core.supabase_client import get_supabase_service
 
 _cache: dict = {"url": None, "ts": 0}
 CACHE_TTL = 30  # seconds
@@ -55,7 +57,7 @@ CACHE_TTL = 30  # seconds
 async def resolve_hermes_gateway_url() -> str:
     if time.time() - _cache["ts"] < CACHE_TTL and _cache["url"]:
         return _cache["url"]
-    client = get_supabase_anon()
+    client = get_supabase_service()  # uses SUPABASE_SERVICE_ROLE_KEY (already in Railway)
     row = client.table("hermes_tunnel").select("url").eq("id", "current").single().execute()
     url = row.data["url"]
     _cache.update({"url": url, "ts": time.time()})
@@ -252,6 +254,6 @@ No DB migrations required for this change.
 | # | Question | Blocking? | Owner |
 |---|---|---|---|
 | OQ1 | What is the exact Manus endpoint shape for `GET /api/brief/context`? What fields does it return? | Blocks Task 7c (brief cron, commercial section) | Fundador confirms with Manus |
-| OQ2 | Does `SUPABASE_ANON_KEY` already exist as a Railway env var, or does it need to be added? | Blocks D1 (gateway URL resolution) | Verify in Railway dashboard before apply |
+| OQ2 | ~~Does `SUPABASE_ANON_KEY` exist as a Railway env var?~~ **CLOSED (2026-09-01):** `SUPABASE_ANON_KEY` does NOT exist in Railway; decision is to use `SUPABASE_SERVICE_ROLE_KEY` (already present) for the `hermes_tunnel` lookup. D1 updated accordingly. | ~~Blocks D1~~ **Resolved** | — |
 | OQ3 | What Hermes model / profile should `jarvis-personal.md` target? (MiMo, or the OmniRoute fallback chain?) | Blocks Task 6 (Hermes skill) | Fundador decides; default: inherit from `contexia` profile |
 | OQ4 | Should `CronJobsMonitor` read cron job status from a Supabase table (requires Hermes to write last-run timestamps) or from a static `jobs.json` endpoint? | Blocks Task 9 (Búnker UI) | Design preference; recommendation: static `jobs.json` served by the backend for now |
