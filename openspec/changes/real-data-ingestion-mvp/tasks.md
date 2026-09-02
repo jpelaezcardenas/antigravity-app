@@ -10,25 +10,25 @@
 - [x] 0.1 Agregar `Depends(get_current_user)` a los 3 endpoints POST
 - [x] 0.2 Reemplazar `_resolve_tenant_id()` por `resolve_request_tenant_scope()` en los 3 endpoints
 - [x] 0.3 Agregar alias `POST /api/v1/shadow-gl/upload` que acepta cualquier formato
-- [ ] 0.4 Actualizar tests en `test_shadow_gl_endpoints.py`
+- [x] 0.4 Actualizar tests en `test_shadow_gl_endpoints.py` — 9/9 passed
 
 ---
 
 ## Track 4 — Multi-format Parser (compartido por todos los tracks)
 
-- [ ] 4.1 Agregar `openpyxl==3.1.2` y `pypdf==4.3.1` a `apps/backend/requirements.txt`
-- [ ] 4.2 Crear `apps/backend/services/multi_format_parser.py` con `parse_any_to_siigo_rows()`
-- [ ] 4.3 Crear `apps/backend/tests/test_multi_format_parser.py` (TDD: CSV, Excel, PDF-XML, PDF-texto, formato inválido)
+- [x] 4.1 Agregar `openpyxl==3.1.2` y `pypdf==4.3.1` a `apps/backend/requirements.txt`
+- [x] 4.2 Crear `apps/backend/services/multi_format_parser.py` con `parse_any_to_siigo_rows()`
+- [x] 4.3 Crear `apps/backend/tests/test_multi_format_parser.py` (TDD: CSV, Excel, PDF-XML, PDF-texto, formato inválido) — 8/8 passed
 
 ---
 
 ## Track 1 — PWA Upload Self-Service
 
-- [ ] 1.1 Crear `contexia-app/lib/ingestion-api.ts`
-- [ ] 1.2 Actualizar `contexia-app/lib/config.ts` — agregar `UPLOAD_DATA` endpoint
-- [ ] 1.3 Crear `contexia-app/components/pulso/DataUploadCard.tsx`
-- [ ] 1.4 Actualizar `contexia-app/app/app/(shell)/overview/page.tsx` — agregar DataUploadCard
-- [ ] 1.5 Build check: `npm run build` desde `contexia-app/`
+- [x] 1.1 Crear `contexia-app/lib/ingestion-api.ts`
+- [x] 1.2 Actualizar `contexia-app/lib/config.ts` — agregar `uploadData` endpoint
+- [x] 1.3 Crear `contexia-app/components/pulso/DataUploadCard.tsx`
+- [x] 1.4 Actualizar `contexia-app/app/app/(shell)/overview/page.tsx` — agregar DataUploadCard
+- [x] 1.5 Build check: compilado con éxito (Next.js 21s)
 
 ---
 
