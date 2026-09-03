@@ -2,7 +2,7 @@
 Maestro Orchestrator Service
 
 Coordinates and parallelizes execution of multiple agents.
-Swarm coordinator for Hermes Workspace.
+Swarm coordinator for Hermes Desktop.
 """
 
 import asyncio
@@ -256,7 +256,7 @@ async def orchestrator_endpoint(action: str, agents: List[str] = None, parallel:
     """
     Endpoint: POST /hermes/swarm/invoke
 
-    Used by Hermes Workspace to trigger orchestration.
+    Used by Hermes Desktop to trigger orchestration.
     """
     result = await MaestroOrchestrator.invoke(action, agents, parallel)
     return result

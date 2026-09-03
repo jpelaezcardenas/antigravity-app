@@ -3,13 +3,13 @@
 **Ubicación en repo:** antigravity-app/AGENTES.md + ai-specs/agents/AGENTES.md (symlink)  
 **Versión:** 2.0 | **Fecha:** 2026-06-21  
 **Propietario:** Dirección Contexia  
-**Alineación:** Ground Truth v2.0 + APM Nominal + Hermes Workspace + Cliente Cero
+**Alineación:** Ground Truth v2.0 + APM Nominal + Hermes Desktop + Cliente Cero
 
 ---
 
 ## 🎯 Propósito de este documento
 
-Este catálogo define la topología completa de **9 agentes** que orquesta **Hermes Workspace** en Contexia. Cada agente es especializado, determinista, responde a un endpoint canónico (`/api/v1/*`), y se alinea con el modelo **Agentic Performance Management (APM)** de Nominal adaptado al contexto fiscal-contable-comercial colombiano.
+Este catálogo define la topología completa de **9 agentes** que orquesta **Hermes Desktop** en Contexia. Cada agente es especializado, determinista, responde a un endpoint canónico (`/api/v1/*`), y se alinea con el modelo **Agentic Performance Management (APM)** de Nominal adaptado al contexto fiscal-contable-comercial colombiano.
 
 ### Principios arquitectónicos:
 - ✅ **Spec-first**: Documentación es fuente de verdad
@@ -23,7 +23,7 @@ Este catálogo define la topología completa de **9 agentes** que orquesta **Her
 ## 📂 Taxonomía de agentes
 
 ```
-CONTEXIA SWARM (Hermes Workspace)
+CONTEXIA SWARM (Hermes Desktop)
 │
 ├─ TIER 1: CORE FISCAL-CONTABLE (modelo APM Nominal)
 │  ├─ Centinela Fiscal (1) — Transaction Patrol + Resolution
@@ -412,4 +412,4 @@ antigravity-app/
 **Documento mantenido por:** Dirección Contexia  
 **Última actualización:** 2026-06-21  
 **Estado:** Ready for FASE 4 implementation  
-**Próxima fase:** Agent implementation + Hermes Workspace orchestration
+**Próxima fase:** Agent implementation + Hermes Desktop orchestration

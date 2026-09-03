@@ -34,14 +34,14 @@ This report documents the **completion of foundational infrastructure and docume
 - **Location:** `ai-specs/agents/agents-hermes-mapping.json`
 - **Size:** ~3KB (machine-readable mapping)
 - **Contents:**
-  - ✅ 9 agents mapped to Hermes Workspace skills
+  - ✅ 9 agents mapped to Hermes Desktop skills
   - ✅ Menu structure (Dashboard > Finanzas > Centinela, etc.)
   - ✅ Endpoint contracts (`GET/POST /api/v1/*`)
   - ✅ HITL requirements (mandatory, conditional, none)
   - ✅ Input/output types per agent
   - ✅ Implementation status tracker
 
-**Purpose:** Automatic configuration of Hermes Workspace menus + skill registration. Parse to generate Hermes navigation dynamically.
+**Purpose:** Automatic configuration of Hermes Desktop menus + skill registration. Parse to generate Hermes navigation dynamically.
 
 ### 3. **API_REFERENCE.md** (Complete Endpoint Documentation)
 - **Location:** `API_REFERENCE.md`
@@ -120,7 +120,7 @@ validation_timestamp:         2026-06-21 09:22:03 UTC
 
 ### ⏳ Pending (FASE 4 Implementation)
 - Implement 9 agents (services + endpoints)
-- Integrate with Hermes Workspace (React components, menus)
+- Integrate with Hermes Desktop (React components, menus)
 - Build orchestrator endpoint `/hermes/swarm/invoke`
 - Wire up HITL rules to Approval Queue
 - Full E2E test with Cliente Cero data flow

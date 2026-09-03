@@ -35,7 +35,7 @@
 - Audit trail in approval_queue
 
 ✅ **Manual Review** (Phase 6)
-- Hermes Workspace for rejected/uncertain entries
+- Hermes Desktop for rejected/uncertain entries
 - Admin approval/rejection workflow
 - WebSocket integration for real-time decisions
 
@@ -124,7 +124,7 @@ https://antigravity-app-production-dc78.up.railway.app
 
 ### 2. Review Auto-Approved Entries
 ```
-1. Go to Hermes Workspace (localhost:3000)
+1. Go to Hermes Desktop (localhost:3000)
 2. Check Conductor kanban
 3. Approved entries show in "completed" column
 ```
@@ -192,7 +192,7 @@ https://antigravity-app-production-dc78.up.railway.app
 
 - **Phases 1-8 commits:** https://github.com/jpelaezcardenas/antigravity-app/commits/main
 - **Production URL:** https://antigravity-app-production-dc78.up.railway.app
-- **Hermes Workspace:** https://github.com/jpelaezcardenas/hermes-workspace
+- **Hermes Desktop:** v0.21.0 native Windows app (repo `jpelaezcardenas/hermes-workspace` is DEPRECATED)
 - **OpenSpec changes:** `openspec/changes/shadow-gl-*`
 
 ---

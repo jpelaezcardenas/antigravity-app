@@ -8,11 +8,11 @@
 
 ## 1. Contexto: qué es Hermes en Contexia
 
-Hermes es el **orquestador local de agentes** de Contexia. Corre en WSL/Ubuntu (`localhost:8642` gateway, `localhost:3000` Workspace UI, `localhost:9119` dashboard). Es la única pieza que corre local por soberanía de datos — nunca sube a Railway/Vercel/cloud.
+Hermes es el **orquestador local de agentes** de Contexia. Corre en WSL/Ubuntu (`localhost:8642` gateway, `localhost:9119` dashboard) con Hermes Desktop v0.21.0 como GUI nativa de Windows. Es la única pieza que corre local por soberanía de datos — nunca sube a Railway/Vercel/cloud.
 
 **Stack confirmado en vivo (2026-08-29):**
 - Gateway: `localhost:8642` → UP, responde 200
-- Workspace: `localhost:3000` → UP (proceso Windows, no alcanzable desde WSL curl)
+- Desktop: Hermes Desktop v0.21.0 (native Windows app, replaced Workspace SPA)
 - Dashboard: `localhost:9119` → UP, responde 200
 - OmniRoute: `localhost:20128` → UP via systemd `omniroute.service`
 - GBrain: `localhost:gbrain-autopilot.service` → UP, indexa `contexia-brain/`
@@ -248,9 +248,9 @@ Claude Code Desktop ──MCP──► OmniRoute (localhost:20128)
                                   │
 Claude Code Desktop ──MCP──► GBrain (contexia-brain/)
                                   │
-Hermes Workspace ──────────► GBrain (lectura/escritura)
-Hermes Workspace ──────────► Chatwoot bridge (bot-chat delivery)
-Hermes Workspace ──────────► Railway (via CLI instalado)
+Hermes Desktop ──────────► GBrain (lectura/escritura)
+Hermes Desktop ──────────► Chatwoot bridge (bot-chat delivery)
+Hermes Desktop ──────────► Railway (via CLI instalado)
 ```
 
 **Gap confirmado:** No existe un canal directo bidireccional Hermes ↔ Claude Code. La coordinación hoy es:

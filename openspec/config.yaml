@@ -7,13 +7,13 @@ context: |
 
   TECH STACK:
   - Backend: FastAPI, Python 3.11
-  - Frontend: React, Next.js, Hermes Workspace
+  - Frontend: React, Next.js, Hermes Desktop
   - Database: Supabase (PostgreSQL + pgvector)
   - Deployment: Railway (production-175a), Vercel
   - APIs: Siigo, DIAN, Telegram, OpenAI/Cerebras
 
   ARCHITECTURE:
-  - Hermes Workspace: Central dashboard orchestrator
+  - Hermes Desktop: Central dashboard orchestrator
   - 9 Agents: Centinela, Pulso, Radar, Auditoría, Taty, Social Ops, KB, Orchestrator, Approval Queue
   - HITL: Human-in-the-Loop mandatory for sensitive actions
   - Cliente Cero: Contexia is first production customer before externals

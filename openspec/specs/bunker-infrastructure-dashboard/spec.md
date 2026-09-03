@@ -6,7 +6,7 @@ The Dashboard section SHALL display 4 summary cards: estimated monthly cloud spe
 - **THEN** 4 summary cards are visible showing the monthly cloud spend estimate, production service count, active AI layer count, and local agent count, each using this project's existing `@theme` design tokens
 
 ### Requirement: Per-service infrastructure cards
-The Dashboard section SHALL display individual service cards grouped by category (Cloud Infrastructure: Vercel, Railway, Supabase; AI Layer: GLM, Groq, OpenRouter; Tools/Dev: Claude/Anthropic, GCP, Hermes Workspace), each showing service name, status badge, key metrics, and estimated monthly cost.
+The Dashboard section SHALL display individual service cards grouped by category (Cloud Infrastructure: Vercel, Railway, Supabase; AI Layer: GLM, Groq, OpenRouter; Tools/Dev: Claude/Anthropic, GCP, Hermes Desktop), each showing service name, status badge, key metrics, and estimated monthly cost.
 
 #### Scenario: Service card shows status and cost
 - **WHEN** the user views the Dashboard section

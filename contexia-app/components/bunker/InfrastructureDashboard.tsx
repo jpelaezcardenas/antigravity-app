@@ -146,7 +146,7 @@ const SUMMARY_CARDS = [
   { label: "Gasto Cloud Mensual Est.", value: "~$75", sub: "USD/mes (sin AI variable)", icon: "payments" },
   { label: "Servicios en Producción", value: "15", sub: "Vercel × 10 · Supabase × 2 · Railway × 1 · +2", icon: "dns" },
   { label: "Capas de IA Activas", value: "4", sub: "GLM 5.2 · Groq · OpenRouter · Claude", icon: "smart_toy" },
-  { label: "Agentes Locales (on-prem)", value: "9", sub: "Hermes Workspace — $0 cloud", icon: "home" },
+  { label: "Agentes Locales (on-prem)", value: "9", sub: "Hermes Desktop — $0 cloud", icon: "home" },
 ];
 
 const VERCEL_PROJECTS = [
@@ -303,7 +303,7 @@ const STACK_ROWS: {
   { layer: "IA Principal", tech: "GLM 5.2 (ZhipuAI)", fn: "Motor de los 9 agentes de Hermes", cost: "Variable (tokens)", status: "info", statusLabel: "ACTIVO" },
   { layer: "IA Fallback", tech: "Groq · OpenRouter", fn: "Respaldo en nube cuando GLM no disponible", cost: "~$10–35 USD", status: "info", statusLabel: "STANDBY" },
   { layer: "Copiloto Dev", tech: "Claude Code · Cowork", fn: "Desarrollo agent-first: spec → código → deploy", cost: "~$20–50 USD", status: "healthy", statusLabel: "ACTIVO" },
-  { layer: "Orquestación IA", tech: "Hermes Workspace (on-prem)", fn: "Coordina los 9 agentes; datos financieros 100% local", cost: "$0 (hardware propio)", status: "local", statusLabel: "LOCAL" },
+  { layer: "Orquestación IA", tech: "Hermes Desktop (on-prem)", fn: "Coordina los 9 agentes; datos financieros 100% local", cost: "$0 (hardware propio)", status: "local", statusLabel: "LOCAL" },
   { layer: "GCP", tech: "Google Cloud (VERDOLAGA)", fn: "Caricaturas IA — Atlético Nacional", cost: "COP ~55K/mes", status: "healthy", statusLabel: "ACTIVO" },
 ];
 
@@ -437,7 +437,7 @@ export function InfrastructureDashboard() {
             <Metric label="Típico/mes" value="COP 50–60K" tone="success" />
           </div>
         </ServiceCard>
-        <ServiceCard emoji="🏠" name="Hermes Workspace" layer="On-prem · WSL/Ubuntu · Local" status="local" statusLabel="LOCAL" cost="$0 USD" source="Hardware propio">
+        <ServiceCard emoji="🏠" name="Hermes Desktop" layer="On-prem · WSL/Ubuntu · Local" status="local" statusLabel="LOCAL" cost="$0 USD" source="Hardware propio">
           <div className="grid grid-cols-2 gap-2 mb-1">
             <Metric label="Gateway" value=":8642" tone="info" />
             <Metric label="UI" value=":3000" tone="info" />

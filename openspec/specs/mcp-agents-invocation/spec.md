@@ -146,12 +146,12 @@ The MCP server SHALL run exclusively on the user's local machine (WSL). It SHALL
 
 #### Scenario: Documentation warns against cloud deployment
 - **WHEN** user reads README or setup guide
-- **THEN** documentation clearly states: "Hermes Workspace and this MCP server are designed for local, on-premise execution for data sovereignty. Do NOT deploy to cloud VPS."
+- **THEN** documentation clearly states: "Hermes Desktop and this MCP server are designed for local, on-premise execution for data sovereignty. Do NOT deploy to cloud VPS."
 
 ---
 
 ### Requirement: MCP Tool Registration in Hermes
-The MCP server SHALL be registered in Hermes Workspace configuration so Swarm roles can discover and invoke tools. Tools SHALL appear in Hermes UI tool picker.
+The MCP server SHALL be registered in Hermes Desktop configuration so Swarm roles can discover and invoke tools. Tools SHALL appear in Hermes UI tool picker.
 
 #### Scenario: Server is discoverable via Hermes MCP config
 - **WHEN** user adds MCP server to `~/.hermes/config.yaml`
@@ -159,6 +159,6 @@ The MCP server SHALL be registered in Hermes Workspace configuration so Swarm ro
 - **AND** Swarm roles can reference the tools by name in prompts/tasks
 
 #### Scenario: Tool appears in Hermes UI
-- **WHEN** user opens Hermes Workspace and views the tool library
+- **WHEN** user opens Hermes Desktop and views the tool library
 - **THEN** all 6+ Contexia agent tools are listed with names, descriptions, and example inputs
 

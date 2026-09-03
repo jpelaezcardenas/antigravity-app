@@ -340,7 +340,7 @@ def _rows_to_csv_text(rows: list[dict]) -> str:
 @router.websocket("/approval-callback")
 async def approval_callback_endpoint(websocket: WebSocket) -> None:
     """
-    Receive approval decisions from Hermes Workspace (Phase 6).
+    Receive approval decisions from Hermes Desktop (Phase 6).
 
     Hermes sends approval_decision messages with:
     - approval_queue_id: which entry was approved/rejected

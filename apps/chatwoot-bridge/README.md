@@ -97,7 +97,7 @@ uvicorn main:app --port 8090
 
 | Service | Port |
 |---|---|
-| Next.js dev / Hermes Workspace UI | `:3000` |
+| Next.js dev | `:3000` |
 | Chatwoot web | `:3020` |
 | Local backend dev | `:8080` |
 | This bridge | `:8090` |

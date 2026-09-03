@@ -1,5 +1,5 @@
 """
-Hermes Workspace WebSocket client for approval workflows.
+Hermes Desktop WebSocket client for approval workflows.
 
 Sends approval requests to Hermes gateway and listens for approval decisions.
 Used by Shadow GL HITL pipeline (Phase 6).

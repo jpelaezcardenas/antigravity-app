@@ -190,7 +190,7 @@ Phase 3 (Hardening): DEFERRED INDEFINITELY
 
 2. **Implement Hermes User Sync T9 Redesign (1-2 days)**
    - [ ] Design Hermes Swarm role for `onboarding:invite`
-   - [ ] Configure Supabase MCP access in Hermes Workspace
+   - [ ] Configure Supabase MCP access in Hermes Desktop
    - [ ] Write integration tests
 
 3. **Investigate Remaining OpenSpec (1 day)**

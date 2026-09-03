@@ -1,7 +1,7 @@
 {
   "agentes_hermes_mapping": {
     "version": "1.0",
-    "description": "Maps Contexia agents to Hermes Workspace skills for automatic configuration",
+    "description": "Maps Contexia agents to Hermes Desktop skills for automatic configuration",
     "generated_date": "2026-06-21",
     "agents": [
       {

@@ -1,10 +1,10 @@
-# 🗺️ ROADMAP COMPLETO: FASE 4 — Orquestación de 9 Agentes + Hermes Workspace
+# 🗺️ ROADMAP COMPLETO: FASE 4 — Orquestación de 9 Agentes + Hermes Desktop
 
 **Versión:** 1.0  
 **Fecha:** 2026-06-21  
 **Destinatario:** Próximo chat Claude Code (FASE 4 Implementation)  
 **Estado Previo:** FASE 3 completada (Agent Critic + pgvector + Vectorización = 53/53 tasks ✅)  
-**Propósito:** Pasar del MVP escalable (FASE 3) a la **Orquestación Completa de 9 Agentes** bajo Ground Truth v2.0 + Modelo APM Nominal + Hermes Workspace + Cliente Cero
+**Propósito:** Pasar del MVP escalable (FASE 3) a la **Orquestación Completa de 9 Agentes** bajo Ground Truth v2.0 + Modelo APM Nominal + Hermes Desktop + Cliente Cero
 
 ---
 
@@ -28,9 +28,9 @@
 
 ```
 PROYECTO: Contexia — Entidad B (Agentic Performance Management para PyMEs colombianas)
-ETAPA: FASE 4 — Orquestación Completa de 9 Agentes + Hermes Workspace
+ETAPA: FASE 4 — Orquestación Completa de 9 Agentes + Hermes Desktop
 FECHA: 2026-06-21 (sesión anterior) → 2026-06-22+ (este chat)
-REPO: antigravity-app (FastAPI/Railway + Supabase + Hermes Workspace)
+REPO: antigravity-app (FastAPI/Railway + Supabase + Hermes Desktop)
 
 ESTADO PREVIO (FASE 3 - CERRADA):
 ✅ Agent Critic: Validador determinista (SUM débitos = SUM créditos)
@@ -59,7 +59,7 @@ ESTADO ACTUAL (este chat):
 
 BLOQUEADOR ACTUAL:
 ❌ Agentes 1-8 tienen especificaciones en AGENTES.md pero NO están implementados
-❌ Hermes Workspace sin endpoints canónicos para cada agente
+❌ Hermes Desktop sin endpoints canónicos para cada agente
 ❌ Sin orquestación: Agentes aislados, no hay "swarm"
 ❌ Sin telemetría/auditoría centralizada
 ❌ Social Ops heredado (n8n legacy) → necesita migración a FastAPI canónico
@@ -70,19 +70,19 @@ OBJETIVO FASE 4:
 ✅ HITL rules coded: qué requiere aprobación, qué no
 ✅ Cliente Cero testea cada agente con datos reales
 ✅ Knowledge Base crece (decisiones aprobadas → vectorizadas → reutilizables)
-✅ Hermes Workspace operativo: dashboard + approval queue + swarm status
+✅ Hermes Desktop operativo: dashboard + approval queue + swarm status
 ✅ Stage 11 deploy a Railway + reporte final
 
 RUNWAY (estimado):
   FASE 4a (Agentes 1-4, Core APM): 5-7 días
   FASE 4b (Agentes 5-6, Conversacional + Social): 3-4 días
   FASE 4c (Agentes 7-8, KB + Orchestrator): 2-3 días
-  FASE 4d (Hermes Workspace UI + E2E): 2-3 días
+  FASE 4d (Hermes Desktop UI + E2E): 2-3 días
   FASE 4e (Stage 11 Deployment): 1 día
   TOTAL: ~13-20 días (julio 2026 target)
 
 SIGUIENTE DESPUÉS FASE 4:
-  FASE 5: Hermes Workspace UI (React componentes, dashboards)
+  FASE 5: Hermes Desktop UI (React componentes, dashboards)
   FASE 6: Cliente externo #1 (Copiloto Contratos EAFIT, con sandboxing)
   FASE 7: Sales + Onboarding automation
 
@@ -103,7 +103,7 @@ INSTRUCCIONES OBLIGATORIAS PARA EL AGENTE FASE 4:
 RECURSOS DISPONIBLES:
 ✅ Contexto: AGENTES.md (9 agentes definidos)
 ✅ Modelos: APM Nominal (Nominal y Contexia_ Análisis Tecnológico.md)
-✅ Infraestructura: FastAPI (/api/v1/*), Supabase (pgvector), Railway (175a), Hermes Workspace
+✅ Infraestructura: FastAPI (/api/v1/*), Supabase (pgvector), Railway (175a), Hermes Desktop
 ✅ HITL: Approval Queue ya existe (FASE 3), extiende para todos los agentes
 ✅ Vectorización: Embeddings service ya existe (FASE 3)
 ✅ Testing: Cliente Cero (datos reales de Contexia)
@@ -122,7 +122,7 @@ HERRAMIENTAS & APIs DISPONIBLES:
 
 ESTADO CONOCIDO (NO CAMBIAR):
 ✅ Contexia es Entidad B (no firma nada)
-✅ Hermes Workspace es centro operativo (NO Bunker)
+✅ Hermes Desktop es centro operativo (NO Bunker)
 ✅ Cliente Cero = Contexia (primero productivo antes de externos)
 ✅ HITL obligatorio en sensible (asientos, publicaciones, /ops)
 ✅ Stage 11 deployment es NO negociable
@@ -138,7 +138,7 @@ CEREMONIA OPENSPEC FASE 4:
 
 1. LEE Ground Truth (5 min)
    - Contexia es Entidad B tecnológica
-   - Hermes Workspace = centro operativo
+   - Hermes Desktop = centro operativo
    - Ground Truth v2.0 es máxima referencia
    
 2. LEE AGENTES.md (10 min)
@@ -232,7 +232,7 @@ CEREMONIA OPENSPEC FASE 4:
 - [ ] 16 tests pass (4 × 4 test cases por agent)
 - [ ] Cliente Cero valida cada agent
 - [ ] Cada aprobación vectorizada → KB
-- [ ] Hermes Workspace: menú para invocar 4 agentes
+- [ ] Hermes Desktop: menú para invocar 4 agentes
 - [ ] Stage 11 reporte parcial (Agentes 1-4)
 
 ---
@@ -283,7 +283,7 @@ CEREMONIA OPENSPEC FASE 4:
 - [ ] Social Ops migrado de n8n → FastAPI
 - [ ] 20+ endpoints canónicos
 - [ ] 28 tests pass (4 por agent × 7 agents)
-- [ ] Hermes Workspace: menú para Taty + Social Ops
+- [ ] Hermes Desktop: menú para Taty + Social Ops
 - [ ] Aprobaciones en Approval Queue (todas las acciones sensibles)
 
 ---
@@ -313,12 +313,12 @@ CEREMONIA OPENSPEC FASE 4:
 - [ ] Orchestrator paralleliza 5+ agents en < 500ms
 - [ ] Fallback: si 1 agent falla, otros continúan
 - [ ] Telemetría centralizada (cada acción logeada)
-- [ ] Hermes Workspace: dashboard swarm status
+- [ ] Hermes Desktop: dashboard swarm status
 - [ ] 40+ tests pass
 
 ---
 
-### HITO 4: Hermes Workspace Integration — Semana 4
+### HITO 4: Hermes Desktop Integration — Semana 4
 
 **Responsabilidad:** Dashboard React + menus + approval queue UI  
 **Componentes:**
@@ -442,7 +442,7 @@ curl https://antigravity-app-production-175a.up.railway.app/api/v1/approval-queu
 SELECT COUNT(*) FROM [table_with_contexia_data];
 # Esperado: datos reales para testing
 
-# 7. Hermes Workspace URL
+# 7. Hermes Desktop URL
 echo $HERMES_WORKSPACE_URL
 # Esperado: https://hermes.contexia.online/ o similar
 ```
@@ -471,7 +471,7 @@ echo $HERMES_WORKSPACE_URL
 - [ ] **Knowledge Base creciendo** (decisiones aprobadas → vectorizadas)
 - [ ] **Orchestrator sincroniza N agentes** en < 500ms
 - [ ] **Cliente Cero valida cada agent** (datos reales de Contexia)
-- [ ] **Hermes Workspace operativo** (menús, dashboards, approval queue UI)
+- [ ] **Hermes Desktop operativo** (menús, dashboards, approval queue UI)
 - [ ] **60+ tests PASS** (6+ por agent × 9 agents, más E2E e integración)
 - [ ] **Stage 11 Deployment** (commit + Railway rebuild + reporte)
 - [ ] **Telemetría centralizada** (cada acción logeada con timestamp, operator, outcome)
@@ -484,7 +484,7 @@ echo $HERMES_WORKSPACE_URL
 
 | Documento | Ubicación | Propósito |
 |-----------|-----------|-----------|
-| Ground Truth v2.0 | Base-de-conocimientos-Contexia-v2.md | Identidad corporativa (Entidad B, Hermes Workspace) |
+| Ground Truth v2.0 | Base-de-conocimientos-Contexia-v2.md | Identidad corporativa (Entidad B, Hermes Desktop) |
 | APM Nominal | Nominal y Contexia_ Análisis Tecnológico.md | Modelo de 9 agentes (base) |
 | AGENTES.md | AGENTES.md (este repo) | Catálogo completo, HITL rules, integración |
 | CLAUDE.md | CLAUDE.md (proyecto) | Standards de código, OpenSpec rules |

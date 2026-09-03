@@ -35,7 +35,7 @@ The system SHALL record how often similar decisions are found and used.
 - **AND** ops team can see knowledge base is learning
 
 ### Requirement: Centinela alert payload compatible with Hermes UI
-The similarity search data in Centinela alert is formatted for display in Hermes Workspace Approval Queue UI.
+The similarity search data in Centinela alert is formatted for display in Hermes Desktop Approval Queue UI.
 
 #### Scenario: Alert JSON schema includes similar_decisions array
 - **WHEN** Centinela publishes alert to Telegram or Hermes

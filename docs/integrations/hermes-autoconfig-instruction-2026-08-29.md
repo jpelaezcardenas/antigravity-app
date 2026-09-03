@@ -597,7 +597,7 @@ Stack de producción, de extremo a extremo:
   IA**             → OpenRouter → NVIDIA    proveedores; cascada revisada
                    NIM                      el 18 de agosto de 2026
 
-  **Orquestación   Hermes Workspace (local  Coordina los 9 agentes; los
+  **Orquestación   Hermes Desktop (local  Coordina los 9 agentes; los
   de agentes**     / on-prem)               datos financieros se procesan
                                             localmente por soberanía de
                                             datos, nunca en un VPS de
@@ -857,7 +857,7 @@ escrita antes de tocar código.
   → implementador → revisor, para que haya una revisión estructurada
   antes de llegar a producción.
 
-- **Hermes Workspace:** orquesta los 9 agentes operativos del producto.
+- **Hermes Desktop:** orquesta los 9 agentes operativos del producto.
   Corre local / on-prem, nunca en un VPS de terceros, por la regla de
   soberanía de datos.
 
@@ -878,7 +878,7 @@ escrita antes de tocar código.
   crítico de marca y por la cola de aprobación humana en el Búnker.
   Mantener ese control fue una decisión explícita y está documentada.
 
-**Hermes Workspace, en detalle** --- corre local (WSL/Ubuntu), no
+**Hermes Desktop, en detalle** --- corre local (WSL/Ubuntu), no
 expuesto a internet:
 
   ---------------------------------------------------------------------------
@@ -889,7 +889,7 @@ expuesto a internet:
                         sesiones y planificador de   
                         tareas interno               
 
-  **Hermes Workspace**  Interfaz de chat con el      http://localhost:3000/
+  **Hermes Desktop**  Interfaz de chat con el      Native Windows app (v0.21.0)
                         agente principal y sus       
                         sub-agentes                  
 
@@ -903,7 +903,7 @@ el desarrollador entienda el entorno sin necesitar acceso remoto.
 
 height="2.7395833333333335in"}
 
-*Hermes Workspace --- interfaz web del agente principal (chat, memoria,
+*Hermes Desktop --- interfaz web del agente principal (chat, memoria,
 herramientas, ejecución en vivo).*
 
 

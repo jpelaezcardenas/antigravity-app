@@ -6,12 +6,12 @@
 
 ## Overview
 
-This guide documents the WebSocket contract between antigravity-app (backend) and Hermes Workspace (approval UI) for human-in-the-loop accounting entry approval workflows.
+This guide documents the WebSocket contract between antigravity-app (backend) and Hermes Desktop (approval UI) for human-in-the-loop accounting entry approval workflows.
 
 ## Architecture
 
 ```
-antigravity-app                  Hermes Workspace
+antigravity-app                  Hermes Desktop
    (FastAPI)                     (Nous native app)
       │                              │
       ├─ Parser                      │
@@ -310,7 +310,8 @@ After receiving approval_decision, antigravity-app must ACK:
 
 ```bash
 # Start Hermes locally
-cd ~/hermes-workspace && pnpm dev
+# Hermes Desktop v0.21.0 replaces the old hermes-workspace dev server
+# Launch via the native Windows app instead
 
 # Upload bad CSV to trigger approval_request
 curl -X POST \

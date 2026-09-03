@@ -314,7 +314,7 @@ class TestFullE2EFlow:
         Scenario: Maestro orchestrates Pulso + Centinela + Radar + Auditoría
         in parallel, all with tenant_id = "contexia-org-1"
 
-        Given: Hermes Workspace triggers swarm mission with all 9 operators
+        Given: Hermes Desktop triggers swarm mission with all 9 operators
         When: Each operator calls Railway backend
         Then: All should see request.state.tenant_id = "contexia-org-1" (consistent)
         """

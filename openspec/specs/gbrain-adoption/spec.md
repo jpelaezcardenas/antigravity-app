@@ -137,11 +137,11 @@ The system SHALL verify, by direct MCP introspection, that GBrain exposes at lea
 - **AND** one representative tool per category is invoked successfully in a smoke test
 
 ### Requirement: GBrain Reachable From Claude Code, Codex, and Hermes
-The system SHALL expose GBrain's native MCP server to Claude Code Desktop and Codex, and SHALL wire GBrain's native Hermes Agent integration into Hermes Workspace, such that an equivalent knowledge query returns consistent results regardless of which tool issues it.
+The system SHALL expose GBrain's native MCP server to Claude Code Desktop and Codex, and SHALL wire GBrain's native Hermes Agent integration into Hermes Desktop, such that an equivalent knowledge query returns consistent results regardless of which tool issues it.
 
 #### Scenario: Same query, same answer across tools
 - **WHEN** a query such as "¿dónde está Centinela?" is issued from Claude Code via GBrain's MCP server
-- **AND** the same query is issued from Hermes Workspace via GBrain's native Hermes Agent integration
+- **AND** the same query is issued from Hermes Desktop via GBrain's native Hermes Agent integration
 - **THEN** both resolve to the same skill/endpoint reference
 
 #### Scenario: GBrain MCP server coexists with contexia-agents MCP server

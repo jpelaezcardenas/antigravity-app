@@ -65,7 +65,7 @@
 **Goal:** Verify auto-approval rules reduce manual work
 
 **Steps:**
-1. After CSV import, check Hermes Workspace (localhost:3000)
+1. After CSV import, check Hermes Desktop (localhost:3000)
 2. Look at Conductor kanban board
 3. Scroll to "completed" column
 4. Count entries in "completed" (these were auto-approved)
@@ -87,7 +87,7 @@
 **Goal:** Verify manual approval workflow works
 
 **Steps:**
-1. In Hermes Workspace, look for entries in "ready" column
+1. In Hermes Desktop, look for entries in "ready" column
 2. These are entries that DIDN'T auto-approve (uncertain)
 3. Click one entry to see details
 4. Read the rejection reason (why it wasn't auto-approved)
@@ -271,7 +271,7 @@ Error: ECONNREFUSED - cannot connect to database
 - [ ] Account created in production app
 - [ ] Can login successfully
 - [ ] Have Siigo CSV ready for testing
-- [ ] Hermes Workspace running locally (port 3000)
+- [ ] Hermes Desktop running locally (port 3000)
 - [ ] Read this guide completely
 - [ ] Start with Scenario 1 (happy path)
 - [ ] Progress through Scenarios 2-5
@@ -283,7 +283,7 @@ Error: ECONNREFUSED - cannot connect to database
 ## Questions Before You Start?
 
 - How to export Siigo CSV? → See "Prepare Test Data" above
-- Can't see Hermes Workspace? → Run `pnpm dev` in hermes-workspace folder
+- Can't see Hermes Desktop? → Launch the native Hermes Desktop app (the old hermes-workspace repo is deprecated)
 - Getting login error? → Check your Supabase credentials
 - CSV upload hangs? → Check browser console for errors (F12)
 
