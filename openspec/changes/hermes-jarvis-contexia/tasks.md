@@ -10,6 +10,7 @@
 - [ ] 0.1 Crear bot nuevo en Telegram via @BotFather → guardar `TELEGRAM_BOT_TOKEN_JARVIS` en Bitwarden
 - [ ] 0.2 Obtener `TELEGRAM_JUAN_DAVID_CHAT_ID` del chat personal
 - [ ] 0.3 Confirmar que `tunnel_persistent.ps1` corre y que `hermes_tunnel[id='current']` tiene URL válida en Supabase
+- [ ] 0.4 **En Manus workspace:** activar HubSpot connector (aceptar la solicitud de autorización). Verificar que Gmail está habilitado y Meta Ads está configurado. Confirmar que la API de Tareas `/sell-machine/tasks/recent` devuelve datos.
 
 ---
 
@@ -22,10 +23,10 @@
 - [ ] 5. Registrar webhook de Telegram apuntando al endpoint de Railway
 - [ ] 6. Crear skill `~/.hermes/profiles/contexia/skills/jarvis-personal.md`
 - [ ] 7. Crear cron Hermes `jarvis-morning-brief.sh` + registrar en `jobs.json` (9:00 AM COT):
-  - [ ] 7a. Confirmar con Manus el endpoint y shape del `GET /api/brief/context` (HubSpot pipeline + Gmail priority + Meta performance) — acción previa del fundador/Manus
+  - [ ] 7a. Confirmar Stage 0.4 completado (HubSpot activado en Manus, Gmail/Meta listos)
   - [ ] 7b. Implementar llamada al backend Railway (`POST /api/v1/jarvis/brief`) para contexto financiero (Caja Real + alertas + Approval Queue)
-  - [ ] 7c. Implementar llamada al API HTTP interno de Manus para contexto comercial (fail-graceful: si Manus no responde, omite sección sin fallar)
-  - [ ] 7d. Hermes agrega ambos payloads y redacta el brief unificado → envía a `TELEGRAM_JUAN_DAVID_CHAT_ID`
+  - [ ] 7c. Implementar llamada a Manus (`GET /sell-machine/tasks/recent?hours=24`) para contexto comercial (HubSpot deals + Gmail high-priority + Meta Ads metrics) — fail-graceful: si Manus no responde, omite sección sin fallar
+  - [ ] 7d. Hermes agrega ambos payloads (financiero + comercial de Manus) y redacta el brief unificado → envía a `TELEGRAM_JUAN_DAVID_CHAT_ID`
 - [ ] 8. Smoke test Fase A: mensaje al bot → respuesta de Hermes visible en Telegram
 
 ---

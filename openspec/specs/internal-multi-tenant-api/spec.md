@@ -1,5 +1,8 @@
-## ADDED Requirements
+# internal-multi-tenant-api Specification
 
+## Purpose
+TBD - created by archiving change hermes-multi-tenant-endpoints. Update Purpose after archive.
+## Requirements
 ### Requirement: Internal router authenticated by HERMES_BRIDGE_TOKEN
 The system SHALL expose a `/internal/` route group protected by a `verify_hermes_token` FastAPI dependency. The dependency SHALL compare the `Authorization: Bearer <token>` header against the `HERMES_BRIDGE_TOKEN` environment variable using `secrets.compare_digest`. Any request without a matching token SHALL receive HTTP 403. If `HERMES_BRIDGE_TOKEN` is not set in the environment the dependency SHALL raise a startup error (fail closed — never open by default).
 
@@ -104,3 +107,4 @@ The system SHALL expose `GET /internal/social-ops/all-active` that calls `Social
 - **WHEN** `SocialOpsService.get_briefing()` raises an exception for a specific client
 - **THEN** that client's entry contains `social_ops: null` and an `error` field with the error message
 - **AND** the other clients' entries are unaffected
+

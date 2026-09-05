@@ -42,17 +42,19 @@ El brief tiene dos fuentes de contexto que se agregan en paralelo antes de que H
    - Alertas Centinela activas (`/api/v1/centinela/alerts`)
    - Tareas pendientes de la Approval Queue
 
-2. **Contexto comercial** — llama al API HTTP interno de Manus:
-   - Pipeline HubSpot (deals en cada etapa del funnel Renta Natural B2C)
-   - Prioridad de Gmail (mensajes de alta prioridad sin responder)
-   - Performance de Meta Ads (últimas 24h: gasto, alcance, conversiones)
+2. **Contexto comercial** — Hermes llama a Manus vía API existente:
+   - `GET /sell-machine/tasks/recent?hours=24` (o endpoint de Manus que devuelva contexto agregado)
+   - Manus devuelve JSON con:
+     - Pipeline HubSpot (deals activos en cada etapa del funnel Renta Natural B2C)
+     - Gmail high-priority (emails sin responder + senders priority)
+     - Performance Meta Ads (últimas 24h: gasto, alcance, conversiones)
 
 Hermes recibe ambos payloads, redacta el resumen unificado y lo envía al `TELEGRAM_JUAN_DAVID_CHAT_ID`.
 
-**Endpoint de Manus:** `GET http://localhost:<MANUS_INTERNAL_PORT>/api/brief/context` (o el
-path que expondrá Manus — confirmar con el equipo de Manus antes de implementar el call).
-Las tres fuentes comerciales (HubSpot/Gmail/Meta) son opcionales en la respuesta: si Manus
-no tiene datos frescos de alguna, el brief omite esa sección sin fallar.
+**Nota arquitectónica:** Manus actúa como **agregador de datos comerciales** — sus integraciones
+nativas (Gmail, HubSpot, Meta Ads) ya están configuradas en el workspace del fundador. Hermes
+simplemente consulta a Manus vía la API de Tareas existente. Si Manus no responde o alguna
+integración falla, el brief omite esa sección sin fallar (fail-graceful).
 
 **Nuevas env vars en Railway:**
 - `TELEGRAM_BOT_TOKEN_JARVIS`
@@ -60,6 +62,10 @@ no tiene datos frescos de alguna, el brief omite esa sección sin fallar.
 - `TELEGRAM_JUAN_DAVID_CHAT_ID`
 - `SUPABASE_ANON_KEY` (probablemente ya existe — para resolver URL dinámica de Hermes)
 - `HERMES_BRIDGE_TOKEN` (ya existe — autentica calls a Hermes)
+
+**Nota:** Hermes accede a Manus **localmente** (ambos corren en la laptop/WSL del fundador).
+No se necesitan env vars nuevas en Railway para la llamada a Manus — la configuración es
+íntegramente local en `~/.hermes/config.yaml` (URL de Manus API, tokens de integraciones).
 
 ### Fase B — Búnker Agentic OS (UI)
 
@@ -212,8 +218,16 @@ a Taty básico. **No requiere un nuevo bot.** Esta fase tiene su propio OpenSpec
 
 ---
 
-## Notas sobre Manus y el brief matutino
+## Notas sobre arquitectura y el brief matutino
 
-El brief matutino de Jarvis **incluye** contexto de Manus (HubSpot pipeline + Gmail priority + Meta performance) vía HTTP call al API interno de Manus. Este es el primer paso natural antes del GTM: el fundador necesita visibilidad integrada (financiera + comercial) en un solo mensaje diario, sin tener que abrir múltiples dashboards.
+El brief matutino de Jarvis **incluye** contexto comercial (HubSpot pipeline + Gmail priority + Meta performance) **consultando a Manus vía su API existente** (hermes-manus-execution-bridge). Este es el primer paso natural antes del GTM: el fundador necesita visibilidad integrada (financiera + comercial) en un solo mensaje diario.
 
-**El Command Center bidireccional completo (Hermes ↔ Manus, escritura + encolamiento de acciones)** es un change separado que vendrá después de que este Jarvis personal quede validado en producción. Este change solo lee de Manus (sin write-back).
+**Manus como agregador:** sus integraciones nativas (Gmail, HubSpot, Meta Ads) ya están configuradas en el workspace del fundador. El brief matutino simplemente consulta a Manus para obtener el resumen comercial de las últimas 24h. Hermes no toca directamente HubSpot/Gmail/Meta — todo pasa por Manus.
+
+**Secuencia clara:**
+1. Hermes cron llama a Railway (`POST /api/v1/jarvis/brief`) → contexto financiero
+2. Hermes cron llama a Manus (`GET /sell-machine/tasks/recent`) → contexto comercial
+3. Hermes agrega ambos y redacta
+4. Envía al Telegram del fundador
+
+**El Command Center bidireccional completo (Hermes ↔ Manus, encolamiento de acciones + feedback loop)** es un change separado que vendrá después de que este Jarvis personal quede validado en producción.
