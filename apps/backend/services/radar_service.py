@@ -19,7 +19,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Optional
 
-from core.supabase_client import get_supabase
+from core.supabase_client import get_supabase, get_service_supabase
 from services.financials_service import _compute_caja_real_balance
 
 logger = logging.getLogger(__name__)
@@ -402,6 +402,65 @@ async def calculate_cash_projection_13w(
         )
 
     return {**base_response, "estado": "ok", "semanas": semanas}
+
+
+async def record_module_open(
+    tenant_id: str,
+    user_id: Optional[str] = None,
+    supabase_client: Optional[Any] = None,
+) -> None:
+    """
+    Record that the Radar de Caja module was opened, for the adoption KPI
+    (radar-adoption-tracking).
+
+    One row per tenant + user + calendar day: the KPI is weekly, so day-grain
+    dedupe keeps the table proportional to real usage instead of to renders.
+    `user_id` is None for the staging identity, which resolves to a tenant but
+    has no auth.uid().
+
+    Best-effort by contract: this NEVER raises. A telemetry failure — including
+    the table not existing because migration 0047 has not been applied yet —
+    must not degrade a client's cash projection (design.md Decision #3).
+
+    Uses the **service-role** client, not the anon one. Verified against the real
+    database: with the anon key this write evaluates
+    `radar_module_opens_tenant_isolation`, which reads `user_tenants`, whose own
+    policy chain hits a pre-existing `infinite recursion detected in policy for
+    relation "user_roles"` error. Combined with fail-soft that would make tracking
+    a permanent silent no-op. The write is not request-controlled: `tenant_id`
+    comes from the resolved scope and `user_id` from the verified JWT — this is
+    the case `radar_module_opens_service_role` exists for, mirroring how the
+    metrics_snapshots nightly job writes for every tenant.
+    """
+    try:
+        supabase = (
+            supabase_client if supabase_client is not None else get_service_supabase()
+        )
+        supabase.table("radar_module_opens").insert(
+            {
+                "tenant_id": tenant_id,
+                "user_id": user_id,
+                "opened_on": datetime.utcnow().date().isoformat(),
+            }
+        ).execute()
+    except Exception as e:  # noqa: BLE001 - deliberate: telemetry must never surface
+        # 23505 = unique violation: this tenant/user already opened the module
+        # today, which is the normal path on every load after the first. Not an
+        # error. Plain INSERT is used rather than upsert because ON CONFLICT
+        # cannot infer a PARTIAL unique index, and the dedupe indexes are partial
+        # (they have to be: Postgres treats NULLs as distinct, so a non-partial
+        # index would let the NULL-user staging identity insert unbounded rows
+        # per day). Verified against the real database — upsert failed with
+        # 42P10 "no unique or exclusion constraint matching the ON CONFLICT
+        # specification" and recorded nothing.
+        if "23505" in str(e) or "duplicate key" in str(e).lower():
+            logger.debug(
+                f"record_module_open: already recorded today for tenant {tenant_id}"
+            )
+        else:
+            logger.warning(
+                f"record_module_open skipped for tenant {tenant_id}: {type(e).__name__}: {e}"
+            )
 
 
 def _format_cop(minor_units: int) -> str:

@@ -20,6 +20,7 @@ from services.radar_service import (
     calculate_cash_projection_13w,
     enqueue_risk_review_if_critical,
     generate_alerta_narrativa,
+    record_module_open,
 )
 
 logger = logging.getLogger(__name__)
@@ -117,6 +118,11 @@ async def get_cash_projection(
     (`estado: "tenant_no_resuelto"`), matching `GET /centinela/alerts`'s
     precedent, not the 404 anti-enumeration policy used by write/ownership
     routes like Approval Queue (see design.md Decision #2).
+
+    Deliberate side effect: a successful read records one adoption row per
+    tenant/user/day (radar-adoption-tracking). A read endpoint that writes is
+    unusual, so it is called out here rather than buried — see that change's
+    design.md Decision #1. The write is best-effort and can never fail the read.
     """
     supabase = get_supabase()
     scope = resolve_request_tenant_scope(user, supabase)
@@ -130,6 +136,11 @@ async def get_cash_projection(
             estado="tenant_no_resuelto",
             semanas=None,
         )
+
+    try:
+        await record_module_open(tenant_id, (user or {}).get("id"))
+    except Exception as e:  # noqa: BLE001 - telemetry must never fail the projection
+        logger.warning(f"Radar adoption tracking skipped for tenant {tenant_id}: {e}")
 
     try:
         result = await calculate_cash_projection_13w(tenant_id, supabase_client=supabase)
