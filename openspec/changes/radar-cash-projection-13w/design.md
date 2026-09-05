@@ -103,6 +103,26 @@ honestly claim.
    documentation correction, not a scope change: it makes the doc match what was already
    approved.
 
+8. **The endpoint needs its own PWA-facing router at `/radar`, mounted separately from
+   the agent router.** Found only after the first production deploy answered **404** for
+   the documented path: `presentation/router.py` mounts `radar_endpoints.router` at
+   `/agents/radar-predictivo`, so the new route landed at
+   `/api/v1/agents/radar-predictivo/proyeccion-caja`, not `/api/v1/radar/proyeccion-caja`.
+   The repo consistently splits the agent-internal surface (`/agents/centinela`,
+   `/agents/pulso-diario`, `/agents/radar-predictivo`) from the clean per-tenant paths the
+   PWA reads (`/financials`, `/centinela`, `/tenant`) — `centinela_endpoints.py` vs
+   `centinela_agents_endpoints.py` is the exact precedent, and `jarvis_endpoints.py`
+   (`webhook_router` + `api_router`) is the precedent for exporting two routers from one
+   module. Fix: `radar_endpoints.py` now also exports `pwa_router`, carrying only
+   `/proyeccion-caja`, mounted at `/radar`. The legacy `/risk-score` route stays exactly
+   where it was.
+
+   **Why the tests missed it:** every endpoint test called `get_cash_projection()` as a
+   plain async function (the `test_agent_stub_endpoints_tenant.py` pattern), which passes
+   regardless of where — or whether — the router is mounted. `TestRouteRegistration` was
+   added to pin the actual mounted path against `presentation.router.api_router`, and it
+   reproduces the 404 when the mount is wrong.
+
 ## Risks / Trade-offs
 
 - **[Risk] A tenant with volatile week-to-week net flux gets a projection that looks

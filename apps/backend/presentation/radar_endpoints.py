@@ -26,6 +26,13 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["radar"])
 
+# PWA-facing read surface, mounted separately at /radar (see presentation/router.py).
+# The repo splits agent-internal routes (/agents/radar-predictivo, /agents/centinela,
+# /agents/pulso-diario) from the clean per-tenant paths the PWA reads (/financials,
+# /centinela, /tenant) — centinela_endpoints vs centinela_agents_endpoints is the
+# precedent, and jarvis_endpoints is the precedent for two routers in one module.
+pwa_router = APIRouter(tags=["radar"])
+
 
 class RiskScoreResponse(BaseModel):
     """Risk score and cashflow forecast response."""
@@ -93,7 +100,7 @@ class CashProjectionResponse(BaseModel):
     alerta_narrativa: Optional[str] = None
 
 
-@router.get(
+@pwa_router.get(
     "/proyeccion-caja",
     response_model=CashProjectionResponse,
     summary="13-week cash projection for the authenticated caller's own tenant",

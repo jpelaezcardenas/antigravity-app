@@ -10,7 +10,7 @@ from presentation.taty_endpoints import router as taty_router
 from presentation.telegram_endpoints import router as telegram_router
 from presentation.jarvis_endpoints import webhook_router as jarvis_webhook_router, api_router as jarvis_api_router
 from presentation.kb_endpoints import router as kb_router
-from presentation.radar_endpoints import router as radar_router
+from presentation.radar_endpoints import router as radar_router, pwa_router as radar_pwa_router
 from presentation.wizard_endpoints import router as wizard_router
 from presentation.social_ops_endpoints import router as social_ops_router
 from presentation.meta_endpoints import router as meta_router
@@ -52,6 +52,10 @@ api_router.include_router(tiktok_router, prefix="/channels/tiktok", tags=["tikto
 api_router.include_router(linkedin_router, prefix="/channels/linkedin", tags=["linkedin"])
 api_router.include_router(kb_router, prefix="/kb", tags=["knowledge-base"])
 api_router.include_router(radar_router, prefix="/agents/radar-predictivo", tags=["radar"])
+# Radar's PWA-facing read surface (radar-cash-projection-13w). Mounted at the clean
+# /radar prefix like /financials and /centinela, not under /agents/* — same split
+# centinela already uses between its PWA router and its agents router.
+api_router.include_router(radar_pwa_router, prefix="/radar", tags=["radar"])
 api_router.include_router(wizard_router, prefix="/wizard", tags=["wizard"])
 api_router.include_router(financials_router, prefix="/financials", tags=["financials"])
 api_router.include_router(tenant_router, prefix="/tenant", tags=["tenant"])

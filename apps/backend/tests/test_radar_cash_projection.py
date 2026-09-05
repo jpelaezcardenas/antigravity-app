@@ -363,6 +363,29 @@ class TestCashProjectionEndpoint:
         assert response.impuesto_futuro_estimado is None
 
 
+class TestRouteRegistration:
+    """
+    The endpoint must be reachable at the path the spec and the PWA client
+    agree on. Calling the handler function directly (as the tests above do)
+    passes even when the router is mounted somewhere else entirely — which is
+    exactly what happened on the first deploy: radar_endpoints was only mounted
+    at /agents/radar-predictivo, so production answered 404 for the documented
+    path. This test pins the real mounted path.
+    """
+
+    def test_proyeccion_caja_is_mounted_at_api_v1_radar(self):
+        from presentation.router import api_router
+
+        paths = {route.path for route in api_router.routes}
+        assert "/radar/proyeccion-caja" in paths
+
+    def test_legacy_risk_score_path_is_unchanged(self):
+        from presentation.router import api_router
+
+        paths = {route.path for route in api_router.routes}
+        assert "/agents/radar-predictivo/risk-score" in paths
+
+
 class TestGenerateAlertaNarrativa:
     """Task 5.1: dedicated coverage for the two phrasing branches + the empty case."""
 
