@@ -14,7 +14,7 @@ Demo mock visual de la app Contexia. Stack: Next.js 16 App Router + React 19 + T
 
 ## Pantallas data-bound
 
-`CashTodayCard` (Pulso/Overview) es la primera pantalla data-bound (de 7 hoy).
+`CashTodayCard` (Pulso/Overview) es la primera pantalla data-bound (de 10 hoy).
 Es un `"use client"` componente que se autoabastece (no recibe props de datos):
 `useEffect` + `fetchFinancials()` (`lib/api-client.ts`) en mount, con estados
 `loading` / `error` / `empty` / `ready` explícitos en el render — nunca queda en
@@ -171,7 +171,7 @@ desbloquear esta función") cuando `plan_tier === "freemium"`; en cualquier otro
 caso (loading, error, tier pagado) no renderiza nada, sin flash de layout.
 Fiscal y Patrimonio siguen siendo 100% mock por lo demás — este banner es puramente
 presentacional y no implica que la pantalla tenga datos reales. **Radar dejó de ser
-100% mock** a partir de `radar-cash-projection-13w` (ver la novena excepción abajo):
+100% mock** a partir de `radar-cash-projection-13w` (ver la décima excepción abajo):
 su sección "Radar de Caja 13 Semanas" lee datos reales, mientras el resto de sus
 cards (selector de escenario, proyección 30 días, provisión de impuestos, insight,
 milestones) siguen en `lib/mock/radar.ts`.
@@ -210,7 +210,7 @@ sección Dashboard del Búnker (debajo de `InfrastructureDashboard`):
   `presentation/metrics_endpoints.py` registrado en `main.py`. RLS: cada tenant ve solo sus datos;
   el rol `service_role` escribe los snapshots nocturnos.
 
-### Radar → Radar de Caja 13 Semanas (novena excepción data-bound, `radar-cash-projection-13w`)
+### Radar → Radar de Caja 13 Semanas (décima excepción data-bound, `radar-cash-projection-13w`)
 
 `components/radar/CashProjection13wCard.tsx` es self-feeding igual que `CashTodayCard`:
 `fetchCashProjection13w()` (`lib/api-client.ts`) en mount, **solo lectura**. Estados
