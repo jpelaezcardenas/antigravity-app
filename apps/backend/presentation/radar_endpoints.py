@@ -6,15 +6,20 @@ Risk scores >= 80 trigger conditional HITL (risk_review approval_queue entry).
 """
 
 import logging
-from typing import Optional
+from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from core.deps import get_current_user
+from core.supabase_client import get_supabase
+from core.tenant_context import TenantScope, resolve_request_tenant_scope
 from services.radar_service import (
     calculate_risk_score,
     calculate_cashflow_forecast,
+    calculate_cash_projection_13w,
     enqueue_risk_review_if_critical,
+    generate_alerta_narrativa,
 )
 
 logger = logging.getLogger(__name__)
@@ -65,3 +70,74 @@ async def get_risk_score(
     except Exception as e:
         logger.error(f"Radar.get_risk_score failed for tenant {tenant_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Risk score calculation failed: {e}")
+
+
+class WeekProjection(BaseModel):
+    """One week of the 13-week cash projection."""
+
+    semana: int
+    fecha_inicio: str
+    caja_proyectada: int
+    confianza: str
+
+
+class CashProjectionResponse(BaseModel):
+    """13-week cash projection response (radar-cash-projection-13w)."""
+
+    client_tenant_id: str
+    generado_en: str
+    metodologia: str
+    impuesto_futuro_estimado: Optional[int] = None
+    estado: str
+    semanas: Optional[List[WeekProjection]] = None
+    alerta_narrativa: Optional[str] = None
+
+
+@router.get(
+    "/proyeccion-caja",
+    response_model=CashProjectionResponse,
+    summary="13-week cash projection for the authenticated caller's own tenant",
+)
+async def get_cash_projection(
+    user: dict = Depends(get_current_user),
+) -> CashProjectionResponse:
+    """
+    Return a 13-week cash projection for the caller's resolved tenant.
+
+    Tenant resolution uses the canonical `resolve_request_tenant_scope()`
+    (Decision #17) — no query-param tenant. This is a read-only endpoint, so
+    an unresolved tenant gets a graceful 200 empty response
+    (`estado: "tenant_no_resuelto"`), matching `GET /centinela/alerts`'s
+    precedent, not the 404 anti-enumeration policy used by write/ownership
+    routes like Approval Queue (see design.md Decision #2).
+    """
+    supabase = get_supabase()
+    scope = resolve_request_tenant_scope(user, supabase)
+    tenant_id = scope.tenant_id if scope else None
+
+    if tenant_id is None:
+        return CashProjectionResponse(
+            client_tenant_id="",
+            generado_en="",
+            metodologia="solo_historico",
+            estado="tenant_no_resuelto",
+            semanas=None,
+        )
+
+    try:
+        result = await calculate_cash_projection_13w(tenant_id, supabase_client=supabase)
+    except Exception as e:
+        logger.error(f"Radar.get_cash_projection failed for tenant {tenant_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Cash projection calculation failed: {e}")
+
+    narrativa = generate_alerta_narrativa(result.get("semanas"))
+
+    return CashProjectionResponse(
+        client_tenant_id=result["client_tenant_id"],
+        generado_en=result["generado_en"],
+        metodologia=result["metodologia"],
+        impuesto_futuro_estimado=result.get("impuesto_futuro_estimado"),
+        estado=result["estado"],
+        semanas=result.get("semanas"),
+        alerta_narrativa=narrativa,
+    )

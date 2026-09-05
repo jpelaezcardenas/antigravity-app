@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 from typing import Any, Optional
 
 from core.supabase_client import get_supabase
+from services.financials_service import _compute_caja_real_balance
 
 logger = logging.getLogger(__name__)
 
@@ -259,6 +260,184 @@ async def calculate_cashflow_forecast(tenant_id: str, days: int = 30, supabase_c
     except Exception as e:
         logger.warning(f"Error calculating cashflow forecast for tenant {tenant_id}: {e}")
         return 0
+
+
+async def _weekly_net_flux(
+    tenant_id: str,
+    week_start: datetime,
+    week_end: datetime,
+    supabase_client: Optional[Any] = None,
+) -> int:
+    """
+    Net cash flux (minor units) for a single tenant within [week_start, week_end).
+
+    Same query shape as calculate_cashflow_forecast's lookback window (DIAN
+    invoiced minus ERP posted), extracted so the 13-week projection can bucket
+    it per ISO week without duplicating the Shadow GL access pattern
+    (design.md Decision #1).
+
+    Returns 0 if the tenant has no rows in the window.
+    """
+    supabase = supabase_client if supabase_client is not None else get_supabase()
+
+    week_start_str = week_start.isoformat() + "Z"
+    week_end_str = week_end.isoformat() + "Z"
+
+    dian_rows = (
+        supabase.table("dian_xml_documents")
+        .select("total_amount_minor")
+        .eq("tenant_id", tenant_id)
+        .gte("created_at", week_start_str)
+        .lte("created_at", week_end_str)
+        .execute()
+    )
+    total_dian_minor = sum(row["total_amount_minor"] for row in dian_rows.data)
+
+    erp_entries = (
+        supabase.table("erp_journal_entries")
+        .select("id")
+        .eq("tenant_id", tenant_id)
+        .gte("created_at", week_start_str)
+        .lte("created_at", week_end_str)
+        .execute()
+    )
+
+    total_erp_minor = 0
+    if erp_entries.data:
+        erp_lines = (
+            supabase.table("erp_journal_lines")
+            .select("debit_minor")
+            .eq("tenant_id", tenant_id)
+            .in_("entry_id", [row["id"] for row in erp_entries.data])
+            .execute()
+        )
+        total_erp_minor = sum(line["debit_minor"] for line in erp_lines.data)
+
+    return total_dian_minor - total_erp_minor
+
+
+PROJECTION_LOOKBACK_WEEKS = 12
+PROJECTION_MIN_HISTORY_WEEKS = 4
+PROJECTION_HORIZON_WEEKS = 13
+PROJECTION_HIGH_CONFIDENCE_WEEKS = 4
+
+
+def _distinct_history_weeks(entry_dates: list[str]) -> int:
+    """Count distinct ISO (year, week) buckets among the given entry_date strings."""
+    weeks = set()
+    for raw_date in entry_dates:
+        if not raw_date:
+            continue
+        parsed = datetime.fromisoformat(raw_date)
+        iso_year, iso_week, _ = parsed.isocalendar()
+        weeks.add((iso_year, iso_week))
+    return len(weeks)
+
+
+async def calculate_cash_projection_13w(
+    tenant_id: str, supabase_client: Optional[Any] = None
+) -> dict:
+    """
+    13-week cash projection (radar-cash-projection-13w).
+
+    Methodology is always "solo_historico": no accounts-receivable/payable
+    table with due dates exists in the data model, so the projection is a
+    naive linear extrapolation of the tenant's average weekly net flux
+    (see design.md Decision #3/#4). Confidence is capped at "media" for the
+    first PROJECTION_HIGH_CONFIDENCE_WEEKS weeks and "baja" afterward — never
+    "alta", since that would claim grounding this methodology doesn't have.
+
+    Returns a dict with `estado: "sin_historico_suficiente"` and no `semanas`
+    if the tenant has fewer than PROJECTION_MIN_HISTORY_WEEKS distinct weeks
+    of erp_journal_entries activity in the lookback window (never a
+    fabricated projection).
+    """
+    supabase = supabase_client if supabase_client is not None else get_supabase()
+
+    today = datetime.utcnow()
+    lookback_start = today - timedelta(weeks=PROJECTION_LOOKBACK_WEEKS)
+
+    entries = (
+        supabase.table("erp_journal_entries")
+        .select("entry_date")
+        .eq("tenant_id", tenant_id)
+        .gte("entry_date", lookback_start.date().isoformat())
+        .lte("entry_date", today.date().isoformat())
+        .execute()
+    )
+    history_weeks = _distinct_history_weeks(
+        [row.get("entry_date") for row in (entries.data or [])]
+    )
+
+    base_response = {
+        "client_tenant_id": tenant_id,
+        "generado_en": today.isoformat() + "Z",
+        "metodologia": "solo_historico",
+        "impuesto_futuro_estimado": None,
+    }
+
+    if history_weeks < PROJECTION_MIN_HISTORY_WEEKS:
+        return {**base_response, "estado": "sin_historico_suficiente", "semanas": None}
+
+    total_net_flux = await _weekly_net_flux(
+        tenant_id, lookback_start, today, supabase_client=supabase
+    )
+    avg_weekly_flux = total_net_flux / PROJECTION_LOOKBACK_WEEKS
+
+    current_balance = _compute_caja_real_balance(supabase, tenant_id, today.date())
+
+    semanas = []
+    running_balance = current_balance
+    for week_num in range(1, PROJECTION_HORIZON_WEEKS + 1):
+        running_balance += avg_weekly_flux
+        week_start = today + timedelta(weeks=week_num - 1)
+        confianza = "media" if week_num <= PROJECTION_HIGH_CONFIDENCE_WEEKS else "baja"
+        semanas.append(
+            {
+                "semana": week_num,
+                "fecha_inicio": week_start.date().isoformat(),
+                "caja_proyectada": int(running_balance),
+                "confianza": confianza,
+            }
+        )
+
+    return {**base_response, "estado": "ok", "semanas": semanas}
+
+
+def _format_cop(minor_units: int) -> str:
+    """Format minor units (cents) as a whole-COP thousands-separated string, e.g. $8.200.000 COP."""
+    whole_cop = round(minor_units / 100)
+    return f"${whole_cop:,.0f} COP".replace(",", ".")
+
+
+def generate_alerta_narrativa(semanas: Optional[list]) -> str:
+    """
+    Plain Colombian-Spanish narrative for the 13-week projection (task 5.1).
+
+    Deliberately avoids absolute-certainty language ("vas a tener exactamente
+    X") per design.md Risk #1 — the underlying methodology is a naive trend
+    extrapolation (solo_historico), not a grounded forecast.
+    """
+    if not semanas:
+        return (
+            "Todavía no tenemos suficiente historial para proyectar tu caja "
+            "con confianza — vuelve en unas semanas."
+        )
+
+    first_week = semanas[0]["caja_proyectada"]
+    last_week = semanas[-1]["caja_proyectada"]
+    delta = last_week - first_week
+
+    if delta < 0:
+        return (
+            f"A este ritmo, tu caja podría bajar de {_format_cop(first_week)} "
+            f"a {_format_cop(last_week)} en las próximas 13 semanas. Vale la "
+            "pena revisar tus gastos con calma."
+        )
+    return (
+        f"Tu caja se mantiene estable: hoy proyectamos {_format_cop(first_week)} "
+        f"y en 13 semanas alrededor de {_format_cop(last_week)}. Sigue así."
+    )
 
 
 RISK_REVIEW_THRESHOLD = 80

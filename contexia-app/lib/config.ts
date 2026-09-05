@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
   centinelaAlerts: `${API_BASE_URL}/api/v1/centinela/alerts`,
   liquidityBridge: `${API_BASE_URL}/api/v1/financials/liquidity-bridge`,
   tenantMe: `${API_BASE_URL}/api/v1/tenant/me`,
+  radarCashProjection: `${API_BASE_URL}/api/v1/radar/proyeccion-caja`,
   metricsAutoApproval: `${API_BASE_URL}/api/v1/metrics/auto-approval/last-7-days`,
   metricsCsvIngestion: `${API_BASE_URL}/api/v1/metrics/csv-ingestion/last-7-days`,
   metricsQueueHealth: `${API_BASE_URL}/api/v1/metrics/queue-health`,

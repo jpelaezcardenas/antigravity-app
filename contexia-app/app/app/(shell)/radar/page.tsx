@@ -5,6 +5,7 @@ import type { Scenario } from "@/lib/types/contexia";
 import { radarMock } from "@/lib/mock/radar";
 import { RadarScenarioSelector } from "@/components/radar/RadarScenarioSelector";
 import { CashProjectionCard } from "@/components/radar/CashProjectionCard";
+import { CashProjection13wCard } from "@/components/radar/CashProjection13wCard";
 import { EstimatedTaxProvisionCard } from "@/components/radar/EstimatedTaxProvisionCard";
 import { StrategicInsightCard } from "@/components/radar/StrategicInsightCard";
 import { UpcomingMilestonesCard } from "@/components/radar/UpcomingMilestonesCard";
@@ -28,6 +29,10 @@ export default function RadarPage() {
         </div>
         <RadarScenarioSelector value={scenario} onChange={setScenario} />
       </section>
+
+      {/* Live 13-week projection (radar-cash-projection-13w) — reads the real
+          Shadow GL. The scenario-driven mock cards below are unaffected. */}
+      <CashProjection13wCard />
 
       <CashProjectionCard projection={data.cashProjection} />
       <EstimatedTaxProvisionCard provision={data.taxProvision} />

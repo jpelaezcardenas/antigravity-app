@@ -4,7 +4,7 @@ Demo mock visual de la app Contexia. Stack: Next.js 16 App Router + React 19 + T
 
 ## Reglas duras
 
-- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real, Alertas Activas; Flujo-detalle → Puente de Liquidez; Búnker → Social Content Ops; Búnker → Onboarding; Búnker → CRM/Ventas; Búnker → Sell Machine; Config → identidad/plan del tenant; el banner "actualiza tu plan" en Fiscal/Radar/Patrimonio) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real, Alertas Activas, Puente de Liquidez, Config y el banner de upgrade son solo lectura; Social Content Ops, Onboarding, CRM/Ventas B2C, y Sell Machine escriben; CRM/Ventas B2B es de solo lectura — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
+- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real, Alertas Activas; Flujo-detalle → Puente de Liquidez; Búnker → Social Content Ops; Búnker → Onboarding; Búnker → CRM/Ventas; Búnker → Sell Machine; Config → identidad/plan del tenant; el banner "actualiza tu plan" en Fiscal/Radar/Patrimonio; Radar → Radar de Caja 13 Semanas) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real, Alertas Activas, Puente de Liquidez, Config, el banner de upgrade y Radar de Caja 13 Semanas son solo lectura; Social Content Ops, Onboarding, CRM/Ventas B2C, y Sell Machine escriben; CRM/Ventas B2B es de solo lectura — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
 - **Regla dura — nunca mock como fallback de error**: ninguna pantalla data-bound puede, ante un fetch fallido, mostrar datos de `lib/mock/*` presentados como si fueran reales. El estado de error debe ser explícito y honesto (discreto, sin banner alarmante) — nunca datos inventados bajo un estado "ready"/"listo". Incidente que originó esta regla: `CashTodayCard` caía silenciosamente a `pulsoMock.cash` en error, marcado como `"ready"` — corregido en `pwa-tenant-aware-screens` (ver abajo).
 - **Fuente de verdad visual**: el export de Stitch y los screenshots `screen.png` del ZIP `stitch_contexia_evolution_cfo_as_a_service`. No rediseñar pantallas que Stitch ya definió.
 - **Sin CDN**: nada de React/Tailwind/Babel por unpkg. Las únicas URLs externas son Google Fonts (Inter, JetBrains Mono, Material Symbols) cargadas desde [app/layout.tsx](app/layout.tsx).
@@ -165,12 +165,16 @@ mount, estados `loading` (skeleton) / `ready` (nombre + tier reales) / `empty`
 identidad del tenant no es un dato crítico que amerite alarmar). Solo lectura.
 
 `components/shared/UpgradePlanBanner.tsx` es un componente compartido, montado
-en las 3 pantallas 100% mock (Fiscal, Radar, Patrimonio) — llama al mismo
+en Fiscal, Radar y Patrimonio — llama al mismo
 `fetchTenantMe()` y solo se renderiza (una línea "Actualiza tu plan para
 desbloquear esta función") cuando `plan_tier === "freemium"`; en cualquier otro
-caso (loading, error, tier pagado) no renderiza nada, sin flash de layout. Las 3
-pantallas siguen siendo 100% mock por lo demás — este banner es puramente
-presentacional y no implica que la pantalla tenga datos reales.
+caso (loading, error, tier pagado) no renderiza nada, sin flash de layout.
+Fiscal y Patrimonio siguen siendo 100% mock por lo demás — este banner es puramente
+presentacional y no implica que la pantalla tenga datos reales. **Radar dejó de ser
+100% mock** a partir de `radar-cash-projection-13w` (ver la novena excepción abajo):
+su sección "Radar de Caja 13 Semanas" lee datos reales, mientras el resto de sus
+cards (selector de escenario, proyección 30 días, provisión de impuestos, insight,
+milestones) siguen en `lib/mock/radar.ts`.
 
 - **Backend**: `GET /api/v1/tenant/me` (nuevo), resuelto vía el resolver
   canónico `resolve_request_tenant_scope` (a diferencia de `/financials`, que
@@ -205,6 +209,30 @@ sección Dashboard del Búnker (debajo de `InfrastructureDashboard`):
 - **Backend**: tabla `metrics_snapshots` (migración `0045`), `services/metrics_service.py`,
   `presentation/metrics_endpoints.py` registrado en `main.py`. RLS: cada tenant ve solo sus datos;
   el rol `service_role` escribe los snapshots nocturnos.
+
+### Radar → Radar de Caja 13 Semanas (novena excepción data-bound, `radar-cash-projection-13w`)
+
+`components/radar/CashProjection13wCard.tsx` es self-feeding igual que `CashTodayCard`:
+`fetchCashProjection13w()` (`lib/api-client.ts`) en mount, **solo lectura**. Estados
+explícitos: `loading` (skeleton) / `ready` (gráfico de 13 puntos + narrativa) /
+`sin_historico_suficiente` (mensaje honesto "aún no tenemos suficiente historial") /
+`tenant_no_resuelto` / `error` — nunca cae a `radarMock`.
+
+- **Backend**: `GET /api/v1/radar/proyeccion-caja` (nuevo), tenant resuelto vía el
+  resolver canónico `resolve_request_tenant_scope`, sin query param de tenant.
+- **Metodología honesta**: la respuesta trae `metodologia: "solo_historico"` —
+  no existen tablas de CxC/CxP con fecha de vencimiento en el modelo de datos, así
+  que la proyección es extrapolación de tendencia, no un forecast con compromisos
+  conocidos. `impuesto_futuro_estimado` viene siempre `null` (no hay cálculo real de
+  impuesto en el backend). **No inventar ni mockear ese número en la UI.**
+- **Confianza**: solo dos bandas, `"media"` (semanas 1-4) y `"baja"` (5-13). **Nunca
+  existe `"alta"`** — colorear con dos colores, no tres.
+- **Gráfico sin librerías**: SVG inline (`viewBox="0 0 100 100"` + `path d`), misma
+  técnica que `CashProjectionCard.tsx` ya usaba. Se evaluó Recharts y se descartó por
+  la regla dura "no agregar dependencias sin razón fuerte" — ver
+  `openspec/changes/radar-cash-projection-13w/design.md` Decisión #6.
+- **Sin tracking**: el evento de adopción del brief original quedó fuera de alcance —
+  no existe infraestructura de analytics en `contexia-app` a la cual engancharse.
 
 Esto es una excepción escoped al charter "sin backend" — pantallas data-bound son
 un puente hacia el MVP data-driven; mocks aplican para todo lo demás.
