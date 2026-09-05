@@ -44,21 +44,11 @@ def get_siigo_credentials(tenant_id: str) -> tuple[str, str] | None:
     return username, access_key
 
 
-def list_siigo_eligible_tenants() -> list[str]:
-    """Return tenant UUIDs that have both SIIGO_USERNAME_* and SIIGO_ACCESS_KEY_* env vars set."""
-    eligible: list[str] = []
-    prefix = "SIIGO_USERNAME_"
-    for var_name, value in os.environ.items():
-        if var_name.startswith(prefix) and value:
-            suffix = var_name[len(prefix):]
-            # Reconstruct UUID format: 8_4_4_4_12 → 8-4-4-4-12
-            parts = suffix.lower()
-            # Accept both underscore-joined and original UUID format
-            tenant_candidate = f"{parts[0:8]}-{parts[9:13]}-{parts[14:18]}-{parts[19:23]}-{parts[24:36]}"
-            key_var = f"SIIGO_ACCESS_KEY_{suffix}"
-            if os.environ.get(key_var):
-                eligible.append(tenant_candidate)
-    return eligible
+# NOTE: a list_siigo_eligible_tenants() helper was removed here — it had no callers and
+# reconstructed UUIDs by slicing fixed character positions out of the env var name, which
+# breaks on any name that is not exactly a 32-hex-with-underscores suffix. The poller
+# discovers tenants from its own SIIGO_ELIGIBLE_TENANTS setting instead; the backend only
+# ever resolves credentials for a tenant_id it is explicitly given.
 
 
 class SiigoApiClient:

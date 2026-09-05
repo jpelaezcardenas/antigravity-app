@@ -84,17 +84,88 @@ def _parse_xml_bytes(content: bytes) -> list[dict[str, Any]]:
     return _ingest_xml_rows(raw_xml)
 
 
-def _ingest_xml_rows(raw_xml: str) -> list[dict[str, Any]]:
-    """Parse a DIAN UBL 2.1 XML document into Shadow GL rows.
+# Colombian PUC accounts used when deriving a journal entry from a DIAN document.
+# These are the same codes siigo_api_client._invoice_to_rows() uses, kept in sync
+# deliberately so both ingestion paths produce comparable entries.
+_PUC_RECEIVABLE = "1300"  # Clientes (accounts receivable)
+_PUC_REVENUE = "4135"     # Ingresos operacionales (commerce)
+_PUC_VAT_PAYABLE = "2408"  # IVA por pagar
 
-    This thin wrapper is a separate function so tests can patch it cleanly.
-    The real DIAN XML parsing lives in shadow_gl_service.parse_dian_ubl_xml().
+
+def _ingest_xml_rows(raw_xml: str) -> list[dict[str, Any]]:
+    """Parse a DIAN UBL 2.1 XML document into balanced Shadow GL rows.
+
+    parse_dian_ubl_xml() returns a SINGLE document dict shaped for the
+    `dian_xml_documents` table (cufe, totals, NITs) — NOT journal rows. This
+    function derives the double-entry rows the Shadow GL ingestion expects.
+
+    An invoice/debit note produces:
+        DEBIT  1300 Clientes        = total (incl. VAT)
+        CREDIT 4135 Ingresos        = total - VAT
+        CREDIT 2408 IVA por pagar   = VAT            (omitted when VAT is 0)
+
+    A credit note reverses those directions. Debits always equal credits, which
+    the downstream ingest_siigo_csv() balance check requires.
     """
     try:
         from services.shadow_gl_service import parse_dian_ubl_xml
-        return parse_dian_ubl_xml(raw_xml)
+        doc = parse_dian_ubl_xml(raw_xml)
     except Exception as exc:
         raise ValueError(f"Could not parse DIAN XML: {exc}") from exc
+
+    total = int(doc.get("total_amount_minor") or 0)
+    if total == 0:
+        raise ValueError("DIAN document has a zero payable amount — nothing to ingest")
+
+    vat = int(doc.get("tax_amount_minor") or 0)
+    if vat > total:
+        raise ValueError(
+            f"DIAN document VAT ({vat}) exceeds its payable amount ({total}) — refusing to "
+            "derive an unbalanced entry"
+        )
+    net = total - vat
+
+    # Withholding is parsed by parse_dian_ubl_xml but deliberately NOT posted here:
+    # its correct treatment (retefuente/reteIVA/reteICA accounts) is an accounting
+    # decision this parser must not invent. Log it so the omission is visible rather
+    # than silent — see the OpenSpec change before adding withholding lines.
+    withholding = int(doc.get("withholding_amount_minor") or 0)
+    if withholding:
+        logger.warning(
+            "DIAN document %s carries withholding of %d minor units, which is NOT posted to "
+            "the Shadow GL. The derived entry reflects the gross amount only.",
+            doc.get("cufe"),
+            withholding,
+        )
+
+    cufe = str(doc.get("cufe") or "")
+    fecha = str(doc.get("issue_date") or "")
+    doc_type = str(doc.get("document_type") or "invoice")
+    reference = f"DIAN-{cufe}"
+    description = f"{doc_type} {cufe} (NIT {doc.get('issuer_nit', '')})"
+
+    # A credit note reverses the flow of an invoice/debit note.
+    reversed_flow = doc_type == "credit_note"
+
+    def _row(account: str, amount: int, is_debit: bool) -> dict[str, Any]:
+        debit_side = is_debit if not reversed_flow else not is_debit
+        return {
+            "fecha": fecha,
+            "referencia_externa": reference,
+            "codigo_cuenta": account,
+            "descripcion": description,
+            "debito_cents": amount if debit_side else 0,
+            "credito_cents": 0 if debit_side else amount,
+        }
+
+    rows = [
+        _row(_PUC_RECEIVABLE, total, is_debit=True),
+        _row(_PUC_REVENUE, net, is_debit=False),
+    ]
+    if vat:
+        rows.append(_row(_PUC_VAT_PAYABLE, vat, is_debit=False))
+
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -232,16 +303,32 @@ async def _extract_rows_via_llm(content: bytes) -> list[dict[str, Any]]:
     )
 
     try:
-        from services.llm_engine import call_llm
-        response_text = await call_llm(prompt, max_tokens=2000)
-        raw = response_text.strip()
-        if raw.startswith("```"):
-            raw = raw.split("```", 2)[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-        rows = json.loads(raw)
+        # The LLM entry point lives in agents.llm_engine (NOT services.llm_engine, which
+        # does not exist) and get_ai_response is SYNCHRONOUS — run it off the event loop
+        # so a slow provider cannot block the whole backend.
+        import asyncio
+        from agents.llm_engine import get_ai_response
+
+        response_text = await asyncio.to_thread(
+            get_ai_response,
+            prompt=prompt,
+            max_tokens=2000,
+            temperature=0.0,  # deterministic extraction, not creative writing
+        )
+        if isinstance(response_text, dict):
+            # response_format defaults to "text", but guard anyway: a dict here means
+            # the engine already parsed JSON for us.
+            rows = response_text.get("rows", response_text)
+        else:
+            raw = str(response_text).strip()
+            if raw.startswith("```"):
+                raw = raw.split("```", 2)[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+            rows = json.loads(raw)
+
         if not isinstance(rows, list):
-            raise ValueError("LLM did not return a list")
+            raise ValueError("LLM did not return a list of rows")
         return rows
     except Exception as exc:
         raise ValueError(f"LLM extraction failed: {exc}") from exc
