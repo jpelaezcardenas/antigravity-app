@@ -20,12 +20,38 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-_BASE_URL = "https://api.siigo.com"
-_PARTNER_ID = "contexia-financial-os"
 _AUTH_PATH = "/auth"
 _JOURNALS_PATH = "/v1/journals"
 _INVOICES_PATH = "/v1/invoices"
 _TOKEN_BUFFER_SECONDS = 60  # Refresh token this many seconds before expiry
+
+
+class SiigoConfigurationError(RuntimeError):
+    """Raised when Siigo is not configured well enough to make a real call."""
+
+
+def _base_url() -> str:
+    from config import settings
+    return settings.SIIGO_BASE_URL
+
+
+def _partner_id() -> str:
+    """Return the configured Siigo Partner-Id, or fail closed.
+
+    Siigo rejects requests whose Partner-Id is not a registered partner, so a wrong
+    value fails at authentication anyway — but it fails as an opaque 401. Raising
+    here instead makes the cause explicit and keeps an unverified guess out of the
+    request. Set SIIGO_PARTNER_ID from Siigo's partner console.
+    """
+    from config import settings
+    partner_id = (settings.SIIGO_PARTNER_ID or "").strip()
+    if not partner_id:
+        raise SiigoConfigurationError(
+            "SIIGO_PARTNER_ID is not set. Siigo requires a registered Partner-Id header; "
+            "obtain it from Siigo's partner console and set it as a Railway env var. "
+            "Refusing to call the Siigo API with a guessed value."
+        )
+    return partner_id
 
 
 def _env_key(tenant_id: str) -> tuple[str, str]:
@@ -80,8 +106,8 @@ class SiigoApiClient:
         """POST /auth → cache JWT until near-expiry."""
         from datetime import timedelta
         payload = {"username": self._username, "access_key": self._access_key}
-        headers = {"Partner-Id": _PARTNER_ID, "Content-Type": "application/json"}
-        resp = await client.post(f"{_BASE_URL}{_AUTH_PATH}", json=payload, headers=headers)
+        headers = {"Partner-Id": _partner_id(), "Content-Type": "application/json"}
+        resp = await client.post(f"{_base_url()}{_AUTH_PATH}", json=payload, headers=headers)
         resp.raise_for_status()
         data = resp.json()
         self._token = data["access_token"]
@@ -91,7 +117,7 @@ class SiigoApiClient:
 
     def _auth_headers(self) -> dict[str, str]:
         return {
-            "Partner-Id": _PARTNER_ID,
+            "Partner-Id": _partner_id(),
             "Authorization": f"Bearer {self._token}",
             "Content-Type": "application/json",
         }
@@ -115,7 +141,7 @@ class SiigoApiClient:
             rows: list[dict[str, Any]] = []
             while True:
                 resp = await client.get(
-                    f"{_BASE_URL}{_JOURNALS_PATH}",
+                    f"{_base_url()}{_JOURNALS_PATH}",
                     headers=self._auth_headers(),
                     params=params,
                 )
@@ -145,7 +171,7 @@ class SiigoApiClient:
             rows: list[dict[str, Any]] = []
             while True:
                 resp = await client.get(
-                    f"{_BASE_URL}{_INVOICES_PATH}",
+                    f"{_base_url()}{_INVOICES_PATH}",
                     headers=self._auth_headers(),
                     params=params,
                 )

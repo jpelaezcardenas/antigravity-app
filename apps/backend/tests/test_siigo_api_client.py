@@ -136,6 +136,36 @@ class TestSiigoApiClientForTenant:
         assert client.tenant_id == "fake-tenant-id"
 
 
+class TestPartnerIdFailsClosed:
+    """SIIGO_PARTNER_ID must never fall back to a guessed value."""
+
+    def test_raises_when_partner_id_unset(self):
+        from services.siigo_api_client import _partner_id, SiigoConfigurationError
+        from config import settings
+
+        with patch.object(settings, "SIIGO_PARTNER_ID", ""):
+            with pytest.raises(SiigoConfigurationError) as exc_info:
+                _partner_id()
+
+        assert "SIIGO_PARTNER_ID" in str(exc_info.value)
+
+    def test_returns_configured_value(self):
+        from services.siigo_api_client import _partner_id
+        from config import settings
+
+        with patch.object(settings, "SIIGO_PARTNER_ID", "  real-partner-id  "):
+            assert _partner_id() == "real-partner-id"
+
+    def test_no_hardcoded_partner_id_in_source(self):
+        """Guard against reintroducing a literal partner id."""
+        import inspect
+        import services.siigo_api_client as mod
+
+        source = inspect.getsource(mod)
+        assert "contexiaFinancialOS" not in source
+        assert "contexia-financial-os" not in source
+
+
 class TestSiigoApiClientAuth:
     @pytest.mark.asyncio
     async def test_authenticate_caches_token(self):
@@ -150,7 +180,9 @@ class TestSiigoApiClientAuth:
         mock_httpx_client = AsyncMock()
         mock_httpx_client.post = AsyncMock(return_value=mock_response)
 
-        await client._authenticate(mock_httpx_client)
+        from config import settings
+        with patch.object(settings, "SIIGO_PARTNER_ID", "test-partner-id"):
+            await client._authenticate(mock_httpx_client)
 
         assert client._token == "tok-123"
         assert client._token_expires_at is not None
@@ -168,6 +200,8 @@ class TestSiigoApiClientAuth:
 
         mock_httpx = AsyncMock()
         mock_httpx.post = AsyncMock(return_value=mock_response)
-        await client._authenticate(mock_httpx)
+        from config import settings
+        with patch.object(settings, "SIIGO_PARTNER_ID", "test-partner-id"):
+            await client._authenticate(mock_httpx)
 
         assert client._token_is_valid()

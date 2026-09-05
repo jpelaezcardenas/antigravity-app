@@ -58,6 +58,8 @@ flowchart TB
 | **Hermes** | Orquestador/scheduler de agentes + memoria aplicada | Nous Research native | **Local / WSL** (soberanía de datos) |
 | **GBrain** | Segundo cerebro: hybrid search (vector+keyword+expansión) + grafo de conocimiento auto-wired sobre `contexia-brain`; MCP server para Claude Code/Codex/Hermes | TypeScript/Bun (github.com/jpelaezcardenas/garrytan-gbrain), `gbrain-autopilot.service` (systemd) | **Local / WSL** (mismo host que Hermes) — proceso local, almacenamiento en esquema dedicado `gbrain` en el mismo proyecto Supabase (`kpynymwghfwshvcvevxq`) |
 | **Hermes-HubSpot poller** | Sync unidireccional Supabase → HubSpot (free tier): `crm_leads` → Contacts + Deals en el único pipeline gratis (funnel Renta Natural B2C); `b2b_clients` → Companies solo lectura, nunca Deals. Ver `openspec/changes/hubspot-sync-renta-natural/` | `apps/hermes-hubspot-poller/` (Python/httpx), scheduled task cada 5 min | **Local / laptop** (mismo host que Hermes) — el Private App Access Token de HubSpot y la service-role key de Supabase nunca llegan a Railway/Vercel |
+| **Hermes-Siigo poller** | Sync unidireccional **de solo lectura** Siigo → Shadow GL: cada noche a las 2 AM pide journals + invoices de la API REST de Siigo por cada tenant con credenciales y los ingesta vía `POST /internal/siigo-sync/run`. Nunca escribe de vuelta al Siigo del cliente. Ver `openspec/changes/real-data-ingestion-mvp/` | `apps/hermes-siigo-poller/` (Python/httpx), scheduled task diaria | **Local / laptop** (mismo host que Hermes) — `INTERNAL_API_KEY` y la lista de tenants viven en su `.env` local; las credenciales Siigo por tenant viven **solo** en env vars de Railway (`SIIGO_USERNAME_<tenant>`/`SIIGO_ACCESS_KEY_<tenant>`), nunca en git ni en Supabase |
+| **Hermes-Gmail poller** | Ingesta de adjuntos: cada 15 min lee el inbox de Taty, resuelve el remitente a un tenant vía la tabla `gmail_sender_map` y sube cada adjunto soportado (CSV/XLSX/XML/PDF) a `POST /internal/ingest/file`. Marca el correo `contexia-processed` **solo** si todos sus adjuntos ingestaron bien; un remitente sin mapear se salta sin etiquetar, así queda reintentable. Ver `openspec/changes/real-data-ingestion-mvp/` | `apps/hermes-gmail-poller/` (Python/httpx + Gmail API v1 OAuth2), scheduled task cada 15 min | **Local / laptop** (mismo host que Hermes) — el token OAuth de Gmail, `credentials.json` y la service-role key de Supabase nunca llegan a Railway/Vercel |
 | **Chatwoot + bridge** | Inbox real de WhatsApp (Meta Cloud API) para Taty — inbox `1` ("Taty Contadora Amiga 24/7", `Channel::Whatsapp`; el inbox `3` es `Channel::Api`, solo pruebas/inyección, sin credenciales Meta). `apps/chatwoot-bridge/` (FastAPI) es una capa de transporte delgada: reenvía al backend (`POST /channels/whatsapp/leads/{id}/reply`, que enruta a `taty_lead_router` → `TatyAgentService` — un solo cerebro, el mismo que Telegram/PWA) y Chatwoot entrega la respuesta al cliente real (`deliver=false` en esa llamada evita el doble envío). Pausa HITL vía etiqueta `bot_off` | Chatwoot (Docker Compose, `docker-compose.chatwoot.yml`) + FastAPI/Python 3.11, corre como Scheduled Task de Windows (`ContexiaChatwootBridge`, watchdog de 1 min) | **Local / laptop** (mismo host que Hermes, soberanía de datos) — nunca Vercel/Railway. Docker Desktop instalado y corriendo desde `chatwoot-hermes-taty-bridge`; ver `taty-whatsapp-renta-sales-capability` para el cableado actual al cerebro compartido de Taty |
 
 **Fuente canónica vs artefacto de build:** `contexia-app/` es la fuente de la PWA; la carpeta `app/` (raíz) es un **artefacto generado** (`npm run build` → sync `out/` → `app/`). **Nunca editar `app/` a mano.** (Ver CLAUDE.md §9.)
@@ -102,7 +104,8 @@ DIAN XML  ─┘                dian_xml_documents)  [Supabase, por tenant]
   **Estado real verificado en vivo 2026-08-28 contra las keys de Railway (`elegant-success`/production):** Groq, OpenRouter free y **NVIDIA NIM** (`openai/gpt-oss-120b`, key nueva agregada a Railway) responden — 3 de 4 escalones reales. **Cerebras sigue muerto** (`402 Payment required`) incluso con una key nueva generada el mismo día — confirmado que es la cuenta (falta activar/pagar el tier), no la key ni el código; pendiente del fundador en el dashboard de Cerebras. El modelo de NVIDIA también tuvo que corregirse en el camino: `meta/llama-3.3-70b-instruct` fue retirado el 2026-08-26 (`410 Gone`).
 - **Deploy**: Vercel (auto desde `main`) · Railway (auto desde `main`; arranque ~80s antes de servir).
 - **Secretos**: Bitwarden (ver `docs/runbooks/secrets.md` si existe, o AGENTS.md).
-- **Integraciones**: DIAN (XML UBL 2.1 + normograma), Siigo (CSV), Telegram (Taty), bancos (movimientos vía contable).
+- **Integraciones**: DIAN (XML UBL 2.1 + normograma), Siigo (**CSV export y API REST** — `api.siigo.com`, solo lectura, requiere header `Partner-Id` registrado vía `SIIGO_PARTNER_ID`), **Gmail API v1** (OAuth2 local, solo lectura de adjuntos + etiquetado), Telegram (Taty), bancos (movimientos vía contable).
+- **Parsing de archivos**: `openpyxl` (Excel) y `pypdf` (PDF: extracción de XML embebido y de texto) — agregados en `real-data-ingestion-mvp`.
 
 ## Los 9 agentes
 
@@ -233,6 +236,46 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
     costs... for 16 freemium clients"* — cifra sin respaldo, ningún cliente freemium real ha sido
     aprovisionado todavía en este proyecto. Pendiente de aclarar con Hermes de dónde salió; no
     bloquea nada de lo anterior.
+
+22. **Los datos reales del cliente entran por tres puertas a un solo parser, y el tenant siempre
+    sale del JWT** (`real-data-ingestion-mvp`, 2026-09-04) — el cliente sube su archivo desde la
+    PWA, su Siigo se sincroniza solo cada noche, o manda el adjunto por correo a Taty. Las tres
+    puertas convergen en `services/multi_format_parser.py::parse_any_to_siigo_rows()`
+    (CSV/XLSX/XML/PDF → forma de fila Siigo) y de ahí al `ingest_siigo_csv()` que ya existía, que
+    sigue siendo la única autoridad de validación de balance e idempotencia sobre
+    `(tenant_id, external_reference_id, entry_date)`.
+
+    **Corrección de aislamiento de datos (el motivo real del change):** `shadow_gl_endpoints.py`
+    resolvía el tenant destino consultando `is_cliente_cero=true` — hardcodeado — y sus tres
+    endpoints POST no exigían autenticación. Cualquier cliente que subiera su CSV habría escrito
+    su contabilidad en el libro de **Cliente Cero**. Ahora los cuatro endpoints usan
+    `Depends(get_current_user)` + el resolvedor canónico `resolve_request_tenant_scope()` de la
+    Decisión #17; un llamador autenticado sin tenant resuelto recibe **403**, nunca Cliente Cero.
+
+    **Los endpoints de los pollers viven fuera de `/api/v1/*`** (en `/internal/*`) precisamente
+    porque el rewrite de `vercel.json` expone `/api/v1/*` a internet; `/internal/*` no lo expone
+    ningún rewrite, y además exige `INTERNAL_API_KEY` — que **falla cerrado**: sin la variable,
+    toda petición responde 503 en vez de quedar abierta.
+
+    **Soberanía de credenciales, igual que las Decisiones #1/#10/#20:** los dos pollers corren
+    100% locales. Las credenciales Siigo por tenant son env vars **dinámicas** en Railway
+    (`SIIGO_USERNAME_<tenant>`), nunca una tabla — ninguna credencial se persiste en la base. El
+    token OAuth de Gmail y la service-role key del poller de correo nunca salen del disco local.
+    `SIIGO_PARTNER_ID` no tiene valor por defecto: circulaban dos conjeturas distintas
+    (`contexiaFinancialOS` y `contexia-financial-os`) **sin fuente para ninguna**, así que el
+    cliente lanza `SiigoConfigurationError` antes que llamar a Siigo con un valor inventado.
+
+    **Deuda consciente:** la retención (retefuente/reteIVA/reteICA) se extrae del XML DIAN pero
+    **no se contabiliza** — el asiento derivado registra el bruto y deja un warning con el CUFE.
+    Definir esas cuentas es decisión de una contadora titulada, no default de un parser.
+
+    **Regla que dejó este change (dos bugs llegaron a producción por lo mismo):** un test no debe
+    mockear la frontera que dice verificar. El path XML devolvía un dict de documento en vez de
+    filas y el path LLM importaba un módulo inexistente; ambos tests parcheaban exactamente la
+    función bajo prueba. Agravante: el fixture XML inline era inválido, así que el mock era
+    *necesario* para que el test pasara. Corolario: un `try/except` alrededor del registro de
+    routers que loguea una excepción es una **falla**, no un warning — uno se tragó un `NameError`
+    y dejó ambas rutas `/internal/*` sin registrar con la app arrancando "normal".
 
 ## Enlaces canónicos
 

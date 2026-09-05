@@ -138,6 +138,19 @@ class Settings(BaseSettings):
     WOMPI_EVENTS_SECRET: str = ""
     WOMPI_BASE_URL: str = "https://sandbox.wompi.co/v1"
 
+    # Siigo REST API (change real-data-ingestion-mvp, Track 2).
+    # SIIGO_PARTNER_ID is the partner identifier Siigo issues when registering an
+    # integration; it is sent as the Partner-Id header on every request and Siigo
+    # rejects calls carrying an unregistered value. Empty default = FAIL CLOSED:
+    # SiigoApiClient raises rather than authenticating with a guessed id. Two
+    # different guesses ("contexiaFinancialOS" in the original plan,
+    # "contexia-financial-os" in the first implementation) were in circulation with
+    # no source for either — the real value must come from Siigo's partner console.
+    # Per-tenant credentials are NOT declared here: they are dynamic env var names
+    # (SIIGO_USERNAME_<tenant>/SIIGO_ACCESS_KEY_<tenant>) read in siigo_api_client.
+    SIIGO_PARTNER_ID: str = ""
+    SIIGO_BASE_URL: str = "https://api.siigo.com"
+
     @property
     def origins_list(self) -> List[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]
