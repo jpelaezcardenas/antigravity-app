@@ -64,11 +64,11 @@ Project-specific details:
 - Backend URL: https://antigravity-app-production-175a.up.railway.app
 
 Tasks:
-- [ ] 10.1 git commit + push to main
-- [ ] 10.2 Vercel build complete (green ✅)
-- [ ] 10.3 Railway deploy active (backend change — confirm health check passes)
-- [ ] 10.4 Production URL: `/app/radar` shows the real chart + narrative for Cliente Cero, verified with hard refresh (Ctrl+F5)
-- [ ] 10.5 Create report: `openspec/changes/radar-cash-projection-13w/reports/YYYY-MM-DD-deployment.md`
+- [x] 10.1 git commit + push to main — 4 commits: `40df84f` (feature), `0454f04` (live root sw.js bump), `0855e13` (routing fix), `82d27f6` (export-path fix).
+- [x] 10.2 Vercel build complete (green ✅) — `/app/radar` serves the "Radar de Caja — 13 semanas" card, verified with a cache-busted request (this path returns `X-Vercel-Cache: HIT`). Root `sw.js` live at `v18-2026-09-04`.
+- [x] 10.3 Railway deploy active — deployment status `SUCCESS`, `Application startup complete`, `/api/v1/health` → 200, and `GET /api/v1/radar/proyeccion-caja` → **401** without a token (route registered, auth enforced).
+- [~] 10.4 Production URL: `/app/radar` shows the real chart + narrative for Cliente Cero. **Partially done:** the card is live and rendering on production, correctly degrading to its honest error state for an unauthenticated visitor (endpoint returns 401, no mock fallback). Verifying the *chart with real Cliente Cero numbers* needs a logged-in session; this agent does not handle credentials. **Founder action: open `/app/radar` logged in as Cliente Cero and confirm the 13-week chart renders with real figures** (or the honest `sin_historico_suficiente` state, if that tenant lacks 4+ weeks of Shadow GL history — which would itself be correct behavior).
+- [x] 10.5 Create report: `openspec/changes/radar-cash-projection-13w/reports/2026-09-04-deployment.md` — includes the three deploy failures found and the rules they produced.
 
 ## 11. Archive
 
