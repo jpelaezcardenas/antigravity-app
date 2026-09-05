@@ -34,21 +34,23 @@
 
 ## Track 2 — Siigo API Key Sync
 
-- [ ] 2.1 Crear `apps/backend/services/siigo_api_client.py`
-- [ ] 2.2 Crear `apps/backend/presentation/siigo_sync_endpoints.py` — `POST /internal/siigo-sync/run`
-- [ ] 2.3 Registrar router en `apps/backend/presentation/router.py`
-- [ ] 2.4 Crear `apps/hermes-siigo-poller/` (patrón hubspot-poller)
-- [ ] 2.5 Tests: `pytest -k siigo_api_client --dry-run` con sandbox
+- [x] 2.1 Crear `apps/backend/services/siigo_api_client.py`
+- [x] 2.2 Crear `apps/backend/presentation/siigo_sync_endpoints.py` — `POST /internal/siigo-sync/run`
+- [x] 2.3 Registrar router en `apps/backend/main.py` (prefix `/internal`, fuera de api/v1)
+- [x] 2.4 Crear `apps/hermes-siigo-poller/` (patrón hubspot-poller, nightly 2 AM)
+- [x] 2.5 Tests: `pytest tests/test_siigo_api_client.py` — 11/11 passed
 
 ---
 
 ## Track 3 — Gmail Adjuntos Ingest
 
-- [ ] 3.1 Crear migration `0048_gmail_sender_map.sql`
-- [ ] 3.2 Crear `apps/backend/presentation/ingest_file_endpoints.py` — `POST /internal/ingest/file`
-- [ ] 3.3 Registrar router en `apps/backend/presentation/router.py`
-- [ ] 3.4 Crear `apps/hermes-gmail-poller/` (patrón hubspot-poller)
-- [ ] 3.5 Registrar tarea en Windows Task Scheduler
+- [x] 3.1 Crear migration `0046_gmail_sender_map.sql` (numeración corregida: 0046, no 0048)
+- [x] 3.2 Crear `apps/backend/presentation/ingest_file_endpoints.py` — `POST /internal/ingest/file`
+- [x] 3.3 Registrar router en `apps/backend/main.py` (prefix `/internal`)
+- [x] 3.4 Crear `apps/hermes-gmail-poller/` (patrón hubspot-poller, cada 15 min)
+- [ ] 3.5 Registrar tarea en Windows Task Scheduler — **acción manual del fundador**
+- [ ] 3.6 Aplicar migration `0046` en Supabase — **acción manual del fundador**
+- [ ] 3.7 OAuth2 Gmail: descargar `credentials.json` de Google Cloud Console — **acción manual**
 
 ---
 

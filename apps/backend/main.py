@@ -249,14 +249,18 @@ if os.environ.get("HERMES_BRIDGE_TOKEN"):
     from routers.internal import router as internal_router
     app.include_router(internal_router)
 
-# Siigo sync endpoint — internal machine-to-machine (hermes-siigo-poller, INTERNAL_API_KEY auth)
-# Mounted at /internal (not under /api/v1) — not proxied through vercel.json rewrite.
+# Internal machine-to-machine endpoints (hermes pollers, INTERNAL_API_KEY auth)
+# Mounted at /internal — not proxied through vercel.json rewrite.
 try:
     from presentation.siigo_sync_endpoints import router as siigo_sync_router
-    app.include_router(siigo_sync_router, prefix="/internal")
-    logger.info("Siigo sync router registered at /internal/siigo-sync/run")
+    from presentation.ingest_file_endpoints import router as ingest_file_router
+    _internal_router = APIRouter()
+    _internal_router.include_router(siigo_sync_router)
+    _internal_router.include_router(ingest_file_router)
+    app.include_router(_internal_router, prefix="/internal")
+    logger.info("Internal routers registered: /internal/siigo-sync/run, /internal/ingest/file")
 except Exception as _e:
-    logger.error(f"Failed to include siigo_sync_router: {_e}", exc_info=True)
+    logger.error(f"Failed to include internal routers: {_e}", exc_info=True)
 
 
 if __name__ == "__main__":
