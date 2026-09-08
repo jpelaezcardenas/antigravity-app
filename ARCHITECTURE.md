@@ -277,6 +277,54 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
     routers que loguea una excepción es una **falla**, no un warning — uno se tragó un `NameError`
     y dejó ambas rutas `/internal/*` sin registrar con la app arrancando "normal".
 
+23. **El precio del servicio profesional vive en `b2b_clients`, no en el plan tier; y la UVT
+    vive en una tabla, no en el código** (`pricing-quote-engine`, 2026-09-08) — Contexia vende dos
+    cosas facturadas por dos entidades distintas (`.antigravity/GROUND_TRUTH.md`): **Entidad B**
+    (S.A.S. TIC) vende licencia de software con tiers fijos, **Entidad A** (práctica contable
+    regulada, JCC) vende servicio profesional en **banda** según carga real de trabajo. Pro Micro
+    y Pro Estándar tienen features de software **idénticas** — lo que cambia es la carga humana —
+    así que `core/plan_features.py` **no se toca**: la banda se guarda en la nueva columna
+    `b2b_clients.service_band` (`micro|estandar|complejo`, CHECK, nullable) junto al
+    `monthly_fee_cents` que ya existía desde la migración 0020. Sin la banda, un honorario de
+    $1.490.000 era indistinguible de una excepción Micro y de un piso de Estándar.
+
+    **La UVT no puede ser una constante.** Nueva tabla `uvt_values` (`year` PK, `value_cop` en
+    **pesos completos** —a diferencia de los `*_minor` del Shadow GL—, `resolution`, `created_at`),
+    sembrada con UVT 2025 ($49.799, Res. DIAN 000193 de 2024) y UVT 2026 ($52.374, Res. DIAN
+    000238 del 15-dic-2025). Durante 2026 **corren las dos a la vez y aplican a cosas distintas**:
+    UVT 2025 gobierna los topes de obligatoriedad del año gravable 2025, UVT 2026 las sanciones y
+    la retefuente causadas en 2026 — por eso es una tabla por año y no una fila "vigente". Todo
+    cálculo recibe el año gravable como parámetro; un año sin fila lanza `UvtNotFoundError` y el
+    endpoint responde `estado: "uvt_no_disponible"`, **nunca** la UVT de otro año.
+
+    **`GET /api/v1/pricing/pre-cotizacion`** (nuevo, prefijo limpio `/pricing` como `/financials`
+    y `/radar`, no `/agents/*`) lee el Shadow GL del tenant que llama —resuelto solo con
+    `resolve_request_tenant_scope()`, sin query param, tenant no resuelto → **404**, nunca Cliente
+    Cero— y devuelve ingresos anualizados (COP y UVT), `movimientos_mes`, si supera las 1.400 UVT,
+    banda sugerida y confianza. **No está gated por plan** (a propósito: su razón de ser es
+    dimensionar leads *freemium*) y es **estrictamente de solo lectura** — sin fila en
+    `approval_queue` y sin telemetría, es decir sin la excepción que `radar-adoption-tracking` sí
+    tuvo que justificar.
+
+    **Límites declarados en la propia respuesta, siguiendo el precedente del Radar de Caja:**
+    la **carga laboral / nómina no existe en el modelo de datos** y es la mitad del criterio de
+    honorarios, así que va siempre en `drivers_faltantes`, jamás estimada — por eso `confianza`
+    tiene banda `"media"` o `"baja"` y **nunca `"alta"`**, y una sugerencia `micro` es siempre
+    `"baja"` (Micro se define por la ausencia de carga laboral, justo lo que no se puede ver). De
+    los cinco criterios cuantitativos de obligatoriedad (1.400 UVT cada uno, salvo patrimonio
+    bruto a 4.500 UVT) solo se observa **ingresos brutos**: por eso
+    `supera_umbral_declarante=false` **no significa "no declara"**, y la respuesta lo dice en
+    banda vía `criterio_evaluado` + `criterios_no_evaluables` (compras y consumos, consignaciones,
+    consumos con tarjeta, patrimonio bruto, responsabilidad de IVA). El patrimonio **no se
+    calcula ni se compara** contra su umbral. Un tenant con menos de 3 meses de historial recibe
+    `estado: "sin_historico_suficiente"` en vez de una banda inventada. La banda es **sugerencia**:
+    Tatiana (contadora titulada) confirma o ajusta; el endpoint no fija precio ni escribe la banda.
+
+    **Deuda consciente:** la migración `0048_uvt_values_and_service_band.sql` quedó escrita y
+    probada a nivel de archivo pero **NO aplicada** — aplicar migraciones requiere aprobación
+    explícita del fundador. Hasta entonces el endpoint responde `uvt_no_disponible` y las
+    escrituras de `service_band` fallan; ambas fallan en voz alta, ninguna corrompe datos.
+
 ## Enlaces canónicos
 
 - Identidad / legal / semántica → [`.antigravity/GROUND_TRUTH.md`](.antigravity/GROUND_TRUTH.md) (manda)

@@ -4,14 +4,24 @@
   "rules": {
     "one_change_at_a_time": true,
     "scope_source": "openspec/changes/<id>/tasks.md",
-    "valid_status": ["pending", "in_progress", "done", "blocked"]
+    "valid_status": [
+      "pending",
+      "in_progress",
+      "done",
+      "blocked"
+    ]
   },
-  "active": "evaluate-omniroute-backend-integration",
+  "active": "pricing-quote-engine",
   "pending_implementation": [
     "taty-wompi-link-hitl-gate",
     "metrics-dashboard-phase9"
   ],
   "features": [
+    {
+      "id": "pricing-quote-engine",
+      "status": "in_progress",
+      "summary": "Pre-quote engine + agreed per-client price. Adds uvt_values (UVT by tax year, whole COP, seeded 2025/2026 with their DIAN resolutions), b2b_clients.service_band (micro|estandar|complejo), and GET /api/v1/pricing/pre-cotizacion (tenant-scoped via resolve_request_tenant_scope, 404 on unresolved tenant, read-only, not plan-gated). core/plan_features.py deliberately untouched. Migration 0048 WRITTEN BUT NOT APPLIED - requires founder approval. Committed on a feature branch, NOT pushed to main (main auto-deploys)."
+    },
     {
       "id": "adopt-gbrain-second-brain",
       "status": "done",

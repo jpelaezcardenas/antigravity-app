@@ -45,6 +45,10 @@ class CreateB2bClientRequest(BaseModel):
     phone: Optional[str] = None
     contact_name: Optional[str] = None
     monthly_fee_cents: Optional[int] = Field(default=None, ge=0)
+    #: Entidad A professional-service band the fee was quoted under (pricing-quote-engine).
+    #: Validated in the service layer against SERVICE_BANDS, not by a Literal here, so the
+    #: allowed values have exactly one definition (services/pricing_service.py).
+    service_band: Optional[str] = None
     plan_tier: Optional[str] = None
     opening_balance_cents: Optional[int] = Field(default=None, ge=0)
 
@@ -62,6 +66,7 @@ def create_b2b_client(payload: CreateB2bClientRequest):
         phone=payload.phone,
         contact_name=payload.contact_name,
         monthly_fee_cents=payload.monthly_fee_cents,
+        service_band=payload.service_band,
     )
     if payload.plan_tier is not None:
         kwargs["plan_tier"] = payload.plan_tier
@@ -98,6 +103,30 @@ def upsert_b2b_payment(client_id: str, payload: UpsertB2bPaymentRequest):
     try:
         return get_crm_service().upsert_b2b_payment(client_id, payload.period, payload.amount_cents)
     except (APIError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+class UpdateB2bClientCommercialsRequest(BaseModel):
+    monthly_fee_cents: Optional[int] = Field(default=None, ge=0)
+    #: Empty string clears the band; omitting the field leaves it untouched.
+    service_band: Optional[str] = None
+
+
+@router.patch("/b2b/clients/{client_id}/commercials")
+def update_b2b_client_commercials(
+    client_id: str, payload: UpdateB2bClientCommercialsRequest
+):
+    """Record/correct the agreed Entidad A monthly fee and its service band
+    (pricing-quote-engine). Mirrors the /contact write pattern: service-layer validation
+    surfaces an invalid band as a 400 naming the allowed values, never as a raw Postgres
+    CHECK violation."""
+    try:
+        return get_crm_service().update_b2b_client_commercials(
+            client_id,
+            monthly_fee_cents=payload.monthly_fee_cents,
+            service_band=payload.service_band,
+        )
+    except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 

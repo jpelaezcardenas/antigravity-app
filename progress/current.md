@@ -4,18 +4,26 @@
 > su detalle — eso va a `progress/impl_<id>.md` y `progress/review_<id>.md`.
 > Al cerrar sesión: mover el resumen a `history.md` y dejar esta plantilla limpia.
 
-**Actualizado:** 2026-08-30
+**Actualizado:** 2026-09-08
 
-**Change OpenSpec activo:** `taty-wompi-link-hitl-gate` — in_progress
+**Change OpenSpec activo:** `pricing-quote-engine` — implementado, commit en rama
+`feat/pricing-quote-engine`. NO pusheado, NO desplegado, migración 0048 NO aplicada.
 
-Task in progress: Sections 1-3 — taty-wompi-link-hitl-gate full implementation
+Qué quedó:
+- `uvt_values` (UVT por año gravable, pesos completos, sembrada 2025/2026 con sus resoluciones)
+  + `services/uvt_service.py`. Cero constantes de UVT en código — un test lo verifica leyendo
+  el propio source del módulo.
+- `b2b_clients.service_band` (`micro|estandar|complejo`). **Hallazgo:** `monthly_fee_cents` YA
+  existía desde la migración 0020 (verificado en vivo contra Supabase) — el handoff decía que no.
+  Lo que faltaba era la banda. De paso, el honorario ahora es editable después del alta.
+- `GET /api/v1/pricing/pre-cotizacion` — tenant del JWT vía `resolve_request_tenant_scope()`,
+  404 si no resuelve, solo lectura, sin gating por plan. `core/plan_features.py` intacto.
+- 77 tests nuevos, todos verdes. `tsc --noEmit` limpio.
 
-Plan:
-- Verify implementation in taty_lead_router.py (enqueue helper + sales_interest branch)
-- Verify tests in test_taty_lead_router.py (enqueue assertions, no direct link call)
-- Verify test_approval_queue_service_wompi_link.py (new file, approve delivers link)
-- Verify approve_draft in approval_queue_service.py (wompi_payment_link branch)
-- Run pytest -k "taty or approval_queue" and confirm green
+**Bloqueado en el fundador, EN ESTE ORDEN:**
+1. Aplicar migración 0048 **antes** de desplegar (`list_b2b_clients` ya proyecta `service_band`
+   y su `except` cae a datos demo — desplegar primero mostraría clientes falsos en el Búnker).
+2. Push de `feat/pricing-quote-engine` (main auto-despliega).
 
 **Changes pendientes de implementación (en `openspec/changes/`, sin archivar):**
 

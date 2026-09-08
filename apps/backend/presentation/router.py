@@ -19,6 +19,7 @@ from presentation.tiktok_endpoints import router as tiktok_router
 from presentation.linkedin_endpoints import router as linkedin_router
 from presentation.financials_endpoints import router as financials_router
 from presentation.tenant_endpoints import router as tenant_router
+from presentation.pricing_endpoints import router as pricing_router
 from presentation.critic_endpoints import router as critic_router
 from presentation.approval_queue_endpoints import router as approval_queue_router
 from presentation.shadow_gl_endpoints import router as shadow_gl_router
@@ -59,6 +60,10 @@ api_router.include_router(radar_pwa_router, prefix="/radar", tags=["radar"])
 api_router.include_router(wizard_router, prefix="/wizard", tags=["wizard"])
 api_router.include_router(financials_router, prefix="/financials", tags=["financials"])
 api_router.include_router(tenant_router, prefix="/tenant", tags=["tenant"])
+# Pre-quote engine (pricing-quote-engine). Clean per-tenant read prefix like /financials
+# and /radar, not /agents/* and deliberately not inside the CRM_CANONICAL-gated crm_router,
+# which is scoped to Cliente Cero's operator roster rather than the caller's own tenant.
+api_router.include_router(pricing_router, prefix="/pricing", tags=["pricing"])
 api_router.include_router(critic_router, prefix="/critic", tags=["critic"])
 api_router.include_router(approval_queue_router, prefix="/approval-queue", tags=["approval-queue"])
 api_router.include_router(shadow_gl_router, prefix="/shadow-gl", tags=["shadow-gl"])

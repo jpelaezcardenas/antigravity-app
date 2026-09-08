@@ -22,8 +22,24 @@ from channels.whatsapp import send_whatsapp_message
 from config import settings
 from core.plan_features import PLAN_FEATURES
 from core.supabase_client import get_service_supabase
+from services.pricing_service import SERVICE_BANDS
 from services.shadow_gl_seed_service import seed_freemium_opening_balance
 from services.wompi_signature import compute_integrity_signature, verify_event_checksum
+
+
+def _validate_service_band(service_band: Optional[str]) -> None:
+    """Reject an unknown Entidad A service band before it reaches Postgres.
+
+    Migration 0048's `chk_b2b_clients_service_band` is the backstop; this is the error the
+    Bunker should actually see, matching how `plan_tier` is validated against
+    `core/plan_features.py` rather than left to its own CHECK constraint.
+    """
+    if service_band in (None, ""):
+        return
+    if service_band not in SERVICE_BANDS:
+        raise ValueError(
+            f"Invalid service_band {service_band!r}; must be one of {sorted(SERVICE_BANDS)}"
+        )
 
 logger = logging.getLogger(__name__)
 
@@ -120,8 +136,9 @@ class CrmService:
                 result = (
                     client.table("b2b_clients")
                     .select(
-                        "id, name, status, monthly_fee_cents, email, phone, "
-                        "contact_name, provision_status, hubspot_company_id, last_synced_at"
+                        "id, name, status, monthly_fee_cents, service_band, plan_tier, "
+                        "email, phone, contact_name, provision_status, "
+                        "hubspot_company_id, last_synced_at"
                     )
                     .eq("tenant_id", tenant_id)
                     .order("name")
@@ -213,6 +230,7 @@ class CrmService:
         phone: Optional[str] = None,
         contact_name: Optional[str] = None,
         monthly_fee_cents: Optional[int] = None,
+        service_band: Optional[str] = None,
         plan_tier: str = "starter",
         opening_balance_cents: Optional[int] = None,
     ) -> Dict[str, Any]:
@@ -229,7 +247,15 @@ class CrmService:
         `opening_balance_cents` (freemium-tenant-minimum-seed) seeds a single synthetic
         opening-balance Shadow GL entry into the new tenant, but ONLY when plan_tier is
         "freemium" — paid tiers onboard real Siigo/DIAN data instead, so the field is
-        silently ignored (not an error) for any other tier."""
+        silently ignored (not an error) for any other tier.
+
+        `service_band` (pricing-quote-engine, migration 0048) records which Entidad A
+        professional-service band the agreed `monthly_fee_cents` was quoted under. It is
+        validated here so the Bunker sees a 400 naming the allowed values rather than a raw
+        Postgres CHECK violation, and it stays NULL when omitted — a band is never inferred
+        from the fee amount."""
+        _validate_service_band(service_band)
+
         if plan_tier not in PLAN_FEATURES:
             raise ValueError(
                 f"Invalid plan_tier {plan_tier!r}; must be one of {sorted(PLAN_FEATURES)}"
@@ -255,6 +281,7 @@ class CrmService:
             "phone": phone,
             "contact_name": contact_name,
             "monthly_fee_cents": monthly_fee_cents,
+            "service_band": service_band or None,
             "plan_tier": plan_tier,
             "provision_status": "not_provisioned" if email else "pending_email",
         }
@@ -369,6 +396,44 @@ class CrmService:
             )
             .execute()
         )
+        return (result.data or [{}])[0]
+
+    def update_b2b_client_commercials(
+        self,
+        client_id: str,
+        monthly_fee_cents: Optional[int] = None,
+        service_band: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Record or correct the commercial terms agreed with an existing client: the
+        Entidad A monthly professional fee and the band it was quoted under.
+
+        Until this existed, `monthly_fee_cents` could only be set at alta time and the band
+        had nowhere to live at all — so a $1.490.000 fee was indistinguishable from a Micro
+        exception and a bottom-of-Estandar quote (pricing-quote-engine, proposal.md).
+
+        Omitting a field leaves the stored value untouched; passing an empty string for
+        `service_band` clears it to NULL, so a band recorded by mistake can be removed
+        without a direct database edit.
+        """
+        patch: Dict[str, Any] = {}
+
+        if monthly_fee_cents is not None:
+            if monthly_fee_cents < 0:
+                raise ValueError("monthly_fee_cents must be zero or positive.")
+            patch["monthly_fee_cents"] = monthly_fee_cents
+
+        if service_band is not None:
+            if service_band == "":
+                patch["service_band"] = None
+            else:
+                _validate_service_band(service_band)
+                patch["service_band"] = service_band
+
+        if not patch:
+            raise ValueError("No commercial fields provided to update.")
+
+        client = get_service_supabase()
+        result = client.table("b2b_clients").update(patch).eq("id", client_id).execute()
         return (result.data or [{}])[0]
 
     def update_b2b_client_contact(

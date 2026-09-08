@@ -13,6 +13,7 @@ export interface B2bClient {
   name: string;
   status: "activo" | "inactivo";
   monthly_fee_cents: number | null;
+  service_band?: ServiceBand | null;
   email?: string | null;
   phone?: string | null;
   contact_name?: string | null;
@@ -27,6 +28,14 @@ export interface B2bClient {
 // sync by convention, same pattern as TenantInfoCard.tsx's PLAN_TIER_LABEL.
 export type PlanTier = "freemium" | "starter" | "growth" | "enterprise";
 export const PLAN_TIERS: PlanTier[] = ["freemium", "starter", "growth", "enterprise"];
+
+// Entidad A professional-service band the agreed monthly fee was quoted under
+// (pricing-quote-engine). Mirrors services/pricing_service.py's SERVICE_BANDS and
+// migration 0048's chk_b2b_clients_service_band, kept in sync by convention like
+// PLAN_TIERS above. Distinct from PlanTier on purpose: the software tier and the human
+// workload band are independent — Pro Micro and Pro Estandar are the SAME software.
+export type ServiceBand = "micro" | "estandar" | "complejo";
+export const SERVICE_BANDS: ServiceBand[] = ["micro", "estandar", "complejo"];
 
 export interface B2bClientsResponse {
   source: "supabase" | "demo_fallback";
@@ -88,6 +97,7 @@ export interface CreateB2bClientInput {
   phone?: string;
   contact_name?: string;
   monthly_fee_cents?: number;
+  service_band?: ServiceBand;
   plan_tier?: PlanTier;
   opening_balance_cents?: number;
 }
@@ -123,6 +133,22 @@ export function upsertB2bPayment(
   return api<B2bPaymentRecord>(`/crm/b2b/clients/${clientId}/payments`, {
     method: "PUT",
     body: JSON.stringify({ period, amount_cents: amountCents }),
+  });
+}
+
+export interface UpdateB2bClientCommercialsInput {
+  monthly_fee_cents?: number;
+  /** Empty string clears the band; omitting the field leaves the stored value untouched. */
+  service_band?: ServiceBand | "";
+}
+
+export function updateB2bClientCommercials(
+  clientId: string,
+  patch: UpdateB2bClientCommercialsInput
+): Promise<B2bClient> {
+  return api<B2bClient>(`/crm/b2b/clients/${clientId}/commercials`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
   });
 }
 

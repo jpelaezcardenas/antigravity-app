@@ -8,10 +8,13 @@ import {
   upsertB2bPayment,
   updateB2bClientContact,
   getB2bRetentionAlerts,
+  updateB2bClientCommercials,
   PLAN_TIERS,
+  SERVICE_BANDS,
   type B2bPaymentsResponse,
   type B2bClient,
   type PlanTier,
+  type ServiceBand,
   type RetentionAlert,
 } from "@/lib/crm-api";
 
@@ -20,6 +23,15 @@ const PLAN_TIER_OPTION_LABEL: Record<PlanTier, string> = {
   starter: "Starter",
   growth: "Growth",
   enterprise: "Enterprise",
+};
+
+// Entidad A's professional-service band — independent of the software tier above.
+// Micro is the documented exception (minimal movement, no labour load), Estandar the
+// majority, Complejo quoted case by case.
+const SERVICE_BAND_LABEL: Record<ServiceBand, string> = {
+  micro: "Micro",
+  estandar: "Estándar",
+  complejo: "Complejo",
 };
 import { formatCop } from "@/lib/format";
 import { HubspotSyncBadge } from "./HubspotSyncBadge";
@@ -62,12 +74,16 @@ export function B2bRetainersTab() {
   const [altaEmail, setAltaEmail] = useState("");
   const [altaPhone, setAltaPhone] = useState("");
   const [altaFeeCop, setAltaFeeCop] = useState("");
+  const [altaServiceBand, setAltaServiceBand] = useState<ServiceBand | "">("");
   const [altaPlanTier, setAltaPlanTier] = useState<PlanTier>("starter");
   const [altaOpeningBalanceCop, setAltaOpeningBalanceCop] = useState("");
   const [inviteLink, setInviteLink] = useState<string | null>(null);
 
   const [editingCell, setEditingCell] = useState<{ clientId: string; period: string } | null>(null);
   const [editingValue, setEditingValue] = useState("");
+
+  const [editingFeeClientId, setEditingFeeClientId] = useState<string | null>(null);
+  const [editingFeeValue, setEditingFeeValue] = useState("");
 
   const [alerts, setAlerts] = useState<RetentionAlert[] | null>(null);
   const [alertsError, setAlertsError] = useState("");
@@ -121,6 +137,7 @@ export function B2bRetainersTab() {
         email: altaEmail.trim() || undefined,
         phone: altaPhone.trim() || undefined,
         monthly_fee_cents: altaFeeCop ? Math.round(Number(altaFeeCop) * 100) : undefined,
+        service_band: altaServiceBand || undefined,
         plan_tier: altaPlanTier,
         opening_balance_cents:
           altaPlanTier === "freemium" && altaOpeningBalanceCop
@@ -131,6 +148,7 @@ export function B2bRetainersTab() {
       setAltaEmail("");
       setAltaPhone("");
       setAltaFeeCop("");
+      setAltaServiceBand("");
       setAltaPlanTier("starter");
       setAltaOpeningBalanceCop("");
       if (created.invite_link) {
@@ -155,6 +173,38 @@ export function B2bRetainersTab() {
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo cambiar el estado del cliente");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const commitFeeEdit = async (clientId: string) => {
+    const raw = editingFeeValue.trim();
+    setEditingFeeClientId(null);
+    const feeCents = raw ? Math.round(Number(raw) * 100) : 0;
+    if (Number.isNaN(feeCents)) return;
+    setError("");
+    setBusyId(clientId);
+    try {
+      await updateB2bClientCommercials(clientId, { monthly_fee_cents: feeCents });
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo actualizar el honorario");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const changeServiceBand = async (clientId: string, band: ServiceBand | "") => {
+    setError("");
+    setBusyId(clientId);
+    try {
+      // "" clears the band server-side; omitting it would leave the stored value alone,
+      // so the empty option has to be sent explicitly.
+      await updateB2bClientCommercials(clientId, { service_band: band });
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo actualizar la banda de servicio");
     } finally {
       setBusyId(null);
     }
@@ -305,6 +355,21 @@ export function B2bRetainersTab() {
             className="rounded-lg border border-outline-variant/30 bg-transparent px-3 py-2 text-sm text-on-surface"
           />
           <select
+            value={altaServiceBand}
+            onChange={(e) => setAltaServiceBand(e.target.value as ServiceBand | "")}
+            title="Banda del servicio profesional (Entidad A)"
+            className="rounded-lg border border-outline-variant/30 bg-transparent px-3 py-2 text-sm text-on-surface"
+          >
+            <option value="" className="bg-surface-container text-on-surface">
+              Banda de servicio (sin definir)
+            </option>
+            {SERVICE_BANDS.map((band) => (
+              <option key={band} value={band} className="bg-surface-container text-on-surface">
+                {SERVICE_BAND_LABEL[band]}
+              </option>
+            ))}
+          </select>
+          <select
             value={altaPlanTier}
             onChange={(e) => setAltaPlanTier(e.target.value as PlanTier)}
             className="rounded-lg border border-outline-variant/30 bg-transparent px-3 py-2 text-sm text-on-surface"
@@ -370,6 +435,9 @@ export function B2bRetainersTab() {
                 <th className="px-4 py-3 font-semibold">Contacto</th>
                 <th className="px-4 py-3 font-semibold">Login</th>
                 <th className="px-4 py-3 font-semibold">Estado</th>
+                <th className="px-4 py-3 font-semibold" title="Honorario acordado (Entidad A) y la banda bajo la que se cotizó">
+                  Honorario / Banda
+                </th>
                 <th className="px-4 py-3 font-semibold">HubSpot</th>
                 {grid.periods.map((period) => (
                   <th key={period} className="px-4 py-3 text-right font-semibold">
@@ -414,6 +482,64 @@ export function B2bRetainersTab() {
                       >
                         {client.status}
                       </button>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-1">
+                        {editingFeeClientId === client.id ? (
+                          <input
+                            autoFocus
+                            type="number"
+                            min="0"
+                            value={editingFeeValue}
+                            onChange={(e) => setEditingFeeValue(e.target.value)}
+                            onBlur={() => commitFeeEdit(client.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") commitFeeEdit(client.id);
+                              if (e.key === "Escape") setEditingFeeClientId(null);
+                            }}
+                            className="w-28 rounded border border-primary/40 bg-transparent px-1 py-0.5 text-right text-xs text-on-surface"
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={busyId === client.id}
+                            onClick={() => {
+                              setEditingFeeClientId(client.id);
+                              setEditingFeeValue(
+                                full?.monthly_fee_cents ? String(full.monthly_fee_cents / 100) : ""
+                              );
+                            }}
+                            className="text-left text-xs text-on-surface hover:underline disabled:opacity-50"
+                            title="Click para registrar/editar el honorario acordado"
+                          >
+                            {full?.monthly_fee_cents
+                              ? formatCop(full.monthly_fee_cents / 100)
+                              : "Sin honorario"}
+                          </button>
+                        )}
+                        <select
+                          value={full?.service_band ?? ""}
+                          disabled={busyId === client.id}
+                          onChange={(e) =>
+                            changeServiceBand(client.id, e.target.value as ServiceBand | "")
+                          }
+                          className="rounded border border-outline-variant/30 bg-transparent px-1 py-0.5 text-[10px] text-on-surface-variant disabled:opacity-50"
+                          title="Banda del servicio profesional (Entidad A)"
+                        >
+                          <option value="" className="bg-surface-container text-on-surface">
+                            Sin banda
+                          </option>
+                          {SERVICE_BANDS.map((band) => (
+                            <option
+                              key={band}
+                              value={band}
+                              className="bg-surface-container text-on-surface"
+                            >
+                              {SERVICE_BAND_LABEL[band]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <HubspotSyncBadge
@@ -469,7 +595,7 @@ export function B2bRetainersTab() {
             </tbody>
             <tfoot>
               <tr className="border-t border-outline-variant/30 bg-white/5">
-                <td className="px-4 py-3 font-bold text-on-surface" colSpan={4}>
+                <td className="px-4 py-3 font-bold text-on-surface" colSpan={6}>
                   Total
                 </td>
                 {grid.periods.map((period) => (
