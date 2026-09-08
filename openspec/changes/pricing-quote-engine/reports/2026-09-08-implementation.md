@@ -108,7 +108,29 @@ Returns `ingresos_anualizados_cop` / `_uvt`, `movimientos_mes`, `meses_observado
 | `test_crm_endpoints.py` (regression) | passed |
 | `npx tsc --noEmit` | clean |
 
-**77 new tests, all green.** Full-suite result recorded below.
+**77 new tests, all green.**
+
+**Full-suite regression check — zero regressions, proven by comparison, not assertion.**
+The suite was run identically on this branch and on an isolated `main` worktree
+(`git worktree add … main`, commit `f96d487`), both from the repo root with `-rfE`:
+
+| | failed | passed | skipped | errors |
+|---|---|---|---|---|
+| `main` (baseline) | 25 | 989 | 120 | 28 |
+| `feat/pricing-quote-engine` | 25 | **1066** | 120 | 28 |
+
+The sorted `FAILED`/`ERROR` lists are **byte-identical** (53 entries each; `comm` reports
+zero lines unique to either side). The only delta is `+77 passed` — exactly the number of
+tests this change adds.
+
+Two notes on the pre-existing 53, checked rather than assumed:
+- The 28 **errors** are all `supabase.client.SupabaseException: supabase_url is required` —
+  no `SUPABASE_URL` in the local environment. Environmental, not code.
+- Three of the failures (`test_whatsapp_endpoints`, `test_sell_machine_endpoints`,
+  `test_social_ops_endpoints` feature-flag tests) read `presentation/router.py` via a
+  **relative** path, so they only pass when pytest runs from `apps/backend`. Since this
+  change edits `router.py`, they were re-run from that directory specifically: **7 passed**.
+  Their repo-root failure is CWD sensitivity, not a mounting regression.
 
 Interpreter note: `python` and `python3` on this machine resolve to interpreters without pytest
 (`python` → the Hermes agent venv). The suite runs under
