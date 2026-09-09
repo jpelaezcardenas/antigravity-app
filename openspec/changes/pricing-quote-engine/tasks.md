@@ -101,12 +101,14 @@ Project-specific details:
 - Backend URL: https://antigravity-app-production-175a.up.railway.app
 
 Tasks:
-- [ ] 11.1 git commit + push to main — **BLOCKED BY FOUNDER**: this change stops at a commit on a
-      feature branch. `main` auto-deploys to Vercel and Railway; the push to production is the
-      founder's call
-- [ ] 11.2 Vercel build complete (green ✅) — blocked by 11.1
-- [ ] 11.3 Railway deploy active (backend change) — blocked by 11.1
-- [ ] 11.4 Production URL: changes visible and working — blocked by 11.1
+- [x] 11.1 git commit + push to main — **DONE 2026-09-09** with explicit founder approval.
+      Fast-forward `f96d487..dfdcb8a` via `git fetch . feat/pricing-quote-engine:main` (no
+      checkout, so a concurrent session's working tree was not disturbed), then `git push origin main`
+- [x] 11.2 Vercel: `contexia.online/app/bunker` → 200; live `sw.js` at `v19-2026-09-08`; the
+      served page references chunk `0x__o-vi52nbo.js` and that chunk contains `Honorario / Banda`
+- [x] 11.3 Railway deployment `c5133932-65d5-4651-ad70-c2e50b18451e` — SUCCESS
+- [x] 11.4 `GET /api/v1/pricing/pre-cotizacion` → 401 (mounted, auth enforced); siblings
+      (`/financials`, `/centinela/alerts`, `/radar/proyeccion-caja`) unchanged at 401; health 200
 - [x] 11.4b Apply migration `0048` to Supabase **BEFORE 11.1** — **DONE 2026-09-08**, applied
       with the founder's explicit approval and verified live (see
       `reports/2026-09-08-migration.md`). **Ordering is not cosmetic.** `CrmService.list_b2b_clients`
@@ -115,4 +117,4 @@ Tasks:
       Búnker's B2B roster silently show demo clients instead of the real ones. Apply the
       migration first, then push. `/pricing/pre-cotizacion` degrades safely either way
       (`estado: "uvt_no_disponible"`), and `service_band` writes fail loudly
-- [ ] 11.5 Create report: `openspec/changes/pricing-quote-engine/reports/2026-09-08-deployment.md`
+- [x] 11.5 Report: `openspec/changes/pricing-quote-engine/reports/2026-09-09-deployment.md`
