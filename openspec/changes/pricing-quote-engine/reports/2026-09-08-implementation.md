@@ -142,6 +142,43 @@ pytest gate finds no interpreter here — pre-existing, not introduced by this c
 
 ---
 
+## Build artifact — a gap I missed on the first pass
+
+`vercel.json` sets `"outputDirectory": "."` and declares **no build step**: Vercel serves the
+repo root as static files, and `app/` is a *committed* pre-built Next.js export. My first three
+commits changed `contexia-app/` **source only**, so merging them would have half-shipped this
+change — Railway rebuilds the backend from source, but the Búnker UI would have been unchanged,
+with no band selector and no Honorario/Banda column, because that code was never compiled into
+`app/`.
+
+Caught before deploying, not after. Fixed in `28f9918`:
+
+- `npm run build` in `contexia-app`, synced per the mapping `270a859`/`82d27f6` document:
+  `out/app/*` → `app/`, everything else → repo root. Copy-overwrite only, no deletion.
+- Built in an **isolated detached worktree**. The working tree carries uncommitted work from
+  other efforts (`jarvis_chat`/`jarvis_voice`, and a concurrent session's `voicebox` entry in
+  `feature_list.json`); building in place would have compiled that in-flight work into the
+  deploy artifact — exactly the leak `82d27f6` guarded against. None of it is staged.
+- `CACHE_VERSION` `v18-2026-09-04` → `v19-2026-09-08` in both `contexia-app/public/sw.js` and
+  the synced root `sw.js` (CLAUDE.md §9 rule 5). `lib/sw-register.ts` registers `/sw.js` (root),
+  so `app/sw.js` is vestigial like `app/app/` and was left untouched rather than hand-edited.
+
+Verified before committing, not assumed:
+
+| Check | Result |
+|---|---|
+| New UI strings in compiled output | `Honorario / Banda`, `Banda de servicio`, `Sin honorario`, `commercials` all present in chunk `0x__o-vi52nbo.js` |
+| Served page wired to that chunk | `app/bunker.html` references `/_next/static/chunks/0x__o-vi52nbo.js` by absolute repo-root path — the wiring `82d27f6` had to repair after two sessions synced into `app/app/` |
+| Unreachable `app/app/` tree | **not** re-fed (0 files changed), matching prior practice |
+
+**Note for whoever deploys:** a concurrent session is active in this repo. It branched
+`feat/voicebox-local-voice-adoption` off this branch's tip mid-build, so `28f9918` initially
+landed on *their* branch; it was moved back to `feat/pricing-quote-engine` and their branch
+restored to its creation point (`ce3709b`). Their branch held no commits of their own, and none
+of their uncommitted work was touched.
+
+---
+
 ## What is still pending — and the order matters
 
 1. **Apply migration `0048` — BEFORE deploying, not after.**
