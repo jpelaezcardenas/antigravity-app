@@ -534,7 +534,8 @@ Si no tienes información suficiente, di "No tengo información suficiente para 
                 tier_lines.append(f"- {tier.commercial_name}: cotizado según el caso.")
             else:
                 price = f"{tier.price_cents // 100:,.0f}".replace(",", ".")
-                tier_lines.append(f"- {tier.commercial_name}: ${price}/mes.")
+                prefix = "desde " if tier.starts_from else ""
+                tier_lines.append(f"- {tier.commercial_name}: {prefix}${price}/mes.")
 
         band_lines = []
         for band in SERVICE_BAND_PRICING.values():

@@ -51,6 +51,11 @@ class SoftwareTier:
     #: Whether the tier includes a licensed accountant (i.e. carries an Entidad A component).
     #: Recorded because the entity split is the reason two revenue lines exist at all.
     includes_accountant: bool
+    #: True when `price_cents` is a FLOOR, not a flat fee — found live 2026-09-09 by running
+    #: Taty's production prompt: Contexia Pro's official listing is "desde $1.490.000" (the
+    #: Estándar band's floor), but nothing recorded that, so the formatter stated it as a flat
+    #: price. Callers must render "desde $X" rather than "$X" when this is True.
+    starts_from: bool = False
 
 
 @dataclass(frozen=True)
@@ -111,6 +116,7 @@ SOFTWARE_TIERS: dict[str, SoftwareTier] = {
         # referenced below rather than retyped, so the two cannot drift apart.
         price_cents=1_490_000_00,
         is_quoted=False,
+        starts_from=True,
         includes_accountant=True,
     ),
     "enterprise": SoftwareTier(
