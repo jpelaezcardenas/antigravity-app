@@ -33,7 +33,7 @@ CREATE POLICY gmail_sender_map_tenant_read
     TO authenticated
     USING (
         tenant_id = (
-            SELECT resolved_tenant_id
+            SELECT tenant_id
             FROM user_tenants
             WHERE user_id = auth.uid()
               AND is_active = true

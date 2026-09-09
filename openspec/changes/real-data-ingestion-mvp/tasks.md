@@ -45,6 +45,10 @@
 ## Track 3 — Gmail Adjuntos Ingest
 
 - [x] 3.1 Crear migration `0046_gmail_sender_map.sql` (numeración corregida: 0046, no 0048)
+- [x] 3.1b Corregir bug real en la política RLS `gmail_sender_map_tenant_read` (línea 36): referenciaba
+      `resolved_tenant_id`, columna inexistente en `user_tenants` (la columna real es `tenant_id`,
+      confirmado contra `0004_user_tenants_table.sql`). Sin este fix, la migración habría fallado al
+      aplicarse. Corregido 2026-09-09, no aplicado todavía en Supabase (tarea 3.6).
 - [x] 3.2 Crear `apps/backend/presentation/ingest_file_endpoints.py` — `POST /internal/ingest/file`
 - [x] 3.3 Registrar router en `apps/backend/main.py` (prefix `/internal`)
 - [x] 3.4 Crear `apps/hermes-gmail-poller/` (patrón hubspot-poller, cada 15 min)
