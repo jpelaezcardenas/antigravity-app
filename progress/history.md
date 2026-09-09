@@ -200,3 +200,39 @@ The security-critical part (auth enforcement itself) is independently verified l
 production already — these are follow-up UAT-style spot-checks on top of that, not a gap in
 the security boundary. Report at
 `openspec/changes/archive/2026-07-23-taty-per-tenant-profiles/reports/2026-07-23-deployment.md`.
+
+## 2026-09-09 — whatsapp-b2b-lead-bridge (Grupos 1-6 implementados, Stage 11 pendiente del fundador)
+
+- Change: `openspec/changes/whatsapp-b2b-lead-bridge/` (Frente A del plan maestro de cierre de
+  loop de negocio). 32/37 tareas en verde; las 5 restantes son Stage 11 (deploy + migración +
+  verificación E2E), bloqueadas a acción explícita del fundador.
+- Grupo 1: `classify_lead_intent()` (`taty_lead_router.py`) gana 4ª categoría `business_interest`,
+  revisada después de `payment_confirmation` y antes de `sales_interest`. Cero regresión en
+  fixtures existentes.
+- Grupo 2: migración `apps/backend/migrations/0049_crm_leads_lead_type.sql` (columna nullable,
+  sin default, sin backfill) ESCRITA, NO aplicada contra Supabase — confirmado dos veces
+  (implementer + reviewer) que no hay indicio de aplicación real.
+- Grupo 3: write de `lead_type` en `route_lead_message()` reusando
+  `CrmService.whatsapp_intake()`/`advance_lead()` de forma aditiva — sin query independiente,
+  sin duplicar filas, sin tocar `stage`.
+- Grupo 4: `_auto_tag_chatwoot()` (`apps/chatwoot-bridge/main.py`) extendido con
+  `business_interest -> servicio_interes="creacion_empresa"` / `tipo_contribuyente="SAS"`.
+  Valores CONFIRMADOS EN VIVO contra `GET .../custom_attribute_definitions` de la instancia real
+  de Chatwoot (no adivinados) — la elección semántica entre `"creacion_empresa"` y `"CFO"` queda
+  documentada como decisión de diseño abierta a ajuste futuro por el fundador si la práctica lo
+  sugiere. Precedencia sobre `persona_natural`/`regimen_simple` confirmada. Fire-and-forget
+  preservado.
+- Grupo 5/6: verificado por lectura que ningún path crea `tenants`/`b2b_clients` ni toca
+  `hermes-hubspot-poller`; sweep de tests sin regresión real — el único fallo encontrado
+  (`test_reply_comes_from_the_sales_router_not_hermes`) es preexistente de
+  `voicebox-local-voice-adoption` (`private=True`), confirmado por `git stash` dos veces
+  independientes.
+- Revisado leader→implementer→reviewer por cada grupo (4 reviews individuales + 1 review final
+  holístico), todos APPROVED.
+- Estado del working tree: NO commiteado, NO pusheado, NO desplegado. `feature_list.json` marcado
+  `done` para este change; `active` vuelve a `pricing-quote-engine` (el otro change en progreso,
+  bloqueado en push/merge del fundador).
+- Pendiente EXPLÍCITO del fundador (Stage 11, tareas 11.1-11.5): aplicar la migración `0049`,
+  commit + push a `main`, verificar deploy Railway, prueba E2E con conversación real/simulada de
+  WhatsApp confirmando `crm_leads.lead_type` + atributos Chatwoot correctos sin romper una
+  conversación Renta Natural normal enviada inmediatamente después, y el reporte de deployment.

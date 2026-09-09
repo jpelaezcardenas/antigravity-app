@@ -535,15 +535,26 @@ class CrmService:
         new_row = (inserted.data or [{}])[0]
         return {"lead_id": new_row["id"], "is_new": True, "stage": "NUEVOS"}
 
-    def advance_lead(self, lead_id: str, stage: str) -> Dict[str, Any]:
-        """Advance a lead to a new stage. Raises ValueError for an invalid stage."""
+    def advance_lead(
+        self, lead_id: str, stage: str, lead_type: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Advance a lead to a new stage. Raises ValueError for an invalid stage.
+
+        `lead_type` (whatsapp-b2b-lead-bridge, additive, default None) lets a caller stamp
+        `crm_leads.lead_type` in the same update — used by taty_lead_router.route_lead_message
+        to record a `business_interest` classification without a second, independent Supabase
+        write. Passing the lead's own current stage back (no functional stage change) plus
+        `lead_type` is the supported way to set lead_type without advancing/regressing the
+        funnel stage. Omitting `lead_type` preserves this method's exact prior behavior."""
         if stage not in VALID_LEAD_STAGES:
             raise ValueError(f"Invalid stage: {stage!r}. Must be one of {VALID_LEAD_STAGES}.")
 
+        patch: Dict[str, Any] = {"stage": stage}
+        if lead_type is not None:
+            patch["lead_type"] = lead_type
+
         client = get_service_supabase()
-        result = (
-            client.table("crm_leads").update({"stage": stage}).eq("id", lead_id).execute()
-        )
+        result = client.table("crm_leads").update(patch).eq("id", lead_id).execute()
         return (result.data or [{}])[0]
 
     def get_tax_profile(self, lead_id: str) -> Dict[str, Any]:

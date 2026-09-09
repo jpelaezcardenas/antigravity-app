@@ -43,6 +43,46 @@ class TestClassifyLeadIntent:
         assert intent == "unknown"
         assert confidence == 0.0
 
+    @pytest.mark.parametrize(
+        "message",
+        [
+            "Somos una SAS y necesitamos contabilidad",
+            "Tengo mi empresa y quiero llevar la contabilidad",
+            "Mi negocio necesita un contador",
+            "Somos una sociedad constituida hace poco",
+            "Buscamos contabilidad para mi compañía",
+            "Somos una persona jurídica que necesita ayuda contable",
+        ],
+    )
+    def test_business_interest_detected(self, message):
+        intent, confidence = classify_lead_intent(message)
+        assert intent == "business_interest"
+        assert confidence > 0
+
+    def test_payment_confirmation_takes_priority_over_business_interest(self):
+        intent, confidence = classify_lead_intent(
+            "Ya pagué, listo. Somos una SAS y queremos empezar."
+        )
+        assert intent == "payment_confirmation"
+        assert confidence > 0
+
+    def test_sales_interest_still_detected_unchanged(self):
+        intent, confidence = classify_lead_intent(
+            "Quiero saber si me toca declarar renta este año"
+        )
+        assert intent == "sales_interest"
+        assert confidence > 0
+
+    def test_payment_confirmation_still_detected_unchanged(self):
+        intent, confidence = classify_lead_intent("Ya pagué, listo")
+        assert intent == "payment_confirmation"
+        assert confidence > 0
+
+    def test_unknown_still_falls_back_unchanged(self):
+        intent, confidence = classify_lead_intent("asdkjaslkdj random text")
+        assert intent == "unknown"
+        assert confidence == 0.0
+
 
 class TestRouteLeadMessage:
     def _mock_crm_service(self, lead_stage="NUEVOS", tax_profile=None):
@@ -155,6 +195,88 @@ class TestRouteLeadMessage:
 
         assert result["intent"] == "payment_confirmation"
         mock_service.advance_lead.assert_not_called()
+
+
+class TestRouteLeadMessageBusinessInterestLeadType:
+    """whatsapp-b2b-lead-bridge Group 3: business_interest classification stamps
+    crm_leads.lead_type via CrmService.advance_lead (extended additively), never a duplicate
+    row and never a stage change."""
+
+    def _mock_crm_service(self, tax_profile=None):
+        mock_service = MagicMock()
+        mock_service.get_tax_profile.return_value = tax_profile or {}
+        mock_service.update_tax_profile.return_value = {"lead_id": "lead-1"}
+        return mock_service
+
+    def test_new_lead_business_interest_sets_lead_type_on_creation(self):
+        mock_service = self._mock_crm_service()
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="NUEVOS"
+        ), patch(
+            "services.taty_lead_router.resolve_cliente_cero_tenant_id", return_value=None
+        ):
+            result = route_lead_message("lead-1", "Somos una SAS y queremos declarar renta")
+
+        assert result["intent"] == "business_interest"
+        mock_service.advance_lead.assert_called_once_with(
+            "lead-1", "NUEVOS", lead_type="business_interest"
+        )
+
+    def test_existing_lead_reclassified_business_interest_updates_no_duplicate(self):
+        mock_service = self._mock_crm_service()
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="PROSPECTOS"
+        ), patch(
+            "services.taty_lead_router.resolve_cliente_cero_tenant_id", return_value=None
+        ):
+            result = route_lead_message("lead-1", "Tenemos una empresa y queremos ayuda")
+
+        assert result["intent"] == "business_interest"
+        # A single update call against the existing lead id — never a create/insert call.
+        mock_service.advance_lead.assert_called_once_with(
+            "lead-1", "PROSPECTOS", lead_type="business_interest"
+        )
+        mock_service.whatsapp_intake.assert_not_called()
+
+    def test_non_business_message_does_not_clear_lead_type(self):
+        mock_service = self._mock_crm_service()
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="PROSPECTOS"
+        ), patch(
+            "services.taty_lead_router.resolve_cliente_cero_tenant_id", return_value=None
+        ):
+            result = route_lead_message("lead-1", "hola, buenos días")
+
+        assert result["intent"] == "unknown"
+        # No call touches lead_type at all — a previously-set lead_type is left untouched,
+        # never cleared, by a later non-business message.
+        for call in mock_service.advance_lead.call_args_list:
+            assert "lead_type" not in call.kwargs
+
+    def test_business_interest_never_advances_or_regresses_stage(self):
+        mock_service = self._mock_crm_service()
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="LISTOS_CONTADORA"
+        ), patch(
+            "services.taty_lead_router.resolve_cliente_cero_tenant_id", return_value=None
+        ):
+            result = route_lead_message("lead-1", "Somos una compañía interesada")
+
+        assert result["intent"] == "business_interest"
+        assert result["stage"] == "LISTOS_CONTADORA"
+        # The stage argument passed to advance_lead is the lead's own current stage — no
+        # advance/regress, matching the sales_interest branch's "past NUEVOS" guarantee.
+        mock_service.advance_lead.assert_called_once_with(
+            "lead-1", "LISTOS_CONTADORA", lead_type="business_interest"
+        )
 
 
 class TestRouteLeadMessageReturnsClassificationForAutoTagging:

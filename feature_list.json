@@ -13,6 +13,7 @@
   },
   "active": "pricing-quote-engine",
   "pending_implementation": [
+    "pricing-quote-engine",
     "taty-wompi-link-hitl-gate",
     "metrics-dashboard-phase9",
     "voicebox-local-voice-adoption"
@@ -112,6 +113,11 @@
       "id": "voicebox-local-voice-adoption",
       "status": "pending",
       "summary": "Artifacts created 2026-09-08 (proposal/design/spec/tasks/reports), NOT started - registered as pending_implementation, `active` deliberately left as pricing-quote-engine. Dark launch: wires VoiceBox (MIT, upstream jamiepine/voicebox, installed at C:\\Program Files\\Voicebox) as Contexia's local voice provider for BOTH Hermes agents and Taty's outbound WhatsApp voice note, shipped behind VOICE_ENABLED=false on backend and bridge, so enabling it on the future inference node (Ryzen 7 + RTX 4070 Ti Super) is a config flip, not a dev project - this laptop is CPU-only and takes 3-5 min per phrase. Corrects the prior Hermes session's Fase 1 design, which had Chatwoot deliver the audio: Chatwoot's WhatsApp channel believes the 24h window is permanently closed (backend_client.py:85-101, found live 2026-08-12) so Meta rejects all its outbound. Chosen instead: the LOCAL bridge synthesizes (VoiceBox 127.0.0.1:17493 + ffmpeg to OGG/Opus) and a new POST /internal/whatsapp/voice-note on Railway does the Graph media-upload + type:audio send, reusing the INTERNAL_API_KEY fail-closed pattern of the Siigo/Gmail pollers (Decision #22) - Railway cannot reach a local service and a tunnel was rejected. Voice is strictly ADDITIVE to text (never replaces it) so the operator keeps the quotable audit trail Decision #19's fabrication finding depends on. Safety gate services/voice_safety.py::should_speak has a single owner in the backend and reaches the bridge as an additive voice_allowed field. No migration, no table, no persisted audio. Also creates the contexia-voice-tts skill (a prior session reported creating it; it did not exist) and corrects ARCHITECTURE.md Decision #21, which names ~/.hermes/config.yaml and an OmniRoute fallback that the live config (AppData/Local/hermes/profiles/contexia/config.yaml) does not have - its fallback_providers are gemini + openrouter. BLOCKING founder prerequisite before the flag is ever enabled: written, dated, revocable consent from Tatiana Barbosa for the cloned voice - during Phase 0 validation her cloned voice was made to say abusive sexual text."
+    },
+    {
+      "id": "whatsapp-b2b-lead-bridge",
+      "status": "done",
+      "summary": "Grupos 1-6 COMPLETOS (32/37 tasks; Stage 11 = 5 tareas de founder action, sin ejecutar en esta sesion). Deteccion de senal B2B en WhatsApp/Taty: 4a categoria business_interest en classify_lead_intent() (taty_lead_router.py), revisada despues de payment_confirmation y antes de sales_interest; persistida via CrmService.whatsapp_intake()/advance_lead() (write aditivo, sin query independiente, stage nunca se toca por este intent); migracion 0049_crm_leads_lead_type.sql ESCRITA, NO APLICADA (bloqueada por aprobacion del fundador); _auto_tag_chatwoot() extendido con business_interest -> servicio_interes=creacion_empresa / tipo_contribuyente=SAS, valores CONFIRMADOS EN VIVO contra la API real de Chatwoot (custom_attribute_definitions), con precedencia sobre la derivacion persona_natural/regimen_simple; fire-and-forget preservado. Non-goals verificados por lectura: ningun path crea tenants/b2b_clients, hermes-hubspot-poller intacto. Cero regresion confirmada dos veces (implementer + reviewer, git stash) contra el unico fallo preexistente no relacionado (test_reply_comes_from_the_sales_router_not_hermes, de voicebox-local-voice-adoption). Revisado leader->implementer->reviewer por grupo, las 4 rondas de review individuales + 1 review final holistico todas APPROVED. NO commiteado, NO pusheado, NO desplegado, migracion NO aplicada -- Stage 11 (11.1-11.5) queda pendiente de accion del fundador."
     }
   ]
 }

@@ -68,6 +68,12 @@ _INTENT_TO_INTENCION = {
 }
 _INTENT_TO_SERVICIO_INTERES = {
     "sales_interest": "renta",
+    # whatsapp-b2b-lead-bridge: "creacion_empresa" confirmed live against the Chatwoot instance
+    # (GET /api/v1/accounts/{id}/custom_attribute_definitions, 2026-09-09) as one of two real
+    # dropdown options for servicio_interes alongside "CFO" — this is the best semantic match for
+    # a company-formation/continuous-operations signal, not the only value that exists on the
+    # attribute (see design.md Decision 3 and the implementer report for the alternative).
+    "business_interest": "creacion_empresa",
 }
 _INTENT_TO_SIGUIENTE_ACCION = {
     "sales_interest": "Enviar link de pago",
@@ -107,7 +113,12 @@ async def _auto_tag_chatwoot(
             contact_attrs: dict = {}
             if intent in _INTENT_TO_SERVICIO_INTERES:
                 contact_attrs["servicio_interes"] = _INTENT_TO_SERVICIO_INTERES[intent]
-            if "es_asalariado" in persona_fields:
+            # whatsapp-b2b-lead-bridge design.md Decision 2/3: a business_interest signal takes
+            # precedence over the persona_natural/regimen_simple derivation below — "SAS"
+            # confirmed live against the same Chatwoot custom_attribute_definitions call above.
+            if intent == "business_interest":
+                contact_attrs["tipo_contribuyente"] = "SAS"
+            elif "es_asalariado" in persona_fields:
                 contact_attrs["tipo_contribuyente"] = (
                     "persona_natural" if persona_fields["es_asalariado"] else "regimen_simple"
                 )

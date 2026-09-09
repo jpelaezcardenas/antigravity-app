@@ -265,6 +265,63 @@ class TestAutoTagChatwoot:
         assert conv_args[1]["prioridad"] == "baja"
 
     @pytest.mark.asyncio
+    async def test_business_interest_tags_conversation_and_contact(self, mocked_clients):
+        """whatsapp-b2b-lead-bridge: a B2B-shaped message tags the Chatwoot contact with the
+        confirmed live dropdown values (servicio_interes: creacion_empresa, tipo_contribuyente:
+        SAS) — and this takes precedence over the persona_natural/regimen_simple derivation even
+        when persona_fields is present."""
+        main_module, mocks = mocked_clients
+        mocks["taty_reply"].return_value = {
+            "intent": "business_interest",
+            "confidence": 0.8,
+            "reply": "Con gusto te ayudo con tu empresa",
+            "persona_fields": {"es_asalariado": False},
+            "stage": "NUEVOS",
+        }
+
+        await main_module.process_incoming_message(
+            conversation_id=42,
+            content="somos una SAS y necesitamos contabilidad",
+            attachments=[],
+            contact_id=7,
+            phone="+573001234567",
+        )
+        await asyncio.sleep(0)
+
+        mocks["set_attrs"].assert_awaited_once()
+        contact_args, _ = mocks["set_attrs"].call_args
+        assert contact_args[0] == 7
+        assert contact_args[1]["servicio_interes"] == "creacion_empresa"
+        assert contact_args[1]["tipo_contribuyente"] == "SAS"
+
+    @pytest.mark.asyncio
+    async def test_business_interest_tagging_failure_never_raises_or_blocks_reply(
+        self, mocked_clients
+    ):
+        main_module, mocks = mocked_clients
+        mocks["taty_reply"].return_value = {
+            "intent": "business_interest",
+            "confidence": 0.8,
+            "reply": "Con gusto te ayudo con tu empresa",
+            "persona_fields": {},
+            "stage": "NUEVOS",
+        }
+        mocks["set_attrs"].side_effect = Exception("chatwoot down")
+
+        await main_module.process_incoming_message(
+            conversation_id=42,
+            content="somos una SAS y necesitamos contabilidad",
+            attachments=[],
+            contact_id=7,
+            phone="+573001234567",
+        )
+        await asyncio.sleep(0)
+
+        mocks["send_reply"].assert_awaited_once_with(
+            42, "Con gusto te ayudo con tu empresa", private=True
+        )
+
+    @pytest.mark.asyncio
     async def test_tagging_failure_never_raises_or_blocks_reply(self, mocked_clients):
         main_module, mocks = mocked_clients
         mocks["taty_reply"].return_value = {

@@ -4,47 +4,49 @@
 > su detalle — eso va a `progress/impl_<id>.md` y `progress/review_<id>.md`.
 > Al cerrar sesión: mover el resumen a `history.md` y dejar esta plantilla limpia.
 
-**Actualizado:** 2026-09-08
+**Actualizado:** 2026-09-09
 
-**Change OpenSpec activo:** `pricing-quote-engine` — implementado, commit en rama
-`feat/pricing-quote-engine`. NO pusheado, NO desplegado, migración 0048 NO aplicada.
+**Último change implementado:** `whatsapp-b2b-lead-bridge` — Grupos 1-6 (32/37 tareas) en verde,
+revisados leader→implementer→reviewer, todos APPROVED. Ver `progress/history.md` (entrada
+2026-09-09) para el resumen completo. NO commiteado, NO pusheado, NO desplegado. Migración
+`0049_crm_leads_lead_type.sql` escrita pero NO aplicada.
 
-Qué quedó:
-- `uvt_values` (UVT por año gravable, pesos completos, sembrada 2025/2026 con sus resoluciones)
-  + `services/uvt_service.py`. Cero constantes de UVT en código — un test lo verifica leyendo
-  el propio source del módulo.
-- `b2b_clients.service_band` (`micro|estandar|complejo`). **Hallazgo:** `monthly_fee_cents` YA
-  existía desde la migración 0020 (verificado en vivo contra Supabase) — el handoff decía que no.
-  Lo que faltaba era la banda. De paso, el honorario ahora es editable después del alta.
-- `GET /api/v1/pricing/pre-cotizacion` — tenant del JWT vía `resolve_request_tenant_scope()`,
-  404 si no resuelve, solo lectura, sin gating por plan. `core/plan_features.py` intacto.
-- 77 tests nuevos, todos verdes. `tsc --noEmit` limpio.
+**Bloqueado en el fundador (Stage 11 de `whatsapp-b2b-lead-bridge`):**
+1. Aplicar migración `0049_crm_leads_lead_type.sql` en Supabase — requiere confirmación explícita.
+2. `git commit` + `push` a `main` (deploy branch) — sin esto no hay cambio en producción.
+3. Verificar deploy Railway.
+4. Verificación E2E: conversación real/simulada de WhatsApp con lenguaje de negocio debe resultar
+   en `crm_leads.lead_type` seteado + atributos Chatwoot correctos (`servicio_interes=
+   creacion_empresa`, `tipo_contribuyente=SAS`), SIN cambiar el comportamiento de una conversación
+   Renta Natural normal enviada inmediatamente después en la misma pasada de verificación.
+5. Crear reporte `openspec/changes/whatsapp-b2b-lead-bridge/reports/YYYY-MM-DD-deployment.md`.
 
-**Migración 0048: APLICADA en producción el 2026-09-08** con aprobación explícita del fundador
-(solo la migración; push y deploy NO fueron autorizados). Verificada en vivo: `uvt_values` con
-las 2 filas correctas en pesos completos, `service_band` nullable sin default (0 de 11 clientes
-con banda), CHECK activo, RLS con lectura pública / escritura solo service_role. Ver
-`openspec/changes/pricing-quote-engine/reports/2026-09-08-migration.md`.
-
-**Bloqueado en el fundador (pendiente):**
-1. `git push -u origin feat/pricing-quote-engine` — sin efecto en producción (main es la rama de
-   deploy).
-2. Merge a `main` — ESE es el deploy a Vercel/Railway. Ya desbloqueado por el lado de la BD.
+**Decisión de diseño abierta, no bloqueante:** el mapeo semántico de `business_interest` a
+`servicio_interes` usó `"creacion_empresa"` en vez de `"CFO"` (ambos son valores reales y
+confirmados en la instancia de Chatwoot) — es un cambio de una línea en
+`apps/chatwoot-bridge/main.py::_INTENT_TO_SERVICIO_INTERES` si la práctica real muestra que
+`"CFO"` encaja mejor.
 
 **Changes pendientes de implementación (en `openspec/changes/`, sin archivar):**
 
 | Change | Estado | Prioridad estimada |
 |---|---|---|
+| `pricing-quote-engine` | Implementado, bloqueado en push/merge del fundador | — |
 | `taty-wompi-link-hitl-gate` | Pendiente — todas las tareas `[ ]` | Alta (bloquea cobros reales vía Wompi) |
 | `metrics-dashboard-phase9` | Pendiente — todas las tareas `[ ]` | Media (dashboard de métricas internas) |
-
-**Último change cerrado:** `taty-whatsapp-renta-sales-capability` — archivado 2026-08-13.
-Ver `progress/history.md` para resumen completo.
+| `voicebox-local-voice-adoption` | Pendiente — todas las tareas `[ ]` | Baja (dark launch, requiere consentimiento de Tatiana) |
+| `real-data-ingestion-mvp` | Estado ambiguo — `tasks.md` con cambios sin commitear detectados en el working tree al iniciar esta sesión, no investigado por este harness | Revisar |
 
 **Acciones del fundador pendientes (no bloquean, pero deberían resolverse):**
 - Verificación E2E con cliente B2B real en `/api/v1/agents/ask` (de `taty-per-tenant-profiles`)
 - Activar `HERMES_BRIDGE_TOKEN` en Hermes + Railway (de `hermes-task-queue-tenant-scoping`)
 - Merchant-of-record Wompi (task 5.1 de `taty-wompi-link-hitl-gate`, prerequisito para cerrar cobros)
+- Stage 11 de `whatsapp-b2b-lead-bridge` (ver arriba)
 
-**Estado:** sin tarea en curso. Próximo paso = el fundador elige cuál change implementar.
-**Bloqueos:** —
+**Estado:** sin tarea en curso. Próximo paso = el fundador decide si commitea/push
+`whatsapp-b2b-lead-bridge` y aplica su migración, o elige otro change.
+**Bloqueos:** hay archivos modificados/sin trackear en el working tree que NO pertenecen a este
+change (`apps/backend/core/plan_features.py`, `apps/backend/migrations/0046_gmail_sender_map.sql`,
+`apps/hermes-hubspot-poller/*`, `openspec/changes/real-data-ingestion-mvp/tasks.md`,
+`ai-specs/references/`) — no fueron tocados por esta sesión; parecen de trabajo previo/paralelo sin
+commitear. Revisar antes de cualquier commit para no mezclar cambios de distintos changes.

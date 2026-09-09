@@ -73,6 +73,21 @@ SALES_INTEREST_KEYWORDS = (
 )
 PAYMENT_CONFIRMATION_KEYWORDS = ("ya pague", "ya pagué", "ya hice el pago", "listo el pago")
 
+# B2B lead signal (whatsapp-b2b-lead-bridge) — a lead speaking as/for a company, not as an
+# individual taxpayer. Checked after payment-confirmation (a paying lead's confirmation always
+# wins) and before sales-interest, so a message like "somos una SAS y queremos declarar renta"
+# still classifies as business_interest, not sales_interest.
+BUSINESS_INTEREST_KEYWORDS = (
+    "sas",
+    "empresa",
+    "negocio",
+    "sociedad",
+    "compañía",
+    "compania",
+    "persona jurídica",
+    "persona juridica",
+)
+
 INTENT_CONFIDENCE_THRESHOLD = 0.6
 
 _ASALARIADO_KEYWORDS = ("soy asalariado", "trabajo asalariado", "tengo un empleo fijo")
@@ -94,12 +109,14 @@ def classify_lead_intent(message: str) -> Tuple[str, float]:
     this module never imports from or modifies that one).
 
     Returns: (intent, confidence) where intent is one of "sales_interest",
-    "payment_confirmation", "unknown".
+    "payment_confirmation", "business_interest", "unknown".
     """
     message_lower = message.lower()
 
     if any(keyword in message_lower for keyword in PAYMENT_CONFIRMATION_KEYWORDS):
         return "payment_confirmation", 0.9
+    if any(keyword in message_lower for keyword in BUSINESS_INTEREST_KEYWORDS):
+        return "business_interest", 0.8
     if any(keyword in message_lower for keyword in SALES_INTEREST_KEYWORDS):
         return "sales_interest", 0.8
 
@@ -352,6 +369,15 @@ def route_lead_message(
         if not tax_profile:
             _create_empty_tax_profile(lead_id)
         service.update_tax_profile(lead_id, persona_fields)
+
+    if intent == "business_interest":
+        # whatsapp-b2b-lead-bridge: stamp crm_leads.lead_type via the existing advance_lead
+        # write (extended additively above), passing the lead's own current stage back so the
+        # Renta Natural funnel stage never advances/regresses from a business-interest signal.
+        # Reply generation still falls through to the shared Taty brain below, same as an
+        # "unknown" message — this branch only adds the side effect.
+        if current_stage is not None:
+            service.advance_lead(lead_id, current_stage, lead_type="business_interest")
 
     if intent == "sales_interest":
         if current_stage == "NUEVOS":
