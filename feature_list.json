@@ -11,7 +11,7 @@
       "blocked"
     ]
   },
-  "active": "pricing-quote-engine",
+  "active": "pricing-catalog-and-operator-quote",
   "pending_implementation": [
     "taty-wompi-link-hitl-gate",
     "metrics-dashboard-phase9"
@@ -19,8 +19,8 @@
   "features": [
     {
       "id": "pricing-quote-engine",
-      "status": "in_progress",
-      "summary": "Pre-quote engine + agreed per-client price. Adds uvt_values (UVT by tax year, whole COP, seeded 2025/2026 with their DIAN resolutions), b2b_clients.service_band (micro|estandar|complejo), and GET /api/v1/pricing/pre-cotizacion (tenant-scoped via resolve_request_tenant_scope, 404 on unresolved tenant, read-only, not plan-gated). core/plan_features.py deliberately untouched. Migration 0048 WRITTEN BUT NOT APPLIED - requires founder approval. Committed on a feature branch, NOT pushed to main (main auto-deploys)."
+      "status": "done",
+      "summary": "COMPLETE, archived 2026-09-09 as openspec/changes/archive/2026-09-09-pricing-quote-engine. Stage 11 verified live: Railway c5133932 SUCCESS, /api/v1/pricing/pre-cotizacion 401 (mounted, auth enforced), siblings unchanged, contexia.online/app/bunker 200, live sw.js v19-2026-09-08, and the served Bunker page -> chunk 0x__o-vi52nbo.js -> 'Honorario / Banda' chain walked end to end. Migration 0048 applied 2026-09-08 with explicit founder approval (uvt_values seeded 2025/2026 in whole COP; b2b_clients.service_band micro|estandar|complejo, nullable, no default). core/plan_features.py deliberately untouched. Zero regressions proven against an isolated main worktree (byte-identical failure lists, +77 passed). Caught pre-deploy: the first 3 commits changed contexia-app/ source only, which would have shipped the backend with an invisible Bunker UI since vercel.json serves the repo root statically with no build step. Promotes 7 requirements to openspec/specs/pricing-quote-engine/spec.md."
     },
     {
       "id": "adopt-gbrain-second-brain",
