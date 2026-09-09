@@ -67,12 +67,19 @@ Project-specific details:
 - Backend URL: https://antigravity-app-production-175a.up.railway.app
 
 Tasks:
-- [ ] 11.1 Apply migration `00XX_crm_leads_lead_type.sql` in Supabase (founder confirmation
-      required — not automatic even after Stage 11 starts).
-- [ ] 11.2 git commit + push to main.
-- [ ] 11.3 Railway deploy active (backend change).
-- [ ] 11.4 Verify: a real or simulated WhatsApp/Chatwoot conversation with business-shaped
-      language results in a `crm_leads` row with `lead_type` set AND the correct Chatwoot contact
-      attributes — without changing the reply/behavior of a normal Renta Natural conversation
-      sent immediately after, in the same verification pass.
-- [ ] 11.5 Create report: `openspec/changes/whatsapp-b2b-lead-bridge/reports/YYYY-MM-DD-deployment.md`.
+- [x] 11.1 Applied migration `0049_crm_leads_lead_type.sql` in Supabase, with explicit founder
+      confirmation. Verified live: `lead_type text`, nullable, no default; 0/5 existing rows
+      backfilled.
+- [x] 11.2 git commit (`75ae6e0`) + merge `origin/main` (`73f781e`, resolving a real
+      `ARCHITECTURE.md` decision-numbering collision) + push to main.
+- [x] 11.3 Railway deploy active — deployment `79eb9162` SUCCESS, `/api/v1/health` returns 200.
+- [~] 11.4 **Partially verified — real WhatsApp message not sent** (Chatwoot runs on the
+      founder's local machine, out of this session's reach). Verified instead by exercising the
+      exact deployed code: `classify_lead_intent()` correctly classifies 4 real-shaped messages
+      including the payment-over-business precedence rule; `_INTENT_TO_SERVICIO_INTERES` mapping
+      confirmed live; `route_lead_message()` → `CrmService.advance_lead(..., lead_type=
+      "business_interest")` wiring confirmed by reading the deployed code. **Founder action still
+      needed**: send a real business-shaped WhatsApp message + a normal Renta Natural message in
+      the same pass, and restart the local Chatwoot bridge service so it picks up the deployed
+      `main.py`.
+- [x] 11.5 Report created: `openspec/changes/whatsapp-b2b-lead-bridge/reports/2026-09-09-deployment.md`.
