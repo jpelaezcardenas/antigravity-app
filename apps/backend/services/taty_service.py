@@ -27,6 +27,7 @@ import uuid
 
 from agents.llm_engine import get_llm_engine
 from agents.anonymizer import Anonymizer
+from core.pricing_catalog import RENTA_NATURAL_PRICING, SERVICE_BAND_PRICING, SOFTWARE_TIERS
 from core.supabase_client import get_supabase
 from services.kb_seeding_service import retrieve_similar, ensure_dian_loaded
 
@@ -520,6 +521,43 @@ Pregunta del cliente:
 Si no tienes información suficiente, di "No tengo información suficiente para responder con precisión".
 {no_context_note}"""
 
+    def _build_pricing_knowledge_block(self) -> str:
+        """Contexia's official B2B prices, read live from `core/pricing_catalog.py` — never
+        retyped as a literal here, so a catalog edit changes what Taty says on the next request
+        with nothing else to update (taty-pricing-skill, design.md Decision 4).
+
+        Available on EVERY channel (Telegram/PWA/WhatsApp), independent of `lead_context` —
+        unlike the Renta Natural floor below, which is specific to that WhatsApp funnel."""
+        tier_lines = []
+        for tier in SOFTWARE_TIERS.values():
+            if tier.is_quoted:
+                tier_lines.append(f"- {tier.commercial_name}: cotizado según el caso.")
+            else:
+                price = f"{tier.price_cents // 100:,.0f}".replace(",", ".")
+                tier_lines.append(f"- {tier.commercial_name}: ${price}/mes.")
+
+        band_lines = []
+        for band in SERVICE_BAND_PRICING.values():
+            if band.is_quoted:
+                band_lines.append(f"- {band.label}: cotizado caso por caso.")
+            elif band.min_cents == band.max_cents:
+                price = f"{band.min_cents // 100:,.0f}".replace(",", ".")
+                band_lines.append(f"- {band.label}: ${price} (precio fijo).")
+            else:
+                lo = f"{band.min_cents // 100:,.0f}".replace(",", ".")
+                hi = f"{band.max_cents // 100:,.0f}".replace(",", ".")
+                band_lines.append(f"- {band.label}: ${lo} – ${hi}.")
+
+        lines = [
+            "Precios oficiales de Contexia (úsalos si el cliente pregunta cuánto cuesta el "
+            "software o el servicio contable; nunca inventes un número distinto a estos):",
+            "Planes de software (Entidad B):",
+            *tier_lines,
+            "Bandas del servicio contable profesional (Entidad A, según carga de trabajo):",
+            *band_lines,
+        ]
+        return "\n".join(lines)
+
     def _build_system_prompt(self, profile: Dict, lead_context: Optional[Dict[str, Any]] = None) -> str:
         """Build system prompt for LLM.
 
@@ -535,8 +573,11 @@ Si no tienes información suficiente, di "No tengo información suficiente para 
             "nunca lo deletrees como \"24 horas al día, 7 días a la semana\" ni ninguna otra variante. "
             "Responde en español, con calidez y cercanía, como alguien que de verdad quiere ayudar — "
             "nunca con tono formal/legal de asesor fiscal certificado. "
-            "Sé precisa, cita fuentes, y sugiere hablar con un asesor humano cuando el tema lo amerite."
+            "Sé precisa, cita fuentes, y sugiere hablar con un asesor humano cuando el tema lo amerite. "
+            "También eres la vendedora estrella de Contexia: conoces los precios reales de la "
+            "empresa y sabes guiar a un prospecto hacia el plan o la banda correcta (taty-pricing-skill)."
         )
+        base = "\n\n".join([base, self._build_pricing_knowledge_block()])
         if not lead_context:
             return base
 
@@ -562,7 +603,18 @@ Si no tienes información suficiente, di "No tengo información suficiente para 
         docs = offer.get("documentos_requeridos")
         if docs:
             parts.append(f"- Documentos que Contexia pide para armar la declaración: {', '.join(docs)}.")
-        if not offer.get("precio_confirmado"):
+        if offer.get("precio_confirmado") and offer.get("precio_desde_cop"):
+            drivers = offer.get("price_drivers") or []
+            driver_text = ", ".join(d.replace("_", " ") for d in drivers) or "el caso particular"
+            floor = f"{offer['precio_desde_cop']:,.0f}".replace(",", ".")
+            parts.append(
+                f"- Precio de la declaración de renta persona natural: desde ${floor}, y varía "
+                f"según {driver_text}. Puedes decir ese valor \"desde\" y explicar que varía por "
+                "esos factores, pero NUNCA des un valor final exacto ni inventes un tope máximo "
+                "o límite superior — no existe uno definido, se cotiza según el caso una vez "
+                "un asesor revisa la información del cliente."
+            )
+        elif not offer.get("precio_confirmado"):
             parts.append(
                 "- El precio para este caso todavía no está definido en el sistema. Si el cliente "
                 "pregunta cuánto cuesta, NO inventes ni menciones un número — dile que un asesor "

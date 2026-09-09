@@ -100,16 +100,29 @@ Two consequences for pricing:
 infrastructure cost, and inventing one would repeat exactly the failure mode the pre-quote engine
 was designed to avoid: a confident number with nothing underneath it.
 
-## Known follow-up (founder decision, not made here)
+## A third revenue line: Renta Natural (persona natural)
 
-Taty's WhatsApp sales prompt currently **refuses to state a price**, because when
-`taty-whatsapp-renta-sales-capability` shipped, none were defined. They are defined now, so Taty
-*could* quote — but that change points a live customer-facing sales agent at real numbers, and
-that same change's findings document the model inventing figures when ungrounded. Wiring the
-catalog into Taty's prompt is a deliberate commercial decision, not a mechanical follow-up.
+Alongside Entidad B's software tiers and Entidad A's B2B service bands, Contexia sells Renta
+Natural tax-filing through the WhatsApp sales funnel. Founder-given (2026-09-09): **desde
+$350.000**, varying by cantidad de trámites, movimientos, and patrimonio — no ceiling, because
+none exists; it is quoted case by case once an advisor reviews the client's information. Same
+shape as the Complejo band: a real floor, deliberately no invented maximum.
+
+## Taty's pricing skill (`taty-pricing-skill`, 2026-09-09)
+
+Taty (the WhatsApp/Telegram/PWA conversational agent) previously refused to state any price,
+because when `taty-whatsapp-renta-sales-capability` shipped, none were defined. Both gaps are
+now closed by the founder's own commercial decision:
+
+- **Every channel** states the B2B software tiers and service bands from this catalog (read live,
+  never retyped as a prompt literal).
+- **The Renta Natural WhatsApp funnel** states the $350.000 floor and its drivers, with an
+  explicit instruction never to state a final exact number or an invented ceiling — the same
+  discipline this whole catalog follows, applied to a live sales conversation.
 
 Related: `TenantInfoCard.tsx` and `UpgradePlanBanner.tsx` carry hand-written commercial names that
-drifted from the official ones. The catalog now gives them a source to align to.
+drifted from the official ones. The catalog now gives them a source to align to (not yet done —
+would collide with concurrent work on those files).
 
 ## References
 

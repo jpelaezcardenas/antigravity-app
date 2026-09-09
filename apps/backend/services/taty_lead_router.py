@@ -27,6 +27,7 @@ from channels.whatsapp import download_whatsapp_media, send_whatsapp_message
 from core.constants import UMBRAL_RENTA_COP
 from core.supabase_client import get_service_supabase
 from core.tenant_context import resolve_cliente_cero_tenant_id
+from core.pricing_catalog import RENTA_NATURAL_PRICING
 from services.crm_service import get_crm_service
 from services.document_storage_service import upload_tax_document
 from services.taty_service import get_taty_service
@@ -44,13 +45,20 @@ KB_FALLBACK_REPLY = (
 
 # Static, code-verified offer facts a WhatsApp lead's Taty turn is given as context — never
 # invented. Documents match RUT_REQUEST_MESSAGE/EXTRACTOS_REQUEST_MESSAGE below (the actual
-# document-collection flow). Price is deliberately absent (`precio_confirmado: False`): pricing
-# tiers are undefined as of this change (founder decision, 2026-08-11) — see
-# TatyAgentService._build_system_prompt, which turns this exact flag into an explicit
-# never-invent-a-number instruction.
+# document-collection flow).
+#
+# Price (taty-pricing-skill, 2026-09-09): the founder gave the Renta Natural floor — "desde
+# 350.000 pesos... según cantidad de trámites, movimientos, patrimonio" — replacing the prior
+# undefined-price refusal (founder decision, 2026-08-11). Sourced from
+# core/pricing_catalog.py.RENTA_NATURAL_PRICING, never retyped as a bare literal here.
+# `precio_confirmado: True` + a real floor still does NOT mean Taty may state a final exact
+# number — TatyAgentService._build_system_prompt turns the "no ceiling exists" fact into an
+# explicit never-invent-a-final-number instruction.
 RENTA_OFFER_CONTEXT: Dict[str, Any] = {
     "documentos_requeridos": ["RUT (foto o PDF)", "extractos bancarios del año (PDF o foto)"],
-    "precio_confirmado": False,
+    "precio_confirmado": True,
+    "precio_desde_cop": RENTA_NATURAL_PRICING.min_cents // 100,
+    "price_drivers": list(RENTA_NATURAL_PRICING.price_drivers),
 }
 
 # The campaign's own landing page (same URL as the click-to-WhatsApp ad's caption, see

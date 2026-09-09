@@ -54,6 +54,23 @@ class SoftwareTier:
 
 
 @dataclass(frozen=True)
+class QuotedPricing:
+    """A floor-only offering, quoted case by case — no invented ceiling.
+
+    Distinct from `ServiceBandPrice` (which can also represent a genuine bounded range, like
+    Estándar) because this shape additionally names WHY the price varies (`price_drivers`),
+    which the Renta Natural offer needs so Taty can tell a prospect what drives their number up
+    without inventing a figure for it.
+    """
+
+    label: str
+    min_cents: int
+    max_cents: Optional[int]
+    is_quoted: bool
+    price_drivers: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class ServiceBandPrice:
     """One Entidad A professional-service band.
 
@@ -124,6 +141,22 @@ SERVICE_BAND_PRICING: dict[str, ServiceBandPrice] = {
         label="Complejo", min_cents=None, max_cents=None, is_quoted=True
     ),
 }
+
+
+#: Entidad A's THIRD revenue line (alongside the B2B software tiers and service bands):
+#: Renta Natural persona-natural tax filing, sold through the WhatsApp funnel
+#: (`taty_lead_router.RENTA_OFFER_CONTEXT`). Founder-given (2026-09-09): "desde 350.000 pesos
+#: teniendo en cuenta cantidad de trámites, movimientos, patrimonio... según el caso" — a floor
+#: with NO ceiling, because none was given and none exists; inventing one would repeat the exact
+#: risk `taty-whatsapp-renta-sales-capability` documented (the model fabricating figures when
+#: ungrounded).
+RENTA_NATURAL_PRICING = QuotedPricing(
+    label="Declaración de Renta Persona Natural",
+    min_cents=35_000_000,
+    max_cents=None,
+    is_quoted=True,
+    price_drivers=("cantidad_de_tramites", "movimientos", "patrimonio"),
+)
 
 
 def band_price_range_cents(service_band: Optional[str]) -> tuple[Optional[int], Optional[int]]:

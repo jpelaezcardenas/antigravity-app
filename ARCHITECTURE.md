@@ -365,10 +365,45 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
     registrar el honorario real. Documentación para el fundador (con la sección de estructura de
     costos frente a la migración a inferencia local soberana): [`docs/pricing.md`](docs/pricing.md).
 
-    **Pendiente del fundador, no hecho aquí:** el prompt de venta de Taty en WhatsApp sigue
-    instruido para NO decir precios. Ya existen, así que *podría* — pero eso apunta un agente de
-    ventas vivo hacia cifras reales, y ese mismo change documenta al modelo inventando datos
-    cuando no está aterrizado. Es decisión comercial, no follow-up mecánico.
+    **Resuelto** (`taty-pricing-skill`, 2026-09-09): ver Decisión #25 — el fundador dio el precio
+    de Renta Natural y decidió explícitamente que Taty deje de negarse a cotizar.
+
+25. **Taty gana una skill de precios: cifras reales en todo canal, y un tercer producto —
+    Renta Natural — reemplaza la negativa a cotizar** (`taty-pricing-skill`, 2026-09-09, decisión
+    comercial explícita del fundador) — hasta este change, `TatyAgentService._build_system_prompt`
+    instruía a Taty a **negarse** a decir un precio en el embudo de WhatsApp de Renta Natural
+    persona natural, porque ninguno existía (decisión diferida 2026-08-11). Dos cosas cambiaron:
+
+    **Precios B2B en todo canal.** `core/pricing_catalog.py` (Decisión #24, arriba) ya tenía los
+    tiers de software y las bandas de servicio, pero nunca aparecían en
+    el prompt de Taty en ningún canal. Nuevo bloque siempre presente en `_build_system_prompt`
+    (con o sin `lead_context`, es decir Telegram/PWA/WhatsApp por igual), leído en vivo del
+    catálogo — ningún precio queda retipeado como literal en `taty_service.py` (verificado por
+    test).
+
+    **Renta Natural: tercer producto, mismo patrón que la banda Complejo.** El fundador dio la
+    cifra: *"desde 350.000 pesos... según cantidad de trámites, movimientos, patrimonio"* — un
+    piso, **sin techo**, porque no existe uno; se cotiza caso por caso. Nuevo
+    `RENTA_NATURAL_PRICING` en el catálogo (`min_cents=35_000_000`, `max_cents=None`,
+    `is_quoted=True`, con los tres drivers como datos, no prosa). `RENTA_OFFER_CONTEXT` en
+    `taty_lead_router.py` pasa `precio_confirmado` de `False` a `True`, sembrado desde el
+    catálogo — nunca un literal suelto.
+
+    **La cifra real no habilita un número inventado.** El prompt le dice a Taty el piso y por qué
+    varía, y le prohíbe explícitamente decir un valor final exacto o un techo — la misma
+    disciplina que ya rige toda cifra fiscal en este repo (Decisión #19), aplicada ahora a una
+    cifra comercial en una conversación de ventas real.
+
+    **"Skill" es encuadre del prompt, no un mecanismo nuevo.** No existe un artefacto de skill de
+    Hermes cableado a Taty en este repo — `AGENTES.md` la describe como operador conversacional
+    con prompt de sistema, no con skill-loader. Se agregó una línea de persona ("también es la
+    vendedora estrella de Contexia") junto a su encuadre existente ("Fintech Centrado en el Ser
+    Humano"), y se dejó explícitamente fuera de alcance construir infraestructura de skills real.
+
+    **Fuera de alcance, a propósito:** lead qualification (el fundador la nombró como "más
+    adelante", no ahora); tocar `core/plan_features.py` o el flujo HITL de Wompi; reconciliar
+    `TenantInfoCard.tsx`/`UpgradePlanBanner.tsx` (colisionaría con trabajo concurrente de otra
+    sesión sobre esos archivos).
 
 ## Enlaces canónicos
 
