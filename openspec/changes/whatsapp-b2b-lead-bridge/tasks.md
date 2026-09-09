@@ -73,13 +73,13 @@ Tasks:
 - [x] 11.2 git commit (`75ae6e0`) + merge `origin/main` (`73f781e`, resolving a real
       `ARCHITECTURE.md` decision-numbering collision) + push to main.
 - [x] 11.3 Railway deploy active — deployment `79eb9162` SUCCESS, `/api/v1/health` returns 200.
-- [~] 11.4 **Partially verified — real WhatsApp message not sent** (Chatwoot runs on the
-      founder's local machine, out of this session's reach). Verified instead by exercising the
-      exact deployed code: `classify_lead_intent()` correctly classifies 4 real-shaped messages
-      including the payment-over-business precedence rule; `_INTENT_TO_SERVICIO_INTERES` mapping
-      confirmed live; `route_lead_message()` → `CrmService.advance_lead(..., lead_type=
-      "business_interest")` wiring confirmed by reading the deployed code. **Founder action still
-      needed**: send a real business-shaped WhatsApp message + a normal Renta Natural message in
-      the same pass, and restart the local Chatwoot bridge service so it picks up the deployed
-      `main.py`.
+- [x] 11.4 **Verified with a real WhatsApp conversation**, sent by the founder after the bridge
+      restart. Confirmed live in Supabase: `crm_leads` row for phone `573504187902` has
+      `lead_type="business_interest"`, `stage="PROSPECTOS"` (untouched by this classification, as
+      designed), `updated_at=2026-09-09 23:43:41 UTC` — matches the founder's real WhatsApp
+      message timestamp (18:43 America/Bogota) that said *"tengo empresa ya constituida...
+      necesito... contadora interna"*. A companion normal Renta Natural message
+      ("como me toca pagar impuestos") in the same conversation did not set `lead_type`, and
+      Taty's reply used real prices from `pricing_catalog.py` (Decisión #25) without inventing a
+      final number — confirms this change did not regress the existing Renta Natural funnel.
 - [x] 11.5 Report created: `openspec/changes/whatsapp-b2b-lead-bridge/reports/2026-09-09-deployment.md`.

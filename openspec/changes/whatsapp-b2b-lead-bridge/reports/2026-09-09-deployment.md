@@ -29,27 +29,32 @@ pusheado a `main`.
 - [x] **11.3 Railway deploy activo.** Deployment `79eb9162-868c-4ea8-a0eb-1cf8d3e0c4a8`,
   disparado por el push, terminó en `SUCCESS`. `GET /api/v1/health` responde `200` en
   `antigravity-app-production-175a.up.railway.app`.
-- [~] **11.4 Verificación E2E.** **No se pudo hacer con un mensaje real de WhatsApp** — Chatwoot
-  corre local en el equipo del fundador (Decisión #19), fuera de este alcance y sin manejo de
-  credenciales. En su lugar se ejecutó el código exacto ya desplegado en `main`:
-  - `classify_lead_intent()` clasifica correctamente 4 casos reales, incluyendo la precedencia
-    diseñada (`payment_confirmation` gana sobre `business_interest` cuando el mensaje menciona
-    ambos):
-    - `"Somos una SAS y necesitamos ayuda con la contabilidad del negocio"` → `business_interest`
-    - `"Ya pagué, aquí está el comprobante"` → `payment_confirmation`
-    - `"Estoy interesado en el servicio de declaración de renta"` → `sales_interest`
-    - `"Hola, buenos días"` → `unknown`
-  - `_INTENT_TO_SERVICIO_INTERES` en el bridge desplegado confirma el mapeo:
-    `{"sales_interest": "renta", "business_interest": "creacion_empresa"}`.
-  - `route_lead_message()` llama a `CrmService.advance_lead(lead_id, current_stage,
-    lead_type="business_interest")` cuando el intent es `business_interest` — confirmado leyendo
-    el código real en `taty_lead_router.py:382-388` y `crm_service.py:548-563`.
-  - **Pendiente del fundador, no bloqueante:** enviar un mensaje real por WhatsApp con lenguaje
-    de negocio, seguido de un mensaje normal de Renta Natural, y confirmar en `crm_leads` que
-    solo el primero tiene `lead_type` seteado y que el segundo no cambió su comportamiento
-    habitual. Esto requiere además **reiniciar el servicio local del Chatwoot bridge**
-    (`ContexiaChatwootBridge`, tarea programada de Windows) para que recoja el `main.py`
-    actualizado — no se reinicia solo, corre local y no pasa por Railway/Vercel.
+- [x] **11.4 Verificación E2E — completada con una conversación real de WhatsApp.** El fundador
+  reinició el servicio local del Chatwoot bridge (`ContexiaChatwootBridge`, PID 7704, health
+  check `{"status": "ok"}`) y envió una conversación real por WhatsApp. Antes de eso se ejecutó
+  el código exacto desplegado (clasificador, mapeo Chatwoot, wiring `advance_lead`) — ver detalle
+  técnico abajo — y después **se confirmó en producción, contra Supabase**:
+  - `crm_leads` (phone `573504187902`): `lead_type="business_interest"`,
+    `stage="PROSPECTOS"` (sin avanzar/regresar, como diseñado),
+    `updated_at="2026-09-09 23:43:41 UTC"` — coincide exactamente con el mensaje real del
+    fundador a las 18:43 hora Bogotá: *"tengo empresa ya constituida... necesito... contadora
+    interna"*.
+  - Un mensaje normal de Renta Natural en la misma conversación ("como me toca pagar impuestos")
+    **no** seteó `lead_type`, y la respuesta de Taty usó los precios reales del catálogo
+    (Decisión #25 `taty-pricing-skill`) sin inventar un valor final — confirma que este change no
+    regresionó el funnel de Renta Natural existente.
+  - Verificación de código previa (misma exactitud, antes de la prueba real):
+    - `classify_lead_intent()` clasifica correctamente 4 casos reales, incluyendo la precedencia
+      diseñada (`payment_confirmation` gana sobre `business_interest`):
+      - `"Somos una SAS y necesitamos ayuda con la contabilidad del negocio"` → `business_interest`
+      - `"Ya pagué, aquí está el comprobante"` → `payment_confirmation`
+      - `"Estoy interesado en el servicio de declaración de renta"` → `sales_interest`
+      - `"Hola, buenos días"` → `unknown`
+    - `_INTENT_TO_SERVICIO_INTERES` en el bridge desplegado: `{"sales_interest": "renta",
+      "business_interest": "creacion_empresa"}`.
+    - `route_lead_message()` → `CrmService.advance_lead(lead_id, current_stage,
+      lead_type="business_interest")` — confirmado en `taty_lead_router.py:382-388` y
+      `crm_service.py:548-563`.
 - [x] **11.5 Este reporte.**
 
 ## Suites verificadas antes del push
