@@ -14,7 +14,8 @@
   "active": "pricing-quote-engine",
   "pending_implementation": [
     "taty-wompi-link-hitl-gate",
-    "metrics-dashboard-phase9"
+    "metrics-dashboard-phase9",
+    "voicebox-local-voice-adoption"
   ],
   "features": [
     {
@@ -106,6 +107,11 @@
       "id": "houston-lead-scoring-read-only-bridge",
       "status": "done",
       "summary": "Archived 2026-08-29 as openspec/changes/archive/2026-08-29-houston-lead-scoring-read-only-bridge. Subdomain 7 (GTM parallel lane, investigation-only) of the freemium-onboarding master plan. Original scope assumed Houston's outreach agent might need sell_machine_service.py::run_creative_loop generalized (manus_draft_hooks -> external_draft_hooks) to pass through Content Critic validation -- but Houston ships as closed compiled binaries (houston-app.exe/houston-engine.exe) with no inspectable source, so this could not be resolved from code alone; asked the founder directly rather than guessing. The founder's own integration decision (produced in a separate session, persisted here per explicit request -- 'deben quedar como fuente fija aca, no perdidos en un hilo de Claude Code') resolved it more simply: Houston is read-only lead-scoring/pipeline visibility, connecting to Contexia's existing HubSpot portal (51867201) via its own Composio connector -- the same portal hermes-hubspot-poller already writes to unidirectionally. Houston never writes back and isn't generating outreach content needing a gate -- no code change needed anywhere in the repo. Persisted two durable reference docs to docs/integrations/ (integration plan + the actual sales playbook uploaded to Houston via set-up-my-sales-info), added a one-line addendum to ARCHITECTURE.md Decision #20 documenting this read-only consumer, and flagged a known gap (Chatwoot's Taty lead classification doesn't reach HubSpot, so Houston can't see it) as a future, separate change if the founder wants it. Docs-only change, no deploy required."
+    },
+    {
+      "id": "voicebox-local-voice-adoption",
+      "status": "pending",
+      "summary": "Artifacts created 2026-09-08 (proposal/design/spec/tasks/reports), NOT started - registered as pending_implementation, `active` deliberately left as pricing-quote-engine. Dark launch: wires VoiceBox (MIT, upstream jamiepine/voicebox, installed at C:\\Program Files\\Voicebox) as Contexia's local voice provider for BOTH Hermes agents and Taty's outbound WhatsApp voice note, shipped behind VOICE_ENABLED=false on backend and bridge, so enabling it on the future inference node (Ryzen 7 + RTX 4070 Ti Super) is a config flip, not a dev project - this laptop is CPU-only and takes 3-5 min per phrase. Corrects the prior Hermes session's Fase 1 design, which had Chatwoot deliver the audio: Chatwoot's WhatsApp channel believes the 24h window is permanently closed (backend_client.py:85-101, found live 2026-08-12) so Meta rejects all its outbound. Chosen instead: the LOCAL bridge synthesizes (VoiceBox 127.0.0.1:17493 + ffmpeg to OGG/Opus) and a new POST /internal/whatsapp/voice-note on Railway does the Graph media-upload + type:audio send, reusing the INTERNAL_API_KEY fail-closed pattern of the Siigo/Gmail pollers (Decision #22) - Railway cannot reach a local service and a tunnel was rejected. Voice is strictly ADDITIVE to text (never replaces it) so the operator keeps the quotable audit trail Decision #19's fabrication finding depends on. Safety gate services/voice_safety.py::should_speak has a single owner in the backend and reaches the bridge as an additive voice_allowed field. No migration, no table, no persisted audio. Also creates the contexia-voice-tts skill (a prior session reported creating it; it did not exist) and corrects ARCHITECTURE.md Decision #21, which names ~/.hermes/config.yaml and an OmniRoute fallback that the live config (AppData/Local/hermes/profiles/contexia/config.yaml) does not have - its fallback_providers are gemini + openrouter. BLOCKING founder prerequisite before the flag is ever enabled: written, dated, revocable consent from Tatiana Barbosa for the cloned voice - during Phase 0 validation her cloned voice was made to say abusive sexual text."
     }
   ]
 }
