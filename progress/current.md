@@ -6,9 +6,6 @@
 
 **Actualizado:** 2026-09-08
 
-**Change OpenSpec activo:** `pricing-quote-engine` — implementado, commit en rama
-`feat/pricing-quote-engine`. NO pusheado, NO desplegado, migración 0048 NO aplicada.
-
 Qué quedó:
 - `uvt_values` (UVT por año gravable, pesos completos, sembrada 2025/2026 con sus resoluciones)
   + `services/uvt_service.py`. Cero constantes de UVT en código — un test lo verifica leyendo
@@ -30,6 +27,16 @@ con banda), CHECK activo, RLS con lectura pública / escritura solo service_role
 1. `git push -u origin feat/pricing-quote-engine` — sin efecto en producción (main es la rama de
    deploy).
 2. Merge a `main` — ESE es el deploy a Vercel/Railway. Ya desbloqueado por el lado de la BD.
+
+**Actualizado:** 2026-09-09
+
+**Última acción:** dos changes cerrados y desplegados en producción, back to back —
+`pricing-quote-engine` (archivado) y su seguimiento `pricing-catalog-and-operator-quote`
+(archivado). El motor de pre-cotización ahora es usable de verdad desde el Búnker (antes
+resolvía el tenant del operador, no el del cliente), y los precios oficiales por fin viven en
+un solo lugar: `apps/backend/core/pricing_catalog.py`, explicado para el fundador en
+`docs/pricing.md`. Ambos con Stage 11 verificado en vivo (Railway + Vercel + cadena
+página-servida → chunk → string). Sin migración pendiente. Sin change activo.
 
 **Changes pendientes de implementación (en `openspec/changes/`, sin archivar):**
 
