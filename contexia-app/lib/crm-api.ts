@@ -14,6 +14,8 @@ export interface B2bClient {
   status: "activo" | "inactivo";
   monthly_fee_cents: number | null;
   service_band?: ServiceBand | null;
+  /** Advisory warning when the recorded fee falls outside its recorded band. Never blocks. */
+  fee_band_warning?: string | null;
   email?: string | null;
   phone?: string | null;
   contact_name?: string | null;
@@ -166,6 +168,35 @@ export function updateB2bClientContact(
     method: "PATCH",
     body: JSON.stringify(patch),
   });
+}
+
+// Operator pre-quote (pricing-catalog-and-operator-quote). Reads the CLIENT's own Shadow GL,
+// not the operator's — the self route resolves the caller's tenant and would return Contexia's
+// own numbers in the Bunker. Operator-only server-side; a non-operator gets 404.
+
+export interface ClientPreQuote {
+  client_tenant_id: string;
+  anio_gravable: number;
+  estado: string;
+  uvt_cop?: number | null;
+  meses_observados?: number | null;
+  ingresos_anualizados_cop?: number | null;
+  ingresos_anualizados_uvt?: number | null;
+  movimientos_mes?: number | null;
+  supera_umbral_declarante?: boolean | null;
+  criterio_evaluado: string;
+  criterios_no_evaluables: string[];
+  umbral_declarante_uvt: number;
+  umbral_declarante_cop?: number | null;
+  banda_sugerida?: ServiceBand | null;
+  banda_precio_min_cents?: number | null;
+  banda_precio_max_cents?: number | null;
+  confianza: string;
+  drivers_faltantes: string[];
+}
+
+export function fetchClientPreQuote(clientId: string): Promise<ClientPreQuote> {
+  return api<ClientPreQuote>(`/pricing/pre-cotizacion/cliente/${clientId}`);
 }
 
 // Retention alerts (retention-loop): churn/risk signals computed from b2b_payments history.

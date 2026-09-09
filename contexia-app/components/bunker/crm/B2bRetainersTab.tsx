@@ -9,6 +9,7 @@ import {
   updateB2bClientContact,
   getB2bRetentionAlerts,
   updateB2bClientCommercials,
+  fetchClientPreQuote,
   PLAN_TIERS,
   SERVICE_BANDS,
   type B2bPaymentsResponse,
@@ -16,6 +17,7 @@ import {
   type PlanTier,
   type ServiceBand,
   type RetentionAlert,
+  type ClientPreQuote,
 } from "@/lib/crm-api";
 
 const PLAN_TIER_OPTION_LABEL: Record<PlanTier, string> = {
@@ -62,6 +64,97 @@ const PROVISION_LABELS: Record<string, string> = {
   not_provisioned: "Sin login",
 };
 
+const ESTADO_LABEL: Record<string, string> = {
+  ok: "Pre-cotización calculada",
+  sin_historico_suficiente: "Sin historial suficiente (menos de 3 meses de movimientos)",
+  uvt_no_disponible: "No hay UVT registrada para ese año gravable",
+  cliente_sin_tenant: "El cliente aún no tiene tenant provisionado",
+};
+
+const DRIVER_LABEL: Record<string, string> = {
+  carga_laboral_nomina: "Carga laboral / nómina",
+  patrimonio_bruto: "Patrimonio bruto",
+  responsabilidad_iva: "Responsabilidad de IVA",
+};
+
+function bandRangeLabel(q: ClientPreQuote): string {
+  if (q.banda_precio_min_cents == null) return "Cotizado caso por caso";
+  const min = formatCop(q.banda_precio_min_cents / 100);
+  if (q.banda_precio_max_cents == null) return `Desde ${min}`;
+  if (q.banda_precio_max_cents === q.banda_precio_min_cents) return min;
+  return `${min} – ${formatCop(q.banda_precio_max_cents / 100)}`;
+}
+
+/**
+ * Result panel for an operator pre-quote. Deliberately renders the engine's own honesty
+ * fields rather than only the band: the payroll driver does not exist in the data model and
+ * is half the fee criterion, so a band shown without its missing drivers would overstate how
+ * grounded it is.
+ */
+function PreQuotePanel({ quote, clientName }: { quote: ClientPreQuote; clientName: string }) {
+  const isOk = quote.estado === "ok";
+  return (
+    <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 text-sm">
+      <p className="mb-2 font-semibold text-primary-container">
+        Pre-cotización — {clientName}
+      </p>
+
+      {!isOk ? (
+        <p className="text-on-surface-variant">
+          {ESTADO_LABEL[quote.estado] ?? quote.estado}. No se sugiere banda: el motor no
+          inventa una cuando no tiene con qué sustentarla.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-x-6 gap-y-1">
+            <span className="text-on-surface">
+              Banda sugerida:{" "}
+              <strong className="text-primary-container">
+                {quote.banda_sugerida ? SERVICE_BAND_LABEL[quote.banda_sugerida] : "—"}
+              </strong>
+            </span>
+            <span className="text-on-surface">
+              Rango: <strong>{bandRangeLabel(quote)}</strong>
+            </span>
+            <span className="text-on-surface-variant">
+              Confianza: <strong>{quote.confianza}</strong>
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-on-surface-variant">
+            <span>
+              Ingresos anualizados:{" "}
+              {quote.ingresos_anualizados_cop != null
+                ? formatCop(quote.ingresos_anualizados_cop)
+                : "—"}{" "}
+              ({quote.ingresos_anualizados_uvt?.toFixed(0) ?? "—"} UVT {quote.anio_gravable})
+            </span>
+            <span>Movimientos/mes: {quote.movimientos_mes ?? "—"}</span>
+            <span>Meses observados: {quote.meses_observados ?? "—"}</span>
+          </div>
+
+          <p className="text-xs text-on-surface-variant">
+            {quote.supera_umbral_declarante
+              ? "Supera el umbral de 1.400 UVT por ingresos brutos."
+              : "No supera el umbral de 1.400 UVT por ingresos brutos."}{" "}
+            <span className="opacity-80">
+              Solo se evaluó <em>{quote.criterio_evaluado}</em>; no se evaluaron:{" "}
+              {quote.criterios_no_evaluables.join(", ")}. No superar el único criterio visible
+              no significa que el cliente no declare.
+            </span>
+          </p>
+
+          <p className="rounded-lg border border-status-warning/30 bg-status-warning/10 px-3 py-2 text-xs text-status-warning">
+            Datos que el motor NO puede ver:{" "}
+            {quote.drivers_faltantes.map((d) => DRIVER_LABEL[d] ?? d).join(", ")}. La banda es
+            una sugerencia parcial — la confirma la contadora.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function B2bRetainersTab() {
   const [data, setData] = useState<B2bPaymentsResponse | null>(null);
   const [clientsById, setClientsById] = useState<Record<string, B2bClient>>({});
@@ -84,6 +177,9 @@ export function B2bRetainersTab() {
 
   const [editingFeeClientId, setEditingFeeClientId] = useState<string | null>(null);
   const [editingFeeValue, setEditingFeeValue] = useState("");
+
+  const [preQuote, setPreQuote] = useState<{ clientId: string; data: ClientPreQuote } | null>(null);
+  const [preQuoteLoadingId, setPreQuoteLoadingId] = useState<string | null>(null);
 
   const [alerts, setAlerts] = useState<RetentionAlert[] | null>(null);
   const [alertsError, setAlertsError] = useState("");
@@ -207,6 +303,20 @@ export function B2bRetainersTab() {
       setError(e instanceof Error ? e.message : "No se pudo actualizar la banda de servicio");
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const runPreQuote = async (clientId: string) => {
+    setError("");
+    setPreQuote(null);
+    setPreQuoteLoadingId(clientId);
+    try {
+      const data = await fetchClientPreQuote(clientId);
+      setPreQuote({ clientId, data });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo calcular la pre-cotización");
+    } finally {
+      setPreQuoteLoadingId(null);
     }
   };
 
@@ -422,6 +532,13 @@ export function B2bRetainersTab() {
         </form>
       )}
 
+      {preQuote && (
+        <PreQuotePanel
+          quote={preQuote.data}
+          clientName={clientsById[preQuote.clientId]?.name ?? preQuote.clientId}
+        />
+      )}
+
       {grid.clients.length === 0 ? (
         <div className="rounded-xl border border-outline-variant/30 bg-surface-container p-6 text-on-surface-variant">
           Sin clientes B2B registrados todavía.
@@ -539,6 +656,23 @@ export function B2bRetainersTab() {
                             </option>
                           ))}
                         </select>
+                        {full?.fee_band_warning && (
+                          <span
+                            className="text-[10px] text-status-warning"
+                            title="Advertencia, no bloqueo: Micro es una excepción y Complejo se cotiza caso por caso."
+                          >
+                            ⚠ {full.fee_band_warning}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          disabled={preQuoteLoadingId === client.id}
+                          onClick={() => runPreQuote(client.id)}
+                          className="self-start rounded border border-primary/30 px-2 py-0.5 text-[10px] font-semibold text-primary-container hover:bg-primary/20 disabled:opacity-50"
+                          title="Calcular banda sugerida desde el Shadow GL de este cliente"
+                        >
+                          {preQuoteLoadingId === client.id ? "Calculando…" : "Pre-cotizar"}
+                        </button>
                       </div>
                     </td>
                     <td className="px-4 py-3">

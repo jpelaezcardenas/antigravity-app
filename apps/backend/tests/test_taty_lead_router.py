@@ -389,11 +389,15 @@ class TestBuildLeadContext:
         assert ctx["persona_fields"] == {"es_asalariado": True, "topes": {"ingresos": 1}}
         assert "unrelated_key" not in ctx["persona_fields"]
 
-    def test_offer_context_never_states_a_confirmed_price(self):
-        """Founder decision 2026-08-11: pricing tiers are undefined. This must stay False until
-        that's resolved — accidentally flipping it would let Taty state a price to a real lead."""
+    def test_offer_context_states_the_founder_given_floor(self):
+        """Superseded by taty-pricing-skill (2026-09-09): the founder gave the Renta Natural
+        floor ("desde $350.000... según el caso"), replacing the 2026-08-11 undefined-price
+        refusal this test used to pin. `precio_confirmado` is now deliberately True, sourced
+        from core/pricing_catalog.py.RENTA_NATURAL_PRICING — not a bare literal here — and the
+        floor must still have no invented ceiling, which is what actually keeps this safe."""
         ctx = _build_lead_context("NUEVOS", {})
-        assert ctx["offer"]["precio_confirmado"] is False
+        assert ctx["offer"]["precio_confirmado"] is True
+        assert ctx["offer"]["precio_desde_cop"] == 350_000
         assert "RUT" in " ".join(ctx["offer"]["documentos_requeridos"])
 
 

@@ -347,7 +347,87 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
     explícita del fundador. Hasta entonces el endpoint responde `uvt_no_disponible` y las
     escrituras de `service_band` fallan; ambas fallan en voz alta, ninguna corrompe datos.
 
-24. **La voz de Contexia es local, aditiva, y se sintetiza donde NO se entrega**
+24. **El catálogo de precios vive en código; el motor de pre-cotización se usa desde el Búnker
+    vía una ruta de operador** (`pricing-catalog-and-operator-quote`, 2026-09-09) — la Decisión #23
+    dejó el motor desplegado pero **inservible para su propósito**: `/pricing/pre-cotizacion`
+    resuelve el tenant *del que llama*, y en el Búnker quien llama es un operador de Contexia
+    (resuelve a Cliente Cero), así que devolvía la pre-cotización **de Contexia**, no la del
+    prospecto. Nueva ruta `GET /api/v1/pricing/pre-cotizacion/cliente/{b2b_client_id}`, **solo
+    operador** (`scope.all_tenants`, precedente de Approval Queue / Decisión #14); cualquier otro
+    llamador recibe **404**, nunca 403 (anti-enumeración, Decisión #17). Toma el `b2b_clients.id`,
+    no un UUID de tenant, y resuelve el tenant destino en el servidor. La ruta *self* conserva su
+    contrato sin parámetros: seleccionar un tenant solo es legítimo para un scope que ya tiene
+    derecho a todos.
+
+    **`core/pricing_catalog.py` es la fuente única de los precios oficiales** — antes no estaban
+    en ningún archivo del repo (verificado por grep), lo que ya había causado que los nombres
+    comerciales derivaran en la PWA y que el prompt de Taty tuviera que **negarse a cotizar**
+    porque "las tarifas están sin definir". Entidad B (software, tiers fijos): Pulso `freemium`
+    $0 · GPS `starter` $249.000 · Contexia Pro `growth` desde $1.490.000 · Contexia Total
+    `enterprise` cotizado. Entidad A (servicio profesional, bandas): Micro $890.000 (precio
+    **fijo**, excepción) · Estándar $1.490.000–$2.400.000 · Complejo **sin cotas** (cotizado —
+    inventarle un piso marcaría cotizaciones legítimas como incoherentes). El "desde $1.490.000"
+    de Pro *es* el piso de Estándar, referenciado una sola vez para que no se desincronicen.
+
+    **Por qué en código y no en tabla, a diferencia de `uvt_values`** (Decisión #23): la UVT la
+    republica la DIAN cada diciembre, así que una constante se vuelve **incorrecta sola**, sin que
+    nadie toque el repo. Un precio es una *decisión*, no un hecho externo que deriva: sigue
+    correcto hasta que alguien lo cambie, y hacer que ese cambio pase por revisión y tests es
+    deseable. Además mantiene el precio junto a la clave que nombra (`SERVICE_BANDS`,
+    `PLAN_FEATURES`), y un test exige que cubran **exactamente** el mismo conjunto — no pueden
+    derivar. Unidades: todo en **minor units** con sufijo `_cents` (se compara contra
+    `b2b_clients.monthly_fee_cents`), en contraste deliberado con `uvt_values.value_cop` en pesos
+    completos; el invariante es que **todo monto lleva su unidad en el nombre**, no una unidad
+    global única.
+
+    **`core/plan_features.py` sigue intacto**: el acceso a features y el precio son cosas
+    separadas — Pro Micro y Pro Estándar son el MISMO software. La incoherencia honorario/banda se
+    **avisa, nunca se bloquea**: Micro es excepción y Complejo es cotizado, así que existen
+    honorarios fuera de rango legítimos; bloquear obligaría a registrar mal la banda para poder
+    registrar el honorario real. Documentación para el fundador (con la sección de estructura de
+    costos frente a la migración a inferencia local soberana): [`docs/pricing.md`](docs/pricing.md).
+
+    **Resuelto** (`taty-pricing-skill`, 2026-09-09): ver Decisión #25 — el fundador dio el precio
+    de Renta Natural y decidió explícitamente que Taty deje de negarse a cotizar.
+
+25. **Taty gana una skill de precios: cifras reales en todo canal, y un tercer producto —
+    Renta Natural — reemplaza la negativa a cotizar** (`taty-pricing-skill`, 2026-09-09, decisión
+    comercial explícita del fundador) — hasta este change, `TatyAgentService._build_system_prompt`
+    instruía a Taty a **negarse** a decir un precio en el embudo de WhatsApp de Renta Natural
+    persona natural, porque ninguno existía (decisión diferida 2026-08-11). Dos cosas cambiaron:
+
+    **Precios B2B en todo canal.** `core/pricing_catalog.py` (Decisión #24, arriba) ya tenía los
+    tiers de software y las bandas de servicio, pero nunca aparecían en
+    el prompt de Taty en ningún canal. Nuevo bloque siempre presente en `_build_system_prompt`
+    (con o sin `lead_context`, es decir Telegram/PWA/WhatsApp por igual), leído en vivo del
+    catálogo — ningún precio queda retipeado como literal en `taty_service.py` (verificado por
+    test).
+
+    **Renta Natural: tercer producto, mismo patrón que la banda Complejo.** El fundador dio la
+    cifra: *"desde 350.000 pesos... según cantidad de trámites, movimientos, patrimonio"* — un
+    piso, **sin techo**, porque no existe uno; se cotiza caso por caso. Nuevo
+    `RENTA_NATURAL_PRICING` en el catálogo (`min_cents=35_000_000`, `max_cents=None`,
+    `is_quoted=True`, con los tres drivers como datos, no prosa). `RENTA_OFFER_CONTEXT` en
+    `taty_lead_router.py` pasa `precio_confirmado` de `False` a `True`, sembrado desde el
+    catálogo — nunca un literal suelto.
+
+    **La cifra real no habilita un número inventado.** El prompt le dice a Taty el piso y por qué
+    varía, y le prohíbe explícitamente decir un valor final exacto o un techo — la misma
+    disciplina que ya rige toda cifra fiscal en este repo (Decisión #19), aplicada ahora a una
+    cifra comercial en una conversación de ventas real.
+
+    **"Skill" es encuadre del prompt, no un mecanismo nuevo.** No existe un artefacto de skill de
+    Hermes cableado a Taty en este repo — `AGENTES.md` la describe como operador conversacional
+    con prompt de sistema, no con skill-loader. Se agregó una línea de persona ("también es la
+    vendedora estrella de Contexia") junto a su encuadre existente ("Fintech Centrado en el Ser
+    Humano"), y se dejó explícitamente fuera de alcance construir infraestructura de skills real.
+
+    **Fuera de alcance, a propósito:** lead qualification (el fundador la nombró como "más
+    adelante", no ahora); tocar `core/plan_features.py` o el flujo HITL de Wompi; reconciliar
+    `TenantInfoCard.tsx`/`UpgradePlanBanner.tsx` (colisionaría con trabajo concurrente de otra
+    sesión sobre esos archivos).
+
+26. **La voz de Contexia es local, aditiva, y se sintetiza donde NO se entrega**
     (`voicebox-local-voice-adoption`, 2026-09-09) — VoiceBox (MIT, upstream `jamiepine/voicebox`)
     es el proveedor de voz para dos consumidores: los agentes de Hermes y la nota de voz saliente
     de Taty por WhatsApp. **Estado: integrado y APAGADO** (`VOICE_ENABLED=false` en backend y

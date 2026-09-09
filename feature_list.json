@@ -11,7 +11,7 @@
       "blocked"
     ]
   },
-  "active": "pricing-quote-engine",
+  "active": null,
   "pending_implementation": [
     "pricing-quote-engine",
     "taty-wompi-link-hitl-gate",
@@ -20,9 +20,19 @@
   ],
   "features": [
     {
+      "id": "taty-pricing-skill",
+      "status": "done",
+      "summary": "Archived 2026-09-09 as openspec/changes/archive/2026-09-09-taty-pricing-skill. Founder commercial decision: Taty stops refusing to quote. Added a third catalog product RENTA_NATURAL_PRICING (floor $350.000, no invented ceiling, per the founder's own words) and wired core/pricing_catalog.py into Taty's system prompt on every channel (B2B tiers/bands) plus replaced the WhatsApp Renta Natural funnel's price refusal with the real floor + an explicit never-invent-a-final-number/ceiling instruction. 'Skill' is persona framing, not a new Hermes mechanism. core/plan_features.py untouched; no frontend files touched. 66 new tests green; full suite byte-identical failure list vs main, +55 passed."
+    },
+    {
+      "id": "pricing-catalog-and-operator-quote",
+      "status": "done",
+      "summary": "COMPLETE, archived 2026-09-09 as openspec/changes/archive/2026-09-09-pricing-catalog-and-operator-quote. Stage 11 verified live: Railway d5925dd6 up, GET /api/v1/pricing/pre-cotizacion/cliente/{id} 401 (mounted, operator-only, 404 for non-operators), contexia.online/app/bunker 200, live sw.js v20-2026-09-09, served Bunker page -> chunk 11bepc041jvkm.js -> 'Pre-cotizar' chain walked end to end. core/pricing_catalog.py is now the single source of the official prices (previously nowhere in the repo): Pulso $0, GPS $249.000, Contexia Pro desde $1.490.000, Contexia Total cotizado; Micro $890.000 fijo, Estandar $1.490.000-2.400.000, Complejo sin cotas/cotizado. docs/pricing.md is the founder reference, including the cost-structure section for the sovereign local-inference migration. 116 new tests, zero regressions (byte-identical failure lists vs main). core/plan_features.py untouched. Promotes requirements to openspec/specs/pricing-catalog-and-operator-quote/spec.md."
+    },
+    {
       "id": "pricing-quote-engine",
-      "status": "in_progress",
-      "summary": "Pre-quote engine + agreed per-client price. Adds uvt_values (UVT by tax year, whole COP, seeded 2025/2026 with their DIAN resolutions), b2b_clients.service_band (micro|estandar|complejo), and GET /api/v1/pricing/pre-cotizacion (tenant-scoped via resolve_request_tenant_scope, 404 on unresolved tenant, read-only, not plan-gated). core/plan_features.py deliberately untouched. Migration 0048 WRITTEN BUT NOT APPLIED - requires founder approval. Committed on a feature branch, NOT pushed to main (main auto-deploys)."
+      "status": "done",
+      "summary": "COMPLETE, archived 2026-09-09 as openspec/changes/archive/2026-09-09-pricing-quote-engine. Stage 11 verified live: Railway c5133932 SUCCESS, /api/v1/pricing/pre-cotizacion 401 (mounted, auth enforced), siblings unchanged, contexia.online/app/bunker 200, live sw.js v19-2026-09-08, and the served Bunker page -> chunk 0x__o-vi52nbo.js -> 'Honorario / Banda' chain walked end to end. Migration 0048 applied 2026-09-08 with explicit founder approval (uvt_values seeded 2025/2026 in whole COP; b2b_clients.service_band micro|estandar|complejo, nullable, no default). core/plan_features.py deliberately untouched. Zero regressions proven against an isolated main worktree (byte-identical failure lists, +77 passed). Caught pre-deploy: the first 3 commits changed contexia-app/ source only, which would have shipped the backend with an invisible Bunker UI since vercel.json serves the repo root statically with no build step. Promotes 7 requirements to openspec/specs/pricing-quote-engine/spec.md."
     },
     {
       "id": "adopt-gbrain-second-brain",
