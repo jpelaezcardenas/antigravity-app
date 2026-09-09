@@ -12,6 +12,7 @@ from typing import Any, Dict, Optional
 import httpx
 
 from config import settings
+from http_retry import request_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +33,13 @@ def _url(path: str) -> str:
 
 
 def _create_object(object_type: str, properties: Dict[str, Any]) -> Optional[str]:
-    response = httpx.post(
-        _url(f"/crm/v3/objects/{object_type}"),
-        headers=_headers(),
-        json={"properties": properties},
-        timeout=settings.HTTP_TIMEOUT_SECONDS,
+    response = request_with_retry(
+        lambda: httpx.post(
+            _url(f"/crm/v3/objects/{object_type}"),
+            headers=_headers(),
+            json={"properties": properties},
+            timeout=settings.HTTP_TIMEOUT_SECONDS,
+        )
     )
     if response.status_code not in (200, 201):
         logger.error(
@@ -60,11 +63,13 @@ def _upsert_object(
         return None
     try:
         if object_id:
-            response = httpx.patch(
-                _url(f"/crm/v3/objects/{object_type}/{object_id}"),
-                headers=_headers(),
-                json={"properties": properties},
-                timeout=settings.HTTP_TIMEOUT_SECONDS,
+            response = request_with_retry(
+                lambda: httpx.patch(
+                    _url(f"/crm/v3/objects/{object_type}/{object_id}"),
+                    headers=_headers(),
+                    json={"properties": properties},
+                    timeout=settings.HTTP_TIMEOUT_SECONDS,
+                )
             )
             if response.status_code == 404:
                 logger.warning(
@@ -109,24 +114,26 @@ def create_note(contact_id: str, body: str) -> Optional[str]:
     if not is_configured():
         return None
     try:
-        response = httpx.post(
-            _url("/crm/v3/objects/notes"),
-            headers=_headers(),
-            json={
-                "properties": {"hs_note_body": body, "hs_timestamp": _now_millis()},
-                "associations": [
-                    {
-                        "to": {"id": contact_id},
-                        "types": [
-                            {
-                                "associationCategory": "HUBSPOT_DEFINED",
-                                "associationTypeId": _ASSOC_NOTE_TO_CONTACT,
-                            }
-                        ],
-                    }
-                ],
-            },
-            timeout=settings.HTTP_TIMEOUT_SECONDS,
+        response = request_with_retry(
+            lambda: httpx.post(
+                _url("/crm/v3/objects/notes"),
+                headers=_headers(),
+                json={
+                    "properties": {"hs_note_body": body, "hs_timestamp": _now_millis()},
+                    "associations": [
+                        {
+                            "to": {"id": contact_id},
+                            "types": [
+                                {
+                                    "associationCategory": "HUBSPOT_DEFINED",
+                                    "associationTypeId": _ASSOC_NOTE_TO_CONTACT,
+                                }
+                            ],
+                        }
+                    ],
+                },
+                timeout=settings.HTTP_TIMEOUT_SECONDS,
+            )
         )
         if response.status_code not in (200, 201):
             logger.error("create_note HTTP %s: %s", response.status_code, response.text[:300])
@@ -144,10 +151,12 @@ def has_open_task(deal_id: str) -> bool:
     if not is_configured():
         return False
     try:
-        response = httpx.get(
-            _url(f"/crm/v3/objects/deals/{deal_id}/associations/tasks"),
-            headers=_headers(),
-            timeout=settings.HTTP_TIMEOUT_SECONDS,
+        response = request_with_retry(
+            lambda: httpx.get(
+                _url(f"/crm/v3/objects/deals/{deal_id}/associations/tasks"),
+                headers=_headers(),
+                timeout=settings.HTTP_TIMEOUT_SECONDS,
+            )
         )
         if response.status_code != 200:
             logger.error("has_open_task HTTP %s: %s", response.status_code, response.text[:300])
@@ -164,14 +173,16 @@ def has_open_task(deal_id: str) -> bool:
 def _any_task_incomplete(task_ids: list) -> bool:
     """Batch-reads tasks and returns True if any has a non-terminal hs_task_status."""
     try:
-        response = httpx.post(
-            _url("/crm/v3/objects/tasks/batch/read"),
-            headers=_headers(),
-            json={
-                "properties": ["hs_task_status"],
-                "inputs": [{"id": task_id} for task_id in task_ids],
-            },
-            timeout=settings.HTTP_TIMEOUT_SECONDS,
+        response = request_with_retry(
+            lambda: httpx.post(
+                _url("/crm/v3/objects/tasks/batch/read"),
+                headers=_headers(),
+                json={
+                    "properties": ["hs_task_status"],
+                    "inputs": [{"id": task_id} for task_id in task_ids],
+                },
+                timeout=settings.HTTP_TIMEOUT_SECONDS,
+            )
         )
         if response.status_code != 200:
             return False
@@ -190,28 +201,30 @@ def create_task(deal_id: str, subject: str) -> Optional[str]:
     if not is_configured():
         return None
     try:
-        response = httpx.post(
-            _url("/crm/v3/objects/tasks"),
-            headers=_headers(),
-            json={
-                "properties": {
-                    "hs_task_subject": subject,
-                    "hs_task_status": "NOT_STARTED",
-                    "hs_timestamp": _now_millis(),
+        response = request_with_retry(
+            lambda: httpx.post(
+                _url("/crm/v3/objects/tasks"),
+                headers=_headers(),
+                json={
+                    "properties": {
+                        "hs_task_subject": subject,
+                        "hs_task_status": "NOT_STARTED",
+                        "hs_timestamp": _now_millis(),
+                    },
+                    "associations": [
+                        {
+                            "to": {"id": deal_id},
+                            "types": [
+                                {
+                                    "associationCategory": "HUBSPOT_DEFINED",
+                                    "associationTypeId": _ASSOC_TASK_TO_DEAL,
+                                }
+                            ],
+                        }
+                    ],
                 },
-                "associations": [
-                    {
-                        "to": {"id": deal_id},
-                        "types": [
-                            {
-                                "associationCategory": "HUBSPOT_DEFINED",
-                                "associationTypeId": _ASSOC_TASK_TO_DEAL,
-                            }
-                        ],
-                    }
-                ],
-            },
-            timeout=settings.HTTP_TIMEOUT_SECONDS,
+                timeout=settings.HTTP_TIMEOUT_SECONDS,
+            )
         )
         if response.status_code not in (200, 201):
             logger.error("create_task HTTP %s: %s", response.status_code, response.text[:300])

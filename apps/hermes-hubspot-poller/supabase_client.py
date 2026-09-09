@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from config import settings
+from http_retry import request_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -48,11 +49,13 @@ def list_leads(limit: int) -> List[Dict[str, Any]]:
     change-detection scheme.
     """
     try:
-        response = httpx.get(
-            _url("/crm_leads"),
-            headers=_headers(),
-            params={"select": "*", "order": "updated_at.desc", "limit": str(limit)},
-            timeout=settings.HTTP_TIMEOUT_SECONDS,
+        response = request_with_retry(
+            lambda: httpx.get(
+                _url("/crm_leads"),
+                headers=_headers(),
+                params={"select": "*", "order": "updated_at.desc", "limit": str(limit)},
+                timeout=settings.HTTP_TIMEOUT_SECONDS,
+            )
         )
         if response.status_code != 200:
             logger.error("list_leads HTTP %s: %s", response.status_code, response.text[:300])
@@ -67,16 +70,18 @@ def list_leads(limit: int) -> List[Dict[str, Any]]:
 def get_latest_wompi_transaction(lead_id: str) -> Optional[Dict[str, Any]]:
     """Most recent crm_wompi_transactions row for a lead, or None if none exists/on failure."""
     try:
-        response = httpx.get(
-            _url("/crm_wompi_transactions"),
-            headers=_headers(),
-            params={
-                "select": "status,amount_cents,created_at",
-                "lead_id": f"eq.{lead_id}",
-                "order": "created_at.desc",
-                "limit": "1",
-            },
-            timeout=settings.HTTP_TIMEOUT_SECONDS,
+        response = request_with_retry(
+            lambda: httpx.get(
+                _url("/crm_wompi_transactions"),
+                headers=_headers(),
+                params={
+                    "select": "status,amount_cents,created_at",
+                    "lead_id": f"eq.{lead_id}",
+                    "order": "created_at.desc",
+                    "limit": "1",
+                },
+                timeout=settings.HTTP_TIMEOUT_SECONDS,
+            )
         )
         if response.status_code != 200:
             logger.error(
@@ -106,11 +111,13 @@ def list_b2b_clients(limit: int) -> List[Dict[str, Any]]:
     """All b2b_clients rows, most recently updated first (bounded by limit). Every tick re-syncs
     every client — same rationale as `list_leads` (design.md Decision #7)."""
     try:
-        response = httpx.get(
-            _url("/b2b_clients"),
-            headers=_headers(),
-            params={"select": "*", "order": "updated_at.desc", "limit": str(limit)},
-            timeout=settings.HTTP_TIMEOUT_SECONDS,
+        response = request_with_retry(
+            lambda: httpx.get(
+                _url("/b2b_clients"),
+                headers=_headers(),
+                params={"select": "*", "order": "updated_at.desc", "limit": str(limit)},
+                timeout=settings.HTTP_TIMEOUT_SECONDS,
+            )
         )
         if response.status_code != 200:
             logger.error("list_b2b_clients HTTP %s: %s", response.status_code, response.text[:300])
@@ -132,12 +139,14 @@ def mark_b2b_client_synced(client_id: str, hubspot_company_id: str, synced_at: s
 
 def _patch(path: str, filters: Dict[str, str], body: Dict[str, Any]) -> bool:
     try:
-        response = httpx.patch(
-            _url(path),
-            headers=_headers(),
-            params=filters,
-            json=body,
-            timeout=settings.HTTP_TIMEOUT_SECONDS,
+        response = request_with_retry(
+            lambda: httpx.patch(
+                _url(path),
+                headers=_headers(),
+                params=filters,
+                json=body,
+                timeout=settings.HTTP_TIMEOUT_SECONDS,
+            )
         )
         if response.status_code not in (200, 204):
             logger.error("%s patch HTTP %s: %s", path, response.status_code, response.text[:300])
