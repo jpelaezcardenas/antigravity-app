@@ -325,6 +325,51 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
     explícita del fundador. Hasta entonces el endpoint responde `uvt_no_disponible` y las
     escrituras de `service_band` fallan; ambas fallan en voz alta, ninguna corrompe datos.
 
+24. **El catálogo de precios vive en código; el motor de pre-cotización se usa desde el Búnker
+    vía una ruta de operador** (`pricing-catalog-and-operator-quote`, 2026-09-09) — la Decisión #23
+    dejó el motor desplegado pero **inservible para su propósito**: `/pricing/pre-cotizacion`
+    resuelve el tenant *del que llama*, y en el Búnker quien llama es un operador de Contexia
+    (resuelve a Cliente Cero), así que devolvía la pre-cotización **de Contexia**, no la del
+    prospecto. Nueva ruta `GET /api/v1/pricing/pre-cotizacion/cliente/{b2b_client_id}`, **solo
+    operador** (`scope.all_tenants`, precedente de Approval Queue / Decisión #14); cualquier otro
+    llamador recibe **404**, nunca 403 (anti-enumeración, Decisión #17). Toma el `b2b_clients.id`,
+    no un UUID de tenant, y resuelve el tenant destino en el servidor. La ruta *self* conserva su
+    contrato sin parámetros: seleccionar un tenant solo es legítimo para un scope que ya tiene
+    derecho a todos.
+
+    **`core/pricing_catalog.py` es la fuente única de los precios oficiales** — antes no estaban
+    en ningún archivo del repo (verificado por grep), lo que ya había causado que los nombres
+    comerciales derivaran en la PWA y que el prompt de Taty tuviera que **negarse a cotizar**
+    porque "las tarifas están sin definir". Entidad B (software, tiers fijos): Pulso `freemium`
+    $0 · GPS `starter` $249.000 · Contexia Pro `growth` desde $1.490.000 · Contexia Total
+    `enterprise` cotizado. Entidad A (servicio profesional, bandas): Micro $890.000 (precio
+    **fijo**, excepción) · Estándar $1.490.000–$2.400.000 · Complejo **sin cotas** (cotizado —
+    inventarle un piso marcaría cotizaciones legítimas como incoherentes). El "desde $1.490.000"
+    de Pro *es* el piso de Estándar, referenciado una sola vez para que no se desincronicen.
+
+    **Por qué en código y no en tabla, a diferencia de `uvt_values`** (Decisión #23): la UVT la
+    republica la DIAN cada diciembre, así que una constante se vuelve **incorrecta sola**, sin que
+    nadie toque el repo. Un precio es una *decisión*, no un hecho externo que deriva: sigue
+    correcto hasta que alguien lo cambie, y hacer que ese cambio pase por revisión y tests es
+    deseable. Además mantiene el precio junto a la clave que nombra (`SERVICE_BANDS`,
+    `PLAN_FEATURES`), y un test exige que cubran **exactamente** el mismo conjunto — no pueden
+    derivar. Unidades: todo en **minor units** con sufijo `_cents` (se compara contra
+    `b2b_clients.monthly_fee_cents`), en contraste deliberado con `uvt_values.value_cop` en pesos
+    completos; el invariante es que **todo monto lleva su unidad en el nombre**, no una unidad
+    global única.
+
+    **`core/plan_features.py` sigue intacto**: el acceso a features y el precio son cosas
+    separadas — Pro Micro y Pro Estándar son el MISMO software. La incoherencia honorario/banda se
+    **avisa, nunca se bloquea**: Micro es excepción y Complejo es cotizado, así que existen
+    honorarios fuera de rango legítimos; bloquear obligaría a registrar mal la banda para poder
+    registrar el honorario real. Documentación para el fundador (con la sección de estructura de
+    costos frente a la migración a inferencia local soberana): [`docs/pricing.md`](docs/pricing.md).
+
+    **Pendiente del fundador, no hecho aquí:** el prompt de venta de Taty en WhatsApp sigue
+    instruido para NO decir precios. Ya existen, así que *podría* — pero eso apunta un agente de
+    ventas vivo hacia cifras reales, y ese mismo change documenta al modelo inventando datos
+    cuando no está aterrizado. Es decisión comercial, no follow-up mecánico.
+
 ## Enlaces canónicos
 
 - Identidad / legal / semántica → [`.antigravity/GROUND_TRUTH.md`](.antigravity/GROUND_TRUTH.md) (manda)

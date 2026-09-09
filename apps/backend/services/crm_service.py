@@ -22,6 +22,7 @@ from channels.whatsapp import send_whatsapp_message
 from config import settings
 from core.plan_features import PLAN_FEATURES
 from core.supabase_client import get_service_supabase
+from core.pricing_catalog import check_fee_band_coherence
 from services.pricing_service import SERVICE_BANDS
 from services.shadow_gl_seed_service import seed_freemium_opening_balance
 from services.wompi_signature import compute_integrity_signature, verify_event_checksum
@@ -144,7 +145,15 @@ class CrmService:
                     .order("name")
                     .execute()
                 )
-                return {"source": "supabase", "items": result.data or []}
+                items = result.data or []
+                # Advisory only (pricing-catalog-and-operator-quote, design.md Decision 5):
+                # a fee outside its recorded band is surfaced, never rejected — Micro is an
+                # exception band and Complejo is quoted, so legitimate off-range fees exist.
+                for item in items:
+                    item["fee_band_warning"] = check_fee_band_coherence(
+                        item.get("monthly_fee_cents"), item.get("service_band")
+                    )
+                return {"source": "supabase", "items": items}
         except Exception as exc:
             logger.warning("CRM b2b clients: supabase unavailable, using demo fallback: %s", exc)
 

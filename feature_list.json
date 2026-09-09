@@ -11,12 +11,17 @@
       "blocked"
     ]
   },
-  "active": "pricing-catalog-and-operator-quote",
+  "active": null,
   "pending_implementation": [
     "taty-wompi-link-hitl-gate",
     "metrics-dashboard-phase9"
   ],
   "features": [
+    {
+      "id": "pricing-catalog-and-operator-quote",
+      "status": "in_progress",
+      "summary": "Follow-up to pricing-quote-engine: official prices had nowhere to live (verified by grep), and the pre-quote endpoint resolved the CALLER's tenant, so it was unusable from the Bunker (operator -> Cliente Cero, not the prospect). Adding core/pricing_catalog.py (Entidad B tiers fixed, Entidad A bands with Micro fixed at $890.000, Estandar $1.490.000-2.400.000 range, Complejo unbounded/quoted), a new operator-only GET /pricing/pre-cotizacion/cliente/{b2b_client_id} route (Approval Queue precedent, 404 on non-operator), fee/band coherence warning (advisory, never blocking), band price shown in the pre-quote response, and docs/pricing.md."
+    },
     {
       "id": "pricing-quote-engine",
       "status": "done",

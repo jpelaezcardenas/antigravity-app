@@ -21,7 +21,7 @@ import logging
 from datetime import date
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from pydantic import BaseModel
 
 from core.deps import get_current_user
@@ -70,8 +70,12 @@ class PreQuoteResponse(BaseModel):
     umbral_declarante_uvt: int = DECLARANT_THRESHOLD_UVT
     umbral_declarante_cop: Optional[int] = None
 
-    #: A suggestion for the accountant, never a price and never a stored value.
+    #: A suggestion for the accountant, never a stored value.
     banda_sugerida: Optional[str] = None
+    #: What that band costs, from core/pricing_catalog.py. Both null when there is no band,
+    #: and max null for a band quoted case by case — never zero, which would read as free.
+    banda_precio_min_cents: Optional[int] = None
+    banda_precio_max_cents: Optional[int] = None
     #: "media" or "baja" — never "alta", because the payroll driver is always missing.
     confianza: str
     drivers_faltantes: List[str] = list(DRIVERS_FALTANTES)
@@ -139,6 +143,83 @@ async def get_pre_quote(
         logger.error(
             "Pre-quote failed for tenant %s (year %s): %s", scope.tenant_id, tax_year, exc,
             exc_info=True,
+        )
+        raise HTTPException(status_code=500, detail=f"Pre-quote calculation failed: {exc}")
+
+    return PreQuoteResponse(**result)
+
+
+ESTADO_CLIENTE_SIN_TENANT = "cliente_sin_tenant"
+
+
+@router.get(
+    "/pre-cotizacion/cliente/{b2b_client_id}",
+    response_model=PreQuoteResponse,
+    summary="Pre-quote a specific roster client (Contexia operators only)",
+)
+async def get_client_pre_quote(
+    b2b_client_id: str = Path(..., description="b2b_clients.id of the roster client"),
+    user: dict = Depends(get_current_user),
+) -> PreQuoteResponse:
+    """Pre-quote a named B2B roster client, for a Contexia operator.
+
+    Why this exists: the self route resolves the tenant of the CALLER, so in the Búnker — where
+    the caller is an operator whose membership resolves to Cliente Cero — it returned Contexia's
+    own numbers instead of the prospect's. That made the engine unusable for the one workflow it
+    was built for.
+
+    Authorisation follows Approval Queue's operator precedent (Decisión #14): a caller whose
+    resolved scope covers all tenants is a Contexia operator and may target any roster client.
+    Everyone else — a single-tenant B2B client, or an authenticated caller with no resolved
+    tenant — gets **404**, never 403, so the route's existence is not disclosed (Decisión #17).
+
+    The path takes a `b2b_clients.id`, not a raw tenant UUID: it is the identifier the Búnker
+    already holds, and it keeps tenant UUIDs off the URL surface. The target tenant is resolved
+    server-side.
+    """
+    supabase = get_supabase()
+    scope: Optional[TenantScope] = resolve_request_tenant_scope(user, supabase)
+
+    if scope is None or not scope.all_tenants:
+        raise HTTPException(status_code=404, detail="Pre-quote not available")
+
+    row = (
+        supabase.table("b2b_clients")
+        .select("id, name, client_tenant_id")
+        .eq("id", b2b_client_id)
+        .maybe_single()
+        .execute()
+    )
+    client_row = getattr(row, "data", None)
+    if not client_row:
+        raise HTTPException(status_code=404, detail="Pre-quote not available")
+
+    client_tenant_id = client_row.get("client_tenant_id")
+    if not client_tenant_id:
+        # A roster row created before provisioning has no tenant of its own. Say that
+        # explicitly — an empty pre-quote here would read as "this client has no activity".
+        return PreQuoteResponse(
+            client_tenant_id="",
+            anio_gravable=_default_tax_year(),
+            estado=ESTADO_CLIENTE_SIN_TENANT,
+            confianza="baja",
+        )
+
+    tax_year = _default_tax_year()
+    try:
+        result = compute_pre_quote(client_tenant_id, tax_year, supabase_client=supabase)
+    except UvtNotFoundError:
+        logger.warning("Pre-quote requested for tax year %s with no UVT row", tax_year)
+        return PreQuoteResponse(
+            client_tenant_id=client_tenant_id,
+            anio_gravable=tax_year,
+            estado=ESTADO_UVT_NO_DISPONIBLE,
+            confianza="baja",
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.error(
+            "Operator pre-quote failed for client %s (tenant %s): %s",
+            b2b_client_id, client_tenant_id, exc, exc_info=True,
         )
         raise HTTPException(status_code=500, detail=f"Pre-quote calculation failed: {exc}")
 

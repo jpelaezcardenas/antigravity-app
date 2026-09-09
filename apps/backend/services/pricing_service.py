@@ -28,6 +28,7 @@ import logging
 from datetime import date
 from typing import Any, Optional
 
+from core.pricing_catalog import band_price_range_cents
 from services.financials_service import _classify_ventas_salidas
 from services.uvt_service import cop_to_uvt, get_uvt_for_year
 
@@ -213,6 +214,9 @@ def compute_pre_quote(
             "umbral_declarante_uvt": DECLARANT_THRESHOLD_UVT,
             "umbral_declarante_cop": DECLARANT_THRESHOLD_UVT * uvt.value_cop,
             "banda_sugerida": None,
+            # No band means no price. A zeroed range would read as "free".
+            "banda_precio_min_cents": None,
+            "banda_precio_max_cents": None,
             "confianza": CONFIANZA_BAJA,
         }
 
@@ -231,6 +235,7 @@ def compute_pre_quote(
 
     umbral_cop = DECLARANT_THRESHOLD_UVT * uvt.value_cop
     band = _suggest_band(annualised_uvt, movimientos_mes)
+    band_min_cents, band_max_cents = band_price_range_cents(band)
 
     return {
         **base,
@@ -244,5 +249,9 @@ def compute_pre_quote(
         "umbral_declarante_uvt": DECLARANT_THRESHOLD_UVT,
         "umbral_declarante_cop": umbral_cop,
         "banda_sugerida": band,
+        # What the suggested band actually costs, from the single price source of truth
+        # (core/pricing_catalog.py). Both are None for a band quoted case by case.
+        "banda_precio_min_cents": band_min_cents,
+        "banda_precio_max_cents": band_max_cents,
         "confianza": _confidence(band, months_observed),
     }
