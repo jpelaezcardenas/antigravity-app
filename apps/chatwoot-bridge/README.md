@@ -102,6 +102,39 @@ uvicorn main:app --port 8090
 | Local backend dev | `:8080` |
 | This bridge | `:8090` |
 | Hermes Gateway | `:8642` |
+| VoiceBox (local, optional) | `:17493` |
+
+## Outbound voice notes (VoiceBox) — shipped OFF
+
+The bridge can also send Taty's reply as a WhatsApp **voice note**. It is disabled by default
+(`VOICE_ENABLED=false`) and does nothing until the local inference node exists: on a CPU-only host
+VoiceBox takes 3-5 minutes per phrase.
+
+**Rollback is one line.** Set `VOICE_ENABLED=false`, restart the bridge. Behaviour returns exactly
+to text-only. No migration, no table, no stored audio — nothing to undo.
+
+How it works, and why it is split this way:
+
+1. `POST /leads/{id}/reply` returns an additive `voice_allowed` flag. The **backend** owns that
+   decision (`services/voice_safety.py`) and already folds in its own `VOICE_ENABLED`, so this
+   bridge never synthesises audio the backend would reject.
+2. If allowed, `voicebox_client.synthesize()` calls the local VoiceBox on `:17493`, and
+   `audio_converter.wav_to_ogg_opus()` re-encodes with ffmpeg. **Both run here** — the model, the
+   cloned voice and the customer's text never leave this machine.
+3. `backend_client.send_voice_note()` posts the finished OGG to the backend's
+   `/internal/whatsapp/voice-note`, which performs the Graph API send. It has to be that way:
+   Railway cannot reach a local VoiceBox, and Chatwoot cannot deliver to WhatsApp at all (its
+   channel believes the 24-hour window is permanently closed — see the long note in
+   `backend_client.taty_reply`).
+
+The whole step is **fire-and-forget and additive**: the text reply has already been delivered and
+mirrored into Chatwoot before it starts, and no failure in it can delay or remove that reply.
+
+Requires `ffmpeg` on the host (WhatsApp will not play a WAV as a voice note). Without ffmpeg the
+bridge logs and degrades to text-only.
+
+Full documentation, including the migration-day runbook and the blocking consent prerequisite for
+the cloned voice: `docs/integrations/voicebox.md`.
 
 ## Troubleshooting
 

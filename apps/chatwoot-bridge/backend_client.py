@@ -19,9 +19,11 @@ never blocks the WhatsApp reply.
 
 from __future__ import annotations
 
+import base64
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
+from urllib.parse import urlparse
 
 import httpx
 from jose import jwt
@@ -123,6 +125,58 @@ async def taty_reply(lead_id: str, text: str) -> Optional[dict[str, Any]]:
     except Exception:
         logger.exception("taty_reply call failed")
         return None
+
+
+def _internal_base_url() -> str:
+    """Origin of the backend's `/internal` surface, derived from CONTEXIA_API_URL.
+
+    Deliberately NOT `f"{CONTEXIA_API_URL}/internal/..."`. `CONTEXIA_API_URL` ends in `/api/v1`,
+    which `vercel.json` rewrites to Railway and therefore publishes to the internet; appending
+    would produce `/api/v1/internal/...` and expose a machine-to-machine endpoint. `/internal` sits
+    outside that rewrite on purpose, so it is built from the origin only.
+    """
+    parsed = urlparse(settings.CONTEXIA_API_URL)
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
+async def send_voice_note(lead_id: str, text: str, audio: bytes) -> bool:
+    """Hand locally-synthesised audio to the backend, which performs the Graph API delivery.
+
+    Synthesis happened on this machine (voicebox_client + audio_converter); only the finished OGG
+    bytes cross to Railway, which holds WHATSAPP_TOKEN and can reach Meta — neither of which is
+    true here. `text` travels alongside so the backend can re-apply its safety gate rather than
+    trust this process's copy of the verdict.
+
+    Fail-soft: returns False on any failure and never raises. The text reply already reached the
+    customer, so a missing voice note is a non-event.
+    """
+    if not settings.INTERNAL_API_KEY:
+        logger.warning("send_voice_note: INTERNAL_API_KEY is not set; voice note not sent")
+        return False
+
+    url = f"{_internal_base_url()}/internal/whatsapp/voice-note"
+    payload = {
+        "lead_id": lead_id,
+        "text": text,
+        "audio_base64": base64.b64encode(audio).decode("ascii"),
+        "mime_type": "audio/ogg",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:
+            response = await client.post(
+                url, headers={"X-Internal-Api-Key": settings.INTERNAL_API_KEY}, json=payload
+            )
+        if response.status_code != 200:
+            # 503 is the ordinary answer while the feature is switched off in production.
+            logger.warning(
+                "send_voice_note returned %s: %s", response.status_code, response.text[:200]
+            )
+            return False
+        return bool((response.json() or {}).get("sent"))
+    except Exception:
+        logger.exception("send_voice_note call failed")
+        return False
 
 
 async def pull_pending_events(limit: int = 50) -> list[dict[str, Any]]:

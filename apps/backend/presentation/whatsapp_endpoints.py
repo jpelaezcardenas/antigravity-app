@@ -30,6 +30,7 @@ from channels.whatsapp import normalize_whatsapp_webhook, sanitize_for_whatsapp,
 from config import settings
 from core.deps import get_current_user
 from services.taty_lead_router import get_lead_phone, lead_exists, route_lead_message
+from services.voice_safety import should_speak
 from services.whatsapp_inbox_service import (
     DEFAULT_PULL_LIMIT,
     acknowledge,
@@ -171,6 +172,22 @@ async def taty_lead_reply(
     # channels/whatsapp.py::sanitize_for_whatsapp for the full rationale.
     if result.get("reply"):
         result["reply"] = sanitize_for_whatsapp(result["reply"])
+
+    # voicebox-local-voice-adoption: additive field telling the local bridge whether this reply may
+    # ALSO be sent as a voice note. The backend owns the decision so there is exactly one place to
+    # audit it and the bridge cannot drift from or bypass it; the bridge also avoids spending GPU
+    # time synthesising a reply that would be discarded. Judged AFTER sanitize_for_whatsapp,
+    # because that is the text the customer would actually hear.
+    #
+    # VOICE_ENABLED is folded in here, not left to the bridge, so the backend is the single
+    # authoritative switch: with voice off, no caller is ever told a reply is speakable, and a
+    # bridge running a stale config cannot burn GPU time on audio the voice-note endpoint would
+    # reject with a 503 anyway.
+    #
+    # Adding a key never affects existing callers: the bridge reads named fields off this dict.
+    result["voice_allowed"] = settings.VOICE_ENABLED and should_speak(
+        result.get("reply"), settings.VOICE_MAX_CHARS
+    )
 
     if payload.deliver:
         phone = get_lead_phone(lead_id)

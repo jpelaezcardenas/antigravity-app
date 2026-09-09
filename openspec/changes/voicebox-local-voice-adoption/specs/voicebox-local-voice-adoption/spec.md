@@ -91,16 +91,28 @@ Not under `/api/v1`, therefore not exposed by `vercel.json`'s rewrite.
 **Auth:** `X-Internal-Api-Key` header compared against the `INTERNAL_API_KEY` environment variable,
 copying `ingest_file_endpoints.py:28-34`.
 
-| Condition | Status |
-|---|---|
-| `INTERNAL_API_KEY` unset in the environment | **503** — "Internal API key not configured" (fail closed) |
-| Header missing or mismatched | **401** |
-| `lead_id` unknown (`lead_exists` is False) | **404** |
-| `VOICE_ENABLED` is `False` | **503** — "Voice is disabled" |
-| Payload larger than `VOICE_MAX_AUDIO_BYTES` | **413** |
-| `should_speak(text)` is `False` | **422** — the bridge should not have asked |
-| Lead has no phone, or the Graph send fails | **200** with `{"sent": false, "reason": ...}` |
-| Sent | **200** with `{"sent": true}` |
+Checks run in this exact order, and the order is part of the contract:
+
+| # | Condition | Status |
+|---|---|---|
+| 1 | `INTERNAL_API_KEY` unset in the environment | **503** — "Internal API key not configured" (fail closed) |
+| 2 | Header missing or mismatched | **401** |
+| 3 | `VOICE_ENABLED` is `False` | **503** — "Voice is disabled" |
+| 4 | `mime_type` is not `audio/ogg` | **415** |
+| 5 | `audio_base64` does not decode, or decodes to nothing | **400** |
+| 6 | Payload larger than `VOICE_MAX_AUDIO_BYTES` | **413** |
+| 7 | `should_speak(text)` is `False` | **422** — the bridge should not have asked |
+| 8 | `lead_id` unknown (`lead_exists` is False) | **404** |
+| 9 | Lead has no phone, or upload/send fails | **200** with `{"sent": false, "reason": ...}` |
+| 10 | Sent | **200** with `{"sent": true}` |
+
+Two ordering choices worth stating:
+
+* **Auth precedes the feature flag**, so an unauthenticated caller cannot probe whether voice is
+  enabled by telling 401 from 503.
+* **The lead lookup is last.** It is the only database call on this path, so every cheap rejection
+  runs first; it also means a caller sending a malformed or unspeakable payload never learns
+  whether a lead id exists.
 
 Request body: `{"lead_id": str, "text": str, "audio_base64": str, "mime_type": str}`.
 `mime_type` must be `audio/ogg` — anything else is **415**.

@@ -162,6 +162,84 @@ async def send_whatsapp_message(to: str, text: str) -> bool:
         return False
 
 
+async def upload_whatsapp_media(content: bytes, mime_type: str) -> Optional[str]:
+    """Uploads audio bytes to the Graph API and returns the resulting media id.
+
+    First half of the two-step outbound flow a WhatsApp voice note needs (voicebox-local-voice-
+    adoption); the mirror image of download_whatsapp_media below. Meta will not accept raw bytes on
+    the messages endpoint — the file has to be uploaded first and referenced by id.
+
+    Returns None (never raises) when unconfigured, on a non-200, or when the response carries no
+    `id`. A 200 without an id is a failed upload, not a success: sending a message that references
+    a missing media id would fail later and less visibly.
+    """
+    token = os.getenv("WHATSAPP_TOKEN")
+    phone_number_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+
+    if not token or not phone_number_id:
+        logger.warning("upload_whatsapp_media: WHATSAPP_TOKEN/WHATSAPP_PHONE_NUMBER_ID not configured")
+        return None
+
+    url = f"{GRAPH_API_BASE}/{phone_number_id}/media"
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                url,
+                headers={"Authorization": f"Bearer {token}"},
+                data={"messaging_product": "whatsapp", "type": mime_type},
+                files={"file": ("voice.ogg", content, mime_type)},
+            )
+            if resp.status_code != 200:
+                logger.error("WhatsApp media upload failed: %s", resp.status_code)
+                return None
+
+            media_id = (resp.json() or {}).get("id")
+            if not media_id:
+                logger.error("WhatsApp media upload returned 200 without an 'id'")
+                return None
+            return media_id
+    except Exception as e:
+        logger.error("Failed to upload WhatsApp media: %s", str(e))
+        return None
+
+
+async def send_whatsapp_audio(to: str, media_id: str) -> bool:
+    """Sends an already-uploaded media id as a WhatsApp voice note.
+
+    Second half of the two-step flow. Same never-call-out-with-empty-credentials and never-raise
+    contract as send_whatsapp_message: a failed voice note is an absent voice note, and must never
+    turn into an exception for the caller — the text reply has already been delivered by then.
+    """
+    token = os.getenv("WHATSAPP_TOKEN")
+    phone_number_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+
+    if not token or not phone_number_id:
+        logger.warning("send_whatsapp_audio: WHATSAPP_TOKEN/WHATSAPP_PHONE_NUMBER_ID not configured")
+        return False
+
+    url = f"{GRAPH_API_BASE}/{phone_number_id}/messages"
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": to,
+        "type": "audio",
+        "audio": {"id": media_id},
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                url, json=payload, headers={"Authorization": f"Bearer {token}"}
+            )
+            if resp.status_code != 200:
+                logger.error("WhatsApp audio send failed: %s", resp.status_code)
+                return False
+            return True
+    except Exception as e:
+        logger.error("Failed to send WhatsApp audio: %s", str(e))
+        return False
+
+
 async def download_whatsapp_media(media_id: str) -> Optional[Dict[str, Any]]:
     """Downloads a WhatsApp media object (document/image) via the 2-step Graph API flow
     (taty-document-collection, Change I): fetch the temporary download URL from media_id, then

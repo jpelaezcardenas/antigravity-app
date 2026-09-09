@@ -20,10 +20,12 @@ from contextlib import asynccontextmanager
 
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request, status
 
+import audio_converter
 import backend_client
 import chatwoot_client
 import hermes_client
 import inbox_poller
+import voicebox_client
 from config import settings
 from schemas import ChatwootWebhookPayload
 
@@ -117,6 +119,32 @@ async def _auto_tag_chatwoot(
         )
 
 
+async def _send_voice_reply(lead_id: str, reply_text: str) -> None:
+    """Fire-and-forget: synthesise `reply_text` locally and hand the audio to the backend.
+
+    Never raises — same contract and for the same reason as _auto_tag_chatwoot above. By the time
+    this runs the text reply has already been delivered to the customer's phone and mirrored into
+    Chatwoot, so a voice failure must not surface to the customer or disturb anything that already
+    succeeded. Voice is additive; it can only ever add audio, never remove or delay a reply.
+
+    Synthesis and encoding both happen on this machine: the model, the cloned voice profile and the
+    customer's text never leave it. Only the finished OGG bytes cross to the backend, which is the
+    only side that can reach Meta's Graph API (voicebox-local-voice-adoption, design.md Decision 1).
+    """
+    try:
+        wav = await voicebox_client.synthesize(reply_text)
+        if not wav:
+            return
+
+        ogg = audio_converter.wav_to_ogg_opus(wav)
+        if not ogg:
+            return
+
+        await backend_client.send_voice_note(lead_id, reply_text, ogg)
+    except Exception:
+        logger.exception("voice reply failed for lead %s (non-fatal)", lead_id)
+
+
 def _check_webhook_token(token_param: str | None, token_header: str | None) -> None:
     provided = token_param or token_header
     if not settings.WEBHOOK_TOKEN or provided != settings.WEBHOOK_TOKEN:
@@ -207,6 +235,17 @@ async def process_incoming_message(
     # closed (it never saw a real inbound, only the private-note mirror), so an outgoing message
     # would just surface a red "Error al enviar" even though the phone already received it.
     await chatwoot_client.send_reply(conversation_id, reply_text, private=True)
+
+    # voicebox-local-voice-adoption: optionally ALSO send the reply as a voice note. Strictly
+    # additive — the text above has already gone out and been mirrored, and nothing below can
+    # change that.
+    #
+    # `voice_allowed` is computed by the backend (services/voice_safety.py) and already folds in
+    # the backend's own VOICE_ENABLED, so this never synthesises audio the voice-note endpoint
+    # would reject. Fire-and-forget, exactly like _auto_tag_chatwoot: synthesis takes seconds on a
+    # GPU and minutes on a CPU, and the customer must not wait for it.
+    if settings.VOICE_ENABLED and (taty_result or {}).get("voice_allowed"):
+        asyncio.create_task(_send_voice_reply(lead_id, reply_text))
 
 
 @app.get("/")

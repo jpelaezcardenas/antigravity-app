@@ -122,6 +122,19 @@ class Settings(BaseSettings):
     META_WEBHOOK_VERIFY_TOKEN: str = ""
     META_APP_SECRET: str = ""
 
+    # Outbound voice notes (voicebox-local-voice-adoption). Ships switched OFF: VoiceBox runs on
+    # the local inference node, which does not exist yet, so production must behave exactly as it
+    # did before this feature landed. Enabling it is an env change on the new node, not a deploy.
+    #
+    # Voice is strictly ADDITIVE — the text reply is always sent and always mirrored into Chatwoot
+    # regardless of this flag. Turning it off can never remove a reply, only the audio on top.
+    VOICE_ENABLED: bool = False
+    # Longest reply services/voice_safety.py will allow to be spoken. A voice note is a greeting or
+    # a short nudge, not a read-aloud of a paragraph.
+    VOICE_MAX_CHARS: int = 320
+    # Hard cap on an accepted voice-note payload (16 MB — WhatsApp's own audio limit).
+    VOICE_MAX_AUDIO_BYTES: int = 16777216
+
     # Multi-tenant feature gate (Phase 1: MVP)
     MULTI_TENANT_ENABLED: bool = True  # Enable JWT tenant_id extraction
     JWT_TENANT_CLAIM: str = "tenant_id"  # JWT claim name for tenant identifier

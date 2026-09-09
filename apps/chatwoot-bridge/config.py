@@ -48,7 +48,41 @@ class Settings(BaseSettings):
     PORT: int = 8090
 
     # Reserved for phase 2 (audio transcription) — documented, unused (design.md Non-Goals).
+    # Still unused: voicebox-local-voice-adoption ships OUTBOUND voice only. Inbound customer audio
+    # remains refused (AUDIO_FALLBACK_REPLY in main.py).
     LOCAL_WHISPER_URL: str = ""
+
+    # --- Outbound voice notes (voicebox-local-voice-adoption) -----------------------------------
+    # Off by default. VoiceBox runs on the local inference node, which does not exist yet; on this
+    # CPU-only laptop synthesis takes 3-5 minutes per phrase. With this false the bridge behaves
+    # exactly as it did before the feature landed.
+    #
+    # The backend is the authoritative switch: it only sets `voice_allowed` on a reply when ITS own
+    # VOICE_ENABLED is on, and /internal/whatsapp/voice-note answers 503 otherwise. This flag just
+    # stops the bridge from doing local work that would be rejected.
+    VOICE_ENABLED: bool = False
+
+    # Local VoiceBox REST API. Never a public address — synthesis is on-prem so the client's text,
+    # the model and the cloned voice never leave the machine (same sovereignty principle as the
+    # Hermes/GBrain/poller decisions in ARCHITECTURE.md).
+    VOICEBOX_URL: str = "http://127.0.0.1:17493"
+    # Cloned-voice profile id. Empty means voice is unavailable — never guessed, because a wrong id
+    # would speak in a different voice. Differs per machine, hence config and not a constant.
+    VOICEBOX_PROFILE_ID: str = ""
+    # VoiceBox's own `engine` field. Verified against the live API: the value is `qwen`, not an
+    # engine slug.
+    VOICEBOX_ENGINE: str = "qwen"
+    # VoiceBox defaults model_size to "1.7B", which Phase 0 measured at 30-60 min per phrase on
+    # CPU. Always send this explicitly.
+    VOICEBOX_MODEL_SIZE: str = "0.6B"
+    # VoiceBox defaults language to "en". Always send this explicitly.
+    VOICEBOX_LANGUAGE: str = "es"
+    # Matches Hermes' own command-TTS default.
+    VOICEBOX_TIMEOUT_SECONDS: int = 120
+
+    # Shared secret for the backend's /internal/* surface (same key the Siigo and Gmail pollers
+    # use). Empty fails closed on the backend side with a 503.
+    INTERNAL_API_KEY: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

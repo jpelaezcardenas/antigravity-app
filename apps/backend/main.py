@@ -249,18 +249,27 @@ if os.environ.get("HERMES_BRIDGE_TOKEN"):
     from routers.internal import router as internal_router
     app.include_router(internal_router)
 
-# Internal machine-to-machine endpoints (hermes pollers, INTERNAL_API_KEY auth)
-# Mounted at /internal — not proxied through vercel.json rewrite.
-try:
-    from presentation.siigo_sync_endpoints import router as siigo_sync_router
-    from presentation.ingest_file_endpoints import router as ingest_file_router
-    _internal_router = APIRouter()
-    _internal_router.include_router(siigo_sync_router)
-    _internal_router.include_router(ingest_file_router)
-    app.include_router(_internal_router, prefix="/internal")
-    logger.info("Internal routers registered: /internal/siigo-sync/run, /internal/ingest/file")
-except Exception as _e:
-    logger.error(f"Failed to include internal routers: {_e}", exc_info=True)
+# Internal machine-to-machine endpoints (hermes pollers + the local Chatwoot bridge,
+# INTERNAL_API_KEY auth). Mounted at /internal — not proxied through vercel.json's rewrite.
+#
+# Deliberately NOT wrapped in try/except. This registration used to log-and-continue, and
+# ARCHITECTURE.md Decisión #22 records what that cost: it swallowed a NameError and left both
+# /internal/* routes unregistered while the app started and reported itself healthy. An import
+# error here means a route is missing; the process must refuse to start so the deploy fails
+# loudly instead of serving a backend that silently drops every poller and voice-note request.
+from presentation.siigo_sync_endpoints import router as siigo_sync_router
+from presentation.ingest_file_endpoints import router as ingest_file_router
+from presentation.voice_endpoints import router as voice_router
+
+_internal_router = APIRouter()
+_internal_router.include_router(siigo_sync_router)
+_internal_router.include_router(ingest_file_router)
+_internal_router.include_router(voice_router)
+app.include_router(_internal_router, prefix="/internal")
+logger.info(
+    "Internal routers registered: /internal/siigo-sync/run, /internal/ingest/file, "
+    "/internal/whatsapp/voice-note"
+)
 
 
 if __name__ == "__main__":

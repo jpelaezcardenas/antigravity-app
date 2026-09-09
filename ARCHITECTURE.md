@@ -61,6 +61,7 @@ flowchart TB
 | **Hermes-Siigo poller** | Sync unidireccional **de solo lectura** Siigo → Shadow GL: cada noche a las 2 AM pide journals + invoices de la API REST de Siigo por cada tenant con credenciales y los ingesta vía `POST /internal/siigo-sync/run`. Nunca escribe de vuelta al Siigo del cliente. Ver `openspec/changes/real-data-ingestion-mvp/` | `apps/hermes-siigo-poller/` (Python/httpx), scheduled task diaria | **Local / laptop** (mismo host que Hermes) — `INTERNAL_API_KEY` y la lista de tenants viven en su `.env` local; las credenciales Siigo por tenant viven **solo** en env vars de Railway (`SIIGO_USERNAME_<tenant>`/`SIIGO_ACCESS_KEY_<tenant>`), nunca en git ni en Supabase |
 | **Hermes-Gmail poller** | Ingesta de adjuntos: cada 15 min lee el inbox de Taty, resuelve el remitente a un tenant vía la tabla `gmail_sender_map` y sube cada adjunto soportado (CSV/XLSX/XML/PDF) a `POST /internal/ingest/file`. Marca el correo `contexia-processed` **solo** si todos sus adjuntos ingestaron bien; un remitente sin mapear se salta sin etiquetar, así queda reintentable. Ver `openspec/changes/real-data-ingestion-mvp/` | `apps/hermes-gmail-poller/` (Python/httpx + Gmail API v1 OAuth2), scheduled task cada 15 min | **Local / laptop** (mismo host que Hermes) — el token OAuth de Gmail, `credentials.json` y la service-role key de Supabase nunca llegan a Railway/Vercel |
 | **Chatwoot + bridge** | Inbox real de WhatsApp (Meta Cloud API) para Taty — inbox `1` ("Taty Contadora Amiga 24/7", `Channel::Whatsapp`; el inbox `3` es `Channel::Api`, solo pruebas/inyección, sin credenciales Meta). `apps/chatwoot-bridge/` (FastAPI) es una capa de transporte delgada: reenvía al backend (`POST /channels/whatsapp/leads/{id}/reply`, que enruta a `taty_lead_router` → `TatyAgentService` — un solo cerebro, el mismo que Telegram/PWA) y Chatwoot entrega la respuesta al cliente real (`deliver=false` en esa llamada evita el doble envío). Pausa HITL vía etiqueta `bot_off` | Chatwoot (Docker Compose, `docker-compose.chatwoot.yml`) + FastAPI/Python 3.11, corre como Scheduled Task de Windows (`ContexiaChatwootBridge`, watchdog de 1 min) | **Local / laptop** (mismo host que Hermes, soberanía de datos) — nunca Vercel/Railway. Docker Desktop instalado y corriendo desde `chatwoot-hermes-taty-bridge`; ver `taty-whatsapp-renta-sales-capability` para el cableado actual al cerebro compartido de Taty |
+| **VoiceBox** | Proveedor de voz **local** (TTS con clonación de voz + STT). Sirve a dos consumidores: los agentes de Hermes (vía proveedor `tts` `type: command` o su MCP) y la nota de voz saliente de Taty por WhatsApp. La síntesis ocurre 100% on-prem — el modelo, el perfil de voz clonada y el texto del cliente nunca salen de la máquina; solo los bytes OGG terminados cruzan al backend, que hace el envío Graph que Railway sí puede alcanzar. **Estado: integrado y APAGADO** (`VOICE_ENABLED=false` en backend y bridge) — este portátil es CPU-only y tarda 3-5 min por frase. Ver `docs/integrations/voicebox.md` | VoiceBox v0.5.0 (MIT, upstream `jamiepine/voicebox`), REST en `:17493`, motor Qwen3-TTS 0.6B; `ffmpeg` para WAV→OGG/Opus | **Local / nodo de inferencia** (Ryzen 7 + RTX 4070 Ti Super, aún no existe) — misma soberanía de datos que Hermes/GBrain/pollers, nunca Vercel/Railway |
 
 **Fuente canónica vs artefacto de build:** `contexia-app/` es la fuente de la PWA; la carpeta `app/` (raíz) es un **artefacto generado** (`npm run build` → sync `out/` → `app/`). **Nunca editar `app/` a mano.** (Ver CLAUDE.md §9.)
 
@@ -192,12 +193,33 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
     (`localhost:20128`, instalado vía `npm install -g omniroute`, versión reportada `3.8.50`),
     agregando decenas de proveedores gratuitos de terceros (OpenCode Free, Felo, AI Horde, DVA,
     entre otros — cada uno con sus propios términos de servicio, algunos marcados por el propio
-    proyecto como "avoid" en riesgo). Config de fallback en `~/.hermes/config.yaml`:
+    proyecto como "avoid" en riesgo). La config de fallback que se registró entonces era
     `fallback_providers: [{provider: custom, model: auto, base_url: http://localhost:20128/v1,
-    api_key: not-required}]` — **sin un tercer fallback**: si OmniRoute tampoco responde, la
-    solicitud falla igual. Esto es exclusivamente infraestructura de Hermes (local/on-prem, por
-    la misma soberanía de datos de la Decisión #1) — el backend de `antigravity-app` sigue sin
-    tocar MiMo/OmniRoute por la restricción de ToS ya documentada en la Decisión #7.
+    api_key: not-required}]` en `~/.hermes/config.yaml` — **sin un tercer fallback**: si OmniRoute
+    tampoco responde, la solicitud falla igual. Esto es exclusivamente infraestructura de Hermes
+    (local/on-prem, por la misma soberanía de datos de la Decisión #1) — el backend de
+    `antigravity-app` sigue sin tocar MiMo/OmniRoute por la restricción de ToS ya documentada en la
+    Decisión #7.
+
+    **CORRECCIÓN (2026-09-09, verificada en disco — el párrafo anterior describe algo que hoy no
+    existe):** los dos datos concretos de arriba son incorrectos contra la instalación viva.
+
+    1. **La ruta está mal.** La config real de Hermes es
+       `C:\Users\contexia\AppData\Local\hermes\profiles\contexia\config.yaml` (perfil activo
+       `contexia`, según `AppData\Local\hermes\active_profile`). `~/.hermes/` **no** es una
+       instalación viva: solo contiene `Arquitectura hermes.md.txt`, un venv vacío y tres perfiles
+       antiguos (`builder`, `centinela`, `ops-watch`). No hay ningún `config.yaml` ahí.
+    2. **OmniRoute no está en los fallbacks.** En la config viva (modificada 2026-09-05) el bloque
+       es `fallback_providers: [{provider: gemini, model: gemini-2.5-flash}, {provider: openrouter,
+       model: google/gemini-2.5-flash}]`. No aparece `localhost:20128` por ningún lado. El modelo
+       principal sí sigue siendo `xiaomi/mimo-v2.5-pro`.
+
+    No se toca la decisión de fondo (OmniRoute como gateway local sigue siendo razonable, y el
+    token MCP que el fundador aprobó es independiente de esto). Lo que se corrige es la afirmación
+    de estado: **hoy Hermes no tiene OmniRoute cableado como fallback.** Si la intención sigue en
+    pie, es una acción pendiente, no un hecho consumado. Esta deriva importa porque
+    `ARCHITECTURE.md` se auto-carga en cada sesión de agente: un agente que leyera el párrafo
+    original buscaría la config en una ruta muerta y asumiría un failover que no existe.
 
     **Actualizado 2026-08-29 tras leer el contenido real** (`docs/integrations/
     OMNIRROUTE_SETUP.md` y `docs/integrations/HANDOFF-OMNIRROUTE.md`, obtenidos directamente de
@@ -324,6 +346,61 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
     probada a nivel de archivo pero **NO aplicada** — aplicar migraciones requiere aprobación
     explícita del fundador. Hasta entonces el endpoint responde `uvt_no_disponible` y las
     escrituras de `service_band` fallan; ambas fallan en voz alta, ninguna corrompe datos.
+
+24. **La voz de Contexia es local, aditiva, y se sintetiza donde NO se entrega**
+    (`voicebox-local-voice-adoption`, 2026-09-09) — VoiceBox (MIT, upstream `jamiepine/voicebox`)
+    es el proveedor de voz para dos consumidores: los agentes de Hermes y la nota de voz saliente
+    de Taty por WhatsApp. **Estado: integrado y APAGADO** (`VOICE_ENABLED=false` en backend y
+    bridge). Es deliberado: el portátil actual es CPU-only y tarda 3-5 min por frase, así que
+    encender la voz en el nodo de inferencia futuro debe ser un cambio de config, no un proyecto.
+
+    **Dónde corre cada mitad, y por qué no puede ser de otra forma.** El backend vive en Railway y
+    no puede alcanzar un VoiceBox en el `127.0.0.1:17493` del nodo local — la síntesis no puede
+    pasar allí. Y **Chatwoot no puede entregar a WhatsApp**: su canal nunca ve un inbound real del
+    cliente (el poller del inbox durable espeja los mensajes como *notas privadas*, porque un
+    `incoming` real recibe 422 en un inbox de proveedor real), así que su contabilidad de la ventana
+    de 24 h siempre la cree cerrada y Meta rechaza todo lo que intenta enviar (hallazgo en vivo
+    2026-08-12, `apps/chatwoot-bridge/backend_client.py:85-101`) — la entrega no puede pasar
+    localmente. Por eso: **el bridge local sintetiza** (VoiceBox + ffmpeg, 100% on-prem — modelo,
+    voz clonada y texto del cliente nunca salen de la máquina) y **el backend entrega** vía
+    `POST /internal/whatsapp/voice-note`, reusando el patrón `INTERNAL_API_KEY` que falla cerrado de
+    los pollers de Siigo/Gmail (Decisión #22). Sin túnel: el túnel Cloudflare ya fue evaluado y
+    rechazado para el ingreso de WhatsApp, y exponer una GPU local a internet sería peor. Solo el
+    audio terminado cruza a Railway — la misma frontera de confianza que el texto ya cruza.
+
+    **La voz es ADITIVA, nunca sustituye al texto.** El texto siempre se envía y siempre se espeja
+    en Chatwoot. La Decisión #19 registró que sin grounding el modelo inventa cifras fiscales con
+    total confianza; una cifra hablada es más difícil de disputar y no le deja nada citable al
+    operador humano. Corolario en código: `should_speak()` (`services/voice_safety.py`) **niega la
+    voz a cualquier texto con cifra fiscal** — símbolo de moneda, porcentaje, UVT, magnitud
+    deletreada (`mil`/`millones`) o fecha de plazo. Las cifras viven en el texto.
+
+    **Un solo dueño del gate.** `should_speak()` vive en el backend y su veredicto viaja al bridge
+    como campo aditivo `voice_allowed` en la respuesta de `/leads/{lead_id}/reply` (misma convención
+    aditiva que `conversation_history`/`lead_context` de la Decisión #19). El bridge no re-deriva la
+    regla, no puede saltársela, y no gasta GPU en una respuesta que se descartaría. `VOICE_ENABLED`
+    del backend se pliega dentro de ese campo, así que el backend es el **único interruptor
+    autoritativo**. El endpoint re-aplica el gate como defensa en profundidad.
+
+    **Sin persistencia:** los bytes se transmiten y se descartan. Sin migración, sin tabla, sin
+    bucket. El rollback es una variable de entorno.
+
+    **Efecto colateral necesario:** el `try/except` que envolvía el registro de routers `/internal`
+    en `main.py` fue eliminado. La Decisión #22 ya lo había clasificado como *falla, no warning*
+    tras tragarse un `NameError` que dejó ambas rutas sin registrar con la app arrancando sana;
+    este cambio monta un tercer router ahí, así que hacerlo fail-loud era precondición.
+
+    **Prerrequisito bloqueante del fundador (no código):** consentimiento escrito, fechado y
+    revocable de **Tatiana Barbosa** para la voz clonada, con alcance limitado a Contexia y
+    guardado fuera del repo. Es una persona real y contadora titulada (Entidad A), y durante la
+    validación de Fase 0 su voz clonada fue usada para decir texto sexual abusivo. Sin ese
+    consentimiento el flag no se enciende. Ver `docs/integrations/voicebox.md` y
+    `openspec/changes/voicebox-local-voice-adoption/`.
+
+    **Fuera de alcance (deliberado):** audio entrante/STT (las notas de voz del cliente se siguen
+    rechazando; `LOCAL_WHISPER_URL` sigue siendo un placeholder documentado y sin usar), el
+    micrófono del Búnker (`hermes-jarvis-contexia` Fase 2), voz en Telegram, y cualquier proveedor
+    TTS de nube.
 
 ## Enlaces canónicos
 

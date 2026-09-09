@@ -13,10 +13,24 @@ and inert — not working voice. Enabling it is a migration-day action on the in
       `wsl -d Ubuntu` fails with `Wsl/Service/0x80072747`, and `wsl --shutdown` is not an acceptable
       workaround because Chatwoot runs in Docker Desktop on WSL. Document the outcome either way —
       do not record the path as "empty" without having looked
-- [ ] 0.4 Repair the local VoiceBox clone: `C:\Users\contexia\voicebox\` holds only a broken `.git`
-      (`HEAD` at `refs/heads/.invalid`, no working tree) pointing at upstream. Remove it and clone
-      `jpelaezcardenas/voicebox`. Note in the report that it is not a GitHub fork, so upstream must
-      be added as a second remote to track updates
+- [ ] 0.4 Repair the local VoiceBox clone — **diagnosed, deliberately not executed. Founder call.**
+      `C:\Users\contexia\voicebox\` holds only a broken `.git`: 58 MB of objects, `HEAD` pointing at
+      `refs/heads/.invalid`, no refs, no working tree, and a remote pointing at upstream
+      (`jamiepine/voicebox`) rather than the private mirror. It is an aborted `git clone`.
+
+      Not done here because **nothing in this change needs it**: VoiceBox is consumed as an
+      installed binary over its REST API, not built from source. Executing it would mean a
+      destructive delete plus a 111 MB download for no benefit to the dark launch. When the source
+      is actually wanted (patching the meta-tensor bug, say), it is three commands:
+
+      ```
+      rm -rf "$USERPROFILE/voicebox"
+      git clone https://github.com/jpelaezcardenas/voicebox.git "$USERPROFILE/voicebox"
+      git -C "$USERPROFILE/voicebox" remote add upstream https://github.com/jamiepine/voicebox.git
+      ```
+
+      The third line matters: `jpelaezcardenas/voicebox` is **not a GitHub fork**
+      (`isFork:false`, `parent:null`), so it inherits nothing from upstream automatically
 
 ## Stage 1. Decide the Hermes integration shape
 
@@ -38,66 +52,82 @@ and inert — not working voice. Enabling it is a migration-day action on the in
 
 ## Stage 2. Safety gate (TDD, backend)
 
-- [ ] 2.1 Failing tests in `tests/test_voice_safety.py`: a table of texts covering every rejection
+- [x] 2.1 Failing tests in `tests/test_voice_safety.py`: a table of texts covering every rejection
       class (empty, over-length, `$`, `%`, `UVT`, `120 mil`, `28 de abril`, `15/04`) plus accepted
       short conversational replies. Pure function, no mocks, no network
-- [ ] 2.2 Implement `services/voice_safety.py::should_speak(text, max_chars)`
-- [ ] 2.3 Failing test asserting `should_speak` is judged on the sanitised text, then wire
+- [x] 2.2 Implement `services/voice_safety.py::should_speak(text, max_chars)`
+- [x] 2.3 Failing test asserting `should_speak` is judged on the sanitised text, then wire
       `voice_allowed` into `taty_lead_reply`'s response **after** `sanitize_for_whatsapp`
-- [ ] 2.4 Test asserting every pre-existing field of the `/leads/{id}/reply` response is unchanged
+- [x] 2.4 Test asserting every pre-existing field of the `/leads/{id}/reply` response is unchanged
       (additive-only contract)
 
 ## Stage 3. Graph outbound audio (TDD, backend)
 
-- [ ] 3.1 Failing test for `upload_whatsapp_media`: asserts the multipart body carries
+- [x] 3.1 Failing test for `upload_whatsapp_media`: asserts the multipart body carries
       `messaging_product=whatsapp` and the file, using `httpx.MockTransport`. **Do not patch the
       function under test** — Decisión #22's rule
-- [ ] 3.2 Implement `upload_whatsapp_media` in `channels/whatsapp.py`, mirroring
+- [x] 3.2 Implement `upload_whatsapp_media` in `channels/whatsapp.py`, mirroring
       `download_whatsapp_media`'s unconfigured-credentials contract (return `None`, no network call)
-- [ ] 3.3 Failing test for `send_whatsapp_audio`: asserts `type: "audio"` and `audio.id` in the JSON
-- [ ] 3.4 Implement `send_whatsapp_audio`
-- [ ] 3.5 Test: with `WHATSAPP_TOKEN` unset, neither function makes a network call
+- [x] 3.3 Failing test for `send_whatsapp_audio`: asserts `type: "audio"` and `audio.id` in the JSON
+- [x] 3.4 Implement `send_whatsapp_audio`
+- [x] 3.5 Test: with `WHATSAPP_TOKEN` unset, neither function makes a network call
 
 ## Stage 4. Internal voice endpoint (TDD, backend)
 
-- [ ] 4.1 Failing tests in `tests/test_voice_endpoint_auth.py`: `INTERNAL_API_KEY` unset → 503;
+- [x] 4.1 Failing tests in `tests/test_voice_endpoint_auth.py`: `INTERNAL_API_KEY` unset → 503;
       wrong header → 401; correct header → past auth
-- [ ] 4.2 Failing tests for the rest of the status table in `spec.md` §3.2: unknown lead → 404,
+- [x] 4.2 Failing tests for the rest of the status table in `spec.md` §3.2: unknown lead → 404,
       `VOICE_ENABLED=False` → 503, oversize payload → 413, gate rejects → 422, wrong mime → 415,
       delivery failure → 200 with `sent: false`
-- [ ] 4.3 Implement `presentation/voice_endpoints.py`
-- [ ] 4.4 Add `VOICE_ENABLED`, `VOICE_MAX_CHARS`, `VOICE_MAX_AUDIO_BYTES` to `config.py`, all
+- [x] 4.3 Implement `presentation/voice_endpoints.py`
+- [x] 4.4 Add `VOICE_ENABLED`, `VOICE_MAX_CHARS`, `VOICE_MAX_AUDIO_BYTES` to `config.py`, all
       fail-closed
-- [ ] 4.5 **Make `main.py`'s internal-router registration fail loud** (remove the swallowing
-      `try/except` at lines 252-263) and mount the voice router. Add a test asserting the app
-      exposes all three `/internal/*` routes after startup
-- [ ] 4.6 `tests/test_voice_flag_off.py`: with `VOICE_ENABLED=False`, the WhatsApp reply path makes
-      **zero** VoiceBox-related calls and returns the same payload as before this change. This is
-      the test that certifies the dark launch
+- [x] 4.5 **Make `main.py`'s internal-router registration fail loud** (removed the swallowing
+      `try/except`) and mount the voice router. Guarded by
+      `tests/test_internal_routers_registration.py`. **Deviation, deliberate:** that guard asserts
+      at SOURCE level rather than by importing the app. Importing `main` costs ~5 minutes on this
+      machine (module import triggers KB/pgvector seeding that waits out every embedding provider's
+      timeout), and the property being protected — "this block is not wrapped in try/except" — is
+      about how the code is written, not what it computes. Route behaviour is covered separately by
+      `tests/test_voice_endpoint_auth.py`
+- [x] 4.6 Dark-launch certification. **Landed in two places rather than the single
+      `test_voice_flag_off.py` this task originally named**, because the property has two halves and
+      they live in different processes:
+      * `tests/test_whatsapp_reply_voice_allowed.py::test_voice_allowed_is_false_when_the_feature_is_off`
+        — with `VOICE_ENABLED=False` the backend reports `voice_allowed: false` even for a reply the
+        gate would allow, and the text reply is untouched.
+      * `apps/chatwoot-bridge/tests/test_voice_reply_wiring.py::test_no_voice_work_happens_when_the_flag_is_off`
+        — with the flag off the bridge never contacts VoiceBox at all.
+      Design note that emerged while writing these: `VOICE_ENABLED` is folded into `voice_allowed`
+      on the backend, so the backend is the single authoritative switch and a bridge running a stale
+      config cannot burn GPU time on audio the endpoint would reject anyway
 
 ## Stage 5. Local bridge (TDD)
 
-- [ ] 5.1 Failing tests for `voicebox_client.synthesize` against a fake httpx transport: success
+- [x] 5.1 Failing tests for `voicebox_client.synthesize` against a fake httpx transport: success
       returns bytes; empty `VOICEBOX_PROFILE_ID` makes no call; timeout and non-200 return `None`
-- [ ] 5.2 Implement `apps/chatwoot-bridge/voicebox_client.py`
-- [ ] 5.3 Failing tests for `audio_converter.wav_to_ogg_opus` using a **real small WAV fixture**
+- [x] 5.2 Implement `apps/chatwoot-bridge/voicebox_client.py`
+- [x] 5.3 Failing tests for `audio_converter.wav_to_ogg_opus` using a **real small WAV fixture**
       (generated in the test, not an invalid inline blob that would force a mock — the aggravating
       factor Decisión #22 recorded); missing ffmpeg returns `None`
-- [ ] 5.4 Implement `apps/chatwoot-bridge/audio_converter.py`
-- [ ] 5.5 Implement `backend_client.send_voice_note` with fail-soft contract + its test
-- [ ] 5.6 Add the voice settings to the bridge's `config.py` and `.env.example` (names only, never
+- [x] 5.4 Implement `apps/chatwoot-bridge/audio_converter.py`
+- [x] 5.5 Implement `backend_client.send_voice_note` with fail-soft contract + its test
+- [x] 5.6 Add the voice settings to the bridge's `config.py` and `.env.example` (names only, never
       values — Decisión #12)
-- [ ] 5.7 Wire the fire-and-forget voice step into `main.py::process_incoming_message`, mirroring
+- [x] 5.7 Wire the fire-and-forget voice step into `main.py::process_incoming_message`, mirroring
       `_auto_tag_chatwoot`; test that a raising voice path does not affect the text reply
 
 ## Stage 6. Hermes wiring (inert)
 
-- [ ] 6.1 Add `apps/hermes-voicebox/voicebox_tts.ps1` — builds the `/generate` JSON body, reads
+- [x] 6.1 Add `apps/hermes-voicebox/voicebox_tts.ps1` — builds the `/generate` JSON body, reads
       `VOICEBOX_PROFILE_ID` from the environment, writes to `{output_path}`
-- [ ] 6.2 Add the `tts.providers.voicebox` entry (or the `mcp_servers` entry, per Stage 1) to the
-      live Hermes profile config. **Leave `tts.provider: edge`** — a switch with no server running
-      would fail every call
-- [ ] 6.3 Back up the config before editing and verify Hermes still starts afterwards
+- [x] 6.2 Added the `tts.providers.voicebox` entry (`type: command`, `output_format: ogg`) to the
+      live profile config at `AppData\Local\hermes\profiles\contexia\config.yaml`.
+      **`tts.provider` left as `edge`** — a switch with no server running would fail every call.
+      The MCP alternative stays open (task 1.2/1.3); the command provider does not preclude it
+- [x] 6.3 Backed up to `config.yaml.bak_voicebox_20260909` before editing, and re-parsed the file
+      afterwards: YAML valid, `tts.provider` still `edge`, `stt.provider` still `local`,
+      `model.default` still `xiaomi/mimo-v2.5-pro`. Hermes was not running during the edit
 
 ## Stage 7. The `contexia-voice-tts` skill
 
@@ -128,37 +158,65 @@ and inert — not working voice. Enabling it is a migration-day action on the in
 
 ## Stage 8. Review and update existing unit tests (MANDATORY)
 
-- [ ] 8.1 Review `tests/test_whatsapp_endpoints.py` and `tests/test_whatsapp_channel.py` for
-      assertions that break on the additive `voice_allowed` field; update only what genuinely
-      changed
-- [ ] 8.2 Review `apps/chatwoot-bridge/tests/` for the same
-- [ ] 8.3 Confirm no test mocks the boundary it claims to verify (Decisión #22)
+- [x] 8.1 Reviewed. **Nothing needed updating** — no existing backend test asserts the exact key
+      set of the `/leads/{id}/reply` response, so the additive `voice_allowed` field breaks none of
+      them. Proven by the baseline diff in 9.1/9.3, not by reading alone
+- [x] 8.2 Reviewed. Two bridge tests fail, and **both are pre-existing**: verified by stashing
+      this change's `main.py` and re-running — they fail identically without it.
+      `test_chatwoot_client.py::test_posts_an_incoming_message` (this change never touches
+      `chatwoot_client.py`; `git diff` on it is empty) and
+      `test_process_message.py::test_reply_comes_from_the_sales_router_not_hermes` (expects
+      `send_reply(id, text)`, code passes `private=True`, which predates this change)
+- [x] 8.3 Confirmed. The Graph tests drive real httpx through `MockTransport` rather than
+      patching `upload_whatsapp_media`/`send_whatsapp_audio`; the gate tests call `should_speak`
+      directly; the endpoint tests assert the endpoint uses the real `services.voice_safety`
+      function object; the converter test builds a genuine WAV with `wave` and runs real ffmpeg
+      (the one patch there replaces the resolved ffmpeg binary, i.e. the environment, not the
+      function under test)
 
 ## Stage 9. Run unit tests and verify state (MANDATORY — agent executes)
 
-- [ ] 9.1 Record the pre-change baseline on this branch so pre-existing failures are not
-      misattributed (main's known baseline is 25F/28E — memory note
-      `project_pytest_interpreter_py311`; only py311 has pytest)
-- [ ] 9.2 Run the targeted suites: `test_voice_safety`, `test_whatsapp_voice_send`,
-      `test_voice_endpoint_auth`, `test_voice_flag_off`
-- [ ] 9.3 Run the full backend suite and the bridge suite; compare against 9.1 and record the delta
-- [ ] 9.4 **Database state: N/A and stated as such.** This change adds no migration, table, column,
-      bucket or row (spec.md §7). Record that no DB indicator was captured *because there is nothing
-      to capture*, rather than silently skipping the step
-- [ ] 9.5 Write the test report to `reports/2026-XX-XX-test-run.md`
+- [x] 9.1 Baseline recorded on this branch by stashing the four tracked backend edits and
+      re-running with the new test files excluded: **33 failed, 1029 passed, 120 skipped,
+      3 errors**
+- [x] 9.2 Targeted suites run: 89 new tests, all green (see the table in the test report)
+- [x] 9.3 Full suites run and compared as SETS, not counts. Backend with this change:
+      **33 failed, 1086 passed, 120 skipped, 3 errors**. `comm` on the two FAILED lists returns
+      **empty in both directions** — zero new failures, zero resolved. The +57 passes are exactly
+      this change's new backend tests. Bridge: 83 passed, 2 failed, both pre-existing (see 8.2)
+- [x] 9.4 **Database state: N/A, stated rather than skipped.** This change adds no migration,
+      table, column, bucket or row (spec.md §7); v1 streams audio and persists nothing. No DB
+      indicator was captured because there is none to capture
+- [x] 9.5 Test report written: `reports/2026-09-09-test-run.md`
 
 ## Stage 10. Manual endpoint testing (MANDATORY — agent executes)
 
-- [ ] 10.1 Start the backend locally with `INTERNAL_API_KEY` unset; `curl` the voice endpoint and
-      confirm **503**
-- [ ] 10.2 Set the key; `curl` with a wrong header and confirm **401**; with the right header and an
-      unknown lead confirm **404**
-- [ ] 10.3 With `VOICE_ENABLED=False`, confirm **503** even with valid auth
-- [ ] 10.4 `curl` `/leads/{id}/reply` and confirm `voice_allowed` is present and correct for a
-      figure-bearing reply vs a plain one
-- [ ] 10.5 **Playwright/E2E: not applicable** — this change touches no frontend surface. State the
-      reason rather than leaving the step unmarked
-- [ ] 10.6 Record every command and its output in the test report
+- [x] 10.1 Backend booted locally on `127.0.0.1:8099` using **`apps/backend/.venv`** — the global
+      interpreter cannot boot this app at all (see FU.4). Confirmed via `GET /openapi.json` that
+      `/internal/whatsapp/voice-note` is genuinely **mounted in the assembled app**, next to the two
+      pre-existing internal routes. The unset-key 503 path is covered by `test_voice_endpoint_auth`;
+      the live run used a key set so the auth-ordering check below was possible
+- [x] 10.2 Wrong header → **401**, absent header → **401**, both with
+      `{"detail":"Invalid internal API key"}`. The unknown-lead 404 was NOT exercised live: with
+      `VOICE_ENABLED=false` the request correctly stops at the flag before reaching the lead lookup,
+      and turning voice on would have meant another ~5-minute boot for a case
+      `test_voice_endpoint_auth` already covers
+- [x] 10.3 Valid key + `VOICE_ENABLED=false` → **503** `{"detail":"Voice is disabled"}`. This is
+      the production behaviour this whole change ships. Also confirmed **auth precedes the flag**:
+      wrong key with the flag off returns 401, not 503, so an unauthenticated caller cannot probe
+      whether voice is enabled
+- [x] 10.4 Attempted and **did not produce the intended check** — recorded rather than quietly
+      dropped. `POST /api/v1/channels/whatsapp/leads/fake/reply` returned **500**, for two reasons
+      that are both about the environment and pre-existing code, not this change: locally
+      `AUTH_ENFORCED=False` so nothing rejected the unauthenticated call, and `lead_exists()` then
+      passed the non-UUID `"fake"` straight to Postgres
+      (`22P02: invalid input syntax for type uuid`). Getting a real `voice_allowed` over HTTP needs a
+      provisioned lead and a valid token — deferred to Stage 11.5 against production. The field's
+      behaviour is covered by `test_whatsapp_reply_voice_allowed.py` (6 tests). Logged as FU.5
+- [x] 10.5 **Playwright/E2E: not applicable** — this change touches no frontend surface. Marked
+      with its reason rather than left blank
+- [x] 10.6 Every command and its status code recorded in `reports/2026-09-09-test-run.md`,
+      including the one that failed
 
 ## Stage 11. Deploy to Production (MANDATORY — CLOSES THE LOOP)
 
@@ -183,16 +241,16 @@ Tasks:
 
 ## Stage 12. Documentation (MANDATORY)
 
-- [ ] 12.1 `ARCHITECTURE.md`: add the VoiceBox container row (local/on-prem, same sovereignty
+- [x] 12.1 `ARCHITECTURE.md`: add the VoiceBox container row (local/on-prem, same sovereignty
       principle as Decisiones #1/#10/#20/#22)
-- [ ] 12.2 `ARCHITECTURE.md`: add settled Decision #24 — synthesis local, delivery via
+- [x] 12.2 `ARCHITECTURE.md`: add settled Decision #24 — synthesis local, delivery via
       `/internal/*`, voice additive to text, one owner for the safety gate
-- [ ] 12.3 `ARCHITECTURE.md`: **correct Decisión #21** — the live Hermes config is
+- [x] 12.3 `ARCHITECTURE.md`: **correct Decisión #21** — the live Hermes config is
       `AppData\Local\hermes\profiles\contexia\config.yaml` (not `~/.hermes/config.yaml`) and its
       `fallback_providers` are gemini + openrouter, with no OmniRoute entry at `localhost:20128`
-- [ ] 12.4 `docs/integrations/voicebox.md` — install, real API contract from 1.1, the Phase 0
+- [x] 12.4 `docs/integrations/voicebox.md` — install, real API contract from 1.1, the Phase 0
       engine table, and the migration-day runbook
-- [ ] 12.5 `apps/chatwoot-bridge/README.md` — voice section and the one-variable rollback
+- [x] 12.5 `apps/chatwoot-bridge/README.md` — voice section and the one-variable rollback
 - [x] 12.6 `feature_list.json` — add to `pending_implementation` and to `features` with
       `status: pending`; `active` left as `pricing-quote-engine`. JSON validated after the edit
 - [ ] 12.7 Raise the `.claude/skills` drift with the founder before editing CLAUDE.md §6. §6 says
@@ -203,6 +261,43 @@ Tasks:
       should genuinely move to symlinks — that is a founder decision, not a silent edit. Do **not**
       "fix" it by converting the tree to symlinks: Windows symlinks need elevated rights or
       Developer Mode, and would change what every collaborator's clone gets
+
+## Known follow-ups (not fixed here, deliberately)
+
+- [ ] FU.1 **Fire-and-forget tasks are not strongly referenced.** `asyncio.create_task(...)` keeps
+      only a weak reference, so a task can in principle be garbage-collected mid-await. Both
+      `_auto_tag_chatwoot` (pre-existing) and the new `_send_voice_reply` in
+      `apps/chatwoot-bridge/main.py` have this shape. The new code copies the existing pattern on
+      purpose — matching the surrounding code beats introducing a second idiom for the same
+      concern — but the fix (a module-level `set` holding references, discarded on completion)
+      should be applied to **both** at once, not just the new one. Low impact for voice (a dropped
+      voice note is a non-event) and higher for tagging, which is the real reason to fix it.
+- [ ] FU.2 **`TestClient` is broken repo-wide.** httpx 0.28.1 removed the `app=` shortcut that
+      starlette 0.27.0's TestClient still passes, so every `TestClient(app)` raises
+      `TypeError: Client.__init__() got an unexpected keyword argument 'app'`. Pre-existing and
+      unrelated to this change; the voice tests await endpoint coroutines directly to sidestep it.
+      Fixing it means bumping starlette (or pinning httpx < 0.28) and re-running everything.
+- [ ] FU.5 **A non-UUID `lead_id` returns 500 instead of 404.** `lead_exists()` passes the value
+      straight to Postgres, which raises `22P02: invalid input syntax for type uuid`. Found live
+      during Stage 10 on the pre-existing `POST /channels/whatsapp/leads/{id}/reply`. The new voice
+      endpoint calls the same `lead_exists()` and would behave identically. Left consistent with the
+      existing endpoint rather than fixed in one of the two call sites — fix both together, by
+      validating the UUID shape before the lookup. Low practical impact: the bridge only ever passes
+      an id it received from `whatsapp-intake`.
+- [ ] FU.4 **The backend's default test interpreter cannot boot the backend.** The global
+      Python 3.11 has pydantic 2.13.4 against fastapi 0.104.1, and importing `main` dies at line 7
+      with `AttributeError: 'FieldInfo' object has no attribute 'in_'`. `apps/backend/.venv` pins
+      pydantic 2.5.0 and works; that is also what `requirements.txt` resolves for Railway, so
+      production is fine. But it means a green `py -3.11 -m pytest` run is weaker evidence than it
+      appears — it tests against a pydantic production never sees. Either pin the global env or make
+      the venv the documented test interpreter. (This change's fast suites were re-run under the
+      venv to compensate; the bridge already runs on the global interpreter in production, per
+      `run_bridge.ps1:53`.)
+- [ ] FU.3 **Importing the backend costs ~5 minutes.** Module import triggers KB/pgvector seeding
+      that tries every embedding provider and waits out their timeouts
+      (`KB[pgvector]: skipped 48/48 chunks ... all providers unavailable`). Import-time network I/O
+      makes every endpoint test unusably slow and would slow cold starts in production too.
+      Pre-existing; worth its own change.
 
 ## Founder prerequisites (non-code, blocking before the flag is ever enabled)
 
