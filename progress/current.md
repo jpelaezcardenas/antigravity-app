@@ -20,10 +20,16 @@ Qué quedó:
   404 si no resuelve, solo lectura, sin gating por plan. `core/plan_features.py` intacto.
 - 77 tests nuevos, todos verdes. `tsc --noEmit` limpio.
 
-**Bloqueado en el fundador, EN ESTE ORDEN:**
-1. Aplicar migración 0048 **antes** de desplegar (`list_b2b_clients` ya proyecta `service_band`
-   y su `except` cae a datos demo — desplegar primero mostraría clientes falsos en el Búnker).
-2. Push de `feat/pricing-quote-engine` (main auto-despliega).
+**Migración 0048: APLICADA en producción el 2026-09-08** con aprobación explícita del fundador
+(solo la migración; push y deploy NO fueron autorizados). Verificada en vivo: `uvt_values` con
+las 2 filas correctas en pesos completos, `service_band` nullable sin default (0 de 11 clientes
+con banda), CHECK activo, RLS con lectura pública / escritura solo service_role. Ver
+`openspec/changes/pricing-quote-engine/reports/2026-09-08-migration.md`.
+
+**Bloqueado en el fundador (pendiente):**
+1. `git push -u origin feat/pricing-quote-engine` — sin efecto en producción (main es la rama de
+   deploy).
+2. Merge a `main` — ESE es el deploy a Vercel/Railway. Ya desbloqueado por el lado de la BD.
 
 **Changes pendientes de implementación (en `openspec/changes/`, sin archivar):**
 

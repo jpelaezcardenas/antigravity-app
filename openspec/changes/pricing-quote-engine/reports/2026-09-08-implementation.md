@@ -1,7 +1,9 @@
 # pricing-quote-engine — implementation report (2026-09-08)
 
 **Status:** implemented, tested, committed on branch `feat/pricing-quote-engine`.
-**NOT pushed. NOT deployed. Migration NOT applied.** Both are the founder's call.
+**Migration 0048 APPLIED to production 2026-09-08** with the founder's explicit approval —
+see `2026-09-08-migration.md`. **Still NOT pushed and NOT deployed**; both remain the
+founder's call.
 
 ---
 
@@ -9,7 +11,8 @@
 
 ### 1. `uvt_values` table — the UVT stops being a constant
 
-`apps/backend/migrations/0048_uvt_values_and_service_band.sql` (written, **not applied**).
+`apps/backend/migrations/0048_uvt_values_and_service_band.sql` — **applied to production
+2026-09-08** (was written-not-applied at the time of first writing this report).
 
 `year` PK · `value_cop` bigint in **whole pesos** · `resolution` text · `created_at`. Seeded
 with UVT 2025 ($49.799, Res. DIAN 000193 de 2024) and UVT 2026 ($52.374, Res. DIAN 000238 del
@@ -87,7 +90,7 @@ Returns `ingresos_anualizados_cop` / `_uvt`, `movimientos_mes`, `meses_observado
   Cero.
 - ✅ **Migration number taken from a real directory listing.** Highest existing is `0047`; `0048`
   is free. A test asserts nothing else claims `0048_*`.
-- ✅ **Migration written, not applied.**
+- ✅ **Migration written, then applied only after explicit founder approval** (2026-09-08).
 - ✅ **No test mocks the boundary it verifies.** The Supabase client and the tenant resolver are
   stubbed (collaborators behind the code); the annualisation, unit conversion, banding,
   confidence, UVT-year selection and validation logic all execute for real. The endpoint tests

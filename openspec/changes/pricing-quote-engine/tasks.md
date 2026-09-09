@@ -107,8 +107,9 @@ Tasks:
 - [ ] 11.2 Vercel build complete (green ✅) — blocked by 11.1
 - [ ] 11.3 Railway deploy active (backend change) — blocked by 11.1
 - [ ] 11.4 Production URL: changes visible and working — blocked by 11.1
-- [ ] 11.4b Apply migration `0048` to Supabase **BEFORE 11.1** — **BLOCKED BY FOUNDER**:
-      requires explicit approval. **Ordering is not cosmetic.** `CrmService.list_b2b_clients`
+- [x] 11.4b Apply migration `0048` to Supabase **BEFORE 11.1** — **DONE 2026-09-08**, applied
+      with the founder's explicit approval and verified live (see
+      `reports/2026-09-08-migration.md`). **Ordering is not cosmetic.** `CrmService.list_b2b_clients`
       now selects `service_band`, and its `except` branch falls back to demo data on any
       Supabase error — so deploying the code before applying the migration would make the
       Búnker's B2B roster silently show demo clients instead of the real ones. Apply the
