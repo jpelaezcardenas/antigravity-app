@@ -19,8 +19,8 @@
   "features": [
     {
       "id": "pricing-catalog-and-operator-quote",
-      "status": "in_progress",
-      "summary": "Follow-up to pricing-quote-engine: official prices had nowhere to live (verified by grep), and the pre-quote endpoint resolved the CALLER's tenant, so it was unusable from the Bunker (operator -> Cliente Cero, not the prospect). Adding core/pricing_catalog.py (Entidad B tiers fixed, Entidad A bands with Micro fixed at $890.000, Estandar $1.490.000-2.400.000 range, Complejo unbounded/quoted), a new operator-only GET /pricing/pre-cotizacion/cliente/{b2b_client_id} route (Approval Queue precedent, 404 on non-operator), fee/band coherence warning (advisory, never blocking), band price shown in the pre-quote response, and docs/pricing.md."
+      "status": "done",
+      "summary": "COMPLETE, archived 2026-09-09 as openspec/changes/archive/2026-09-09-pricing-catalog-and-operator-quote. Stage 11 verified live: Railway d5925dd6 up, GET /api/v1/pricing/pre-cotizacion/cliente/{id} 401 (mounted, operator-only, 404 for non-operators), contexia.online/app/bunker 200, live sw.js v20-2026-09-09, served Bunker page -> chunk 11bepc041jvkm.js -> 'Pre-cotizar' chain walked end to end. core/pricing_catalog.py is now the single source of the official prices (previously nowhere in the repo): Pulso $0, GPS $249.000, Contexia Pro desde $1.490.000, Contexia Total cotizado; Micro $890.000 fijo, Estandar $1.490.000-2.400.000, Complejo sin cotas/cotizado. docs/pricing.md is the founder reference, including the cost-structure section for the sovereign local-inference migration. 116 new tests, zero regressions (byte-identical failure lists vs main). core/plan_features.py untouched. Promotes requirements to openspec/specs/pricing-catalog-and-operator-quote/spec.md."
     },
     {
       "id": "pricing-quote-engine",
