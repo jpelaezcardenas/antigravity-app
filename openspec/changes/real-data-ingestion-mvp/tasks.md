@@ -32,7 +32,18 @@
 
 ---
 
-## Track 2 — Siigo API Key Sync
+## Track 2 — Siigo API Key Sync (BLOQUEADO 2026-09-09, no por falta de código)
+
+**Bloqueo real, no técnico:** requiere `SIIGO_PARTNER_ID`, obtenido del consola de partners de
+Siigo — Contexia confirmó que **no es partner de Siigo** hoy. Sin eso, ningún cliente puede
+sincronizar vía este track, sin importar cuántas credenciales `SIIGO_USERNAME_<tenant>`/
+`SIIGO_ACCESS_KEY_<tenant>` se configuren. El código sigue correcto y fail-closed (D6 del
+`design.md`: nunca adivina el Partner-Id). **Decisión del fundador (2026-09-09): pausar este
+track indefinidamente** — el foco pasa a B2C (declaración de renta persona natural, temporada
+actual), donde la ingesta real ya es manual (ver Track 1 y `taty-document-collection`, no Siigo).
+Retomar solo si Contexia se registra como partner de Siigo en el futuro.
+
+
 
 - [x] 2.1 Crear `apps/backend/services/siigo_api_client.py`
 - [x] 2.2 Crear `apps/backend/presentation/siigo_sync_endpoints.py` — `POST /internal/siigo-sync/run`
@@ -42,7 +53,17 @@
 
 ---
 
-## Track 3 — Gmail Adjuntos Ingest
+## Track 3 — Gmail Adjuntos Ingest (PAUSADO 2026-09-09, sin bloqueo técnico)
+
+**Decisión del fundador (2026-09-09):** no se va a definir todavía el correo de Taty
+(`GMAIL_INBOX_ADDRESS`) — se avanza sin esto. La tarea programada `ContexiaHermesGmailPoller` ya
+quedó registrada (3.5) y corre cada 15 min, pero se queda inerte hasta que exista `.env` +
+`credentials.json` (fail-closed por diseño, no genera efectos secundarios). Para B2C, el canal
+real de recepción de documentos ya es WhatsApp directo a Taty
+(`taty-document-collection`, ya archivado y en producción) — Gmail queda como puerta B2B/futura,
+sin urgencia mientras el foco es la temporada de Renta Natural.
+
+
 
 - [x] 3.1 Crear migration `0046_gmail_sender_map.sql` (numeración corregida: 0046, no 0048)
 - [x] 3.1b Corregir bug real en la política RLS `gmail_sender_map_tenant_read` (línea 36): referenciaba
