@@ -94,9 +94,23 @@
 
 ## Stage 11. Deploy to Production (MANDATORY, per-piece — see Migration Plan in design.md)
 
-Tasks 1.x (cadence) deploys and verifies independently of everything below.
+**`taty-followup-cadence` (Task 1) — fully deployed and verified, 2026-09-09/10:**
 
-- [ ] 11.1 git commit + push to main (cadence piece).
+- [x] 11.1a Migration `0051_crm_leads_cadence.sql` applied to Supabase with explicit founder
+      confirmation; verified live (`last_inbound_at`, `cadence_day`, `cadence_completed_at` exist
+      on `crm_leads`, correct types, no backfill).
+- [x] 11.1b `ContexiaHermesCadencePoller` Windows Scheduled Task registered (via `schtasks.exe`
+      directly — `Register-ScheduledTask`/CIM returned "Acceso denegado" in this session, same
+      as the Siigo/Gmail pollers earlier), `.env` created matching the existing pollers'
+      credentials, dry-run verified against 2 real eligible leads in production.
+- [x] 11.1c git commit (`73d5498`) + push to main.
+- [x] 11.1d Railway deploy `71c80e02` SUCCESS. `GET /api/v1/health` → 200.
+      `POST /internal/cadence/send-touch` → 401 with a wrong key (mounted, auth enforced,
+      matches the fail-closed pattern of every other `/internal/*` endpoint).
+- [x] 11.1e Report: `openspec/changes/taty-voice-outbound-calls/reports/2026-09-10-cadence-deployment.md`.
+
+**Tasks 2-9 (Twilio/voice) — untouched, still gated (see design.md's Migration Plan):**
+
 - [ ] 11.2 Railway deploy active (backend endpoint, once Tasks 2-4 are ready).
 - [ ] 11.3 Verify: a real or simulated `/internal/voice/outbound-call` request with a generic
       voice completes end-to-end against a test lead, with the correct `crm_leads` write.
@@ -104,4 +118,5 @@ Tasks 1.x (cadence) deploys and verifies independently of everything below.
       production until Tatiana's written, dated, revocable consent — scoped explicitly to
       outbound sales calls — exists outside this repo. Do not flip this flag based on a chat
       approval alone.
-- [ ] 11.5 Create report: `openspec/changes/taty-voice-outbound-calls/reports/YYYY-MM-DD-deployment.md`.
+- [ ] 11.5 Create report for the voice piece once Tasks 2-9 are implemented (separate from the
+      cadence report above).
