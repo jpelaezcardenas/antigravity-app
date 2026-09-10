@@ -15,8 +15,8 @@ $scriptDir = $PSScriptRoot
 $mainPy    = Join-Path $scriptDir "main.py"
 
 # Use pythonw.exe (no console window) if available; fall back to python.exe.
-$pythonExe = (Get-Command "pythonw.exe" -ErrorAction SilentlyContinue)?.Source
-if (-not $pythonExe) { $pythonExe = (Get-Command "python.exe").Source }
+$pythonCmd = Get-Command "pythonw.exe" -ErrorAction SilentlyContinue
+if ($pythonCmd) { $pythonExe = $pythonCmd.Source } else { $pythonExe = (Get-Command "python.exe").Source }
 
 $action = New-ScheduledTaskAction `
     -Execute $pythonExe `

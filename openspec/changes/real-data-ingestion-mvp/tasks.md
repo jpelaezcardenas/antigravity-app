@@ -52,9 +52,24 @@
 - [x] 3.2 Crear `apps/backend/presentation/ingest_file_endpoints.py` — `POST /internal/ingest/file`
 - [x] 3.3 Registrar router en `apps/backend/main.py` (prefix `/internal`)
 - [x] 3.4 Crear `apps/hermes-gmail-poller/` (patrón hubspot-poller, cada 15 min)
-- [ ] 3.5 Registrar tarea en Windows Task Scheduler — **acción manual del fundador**
-- [ ] 3.6 Aplicar migration `0046` en Supabase — **acción manual del fundador**
-- [ ] 3.7 OAuth2 Gmail: descargar `credentials.json` de Google Cloud Console — **acción manual**
+- [x] 3.5 Registrar tarea en Windows Task Scheduler — ambas tareas creadas y verificadas:
+      `ContexiaHermesSiigoPoller` (diaria 2:00 AM) y `ContexiaHermesGmailPoller` (cada 15 min).
+      **Bug real encontrado y corregido en el camino**: `hermes-siigo-poller/register_poller_task.ps1`
+      usaba el operador `?.` (null-conditional), sintaxis exclusiva de PowerShell 7+ — fallaba con
+      `powershell.exe` 5.1 (el que trae Windows por defecto, confirmado en este equipo). Corregido
+      con el mismo patrón if/else que ya usaban los scripts de Gmail y HubSpot. Aparte de eso, el
+      cmdlet `Register-ScheduledTask` (CIM) devolvió "Acceso denegado" en esta sesión — las tareas
+      se registraron con `schtasks.exe` directamente (mismo resultado funcional: modo de inicio de
+      sesión "Solo interactivo", equivalente al trigger `AtLogOn` de los scripts), envolviendo el
+      comando en `cmd /c cd /d <dir> && pythonw.exe main.py` porque `config.py` carga `.env` con
+      ruta relativa (`env_file=".env"`, resuelta contra el directorio de trabajo del proceso, no
+      contra la ubicación del script) — Task Scheduler por defecto arranca en `System32` si no se
+      fija el directorio de inicio.
+- [x] 3.6 Aplicar migration `0046` en Supabase — aplicada 2026-09-09, con confirmación explícita
+      del fundador. Verificada en vivo: tabla `gmail_sender_map` existe, ambas políticas RLS
+      (`gmail_sender_map_service_all`, `gmail_sender_map_tenant_read`) creadas sin error.
+- [ ] 3.7 OAuth2 Gmail: descargar `credentials.json` de Google Cloud Console — **acción manual del
+      fundador, requiere flujo interactivo de navegador y manejo de credenciales; no delegable**
 
 ---
 
