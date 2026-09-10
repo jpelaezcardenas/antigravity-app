@@ -96,8 +96,15 @@ sin urgencia mientras el foco es la temporada de Renta Natural.
 
 ## Stage 11. Deploy a producción (OBLIGATORIO)
 
-- [ ] 11.1 git commit + push to main
-- [ ] 11.2 Vercel build completo (verde ✅)
-- [ ] 11.3 Railway deploy activo
-- [ ] 11.4 Verificar: subir CSV desde `/app/overview` → datos visibles en Supabase con `is_verified_real=true`
-- [ ] 11.5 Crear reporte: `openspec/changes/real-data-ingestion-mvp/reports/YYYY-MM-DD-deployment.md`
+- [x] 11.1 git commit + push to main (múltiples commits: fix migración 0046, registro de tareas
+      programadas, migración 0050 `ingestion_batches`).
+- [x] 11.2 Vercel: `DataUploadCard` ya en producción (no requirió cambio de frontend para el fix).
+- [x] 11.3 Railway deploy activo — verificado.
+- [x] 11.4 **Verificado con archivo real de CÓDIGO 520 desde `/app/overview`**: bug real
+      encontrado en el camino — `ingestion_batches` no existía (migración 0019 tenía 3 errores de
+      sintaxis Postgres que la hacían fallar silenciosamente desde siempre; ver migración `0050`).
+      Corregido, aplicado, y confirmado con la subida real del fundador: `erp_journal_entries` id
+      `4ff7384a-d8d0-4c21-8573-5cbd3da68eb8`, `source="siigo_csv"`, `is_verified_real=true`,
+      `tenant_id` de CÓDIGO 520 (no Cliente Cero) — contra un baseline capturado antes en 0
+      registros reales.
+- [x] 11.5 Reporte: ver `openspec/changes/real-data-ingestion-mvp/reports/2026-09-10-deployment.md`.
