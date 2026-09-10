@@ -32,7 +32,7 @@ import os
 from typing import Any, Dict, Optional
 from xml.sax.saxutils import escape
 
-from fastapi import APIRouter, Header, HTTPException, Response
+from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, ConfigDict
 
 from config import settings
@@ -100,22 +100,6 @@ def _build_twiml(opening_script: str) -> str:
         f'<Say voice="Polly.Lupe" language="es-MX">{escape(opening_script)}</Say>'
         "</Response>"
     )
-
-
-@router.get("/opening-twiml")
-async def opening_twiml_endpoint() -> Response:
-    """Public, unauthenticated TwiML document Twilio fetches via the `Url` Calls param.
-
-    Deliberately public (no `INTERNAL_API_KEY`, unlike this router's other endpoints) — Twilio's
-    servers must be able to fetch it, and any HTTP client can verify it responds. This replaces a
-    Twilio TwiML Bin as the `TWILIO_TWIML_BIN_URL` target: TwiML Bins only accept requests signed
-    by Twilio, so any external reachability check (including Twilio's own "Try out Voice" console
-    tool) reports them as unreachable even though a real signed call succeeds against them
-    (confirmed live 2026-09-10). Content is the fixed, non-personalized opening line — nothing
-    lead-specific is exposed by making this endpoint public.
-    """
-    twiml = _build_twiml(build_opening_script())
-    return Response(content=twiml, media_type="application/xml")
 
 
 @router.post("/outbound-call", response_model=OutboundCallResponse)
