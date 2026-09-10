@@ -25,10 +25,11 @@
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 11.1 git commit + push to main
-- [ ] 11.2 Vercel build complete (not applicable unless frontend touched — none planned)
-- [ ] 11.3 Railway deploy active
-- [ ] 11.4 Production URL: new `/internal/whatsapp/document` route present in
-      `openapi.json`, returns 503 without `INTERNAL_API_KEY` header per the fail-closed
-      pattern (no live lead exercised)
-- [ ] 11.5 Create report: `openspec/changes/taty-document-collection-wiring/reports/YYYY-MM-DD-deployment.md`
+- [x] 11.1 git commit + push to main (`2f2fb8d`).
+- [x] 11.2 Not applicable — no frontend touched.
+- [x] 11.3 Railway deploy active — `f9f84819-...`, `SUCCESS`.
+- [x] 11.4 Production URL: `/internal/whatsapp/document` present in live `openapi.json`,
+      returns **401** (not 503 — that would mean `INTERNAL_API_KEY` itself is unconfigured,
+      which it correctly is not) without the header, confirming fail-closed rejection of an
+      unauthenticated caller. No live lead exercised.
+- [x] 11.5 Create report: `openspec/changes/taty-document-collection-wiring/reports/2026-09-10-deployment.md`.
