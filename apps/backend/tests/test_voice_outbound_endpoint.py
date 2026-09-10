@@ -26,6 +26,7 @@ def _twilio_configured(monkeypatch):
     monkeypatch.setattr(settings, "TWILIO_ACCOUNT_SID", "ACxxxx")
     monkeypatch.setattr(settings, "TWILIO_AUTH_TOKEN", "fake-token")
     monkeypatch.setattr(settings, "TWILIO_FROM_NUMBER", "+15551234567")
+    monkeypatch.setattr(settings, "TWILIO_TWIML_BIN_URL", "https://handler.twilio.com/twiml/EHxxxx")
 
 
 def _request(**overrides) -> OutboundCallRequest:
@@ -85,11 +86,13 @@ async def test_caller_supplied_phone_field_is_ignored(keyed, monkeypatch):
 
     placed = {}
 
-    async def _place_call(phone, twiml):
+    async def _place_call_via_url(phone, twiml_url):
         placed["phone"] = phone
         return "CAxxxx"
 
-    monkeypatch.setattr(voice_outbound_endpoints.twilio_client, "place_call", _place_call)
+    monkeypatch.setattr(
+        voice_outbound_endpoints.twilio_client, "place_call_via_url", _place_call_via_url
+    )
 
     # A caller-supplied `phone` must be silently ignored by pydantic's `extra = "ignore"` — it is
     # not even a declared field, so passing it must not raise and must not affect the call.
@@ -177,37 +180,62 @@ async def test_no_phone_reports_not_placed(keyed, monkeypatch):
 
 
 # --- Happy path + generic-voice guarantee ----------------------------------------------------------
+#
+# The opening script is served from a Twilio TwiML Bin (`TWILIO_TWIML_BIN_URL`) via `Url`, not sent
+# inline via `Twiml` — trial accounts reject inline `Twiml` (confirmed live 2026-09-10). The Bin's
+# own content (checked manually in the Twilio console, not fetchable here — Twilio only accepts
+# signed requests to a Bin's URL) is the generic `<Say voice="Polly.Lupe" language="es-MX">` script;
+# this test only asserts the endpoint calls Twilio with that URL, never with Tatiana's cloned voice.
 
 
 @pytest.mark.asyncio
-async def test_happy_path_places_call_with_generic_voice(keyed, monkeypatch):
+async def test_happy_path_places_call_via_twiml_bin_url(keyed, monkeypatch):
     import presentation.voice_outbound_endpoints as voice_outbound_endpoints
 
     monkeypatch.setattr(voice_outbound_endpoints, "_get_lead_for_call", lambda _id: _lead())
 
     captured = {}
 
-    async def _place_call(phone, twiml):
+    async def _place_call_via_url(phone, twiml_url):
         captured["phone"] = phone
-        captured["twiml"] = twiml
+        captured["twiml_url"] = twiml_url
         return "CAxxxx"
 
-    monkeypatch.setattr(voice_outbound_endpoints.twilio_client, "place_call", _place_call)
+    monkeypatch.setattr(
+        voice_outbound_endpoints.twilio_client, "place_call_via_url", _place_call_via_url
+    )
 
     result = await _call(_request())
 
     assert result.placed is True
     assert result.call_sid == "CAxxxx"
     assert captured["phone"] == "573001234567"
-    # Twilio's own generic <Say> voice, never Tatiana's cloned VoiceBox profile.
-    assert '<Say voice="Polly.Lupe"' in captured["twiml"]
-    assert "voicebox" not in captured["twiml"].lower()
+    assert captured["twiml_url"] == "https://handler.twilio.com/twiml/EHxxxx"
+
+
+@pytest.mark.asyncio
+async def test_missing_twiml_bin_url_reports_not_placed(keyed, monkeypatch):
+    import presentation.voice_outbound_endpoints as voice_outbound_endpoints
+
+    monkeypatch.setattr(voice_outbound_endpoints, "_get_lead_for_call", lambda _id: _lead())
+    monkeypatch.setattr(settings, "TWILIO_TWIML_BIN_URL", "")
+
+    with patch.object(
+        voice_outbound_endpoints.twilio_client, "place_call_via_url", new=AsyncMock()
+    ) as mock_place:
+        result = await _call(_request())
+
+    assert result.placed is False
+    assert result.reason == "twiml_bin_not_configured"
+    mock_place.assert_not_called()
 
 
 @pytest.mark.asyncio
 async def test_default_flag_never_uses_cloned_voice(keyed, monkeypatch):
     """spec.md: 'With VOICE_OUTBOUND_CALLS_ENABLED unset or false, any outbound call synthesizes
-    speech with a generic voice profile, never Tatiana's cloned voice.'"""
+    speech with a generic voice profile, never Tatiana's cloned voice.' The generic-voice script
+    lives in the TwiML Bin (checked manually in the Twilio console), not in this endpoint's code —
+    this test asserts the flag has no effect on which URL/path is used."""
     import presentation.voice_outbound_endpoints as voice_outbound_endpoints
 
     assert settings.VOICE_OUTBOUND_CALLS_ENABLED is False
@@ -216,15 +244,17 @@ async def test_default_flag_never_uses_cloned_voice(keyed, monkeypatch):
 
     captured = {}
 
-    async def _place_call(phone, twiml):
-        captured["twiml"] = twiml
+    async def _place_call_via_url(phone, twiml_url):
+        captured["twiml_url"] = twiml_url
         return "CAxxxx"
 
-    monkeypatch.setattr(voice_outbound_endpoints.twilio_client, "place_call", _place_call)
+    monkeypatch.setattr(
+        voice_outbound_endpoints.twilio_client, "place_call_via_url", _place_call_via_url
+    )
 
     await _call(_request())
 
-    assert "Polly" in captured["twiml"]
+    assert captured["twiml_url"] == "https://handler.twilio.com/twiml/EHxxxx"
 
 
 @pytest.mark.asyncio
@@ -247,10 +277,12 @@ async def test_call_failure_reports_not_placed(keyed, monkeypatch):
 
     monkeypatch.setattr(voice_outbound_endpoints, "_get_lead_for_call", lambda _id: _lead())
 
-    async def _place_call_fails(phone, twiml):
+    async def _place_call_via_url_fails(phone, twiml_url):
         return None
 
-    monkeypatch.setattr(voice_outbound_endpoints.twilio_client, "place_call", _place_call_fails)
+    monkeypatch.setattr(
+        voice_outbound_endpoints.twilio_client, "place_call_via_url", _place_call_via_url_fails
+    )
 
     result = await _call(_request())
     assert result.placed is False

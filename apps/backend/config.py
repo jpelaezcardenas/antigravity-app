@@ -148,6 +148,9 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_FROM_NUMBER: str = ""
+    # TwiML Bin URL serving the outbound-call opening script — trial accounts reject Twilio's
+    # inline `Twiml` Calls param, so the script is fetched from this URL via `Url` instead.
+    TWILIO_TWIML_BIN_URL: str = ""
 
     # Multi-tenant feature gate (Phase 1: MVP)
     MULTI_TENANT_ENABLED: bool = True  # Enable JWT tenant_id extraction

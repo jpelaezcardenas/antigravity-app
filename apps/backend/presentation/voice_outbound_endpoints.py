@@ -89,6 +89,10 @@ def _build_twiml(opening_script: str) -> str:
 
     `<Say>` is Twilio's own generic TTS — never Tatiana's cloned voice. Text is XML-escaped since
     it is embedded directly into the TwiML document.
+
+    **Not used on a Twilio trial account** (confirmed live 2026-09-10 — trial rejects the inline
+    `Twiml` param with a 400). Kept for when the account is upgraded; the endpoint below calls
+    `twilio_client.place_call_via_url` with `settings.TWILIO_TWIML_BIN_URL` today instead.
     """
     return (
         '<?xml version="1.0" encoding="UTF-8"?>'
@@ -140,10 +144,11 @@ async def trigger_outbound_call_endpoint(
             "implemented; using the generic Twilio voice regardless"
         )
 
-    opening_script = build_opening_script()
-    twiml = _build_twiml(opening_script)
+    if not settings.TWILIO_TWIML_BIN_URL:
+        logger.error("outbound-call: TWILIO_TWIML_BIN_URL is not configured; refusing to call")
+        return OutboundCallResponse(placed=False, reason="twiml_bin_not_configured")
 
-    call_sid = await twilio_client.place_call(phone, twiml)
+    call_sid = await twilio_client.place_call_via_url(phone, settings.TWILIO_TWIML_BIN_URL)
     if not call_sid:
         logger.error("outbound-call: Twilio call failed for lead %s", payload.lead_id)
         return OutboundCallResponse(placed=False, reason="call_failed")

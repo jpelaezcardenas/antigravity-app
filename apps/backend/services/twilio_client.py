@@ -37,6 +37,12 @@ async def place_call(to_number: str, twiml: str) -> Optional[str]:
     instructions (the `Twiml` request param) — no callback URL/webhook server is stood up in this
     change, so the call's entire script is sent up front rather than fetched from a `Url`.
 
+    **Known limitation, confirmed live 2026-09-10**: Twilio trial accounts reject the inline
+    `Twiml` param outright (`400 "trial accounts have limited parameter access"`) — this path only
+    works on a paid Twilio account. `place_call_via_url` below is the trial-compatible path;
+    `voice_outbound_endpoints.py` uses that one today. This function is kept for when the account
+    is upgraded and dynamic per-call TwiML (not just a fixed opening line) is needed.
+
     Returns the Twilio call SID on success, None on any failure (never raises) — mirrors
     `channels.whatsapp.send_whatsapp_message`'s fail-soft contract, since a failed call attempt is
     not itself a bug in the caller's request.
@@ -50,6 +56,44 @@ async def place_call(to_number: str, twiml: str) -> Optional[str]:
         "To": to_number,
         "From": settings.TWILIO_FROM_NUMBER,
         "Twiml": twiml,
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                url,
+                data=data,
+                auth=(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN),
+            )
+            if resp.status_code not in (200, 201):
+                logger.error("Twilio Calls API error: %s %s", resp.status_code, resp.text[:200])
+                return None
+            body = resp.json()
+            return body.get("sid")
+    except Exception as exc:
+        logger.error("Failed to place Twilio call: %s", exc)
+        return None
+
+
+async def place_call_via_url(to_number: str, twiml_url: str) -> Optional[str]:
+    """Places an outbound PSTN call via Twilio's Calls resource, with `twiml_url` as the `Url`
+    request param — Twilio fetches the call script from that URL (a TwiML Bin, in production
+    today) instead of receiving it inline.
+
+    Trial-compatible: unlike `place_call`'s inline `Twiml` param, `Url` is not restricted on a
+    Twilio trial account (confirmed live 2026-09-10 via Twilio's own console test call, which uses
+    `Url` and succeeds). Same fail-soft contract as `place_call` — never raises, returns None on
+    any failure.
+    """
+    if not is_configured():
+        logger.warning("twilio_client: TWILIO_* credentials not configured; refusing to call")
+        return None
+
+    url = f"{_TWILIO_API_BASE}/Accounts/{settings.TWILIO_ACCOUNT_SID}/Calls.json"
+    data = {
+        "To": to_number,
+        "From": settings.TWILIO_FROM_NUMBER,
+        "Url": twiml_url,
     }
 
     try:

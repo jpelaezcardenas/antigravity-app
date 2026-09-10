@@ -80,3 +80,67 @@ class TestPlaceCall:
             mock_client_cls.return_value.__aenter__.side_effect = Exception("boom")
             result = await twilio_client.place_call("573001234567", "<Response/>")
         assert result is None
+
+
+class TestPlaceCallViaUrl:
+    """place_call_via_url uses Twilio's `Url` param (trial-compatible), never inline `Twiml` —
+    confirmed live 2026-09-10 that Twilio trial rejects inline `Twiml` with a 400."""
+
+    @pytest.mark.asyncio
+    async def test_refuses_when_not_configured(self, monkeypatch):
+        monkeypatch.setattr(settings, "TWILIO_ACCOUNT_SID", "")
+        with patch("services.twilio_client.httpx.AsyncClient") as mock_client_cls:
+            result = await twilio_client.place_call_via_url(
+                "573001234567", "https://handler.twilio.com/twiml/EHxxxx"
+            )
+        assert result is None
+        mock_client_cls.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_places_call_and_returns_sid(self):
+        mock_response = AsyncMock()
+        mock_response.status_code = 201
+        mock_response.json = lambda: {"sid": "CAyyyy"}
+
+        with patch("services.twilio_client.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.post.return_value = mock_response
+            mock_client_cls.return_value.__aenter__.return_value = mock_client
+
+            result = await twilio_client.place_call_via_url(
+                "573001234567", "https://handler.twilio.com/twiml/EHxxxx"
+            )
+
+        assert result == "CAyyyy"
+        call_args = mock_client.post.call_args
+        assert call_args.kwargs["data"]["To"] == "573001234567"
+        assert call_args.kwargs["data"]["From"] == "+15551234567"
+        assert call_args.kwargs["data"]["Url"] == "https://handler.twilio.com/twiml/EHxxxx"
+        assert "Twiml" not in call_args.kwargs["data"]
+        assert call_args.kwargs["auth"] == ("ACxxxx", "fake-token")
+
+    @pytest.mark.asyncio
+    async def test_returns_none_on_non_2xx(self):
+        mock_response = AsyncMock()
+        mock_response.status_code = 400
+        mock_response.text = "Bad Request"
+
+        with patch("services.twilio_client.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.post.return_value = mock_response
+            mock_client_cls.return_value.__aenter__.return_value = mock_client
+
+            result = await twilio_client.place_call_via_url(
+                "573001234567", "https://handler.twilio.com/twiml/EHxxxx"
+            )
+
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_never_raises_on_exception(self):
+        with patch("services.twilio_client.httpx.AsyncClient") as mock_client_cls:
+            mock_client_cls.return_value.__aenter__.side_effect = Exception("boom")
+            result = await twilio_client.place_call_via_url(
+                "573001234567", "https://handler.twilio.com/twiml/EHxxxx"
+            )
+        assert result is None
