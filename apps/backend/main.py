@@ -261,16 +261,18 @@ from presentation.siigo_sync_endpoints import router as siigo_sync_router
 from presentation.ingest_file_endpoints import router as ingest_file_router
 from presentation.voice_endpoints import router as voice_router
 from presentation.cadence_endpoints import router as cadence_router
+from presentation.voice_outbound_endpoints import router as voice_outbound_router
 
 _internal_router = APIRouter()
 _internal_router.include_router(siigo_sync_router)
 _internal_router.include_router(ingest_file_router)
 _internal_router.include_router(voice_router)
 _internal_router.include_router(cadence_router)
+_internal_router.include_router(voice_outbound_router, prefix="/voice")
 app.include_router(_internal_router, prefix="/internal")
 logger.info(
     "Internal routers registered: /internal/siigo-sync/run, /internal/ingest/file, "
-    "/internal/whatsapp/voice-note, /internal/cadence/send-touch"
+    "/internal/whatsapp/voice-note, /internal/cadence/send-touch, /internal/voice/outbound-call"
 )
 
 

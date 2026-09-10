@@ -135,6 +135,20 @@ class Settings(BaseSettings):
     # Hard cap on an accepted voice-note payload (16 MB — WhatsApp's own audio limit).
     VOICE_MAX_AUDIO_BYTES: int = 16777216
 
+    # Outbound qualification/follow-up calls (taty-voice-outbound-calls). Wholly independent of
+    # VOICE_ENABLED above (design.md Decision 2) — this flag gates ONLY the cloned voice; with it
+    # false (the default) the call flow works end-to-end with a generic, non-cloned Twilio <Say>
+    # voice. It must never be flipped based on a chat approval alone — only once Tatiana's written,
+    # dated, revocable consent for outbound sales calls specifically exists outside this repo.
+    VOICE_OUTBOUND_CALLS_ENABLED: bool = False
+
+    # Twilio (call carrier, design.md Decision 1 — lives in the backend, never the local bridge).
+    # Empty defaults fail closed: services/twilio_client.py refuses to call the API rather than
+    # guessing credentials. Founder action (task 2.3), external to this repo.
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_FROM_NUMBER: str = ""
+
     # Multi-tenant feature gate (Phase 1: MVP)
     MULTI_TENANT_ENABLED: bool = True  # Enable JWT tenant_id extraction
     JWT_TENANT_CLAIM: str = "tenant_id"  # JWT claim name for tenant identifier

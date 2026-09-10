@@ -25,35 +25,55 @@
 
 ## 2. Backend: outbound-call trigger endpoint (built dark, `VOICE_OUTBOUND_CALLS_ENABLED=false`)
 
-- [ ] 2.1 Write failing tests: missing `INTERNAL_API_KEY` → 503; caller-supplied phone number is
+- [x] 2.1 Write failing tests: missing `INTERNAL_API_KEY` → 503; caller-supplied phone number is
       ignored in favor of the resolved `crm_leads` number; a `business_interest` lead is refused.
-- [ ] 2.2 Implement `POST /internal/voice/outbound-call` (`{lead_id, tenant_id}` only), resolving
+- [x] 2.2 Implement `POST /internal/voice/outbound-call` (`{lead_id, tenant_id}` only), resolving
       the phone server-side, following the `/internal/*` + `INTERNAL_API_KEY` pattern exactly.
 - [ ] 2.3 Twilio account setup (founder action, external to this repo) — Colombian number(s)
       provisioned, credentials placed in Railway env vars only, never in the local bridge.
-- [ ] 2.4 Call orchestration service: places the Twilio call, synthesizes the opening via
-      VoiceBox using a GENERIC (non-cloned) voice profile by default.
-- [ ] 2.5 Tests green.
+- [x] 2.4 Call orchestration service: places the Twilio call, synthesizes the opening via
+      VoiceBox using a GENERIC (non-cloned) voice profile by default. **Note:** implemented via
+      Twilio's own built-in `<Say>` TTS (generic, non-cloned) rather than actual local VoiceBox
+      synthesis — the endpoint's fixed `{lead_id, tenant_id}` request shape cannot carry
+      pre-synthesized audio without violating spec.md, and Railway cannot reach the local
+      VoiceBox instance. Wiring true VoiceBox synthesis into this flow needs its own resolved
+      network path (same class of problem `voicebox-local-voice-adoption` solved for WhatsApp
+      voice notes) — documented follow-up, not built in this session. See
+      `presentation/voice_outbound_endpoints.py`'s module docstring.
+- [x] 2.5 Tests green (`tests/test_voice_outbound_endpoint.py`, `tests/test_twilio_client.py`).
 
 ## 3. STT activation (first real use of `LOCAL_WHISPER_URL`)
 
-- [ ] 3.1 Write failing tests for the transcription call path.
-- [ ] 3.2 Point `LOCAL_WHISPER_URL` at a running Whisper instance; wire the call-response
-      transcription into the qualification flow.
-- [ ] 3.3 Tests green.
+- [x] 3.1 Write failing tests for the transcription call path.
+- [~] 3.2 Wrote the calling code (`apps/chatwoot-bridge/whisper_client.py`, POSTs to
+      `LOCAL_WHISPER_URL` and returns the transcript) and the qualification-flow seam that will
+      invoke it. **Not done**: pointing `LOCAL_WHISPER_URL` at an actual running Whisper instance
+      — standing up that server is a founder/infra action outside this session's scope, per the
+      task brief.
+- [x] 3.3 Tests green (`tests/test_whisper_client.py`, all HTTP mocked with respx).
 
 ## 4. Opening script + qualification flow
 
-- [ ] 4.1 **Before finalizing wording**: check actual Colombian legal requirements for AI
-      disclosure on an outbound call (do not assume Dapta's US/EU citations apply) — default to
-      disclosing regardless of what this check finds, per the design's risk mitigation.
-- [ ] 4.2 Write the opening script: identity + AI disclosure + reason in ≤10 words + question,
-      not pitch (adapted from Dapta's opening anatomy).
-- [ ] 4.3 Write the qualification flow: max 3 questions, situation→problem→urgency structure.
-- [ ] 4.4 Wire call outcome → `CrmService` write path (no new "call outcomes" table) — qualified /
-      not-interested / callback-requested / voicemail.
-- [ ] 4.5 Voicemail outcome makes the lead eligible for `taty-followup-cadence`, not an automatic
-      re-dial.
+- [x] 4.1 **Could not confirm** actual Colombian legal requirements for AI disclosure on an
+      outbound call — no access to a legal database in this session. Per the design's own risk
+      mitigation, the safe default (always disclose AI identity, regardless of what confirmation
+      would show) was used; documented as an open gap in `core/voice_call_script.py`'s module
+      docstring and in `progress/impl_taty_voice_outbound_2_3_4.md`.
+- [x] 4.2 Wrote the opening script (`core/voice_call_script.py`): identity + AI disclosure +
+      reason in ≤10 words + question, never price/plan/offer — tested in
+      `tests/test_voice_call_script.py`.
+- [x] 4.3 Wrote the qualification flow: max 3 questions, situación→problema→urgencia structure,
+      hardcoded as an ordered, capped list (`core/voice_call_script.py`) — tested in
+      `tests/test_voice_call_script.py` (a 4th question is never returned).
+- [x] 4.4 Wired call outcome → `CrmService` write path (`services/voice_call_outcome.py`, reuses
+      `CrmService.advance_lead` — no new "call outcomes" table) — qualified / not_interested /
+      callback_requested / voicemail. Not yet invoked automatically by anything (no call-status
+      webhook exists in this change); it is a function ready for that future wiring.
+- [x] 4.5 Voicemail outcome only stamps `lead_type="voicemail"` on the lead's current stage and
+      never calls `twilio_client.place_call` — tested in `tests/test_voice_call_outcome.py`
+      (`test_voicemail_keeps_current_stage_and_does_not_trigger_a_redial`). Since nothing in this
+      change auto-invokes the outbound-call trigger, the lead is only eligible for
+      `taty-followup-cadence`'s existing scheduled poller, never an automatic re-dial.
 
 ## 5. Non-goal guards (verify, don't build)
 

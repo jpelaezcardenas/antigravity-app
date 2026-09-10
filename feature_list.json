@@ -15,7 +15,8 @@
   "pending_implementation": [
     "taty-wompi-link-hitl-gate",
     "metrics-dashboard-phase9",
-    "voicebox-local-voice-adoption"
+    "voicebox-local-voice-adoption",
+    "taty-voice-outbound-calls"
   ],
   "features": [
     {
@@ -127,6 +128,11 @@
       "id": "whatsapp-b2b-lead-bridge",
       "status": "done",
       "summary": "COMPLETE (37/37 tasks incl. Stage 11), archived 2026-09-09 as openspec/changes/archive/2026-09-09-whatsapp-b2b-lead-bridge. Deteccion de senal B2B en WhatsApp/Taty: 4a categoria business_interest en classify_lead_intent() (taty_lead_router.py), revisada despues de payment_confirmation y antes de sales_interest; persistida via CrmService.whatsapp_intake()/advance_lead() (write aditivo, sin query independiente, stage nunca se toca por este intent); migracion 0049_crm_leads_lead_type.sql aplicada en Supabase con confirmacion explicita del fundador, verificada en vivo (nullable, sin default, 0/5 leads con backfill); _auto_tag_chatwoot() extendido con business_interest -> servicio_interes=creacion_empresa / tipo_contribuyente=SAS, valores confirmados en vivo contra la API real de Chatwoot, con precedencia sobre persona_natural/regimen_simple; fire-and-forget preservado. Mergeado con origin/main (12 commits de pricing-quote-engine/pricing-catalog-and-operator-quote/taty-pricing-skill ya archivados), resolviendo una colision real de numeracion de Decisiones en ARCHITECTURE.md (renumerada VoiceBox de #24 a #26). Railway deploy 79eb9162 SUCCESS. Verificacion E2E CONFIRMADA con una conversacion real de WhatsApp del fundador (no simulada): crm_leads de 573504187902 quedo con lead_type=business_interest tras un mensaje real, stage sin tocar, timestamp exacto; un mensaje de Renta Natural en la misma conversacion no lo activo y Taty respondio con precios reales sin regresion. Delta specs sincronizadas: nueva capacidad openspec/specs/whatsapp-b2b-lead-signal/spec.md + MODIFIED en openspec/specs/taty-whatsapp-sales-router/spec.md."
+    },
+    {
+      "id": "taty-voice-outbound-calls",
+      "status": "pending",
+      "summary": "Tasks 2-6 implemented and reviewer-APPROVED 2026-09-09 (Task 1/cadence already done+deployed earlier; Tasks 7-9 rollout phases untouched, gated behind founder checkpoints). New: POST /internal/voice/outbound-call (INTERNAL_API_KEY fail-closed, {lead_id, tenant_id} only, phone always resolved server-side from crm_leads, business_interest/B2B leads rejected before any Twilio logic runs). services/twilio_client.py is a plain httpx wrapper (no new twilio SDK dependency), credentials Railway-only, apps/chatwoot-bridge/ has zero Twilio references. VOICE_OUTBOUND_CALLS_ENABLED added as a wholly independent flag from VOICE_ENABLED, defaults false; there is NO code path to Tatiana's cloned voice under any flag state -- the opening is always spoken via Twilio's own generic <Say voice=Polly.Lupe> TTS (core/voice_call_script.py + presentation/voice_outbound_endpoints.py::_build_twiml). Documented, not papered-over gap: true local VoiceBox synthesis for this flow needs a resolved network path (Railway can't reach the local VoiceBox instance) and is left as a follow-up. STT: apps/chatwoot-bridge/whisper_client.py is the first live caller of the previously-unused LOCAL_WHISPER_URL placeholder. Opening script discloses AI identity before any question, no price/plan/offer words, max-3 qualification questions (situacion->problema->urgencia), outcome writes reuse CrmService.advance_lead (no new table); voicemail makes the lead eligible for taty-followup-cadence, never an auto-redial. 4.1 (Colombian AI-disclosure law) could not be legally verified this session -- documented explicitly, safe default (always disclose) applied per design.md's own risk mitigation, not invented. 37 new tests green; full-suite regression sweep independently re-run by the reviewer, byte-identical pre-existing failures vs main (zero new regressions). NOT done, explicitly out of scope of this dispatch: Task 2.3 (real Twilio account/Colombian number -- founder action), pointing LOCAL_WHISPER_URL at a real running Whisper instance (founder/infra action), Tasks 7-9 (internal test calls / real batches / scale), and VOICE_OUTBOUND_CALLS_ENABLED remains false -- flipping it requires Tatiana's written, dated, revocable consent per design.md, which does not exist yet."
     }
   ]
 }
