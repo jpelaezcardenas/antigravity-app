@@ -21,6 +21,7 @@ export const API_ENDPOINTS = {
   jarvisChat: `${API_BASE_URL}/api/v1/jarvis/chat`,
   jarvisStatus: `${API_BASE_URL}/api/v1/jarvis/status`,
   uploadData: `${API_BASE_URL}/api/v1/shadow-gl/upload`,
+  socialCapturePartial: `${API_BASE_URL}/api/v1/crm/social-capture/partial`,
 };
 
 export const config = {

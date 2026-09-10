@@ -26,6 +26,7 @@ from presentation.shadow_gl_endpoints import router as shadow_gl_router
 from presentation.pulso_diario_endpoints import router as pulso_diario_router
 from presentation.auditoria_sombra_endpoints import router as auditoria_sombra_router
 from presentation.crm_endpoints import router as crm_router
+from presentation.social_capture_endpoints import router as social_capture_router
 from presentation.sell_machine_endpoints import router as sell_machine_router
 
 api_router = APIRouter()
@@ -83,3 +84,11 @@ if settings.SELL_MACHINE_CANONICAL:
 # only risk silently dropping live customer messages. Authenticity is enforced by
 # X-Hub-Signature-256 verification inside the handler.
 api_router.include_router(whatsapp_router, prefix="/channels/whatsapp", tags=["whatsapp"])
+
+# Public social-lead-capture endpoint (b2c-social-lead-capture) — mounted unconditionally
+# and deliberately NOT via crm_router above: crm_router applies get_current_user as a
+# router-level dependency, but this is a genuinely public, unauthenticated landing-page
+# endpoint (see presentation/social_capture_endpoints.py's module docstring). A feature
+# flag here would risk silently dropping real ad-traffic leads, same reasoning as
+# whatsapp_router just above.
+api_router.include_router(social_capture_router, prefix="/crm", tags=["social-capture"])

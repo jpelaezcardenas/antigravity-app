@@ -4,7 +4,7 @@ Demo mock visual de la app Contexia. Stack: Next.js 16 App Router + React 19 + T
 
 ## Reglas duras
 
-- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real, Alertas Activas; Flujo-detalle → Puente de Liquidez; Búnker → Social Content Ops; Búnker → Onboarding; Búnker → CRM/Ventas; Búnker → Sell Machine; Config → identidad/plan del tenant; el banner "actualiza tu plan" en Fiscal/Radar/Patrimonio; Radar → Radar de Caja 13 Semanas) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real, Alertas Activas, Puente de Liquidez, Config, el banner de upgrade y Radar de Caja 13 Semanas son solo lectura; Social Content Ops, Onboarding, CRM/Ventas B2C, y Sell Machine escriben; CRM/Ventas B2B es de solo lectura — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
+- **Sin backend, sin fetch, sin auth, sin DB**, **EXCEPTO**: pantallas data-bound (Pulso/Overview → Caja Real, Alertas Activas; Flujo-detalle → Puente de Liquidez; Búnker → Social Content Ops; Búnker → Onboarding; Búnker → CRM/Ventas; Búnker → Sell Machine; Config → identidad/plan del tenant; el banner "actualiza tu plan" en Fiscal/Radar/Patrimonio; Radar → Radar de Caja 13 Semanas; `/renta-natural` → captura de leads B2C) PUEDEN hacer fetch al backend Contexia (`/api/v1/*`), incluyendo escrituras cuando esa pantalla lo requiere (Caja Real, Alertas Activas, Puente de Liquidez, Config, el banner de upgrade y Radar de Caja 13 Semanas son solo lectura; Social Content Ops, Onboarding, CRM/Ventas B2C, Sell Machine, y `/renta-natural` escriben; CRM/Ventas B2B es de solo lectura — ver abajo). Ver [Pantallas data-bound](#pantallas-data-bound). Todo lo demás sigue siendo mock local tipado en `lib/mock/`.
 - **Regla dura — nunca mock como fallback de error**: ninguna pantalla data-bound puede, ante un fetch fallido, mostrar datos de `lib/mock/*` presentados como si fueran reales. El estado de error debe ser explícito y honesto (discreto, sin banner alarmante) — nunca datos inventados bajo un estado "ready"/"listo". Incidente que originó esta regla: `CashTodayCard` caía silenciosamente a `pulsoMock.cash` en error, marcado como `"ready"` — corregido en `pwa-tenant-aware-screens` (ver abajo).
 - **Fuente de verdad visual**: el export de Stitch y los screenshots `screen.png` del ZIP `stitch_contexia_evolution_cfo_as_a_service`. No rediseñar pantallas que Stitch ya definió.
 - **Sin CDN**: nada de React/Tailwind/Babel por unpkg. Las únicas URLs externas son Google Fonts (Inter, JetBrains Mono, Material Symbols) cargadas desde [app/layout.tsx](app/layout.tsx).
@@ -233,6 +233,28 @@ explícitos: `loading` (skeleton) / `ready` (gráfico de 13 puntos + narrativa) 
   `openspec/changes/radar-cash-projection-13w/design.md` Decisión #6.
 - **Sin tracking**: el evento de adopción del brief original quedó fuera de alcance —
   no existe infraestructura de analytics en `contexia-app` a la cual engancharse.
+
+### `/renta-natural` → captura de leads B2C (undécima excepción data-bound, `b2c-social-lead-capture`)
+
+`app/renta-natural/page.tsx` + `components/renta-natural/RentaNaturalLandingForm.tsx` es la
+primera pantalla data-bound que **no es parte de la PWA autenticada** — es una landing page
+pública para tráfico de anuncios (Facebook/Instagram/TikTok), sin TopBar/BottomNav, sin sesión.
+URL confirmada por el fundador 2026-09-10: `contexia.online/renta-natural` (ver `openspec/changes/
+b2c-social-lead-capture/design.md`, "Open Questions").
+
+- **Cliente tipado**: `lib/social-capture-api.ts` — deliberadamente NO usa
+  `authenticated-fetch.ts` (un visitante anónimo no tiene token) y llama directo con `fetch` a
+  `POST /api/v1/crm/social-capture/partial` (público, sin auth, resuelve a Cliente Cero
+  server-side — ver `apps/backend/presentation/social_capture_endpoints.py`).
+- **Escribe** (patrón Dapta Forms de captura parcial): el formulario llama al mismo endpoint dos
+  veces — la primera vez que el número de WhatsApp se vuelve válido (`lib/utils/
+  phoneValidation.ts`, captura parcial, sin `full_name` todavía) y de nuevo al enviar el
+  formulario completo. El throttle por teléfono del backend hace que la segunda llamada sea un
+  no-op seguro, nunca un lead ni un WhatsApp duplicado.
+- **`source` oculto**: se toma del query string del enlace del anuncio (`?source=...`) y viaja
+  como campo oculto del formulario — nunca editable por el visitante.
+- **Sin shell de la PWA**: vive fuera del route group `app/app/` (mismo patrón que
+  `app/crear-empresa-wizard/`), con su propio `layout.tsx`.
 
 Esto es una excepción escoped al charter "sin backend" — pantallas data-bound son
 un puente hacia el MVP data-driven; mocks aplican para todo lo demás.

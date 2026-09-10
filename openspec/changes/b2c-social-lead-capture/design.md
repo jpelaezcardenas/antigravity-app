@@ -118,8 +118,7 @@ with zero data migration.
 
 ## Open Questions
 
-- Exact landing page URL/path (`contexia.online/renta` vs. something else) — founder/marketing
-  decision, not decided here.
+- ~~Exact landing page URL/path~~ — **DECIDED 2026-09-10 by the founder: `contexia.online/renta-natural`.**
 - Whether `contexia-wizard/`'s orphaned Supabase project should be reconnected, retired, or left
   as-is — a separate decision, flagged but not made here.
 - Whether `ARCHITECTURE.md`'s claim that `slowapi` is wired is stale documentation that should be
