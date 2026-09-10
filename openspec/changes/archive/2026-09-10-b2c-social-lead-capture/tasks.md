@@ -81,9 +81,11 @@
       creates a real `crm_leads` row with `source` set (smoke-tested with phone `573000000000`,
       row created then deleted immediately after — see report). `contexia.online/renta-natural`
       returns 200 with the real form content (confirmed post-fix, not the pre-fix 404).
-- [ ] 11.5b **NOT verified**: an actual WhatsApp message arriving at a real phone number. The
-      smoke test above used a fake test number specifically to avoid sending a real WhatsApp
-      message without founder authorization — same caution `whatsapp-b2b-lead-bridge` applied.
-      Founder action needed: submit the live landing page with a real phone number (or confirm
-      it's fine to test with a specific number) to close this loop end-to-end.
+- [x] 11.5b Verified 2026-09-10 with the founder's own real number (`573504187902`, explicit
+      authorization to temporarily delete its pre-existing `business_interest` lead so the
+      capture would take the `is_new: True` path): `POST /api/v1/crm/social-capture/partial`
+      against the live Railway backend returned `is_new: true`, and the founder confirmed the
+      real WhatsApp first-contact message ("¡Hola! Soy Taty...") actually arrived. The test
+      lead's `stage`/`lead_type` were restored to `PROSPECTOS`/`business_interest` immediately
+      after to preserve the founder's real lead record.
 - [x] 11.6 Create report: `openspec/changes/b2c-social-lead-capture/reports/2026-09-10-deployment.md`.

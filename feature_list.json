@@ -11,7 +11,9 @@
       "blocked"
     ]
   },
-  "active": null,
+  "active": [
+    "taty-document-collection-wiring"
+  ],
   "pending_implementation": [
     "taty-wompi-link-hitl-gate",
     "metrics-dashboard-phase9",
@@ -133,6 +135,20 @@
       "id": "taty-voice-outbound-calls",
       "status": "pending",
       "summary": "Tasks 2-6 implemented and reviewer-APPROVED 2026-09-09 (Task 1/cadence already done+deployed earlier; Tasks 7-9 rollout phases untouched, gated behind founder checkpoints). New: POST /internal/voice/outbound-call (INTERNAL_API_KEY fail-closed, {lead_id, tenant_id} only, phone always resolved server-side from crm_leads, business_interest/B2B leads rejected before any Twilio logic runs). services/twilio_client.py is a plain httpx wrapper (no new twilio SDK dependency), credentials Railway-only, apps/chatwoot-bridge/ has zero Twilio references. VOICE_OUTBOUND_CALLS_ENABLED added as a wholly independent flag from VOICE_ENABLED, defaults false; there is NO code path to Tatiana's cloned voice under any flag state -- the opening is always spoken via Twilio's own generic <Say voice=Polly.Lupe> TTS (core/voice_call_script.py + presentation/voice_outbound_endpoints.py::_build_twiml). Documented, not papered-over gap: true local VoiceBox synthesis for this flow needs a resolved network path (Railway can't reach the local VoiceBox instance) and is left as a follow-up. STT: apps/chatwoot-bridge/whisper_client.py is the first live caller of the previously-unused LOCAL_WHISPER_URL placeholder. Opening script discloses AI identity before any question, no price/plan/offer words, max-3 qualification questions (situacion->problema->urgencia), outcome writes reuse CrmService.advance_lead (no new table); voicemail makes the lead eligible for taty-followup-cadence, never an auto-redial. 4.1 (Colombian AI-disclosure law) could not be legally verified this session -- documented explicitly, safe default (always disclose) applied per design.md's own risk mitigation, not invented. 37 new tests green; full-suite regression sweep independently re-run by the reviewer, byte-identical pre-existing failures vs main (zero new regressions). NOT done, explicitly out of scope of this dispatch: Task 2.3 (real Twilio account/Colombian number -- founder action), pointing LOCAL_WHISPER_URL at a real running Whisper instance (founder/infra action), Tasks 7-9 (internal test calls / real batches / scale), and VOICE_OUTBOUND_CALLS_ENABLED remains false -- flipping it requires Tatiana's written, dated, revocable consent per design.md, which does not exist yet."
+    },
+    {
+      "id": "taty-document-collection-wiring",
+      "status": "pending",
+      "summary": "Created 2026-09-09 (proposal/design/tasks). Founder priority-1 decision: close the gap found by taty-voice-outbound-calls-adjacent investigation this session -- route_lead_document() (taty_lead_router.py) has real gating/storage/tests but ZERO production callers (confirmed via full apps/ grep, only reference outside its own def is its own test file). Root cause found: its hardcoded download_whatsapp_media(media_id) assumes a Graph API media_id that Chatwoot's webhook payload never exposes (ChatwootAttachment only has file_type/data_url). Design: new download_chatwoot_attachment(data_url) path (no WHATSAPP_TOKEN), route_lead_document branches on source instead of hardcoding Graph media_id, new POST /internal/whatsapp/document (INTERNAL_API_KEY fail-closed, same family as Siigo/Gmail/voice-note endpoints), new branch in chatwoot-bridge main.py::process_incoming_message. Not started -- next tick dispatches implementer for Task 1 (TDD). No live-lead exercise until explicitly logged as controlled test."
+    },
+    {
+      "id": "b2c-social-lead-capture",
+      "status": "done",
+      "summary": "COMPLETE (all 6 content tasks + Stage 11), archived 2026-09-10 as openspec/changes/archive/2026-09-10-b2c-social-lead-capture. Public POST /api/v1/crm/social-capture/partial (IP+phone throttled, resolves to Cliente Cero, stamps crm_leads.source via CrmService.whatsapp_intake's new additive source param) backs a landing page at contexia.online/renta-natural (URL confirmed by the founder 2026-09-10) for Meta/TikTok ad traffic. Partial capture fires the moment the WhatsApp number becomes valid; full capture fires on submit -- the backend's phone throttle makes the second call a safe no-op. First-contact WhatsApp message reuses the existing Chatwoot/Taty text-delivery path. Migration 0052 (crm_leads.source, nullable, additive) applied to Supabase. Deployed live: Railway healthy, Vercel READY -- found and fixed a real bug during verification (commit 77f47b9): vercel.json was missing the /renta-natural rewrite, so the page 404'd despite a READY build; no artifact in this session's harness (design.md/tasks.md/reviewer checklist) had prompted for that check, flagged as a gap for DEPLOYMENT_STAGE/checklist-vercel.md. Real end-to-end WhatsApp delivery verified with the founder's own number (573504187902, explicit authorization to temporarily delete its pre-existing lead so the capture would take the is_new:true path) -- the founder confirmed Taty's real first-contact message actually arrived; the lead's stage/lead_type were restored to PROSPECTOS/business_interest immediately after. Delta specs synced: new capability openspec/specs/b2c-social-lead-capture/spec.md, MODIFIED requirement in openspec/specs/crm-b2c-sell-machine/spec.md."
     }
-  ]
+  ],
+  "parallel_by_founder_decision": {
+    "date": "2026-09-09",
+    "note": "Founder explicitly authorized running both taty-document-collection-wiring and b2c-social-lead-capture in parallel this tick, overriding the harness one-change-at-a-time invariant. b2c-social-lead-capture completed and archived 2026-09-10; taty-document-collection-wiring remains active/in-progress."
+  }
 }

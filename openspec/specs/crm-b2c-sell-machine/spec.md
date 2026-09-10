@@ -107,6 +107,10 @@ tenant-scoped to the calling caller's tenant. It SHALL find an existing `crm_lea
 the normalized phone number, or create a new one with `stage: "NUEVOS"` if none exists, and SHALL
 return `{lead_id, is_new, stage}`.
 
+The same underlying find-or-create logic SHALL also be reachable from the public, unauthenticated
+social-capture path (`b2c-social-lead-capture`), which stamps an additional `source` value the
+authenticated WhatsApp-intake path never sets.
+
 #### Scenario: First contact from a new phone number creates a lead
 - **WHEN** `POST /api/v1/crm/leads/whatsapp-intake` is called with a `whatsapp_phone` not present in
   `crm_leads` for the tenant
@@ -123,3 +127,9 @@ return `{lead_id, is_new, stage}`.
 - **WHEN** `POST /api/v1/crm/leads/whatsapp-intake` is called without a valid tenant-scoped bearer
   token
 - **THEN** the request fails with a 4xx error and no `crm_leads` row is read or written
+
+#### Scenario: A lead created via social capture is later found by the authenticated path
+- **WHEN** a lead was first created by the public social-capture endpoint and later messages Taty
+  directly on WhatsApp
+- **THEN** `whatsapp-intake` finds the existing row (matched by phone) rather than creating a
+  duplicate

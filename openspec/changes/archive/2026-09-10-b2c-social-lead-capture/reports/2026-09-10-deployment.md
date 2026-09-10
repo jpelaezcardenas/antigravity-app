@@ -64,13 +64,19 @@ CLAUDE.md §8, so the next similar change catches this before deploy, not after.
   smoke test of the endpoint contract, not a real lead.
 - `contexia.online/renta-natural` — 200, real form content present (post-fix).
 
-## What was NOT verified (founder action needed)
+## Real WhatsApp delivery — verified
 
-An actual WhatsApp message arriving at a real phone number. The smoke test above deliberately
-used a fake test number to avoid sending a real WhatsApp message without authorization — same
-caution `whatsapp-b2b-lead-bridge`'s deployment report applied. To close this loop:
-**submit the live landing page (`contexia.online/renta-natural`) with a real phone number**, or
-tell a future session it's fine to trigger one against a specific test number.
+The founder authorized a real end-to-end test against his own number (`573504187902`). That
+number already had a real `crm_leads` row (`business_interest`, `PROSPECTOS`, created during
+this session's earlier Twilio testing) — the first-contact trigger only fires on the `is_new:
+True` create path (design.md Decision 4), so with founder's explicit, informed authorization
+that row was deleted first. `POST /api/v1/crm/social-capture/partial` was called against the
+live Railway backend with that phone number, returned `is_new: true`, and the founder confirmed
+the real WhatsApp message ("¡Hola! Soy Taty, la asistente de Contexia...") actually arrived.
+Immediately after, the resulting lead's `stage`/`lead_type` were restored to
+`PROSPECTOS`/`business_interest` to preserve the founder's real lead record — only those two
+fields were overwritten; the row itself is a new id (`6e717c21-...`), not the original
+(`2c7f8911-...`).
 
 ## Restrictions respected
 
