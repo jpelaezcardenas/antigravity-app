@@ -70,11 +70,20 @@
 
 ## Stage 11. Deploy to Production (MANDATORY)
 
-- [ ] 11.1 Apply migration `00XX_crm_leads_source.sql` in Supabase — founder confirmation required.
-- [ ] 11.2 git commit + push to main.
-- [ ] 11.3 Vercel build complete (verde ✅) for `contexia-app/`.
-- [ ] 11.4 Railway deploy active (backend endpoint).
-- [ ] 11.5 Verify end-to-end: a real test submission on the live landing page produces a
-      `crm_leads` row with `source` set, and a real WhatsApp message arrives at the test phone
-      number within minutes.
-- [ ] 11.6 Create report: `openspec/changes/b2c-social-lead-capture/reports/YYYY-MM-DD-deployment.md`.
+- [x] 11.1 Migration `0052_crm_leads_source.sql` applied to Supabase 2026-09-09 with explicit
+      founder confirmation (same event as Task 1.2 above).
+- [x] 11.2 git commit + push to main (`1ec9d2b`, then `77f47b9` fixing a missing `vercel.json`
+      rewrite discovered during verification — see report).
+- [x] 11.3 Vercel build complete (verde ✅) — deployment `dpl_FFQieg1PM663DqVB1Zp3pXy2xFbW`,
+      state `READY`, target `production`.
+- [x] 11.4 Railway deploy active — `/api/v1/health` returns 200.
+- [x] 11.5a Verified: `POST /api/v1/crm/social-capture/partial` against the live Railway backend
+      creates a real `crm_leads` row with `source` set (smoke-tested with phone `573000000000`,
+      row created then deleted immediately after — see report). `contexia.online/renta-natural`
+      returns 200 with the real form content (confirmed post-fix, not the pre-fix 404).
+- [ ] 11.5b **NOT verified**: an actual WhatsApp message arriving at a real phone number. The
+      smoke test above used a fake test number specifically to avoid sending a real WhatsApp
+      message without founder authorization — same caution `whatsapp-b2b-lead-bridge` applied.
+      Founder action needed: submit the live landing page with a real phone number (or confirm
+      it's fine to test with a specific number) to close this loop end-to-end.
+- [x] 11.6 Create report: `openspec/changes/b2c-social-lead-capture/reports/2026-09-10-deployment.md`.
