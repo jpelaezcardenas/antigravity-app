@@ -25,7 +25,11 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
 from config import settings
-from channels.whatsapp import download_whatsapp_media, send_whatsapp_message
+from channels.whatsapp import (
+    download_chatwoot_attachment,
+    download_whatsapp_media,
+    send_whatsapp_message,
+)
 from core.constants import UMBRAL_RENTA_COP
 from core.supabase_client import get_service_supabase
 from core.tenant_context import resolve_cliente_cero_tenant_id
@@ -510,7 +514,13 @@ EXTRACTOS_REQUEST_MESSAGE = (
 )
 
 
-async def route_lead_document(lead_id: str, media_id: str, mime_type: str) -> Dict[str, Any]:
+async def route_lead_document(
+    lead_id: str,
+    media_id: Optional[str] = None,
+    mime_type: str = "application/octet-stream",
+    *,
+    data_url: Optional[str] = None,
+) -> Dict[str, Any]:
     """Handles an incoming WhatsApp document/image for a lead (taty-document-collection,
     Change I). Only processes documents once the lead has reached LISTOS_CONTADORA (i.e. a human
     has already approved the payment at the POR_APROBAR HITL gate via CrmService.approve_payment)
@@ -522,6 +532,12 @@ async def route_lead_document(lead_id: str, media_id: str, mime_type: str) -> Di
     Reuses the live 'pending'/'requested'/'collected' status vocabulary (the DB CHECK constraint
     only allows these three, extended from the original 'pending'/'collected' pair during Stage 8
     DB verification).
+
+    Source of the file (taty-document-collection-wiring, Change J): the caller must pass exactly
+    one of `media_id` (Graph API, existing/unchanged path) or `data_url` (Chatwoot's own hosted
+    copy, used by the WhatsApp-via-Chatwoot bridge — media_id was never reachable from Chatwoot's
+    payload, see design.md). When `data_url` is given it takes precedence and
+    `download_chatwoot_attachment` is used instead of `download_whatsapp_media`.
 
     Returns {"processed": bool}.
     """
@@ -541,7 +557,10 @@ async def route_lead_document(lead_id: str, media_id: str, mime_type: str) -> Di
     else:
         return {"processed": False}
 
-    downloaded = await download_whatsapp_media(media_id)
+    if data_url:
+        downloaded = await download_chatwoot_attachment(data_url)
+    else:
+        downloaded = await download_whatsapp_media(media_id)
     if not downloaded:
         return {"processed": False}
 

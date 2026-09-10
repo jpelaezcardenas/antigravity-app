@@ -47,7 +47,9 @@ def mocked_clients():
         main_module.chatwoot_client, "set_conversation_attributes", new=AsyncMock()
     ) as set_conv_attrs, patch.object(
         main_module.hermes_client, "invoke_chat_completion", new=AsyncMock()
-    ) as invoke:
+    ) as invoke, patch.object(
+        main_module.backend_client, "submit_whatsapp_document", new=AsyncMock(return_value=None)
+    ) as submit_doc:
         yield main_module, {
             "intake": intake,
             "taty_reply": taty_reply,
@@ -55,6 +57,7 @@ def mocked_clients():
             "set_attrs": set_attrs,
             "set_conv_attrs": set_conv_attrs,
             "invoke": invoke,
+            "submit_doc": submit_doc,
         }
 
 
@@ -199,6 +202,155 @@ class TestDegradedPaths:
 
         # taty_reply returned None: no classification exists, so auto-tag never runs.
         mocks["set_conv_attrs"].assert_not_called()
+
+
+class TestDocumentCollection:
+    """taty-document-collection-wiring, Task 4: image/file attachments with a resolved lead_id
+    are forwarded to the backend's /internal/whatsapp/document endpoint instead of (or before,
+    depending on the outcome) the normal Taty text reply."""
+
+    @pytest.mark.asyncio
+    async def test_image_attachment_with_lead_id_calls_backend_with_data_url_and_file_type(
+        self, mocked_clients
+    ):
+        main_module, mocks = mocked_clients
+        mocks["submit_doc"].return_value = {"processed": True}
+
+        await main_module.process_incoming_message(
+            conversation_id=42,
+            content="",
+            attachments=[{"file_type": "image", "data_url": "https://chatwoot/x/rut.jpg"}],
+            contact_id=7,
+            phone="+573001234567",
+        )
+        await asyncio.sleep(0)
+
+        mocks["submit_doc"].assert_awaited_once_with(
+            "lead-1", "https://chatwoot/x/rut.jpg", "image"
+        )
+
+    @pytest.mark.asyncio
+    async def test_processed_true_sends_private_ack_and_skips_normal_reply(self, mocked_clients):
+        main_module, mocks = mocked_clients
+        mocks["submit_doc"].return_value = {"processed": True}
+
+        await main_module.process_incoming_message(
+            conversation_id=42,
+            content="",
+            attachments=[{"file_type": "file", "data_url": "https://chatwoot/x/rut.pdf"}],
+            contact_id=7,
+            phone="+573001234567",
+        )
+        await asyncio.sleep(0)
+
+        mocks["taty_reply"].assert_not_called()
+        mocks["send_reply"].assert_awaited_once()
+        args, kwargs = mocks["send_reply"].call_args
+        assert args[0] == 42
+        assert kwargs.get("private") is True or (len(args) > 2 and args[2] is True)
+
+    @pytest.mark.asyncio
+    async def test_processed_false_falls_through_to_normal_taty_reply_not_silence(
+        self, mocked_clients
+    ):
+        main_module, mocks = mocked_clients
+        mocks["submit_doc"].return_value = {"processed": False}
+
+        await main_module.process_incoming_message(
+            conversation_id=42,
+            content="aqui esta mi documento",
+            attachments=[{"file_type": "image", "data_url": "https://chatwoot/x/early.jpg"}],
+            contact_id=7,
+            phone="+573001234567",
+        )
+        await asyncio.sleep(0)
+
+        mocks["submit_doc"].assert_awaited_once()
+        mocks["taty_reply"].assert_awaited_once_with("lead-1", "aqui esta mi documento")
+        mocks["send_reply"].assert_awaited_once_with(42, "Respuesta de Taty", private=True)
+
+    @pytest.mark.asyncio
+    async def test_backend_call_failure_none_falls_through_to_normal_taty_reply(
+        self, mocked_clients
+    ):
+        """submit_whatsapp_document's fail-soft contract returns None on any failure — treated
+        identically to `{"processed": False}`, never as silence."""
+        main_module, mocks = mocked_clients
+        mocks["submit_doc"].return_value = None
+
+        await main_module.process_incoming_message(
+            conversation_id=42,
+            content="aqui esta mi documento",
+            attachments=[{"file_type": "file", "data_url": "https://chatwoot/x/doc.pdf"}],
+            contact_id=7,
+            phone="+573001234567",
+        )
+        await asyncio.sleep(0)
+
+        mocks["taty_reply"].assert_awaited_once_with("lead-1", "aqui esta mi documento")
+        mocks["send_reply"].assert_awaited_once_with(42, "Respuesta de Taty", private=True)
+
+    @pytest.mark.asyncio
+    async def test_no_attachment_never_calls_document_endpoint(self, mocked_clients):
+        main_module, mocks = mocked_clients
+
+        await main_module.process_incoming_message(
+            conversation_id=42,
+            content="hola",
+            attachments=[],
+            contact_id=7,
+            phone="+573001234567",
+        )
+        await asyncio.sleep(0)
+
+        mocks["submit_doc"].assert_not_called()
+        mocks["taty_reply"].assert_awaited_once_with("lead-1", "hola")
+        mocks["send_reply"].assert_awaited_once_with(42, "Respuesta de Taty", private=True)
+
+    @pytest.mark.asyncio
+    async def test_attachment_without_resolved_lead_id_never_calls_document_endpoint(
+        self, mocked_clients
+    ):
+        """No lead_id means the bridge hands over to a human before any attachment handling —
+        existing degraded-path behaviour must stay unaffected."""
+        main_module, mocks = mocked_clients
+        mocks["intake"].return_value = None
+
+        await main_module.process_incoming_message(
+            conversation_id=42,
+            content="",
+            attachments=[{"file_type": "image", "data_url": "https://chatwoot/x/rut.jpg"}],
+            contact_id=7,
+            phone="+573001234567",
+        )
+        await asyncio.sleep(0)
+
+        mocks["submit_doc"].assert_not_called()
+        mocks["taty_reply"].assert_not_called()
+        mocks["send_reply"].assert_awaited_once()
+        args, _ = mocks["send_reply"].call_args
+        assert args[0] == 42
+
+    @pytest.mark.asyncio
+    async def test_attachment_without_data_url_never_calls_document_endpoint(
+        self, mocked_clients
+    ):
+        """A malformed/incomplete Chatwoot attachment (no data_url) must not be forwarded — it
+        falls through to the normal Taty reply exactly like the text-only path."""
+        main_module, mocks = mocked_clients
+
+        await main_module.process_incoming_message(
+            conversation_id=42,
+            content="hola",
+            attachments=[{"file_type": "image"}],
+            contact_id=7,
+            phone="+573001234567",
+        )
+        await asyncio.sleep(0)
+
+        mocks["submit_doc"].assert_not_called()
+        mocks["taty_reply"].assert_awaited_once_with("lead-1", "hola")
+        mocks["send_reply"].assert_awaited_once_with(42, "Respuesta de Taty", private=True)
 
 
 class TestAutoTagChatwoot:

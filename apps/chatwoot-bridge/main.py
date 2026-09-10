@@ -57,6 +57,7 @@ HANDOVER_FALLBACK_REPLY = (
     "Disculpa, tuve un problema para responderte en este momento. "
     "Un miembro del equipo va a revisar tu mensaje pronto."
 )
+DOCUMENT_ACK_REPLY = "Recibimos tu documento, gracias. Seguimos con el proceso 🙂"
 
 # chatwoot-auto-tagging: maps Taty's existing classification output (taty_lead_router.py) onto
 # the 16 Chatwoot custom attributes provisioned in chatwoot-mcp-and-attributes. Only covers what
@@ -229,6 +230,25 @@ async def process_incoming_message(
         )
         await chatwoot_client.send_reply(conversation_id, HANDOVER_FALLBACK_REPLY)
         return
+
+    # taty-document-collection-wiring: an image/file attachment with a resolved lead is a
+    # candidate RUT/extractos document (sequential collection owned by route_lead_document on the
+    # backend, gated on LISTOS_CONTADORA). `processed: True` means the backend already stored it,
+    # so we ack privately here and skip the normal Taty text reply below. `processed: False` (or a
+    # failed call, treated the same — see backend_client.submit_whatsapp_document) is deliberately
+    # NOT silence: it falls through to the normal Taty reply so the lead still gets a helpful
+    # answer instead of nothing when the document arrives at the wrong stage, both documents are
+    # already collected, or the download itself failed.
+    doc_attachments = [
+        a for a in attachments if a.get("file_type") in ("image", "file") and a.get("data_url")
+    ]
+    if doc_attachments:
+        doc_result = await backend_client.submit_whatsapp_document(
+            lead_id, doc_attachments[0]["data_url"], doc_attachments[0]["file_type"]
+        )
+        if doc_result and doc_result.get("processed"):
+            await chatwoot_client.send_reply(conversation_id, DOCUMENT_ACK_REPLY, private=True)
+            return
 
     taty_result = await backend_client.taty_reply(lead_id, content)
     if taty_result is None:

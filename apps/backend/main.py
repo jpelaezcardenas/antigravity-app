@@ -262,6 +262,7 @@ from presentation.ingest_file_endpoints import router as ingest_file_router
 from presentation.voice_endpoints import router as voice_router
 from presentation.cadence_endpoints import router as cadence_router
 from presentation.voice_outbound_endpoints import router as voice_outbound_router
+from presentation.whatsapp_document_endpoints import router as whatsapp_document_router
 
 _internal_router = APIRouter()
 _internal_router.include_router(siigo_sync_router)
@@ -269,10 +270,12 @@ _internal_router.include_router(ingest_file_router)
 _internal_router.include_router(voice_router)
 _internal_router.include_router(cadence_router)
 _internal_router.include_router(voice_outbound_router, prefix="/voice")
+_internal_router.include_router(whatsapp_document_router)
 app.include_router(_internal_router, prefix="/internal")
 logger.info(
     "Internal routers registered: /internal/siigo-sync/run, /internal/ingest/file, "
-    "/internal/whatsapp/voice-note, /internal/cadence/send-touch, /internal/voice/outbound-call"
+    "/internal/whatsapp/voice-note, /internal/cadence/send-touch, /internal/voice/outbound-call, "
+    "/internal/whatsapp/document"
 )
 
 

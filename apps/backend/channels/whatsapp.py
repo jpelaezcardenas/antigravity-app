@@ -277,3 +277,28 @@ async def download_whatsapp_media(media_id: str) -> Optional[Dict[str, Any]]:
     except Exception as e:
         logger.error("Failed to download WhatsApp media: %s", str(e))
         return None
+
+
+_DEFAULT_MIME_TYPE = "application/octet-stream"
+
+
+async def download_chatwoot_attachment(data_url: str) -> Optional[Dict[str, Any]]:
+    """Downloads an attachment from Chatwoot's own hosted `data_url` (taty-document-
+    collection-wiring, Task 1): a plain, unauthenticated HTTP GET — unlike
+    download_whatsapp_media above, there is no WHATSAPP_TOKEN or Graph API metadata step
+    involved, because Chatwoot's data_url is already a direct, publicly-fetchable copy of
+    the attachment. Mirrors download_whatsapp_media's never-throw, return-None-on-failure
+    contract. mime_type is read from the response's Content-Type header, falling back to
+    a generic default when the header is missing or empty/malformed."""
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(data_url)
+            if resp.status_code != 200:
+                logger.error("Chatwoot attachment download failed: %s", resp.status_code)
+                return None
+
+            mime_type = (resp.headers.get("Content-Type") or "").strip() or _DEFAULT_MIME_TYPE
+            return {"content": resp.content, "mime_type": mime_type}
+    except Exception as e:
+        logger.error("Failed to download Chatwoot attachment: %s", str(e))
+        return None

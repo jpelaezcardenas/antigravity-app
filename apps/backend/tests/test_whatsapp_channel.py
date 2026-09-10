@@ -10,9 +10,11 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
 
+import httpx
 import pytest
 
 from channels.whatsapp import (
+    download_chatwoot_attachment,
     download_whatsapp_media,
     normalize_whatsapp_webhook,
     sanitize_for_whatsapp,
@@ -288,6 +290,96 @@ class TestDownloadWhatsappMedia:
             result = await download_whatsapp_media("MEDIA_ID_123")
 
         assert result is None
+
+
+class TestDownloadChatwootAttachment:
+    """taty-document-collection-wiring, Task 1: plain HTTP GET against Chatwoot's own
+    hosted data_url — no WHATSAPP_TOKEN involved, unlike download_whatsapp_media's
+    Graph API flow. Mirrors that function's never-throw, return-None-on-failure pattern."""
+
+    @pytest.mark.asyncio
+    async def test_success_returns_content_and_mime_type(self):
+        response = AsyncMock()
+        response.status_code = 200
+        response.content = b"fake-image-bytes"
+        response.headers = {"Content-Type": "image/jpeg"}
+
+        with patch("channels.whatsapp.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.get.return_value = response
+            mock_client_cls.return_value.__aenter__.return_value = mock_client
+
+            result = await download_chatwoot_attachment(
+                "https://chatwoot.example/attachment/123"
+            )
+
+        assert result == {"content": b"fake-image-bytes", "mime_type": "image/jpeg"}
+        mock_client.get.assert_called_once_with("https://chatwoot.example/attachment/123")
+
+    @pytest.mark.asyncio
+    async def test_http_error_status_returns_none(self):
+        response = AsyncMock()
+        response.status_code = 404
+
+        with patch("channels.whatsapp.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.get.return_value = response
+            mock_client_cls.return_value.__aenter__.return_value = mock_client
+
+            result = await download_chatwoot_attachment(
+                "https://chatwoot.example/attachment/missing"
+            )
+
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_network_exception_returns_none(self):
+        with patch("channels.whatsapp.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.get.side_effect = httpx.ConnectTimeout("timed out")
+            mock_client_cls.return_value.__aenter__.return_value = mock_client
+
+            result = await download_chatwoot_attachment(
+                "https://chatwoot.example/attachment/timeout"
+            )
+
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_missing_content_type_header_falls_back_to_default(self):
+        response = AsyncMock()
+        response.status_code = 200
+        response.content = b"fake-bytes"
+        response.headers = {}
+
+        with patch("channels.whatsapp.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.get.return_value = response
+            mock_client_cls.return_value.__aenter__.return_value = mock_client
+
+            result = await download_chatwoot_attachment(
+                "https://chatwoot.example/attachment/no-content-type"
+            )
+
+        assert result == {"content": b"fake-bytes", "mime_type": "application/octet-stream"}
+
+    @pytest.mark.asyncio
+    async def test_malformed_content_type_header_falls_back_to_default(self):
+        response = AsyncMock()
+        response.status_code = 200
+        response.content = b"fake-bytes"
+        response.headers = {"Content-Type": ""}
+
+        with patch("channels.whatsapp.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.get.return_value = response
+            mock_client_cls.return_value.__aenter__.return_value = mock_client
+
+            result = await download_chatwoot_attachment(
+                "https://chatwoot.example/attachment/empty-content-type"
+            )
+
+        assert result == {"content": b"fake-bytes", "mime_type": "application/octet-stream"}
 
 
 class TestSanitizeForWhatsapp:

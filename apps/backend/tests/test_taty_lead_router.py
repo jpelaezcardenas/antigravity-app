@@ -681,6 +681,60 @@ class TestRouteLeadDocument:
         mock_service.update_tax_profile.assert_not_called()
         assert result["processed"] is False
 
+    @pytest.mark.asyncio
+    async def test_data_url_source_calls_download_chatwoot_attachment_not_graph_media(self):
+        """taty-document-collection-wiring Task 2: a data_url-sourced call must use
+        download_chatwoot_attachment, and must NOT call download_whatsapp_media (the
+        Graph media_id path stays untouched)."""
+        mock_service = self._mock_crm_service(
+            tax_profile={"rut_status": "requested", "extractos_status": "pending"}
+        )
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="LISTOS_CONTADORA"
+        ), patch(
+            "services.taty_lead_router.download_chatwoot_attachment",
+            new=AsyncMock(return_value={"content": b"fake-pdf", "mime_type": "application/pdf"}),
+        ) as mock_download_chatwoot, patch(
+            "services.taty_lead_router.download_whatsapp_media",
+            new=AsyncMock(return_value=None),
+        ) as mock_download_graph, patch(
+            "services.taty_lead_router.upload_tax_document", return_value="lead-1/rut.pdf"
+        ) as mock_upload, patch(
+            "services.taty_lead_router.get_lead_phone", return_value="573001234567"
+        ), patch(
+            "services.taty_lead_router.send_whatsapp_message", new=AsyncMock(return_value=True)
+        ):
+            result = await route_lead_document(
+                "lead-1", mime_type="application/pdf", data_url="https://chatwoot.example/file.pdf"
+            )
+
+        mock_download_chatwoot.assert_called_once_with("https://chatwoot.example/file.pdf")
+        mock_download_graph.assert_not_called()
+        mock_upload.assert_called_once_with(
+            lead_id="lead-1", document_type="rut", file_bytes=b"fake-pdf", mime_type="application/pdf"
+        )
+        assert result["processed"] is True
+
+    @pytest.mark.asyncio
+    async def test_data_url_download_failure_does_not_update_any_status(self):
+        mock_service = self._mock_crm_service()
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="LISTOS_CONTADORA"
+        ), patch(
+            "services.taty_lead_router.download_chatwoot_attachment",
+            new=AsyncMock(return_value=None),
+        ):
+            result = await route_lead_document(
+                "lead-1", mime_type="application/pdf", data_url="https://chatwoot.example/file.pdf"
+            )
+
+        mock_service.update_tax_profile.assert_not_called()
+        assert result["processed"] is False
+
 
 class TestCreateEmptyTaxProfile:
     def test_includes_tenant_id_from_the_lead(self):

@@ -179,6 +179,53 @@ async def send_voice_note(lead_id: str, text: str, audio: bytes) -> bool:
         return False
 
 
+async def submit_whatsapp_document(
+    lead_id: str, data_url: str, mime_type: str
+) -> Optional[dict[str, Any]]:
+    """Forward a Chatwoot-hosted attachment (image/file) to the backend's document-collection
+    endpoint (taty-document-collection-wiring, Task 4).
+
+    Same `/internal/*` boundary and INTERNAL_API_KEY auth as send_voice_note above — the bridge
+    never talks to services/taty_lead_router.py directly, it forwards the Chatwoot `data_url` and
+    lets route_lead_document own the download, the LISTOS_CONTADORA gate and the RUT/extractos
+    sequencing (presentation/whatsapp_document_endpoints.py).
+
+    `mime_type` here is Chatwoot's coarse `file_type` ("image"/"file"), not a real MIME string —
+    the backend re-derives the actual Content-Type from the download itself
+    (download_chatwoot_attachment), so this is only a fallback default, never load-bearing.
+
+    Fail-soft: returns None on any failure (missing key, non-200, network error) and never raises,
+    same contract as send_voice_note. The caller treats None exactly like `{"processed": False}` —
+    a document that could not be confirmed collected falls through to the normal Taty reply rather
+    than leaving the lead with silence.
+    """
+    if not settings.INTERNAL_API_KEY:
+        logger.warning(
+            "submit_whatsapp_document: INTERNAL_API_KEY is not set; document not sent"
+        )
+        return None
+
+    url = f"{_internal_base_url()}/internal/whatsapp/document"
+    payload = {"lead_id": lead_id, "data_url": data_url, "mime_type": mime_type}
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:
+            response = await client.post(
+                url, headers={"X-Internal-Api-Key": settings.INTERNAL_API_KEY}, json=payload
+            )
+        if response.status_code != 200:
+            logger.warning(
+                "submit_whatsapp_document returned %s: %s",
+                response.status_code,
+                response.text[:200],
+            )
+            return None
+        return response.json()
+    except Exception:
+        logger.exception("submit_whatsapp_document call failed")
+        return None
+
+
 async def pull_pending_events(limit: int = 50) -> list[dict[str, Any]]:
     """Pull and claim unprocessed WhatsApp inbound events (whatsapp-durable-inbox).
 
