@@ -15,12 +15,16 @@
     "taty-document-collection-wiring"
   ],
   "pending_implementation": [
-    "taty-wompi-link-hitl-gate",
     "metrics-dashboard-phase9",
     "voicebox-local-voice-adoption",
     "taty-voice-outbound-calls"
   ],
   "features": [
+    {
+      "id": "taty-wompi-link-hitl-gate",
+      "status": "done",
+      "summary": "Already implemented and deployed live 2026-08-30 (openspec/changes/archive/2026-08-30-taty-wompi-link-hitl-gate, commit 24e41e0) -- this session found it was incorrectly still listed under pending_implementation, blocking nothing further on the code side. route_lead_message's sales_interest branch no longer calls generate_wompi_link directly; it enqueues an approval_queue draft (draft_type='wompi_payment_link', payload={lead_id}) and replies with no link/amount. ApprovalQueueService.approve_draft gained a wompi_payment_link branch: on human approval it generates the real Wompi link (unmodified generate_wompi_link) and delivers it via send_whatsapp_message; a delivery failure never rolls back the approval. The Wompi webhook (CrmService.handle_wompi_webhook, signature-verified, public endpoint) independently keeps crm_wompi_transactions.status authoritative from real Wompi events. 50 tests green at the time (2026-08-30). Two items remain genuinely open, both pre-existing and NOT re-investigated as gaps by this session: (1) tasks.md 3.2 (manual smoke test against a real production payment: send->approve->link arrives->pay->webhook updates status) was never checked off; (2) Section 5 founder action -- deciding/executing the Wompi merchant-of-record fix for Entidad A (today's production WOMPI_PUBLIC_KEY is registered to Contexia/Entidad B) -- is still pending and is why DEFERRED.md/the archived proposal call this gate 'a safety brake, not a substitute' for that decision. No OpenSpec artifacts were created this session because no code gap exists; feature_list.json was corrected instead."
+    },
     {
       "id": "taty-pricing-skill",
       "status": "done",
