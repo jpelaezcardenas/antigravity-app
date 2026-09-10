@@ -114,6 +114,22 @@
             ]
         },
         {
+            "source": "/renta-natural",
+            "headers": [
+                { "key": "Cache-Control", "value": "private, no-store, max-age=0, s-maxage=0, must-revalidate" },
+                { "key": "CDN-Cache-Control", "value": "no-store" },
+                { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+            ]
+        },
+        {
+            "source": "/renta-natural.html",
+            "headers": [
+                { "key": "Cache-Control", "value": "private, no-store, max-age=0, s-maxage=0, must-revalidate" },
+                { "key": "CDN-Cache-Control", "value": "no-store" },
+                { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+            ]
+        },
+        {
             "source": "/icons/:path*",
             "headers": [
                 { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" },
@@ -218,6 +234,10 @@
         {
             "source": "/crear-empresa-wizard",
             "destination": "/crear-empresa-wizard.html"
+        },
+        {
+            "source": "/renta-natural",
+            "destination": "/renta-natural.html"
         },
         {
             "source": "/app/assets/:path*",
