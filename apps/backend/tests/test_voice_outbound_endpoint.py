@@ -11,7 +11,11 @@ import pytest
 from fastapi import HTTPException
 
 from config import settings
-from presentation.voice_outbound_endpoints import OutboundCallRequest, trigger_outbound_call_endpoint
+from presentation.voice_outbound_endpoints import (
+    OutboundCallRequest,
+    opening_twiml_endpoint,
+    trigger_outbound_call_endpoint,
+)
 
 _KEY = "test-internal-key"
 
@@ -53,6 +57,20 @@ def _lead(**overrides):
     }
     base.update(overrides)
     return base
+
+
+# --- Public TwiML endpoint (no INTERNAL_API_KEY — Twilio must reach it unsigned) -----------------
+
+
+@pytest.mark.asyncio
+async def test_opening_twiml_endpoint_is_public_and_returns_spanish_disclosure():
+    """No auth header is passed here at all — Twilio's servers must be able to GET this without
+    INTERNAL_API_KEY, unlike every other endpoint in this router."""
+    response = await opening_twiml_endpoint()
+    body = response.body.decode("utf-8")
+    assert response.media_type == "application/xml"
+    assert "soy un asistente de inteligencia artificial" in body
+    assert "voicebox" not in body.lower()
 
 
 # --- Auth: fails closed -------------------------------------------------------------------------
