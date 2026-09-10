@@ -129,14 +129,26 @@
       matches the fail-closed pattern of every other `/internal/*` endpoint).
 - [x] 11.1e Report: `openspec/changes/taty-voice-outbound-calls/reports/2026-09-10-cadence-deployment.md`.
 
-**Tasks 2-9 (Twilio/voice) — untouched, still gated (see design.md's Migration Plan):**
+**Tasks 2-4 (Twilio infra, generic voice) — deployed 2026-09-10, endpoint live and verified;
+Tasks 7-9 (real calls) remain untouched and gated:**
 
-- [ ] 11.2 Railway deploy active (backend endpoint, once Tasks 2-4 are ready).
-- [ ] 11.3 Verify: a real or simulated `/internal/voice/outbound-call` request with a generic
-      voice completes end-to-end against a test lead, with the correct `crm_leads` write.
+- [x] 11.2 git commit (`e972a52`) + push to main. Railway deploy `32f77186` SUCCESS.
+- [x] 11.2b `GET /api/v1/health` → 200. `POST /internal/voice/outbound-call` → 401 both with no
+      key and with a wrong key (`INTERNAL_API_KEY` already configured on Railway, so the 503
+      "unset key" case doesn't apply here — 401 is the correct authenticated-and-rejected result).
+- [x] 11.2c Twilio credentials configured on Railway (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
+      `TWILIO_FROM_NUMBER`) — **trial account, US trial number (`+17372508034`), not a
+      provisioned Colombian number.** Sufficient to verify the technical flow end-to-end; not
+      sufficient for real production calls to Colombian leads (Task 2.3 remains open for that).
+- [ ] 11.3 Verify: a real outbound call via the trial number completes end-to-end against a real
+      test lead, with the correct `crm_leads` write — not yet done; requires actually placing a
+      call, not just checking the endpoint's auth response.
 - [ ] 11.4 **Gate, not yet crossed in this change**: `VOICE_OUTBOUND_CALLS_ENABLED` stays false in
       production until Tatiana's written, dated, revocable consent — scoped explicitly to
       outbound sales calls — exists outside this repo. Do not flip this flag based on a chat
-      approval alone.
-- [ ] 11.5 Create report for the voice piece once Tasks 2-9 are implemented (separate from the
-      cadence report above).
+      approval alone. **Explicitly reaffirmed 2026-09-10**: the founder asked to treat this as
+      unblocked via a relayed verbal approval, and separately via a fabricated document combining
+      Tatiana's cédula scan with a typed "signature" — both declined. Her actual, own written
+      consent remains the only thing that crosses this gate.
+- [ ] 11.5 Create report for the voice piece once Task 11.3's real call test is done (separate
+      from the cadence report above).
