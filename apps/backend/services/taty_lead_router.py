@@ -18,7 +18,9 @@ Wompi integration (Change C) — never a fabricated payment confirmation.
 
 from __future__ import annotations
 
+import logging
 import re
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
@@ -32,6 +34,8 @@ from services.crm_service import get_crm_service
 from services.document_storage_service import upload_tax_document
 from services.taty_service import get_taty_service
 from services.wompi_signature import compute_integrity_signature
+
+logger = logging.getLogger(__name__)
 
 # Sole remaining static reply: the last-resort fallback when TatyAgentService itself is
 # unreachable (tenant unresolved, or ask() raises/errors) — never a substitute for a real answer.
@@ -158,6 +162,25 @@ def get_lead_phone(lead_id: str) -> Optional[str]:
         client.table("crm_leads").select("whatsapp_phone").eq("id", lead_id).single().execute()
     )
     return (result.data or {}).get("whatsapp_phone")
+
+
+def _record_inbound_and_reset_cadence(lead_id: str) -> None:
+    """Stamps `last_inbound_at` and clears `cadence_day` (taty-followup-cadence) on every genuine
+    inbound message this router processes. Isolated for test patching, matching this file's
+    existing local-helper convention (_get_lead_stage, get_lead_phone, etc.).
+
+    This is the ONLY writer of `last_inbound_at` — deliberately not reusing `updated_at`, which is
+    bumped by unrelated writes (advance_lead, update_tax_profile, ...) and is therefore not a
+    reliable "the lead just replied" signal. Clearing `cadence_day` back to NULL is what makes "a
+    lead who responds exits the automated cadence" (spec.md) true: the cadence endpoint only ever
+    sends a touch when `cadence_day` is None or below the requested day."""
+    client = get_service_supabase()
+    client.table("crm_leads").update(
+        {
+            "last_inbound_at": datetime.now(timezone.utc).isoformat(),
+            "cadence_day": None,
+        }
+    ).eq("id", lead_id).execute()
 
 
 def _enqueue_wompi_link_approval(lead_id: str) -> None:
@@ -366,6 +389,16 @@ def route_lead_message(
     bridge can tag Chatwoot contacts/conversations without a second backend call — this
     function already computes both for its own CRM side effects.
     """
+    try:
+        _record_inbound_and_reset_cadence(lead_id)
+    except Exception:
+        # Best-effort, matching this file's existing degrade-gracefully convention (see the
+        # unknown-intent branch below): a failure here must never block the actual reply to the
+        # lead. Worst case, the next cadence poller tick sees a stale last_inbound_at/cadence_day
+        # and the lead gets one extra scripted touch it should have been exempted from — never
+        # the reverse (a lead silently losing the ability to be nurtured).
+        logger.warning("taty_lead_router: failed to record inbound/reset cadence for %s", lead_id)
+
     intent, confidence = classify_lead_intent(message)
     service = get_crm_service()
     current_stage = _get_lead_stage(lead_id)

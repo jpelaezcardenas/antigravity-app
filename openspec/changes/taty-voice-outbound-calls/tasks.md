@@ -7,20 +7,20 @@
 
 ## 1. `taty-followup-cadence` — ships first, no telephony, no consent dependency
 
-- [ ] 1.1 Write failing tests: unresponsive `NUEVOS` lead gets the next scripted touch at the
+- [x] 1.1 Write failing tests: unresponsive `NUEVOS` lead gets the next scripted touch at the
       right day threshold; a lead who replies exits the automated sequence; day-14 completion
       sends no further automated touch.
-- [ ] 1.2 Define the day-indexed message table (D1/D2/D4/D7/D14) adapted from Dapta's Lead
+- [x] 1.2 Define the day-indexed message table (D1/D2/D4/D7/D14) adapted from Dapta's Lead
       Nurture playbook to Renta Natural — text only, no audio requiring `VOICE_OUTBOUND_CALLS_ENABLED`.
       D7's audio-summary idea from the playbook only if `VOICE_ENABLED` (existing, already
       unblocked) is on — otherwise falls back to text.
-- [ ] 1.3 Implement the cadence check as a new script (`apps/hermes-cadence-poller/` or similar,
+- [x] 1.3 Implement the cadence check as a new script (`apps/hermes-cadence-poller/` or similar,
       mirroring the existing poller pattern) that reads `crm_leads`, computes cadence position,
       and sends via the existing Chatwoot delivery path — no new send mechanism.
-- [ ] 1.4 Register Windows Scheduled Task, same pattern already fixed for the Siigo poller
+- [x] 1.4 Register Windows Scheduled Task, same pattern already fixed for the Siigo poller
       (PowerShell 5.1-compatible, `cmd /c cd /d <dir> && pythonw.exe main.py` if `.env` is
       loaded relative to cwd).
-- [ ] 1.5 Tests green. Deploy this piece independently — no reason to wait on the voice pieces
+- [x] 1.5 Tests green. Deploy this piece independently — no reason to wait on the voice pieces
       below.
 
 ## 2. Backend: outbound-call trigger endpoint (built dark, `VOICE_OUTBOUND_CALLS_ENABLED=false`)
