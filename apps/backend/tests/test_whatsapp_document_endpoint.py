@@ -99,8 +99,11 @@ async def test_delegates_to_route_lead_document_with_data_url(monkeypatch):
 
     calls = {}
 
-    async def _fake_route(lead_id, media_id=None, mime_type="application/octet-stream", *, data_url=None):
-        calls["args"] = (lead_id, media_id, mime_type, data_url)
+    async def _fake_route(
+        lead_id, media_id=None, mime_type="application/octet-stream", *, data_url=None,
+        content_bytes=None,
+    ):
+        calls["args"] = (lead_id, media_id, mime_type, data_url, content_bytes)
         return {"processed": True}
 
     monkeypatch.setattr(endpoints, "route_lead_document", _fake_route)
@@ -108,7 +111,43 @@ async def test_delegates_to_route_lead_document_with_data_url(monkeypatch):
     result = await _call(_request(lead_id="lead-42", data_url="https://x/y.pdf", mime_type="image/jpeg"))
 
     assert result.processed is True
-    assert calls["args"] == ("lead-42", None, "image/jpeg", "https://x/y.pdf")
+    assert calls["args"] == ("lead-42", None, "image/jpeg", "https://x/y.pdf", None)
+
+
+@pytest.mark.asyncio
+async def test_delegates_to_route_lead_document_with_content_base64(monkeypatch):
+    """Follow-up fix (2026-09-11): Chatwoot's data_url is typically localhost-only and never
+    reachable from Railway. When the bridge sends content_base64 (bytes it already downloaded
+    itself), the endpoint must decode it and forward content_bytes, not data_url."""
+    monkeypatch.setenv("INTERNAL_API_KEY", _KEY)
+
+    import base64
+
+    import presentation.whatsapp_document_endpoints as endpoints
+
+    calls = {}
+
+    async def _fake_route(
+        lead_id, media_id=None, mime_type="application/octet-stream", *, data_url=None,
+        content_bytes=None,
+    ):
+        calls["args"] = (lead_id, media_id, mime_type, data_url, content_bytes)
+        return {"processed": True}
+
+    monkeypatch.setattr(endpoints, "route_lead_document", _fake_route)
+
+    encoded = base64.b64encode(b"fake-pdf-bytes").decode("ascii")
+    result = await _call(
+        _request(
+            lead_id="lead-42",
+            data_url=None,
+            content_base64=encoded,
+            mime_type="application/pdf",
+        )
+    )
+
+    assert result.processed is True
+    assert calls["args"] == ("lead-42", None, "application/pdf", None, b"fake-pdf-bytes")
 
 
 @pytest.mark.asyncio

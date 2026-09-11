@@ -44,6 +44,17 @@ closed with 503 if unset — Decisions #22/#26). Body: `{lead_id: str, data_url:
 file_type: str}`. Calls `route_lead_document(lead_id, data_url=data_url, mime_type=...)`
 and returns its `{"processed": bool}` verbatim.
 
+**SUPERSEDED 2026-09-11 — the risk flagged above (line 36) was real.** Verified against a real
+Chatwoot attachment (WhatsApp inbox, "Maria E2E Test" conversation): `data_url` is
+`http://localhost:3020/...` — never reachable from Railway. `download_chatwoot_attachment()`
+would have failed on every real document, silently degrading to `processed: False` in
+production. Fixed by moving the download to the bridge (which IS on Chatwoot's network): the
+bridge downloads via `httpx.get(data_url)` itself and posts the bytes as `content_base64`;
+`route_lead_document()` gained a `content_bytes` parameter that takes precedence over `data_url`/
+`media_id`. The endpoint's body is now `{lead_id, mime_type, content_base64}` (preferred) or
+`{lead_id, mime_type, data_url}` (kept for a hypothetical future public-URL deployment, unused by
+any current caller). See `tasks.md` task 6a for the full fix and its tests.
+
 ## Explicitly out of scope
 
 - No change to the Graph API `media_id` path or `WHATSAPP_TOKEN` usage.

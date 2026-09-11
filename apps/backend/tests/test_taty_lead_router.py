@@ -718,6 +718,49 @@ class TestRouteLeadDocument:
         assert result["processed"] is True
 
     @pytest.mark.asyncio
+    async def test_content_bytes_source_skips_both_downloads(self):
+        """taty-document-collection-wiring, follow-up fix (2026-09-11): Chatwoot's data_url is
+        typically a localhost URL (its own local instance), never reachable from the Railway
+        backend that would otherwise try to download it. When the caller already has the bytes
+        (the local bridge, which CAN reach Chatwoot's localhost, downloads them itself), neither
+        download_chatwoot_attachment nor download_whatsapp_media should be called at all."""
+        mock_service = self._mock_crm_service(
+            tax_profile={"rut_status": "requested", "extractos_status": "pending"}
+        )
+        with patch(
+            "services.taty_lead_router.get_crm_service", return_value=mock_service
+        ), patch(
+            "services.taty_lead_router._get_lead_stage", return_value="LISTOS_CONTADORA"
+        ), patch(
+            "services.taty_lead_router.download_chatwoot_attachment",
+            new=AsyncMock(return_value=None),
+        ) as mock_download_chatwoot, patch(
+            "services.taty_lead_router.download_whatsapp_media",
+            new=AsyncMock(return_value=None),
+        ) as mock_download_graph, patch(
+            "services.taty_lead_router.upload_tax_document", return_value="lead-1/rut.pdf"
+        ) as mock_upload, patch(
+            "services.taty_lead_router.get_lead_phone", return_value="573001234567"
+        ), patch(
+            "services.taty_lead_router.send_whatsapp_message", new=AsyncMock(return_value=True)
+        ):
+            result = await route_lead_document(
+                "lead-1",
+                mime_type="application/pdf",
+                content_bytes=b"fake-pdf-bytes",
+            )
+
+        mock_download_chatwoot.assert_not_called()
+        mock_download_graph.assert_not_called()
+        mock_upload.assert_called_once_with(
+            lead_id="lead-1",
+            document_type="rut",
+            file_bytes=b"fake-pdf-bytes",
+            mime_type="application/pdf",
+        )
+        assert result["processed"] is True
+
+    @pytest.mark.asyncio
     async def test_data_url_download_failure_does_not_update_any_status(self):
         mock_service = self._mock_crm_service()
         with patch(

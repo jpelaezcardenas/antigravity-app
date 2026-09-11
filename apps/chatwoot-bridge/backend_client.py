@@ -182,22 +182,29 @@ async def send_voice_note(lead_id: str, text: str, audio: bytes) -> bool:
 async def submit_whatsapp_document(
     lead_id: str, data_url: str, mime_type: str
 ) -> Optional[dict[str, Any]]:
-    """Forward a Chatwoot-hosted attachment (image/file) to the backend's document-collection
-    endpoint (taty-document-collection-wiring, Task 4).
+    """Download a Chatwoot-hosted attachment (image/file) and forward its bytes to the backend's
+    document-collection endpoint (taty-document-collection-wiring, Task 4).
+
+    Fixed 2026-09-11: this used to forward `data_url` as-is for the backend to re-fetch — but
+    Chatwoot's `data_url` is typically `http://localhost:<port>/...`, Chatwoot's own local
+    address, never reachable from the backend running on Railway (verified live against a real
+    attachment: the download always failed in production). This bridge runs on the same network
+    as Chatwoot, so it downloads the attachment itself and posts the raw bytes as base64 —
+    `content_base64`, not `data_url` — for `route_lead_document` to store directly, skipping any
+    re-download on the backend side.
 
     Same `/internal/*` boundary and INTERNAL_API_KEY auth as send_voice_note above — the bridge
-    never talks to services/taty_lead_router.py directly, it forwards the Chatwoot `data_url` and
-    lets route_lead_document own the download, the LISTOS_CONTADORA gate and the RUT/extractos
-    sequencing (presentation/whatsapp_document_endpoints.py).
+    never talks to services/taty_lead_router.py directly, it forwards to
+    presentation/whatsapp_document_endpoints.py, which owns the LISTOS_CONTADORA gate and the
+    RUT/extractos sequencing.
 
     `mime_type` here is Chatwoot's coarse `file_type` ("image"/"file"), not a real MIME string —
-    the backend re-derives the actual Content-Type from the download itself
-    (download_chatwoot_attachment), so this is only a fallback default, never load-bearing.
+    a fallback default only, never load-bearing.
 
-    Fail-soft: returns None on any failure (missing key, non-200, network error) and never raises,
-    same contract as send_voice_note. The caller treats None exactly like `{"processed": False}` —
-    a document that could not be confirmed collected falls through to the normal Taty reply rather
-    than leaving the lead with silence.
+    Fail-soft: returns None on any failure (missing key, download failure, non-200, network
+    error) and never raises, same contract as send_voice_note. The caller treats None exactly
+    like `{"processed": False}` — a document that could not be confirmed collected falls through
+    to the normal Taty reply rather than leaving the lead with silence.
     """
     if not settings.INTERNAL_API_KEY:
         logger.warning(
@@ -205,8 +212,23 @@ async def submit_whatsapp_document(
         )
         return None
 
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:
+            download = await client.get(data_url)
+    except Exception:
+        logger.exception("submit_whatsapp_document: failed to download attachment from Chatwoot")
+        return None
+    if download.status_code != 200:
+        logger.warning(
+            "submit_whatsapp_document: Chatwoot attachment download returned %s",
+            download.status_code,
+        )
+        return None
+
+    content_base64 = base64.b64encode(download.content).decode("ascii")
+
     url = f"{_internal_base_url()}/internal/whatsapp/document"
-    payload = {"lead_id": lead_id, "data_url": data_url, "mime_type": mime_type}
+    payload = {"lead_id": lead_id, "content_base64": content_base64, "mime_type": mime_type}
 
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:

@@ -520,6 +520,7 @@ async def route_lead_document(
     mime_type: str = "application/octet-stream",
     *,
     data_url: Optional[str] = None,
+    content_bytes: Optional[bytes] = None,
 ) -> Dict[str, Any]:
     """Handles an incoming WhatsApp document/image for a lead (taty-document-collection,
     Change I). Only processes documents once the lead has reached LISTOS_CONTADORA (i.e. a human
@@ -533,11 +534,19 @@ async def route_lead_document(
     only allows these three, extended from the original 'pending'/'collected' pair during Stage 8
     DB verification).
 
-    Source of the file (taty-document-collection-wiring, Change J): the caller must pass exactly
-    one of `media_id` (Graph API, existing/unchanged path) or `data_url` (Chatwoot's own hosted
-    copy, used by the WhatsApp-via-Chatwoot bridge — media_id was never reachable from Chatwoot's
-    payload, see design.md). When `data_url` is given it takes precedence and
-    `download_chatwoot_attachment` is used instead of `download_whatsapp_media`.
+    Source of the file: the caller must pass exactly one of `media_id` (Graph API, existing/
+    unchanged path), `data_url` (Chatwoot's own hosted copy — **only reachable when this process
+    runs on the same network as Chatwoot**; see the `content_bytes` note below), or
+    `content_bytes` (the bytes already downloaded by the caller).
+
+    `content_bytes` exists because Chatwoot's `data_url` is typically `http://localhost:<port>/...`
+    — Chatwoot's own local instance address, never reachable from the Railway backend that
+    previously tried to `httpx.get()` it directly (found live 2026-09-11 against a real Chatwoot
+    attachment: the download would always fail in production). The local Chatwoot bridge, which
+    IS on the same network as Chatwoot, downloads the attachment itself and forwards the raw
+    bytes here instead of a URL for this process to re-fetch. `data_url` is kept for a future
+    Chatwoot deployment where the URL genuinely is public (or a same-host bridge/backend), and
+    `content_bytes` takes precedence over it when both happen to be given.
 
     Returns {"processed": bool}.
     """
@@ -557,7 +566,9 @@ async def route_lead_document(
     else:
         return {"processed": False}
 
-    if data_url:
+    if content_bytes is not None:
+        downloaded = {"content": content_bytes, "mime_type": mime_type}
+    elif data_url:
         downloaded = await download_chatwoot_attachment(data_url)
     else:
         downloaded = await download_whatsapp_media(media_id)
