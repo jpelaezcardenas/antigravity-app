@@ -341,3 +341,69 @@ where content actually lands (`people/`, `companies/`, `deals/`, `meetings/`, `c
 **Legacy canon docs are indexed as-is** — do not retrofit GLOSARIO-MAESTRO / `AGENTES.md` /
 ground-truth into the two-section page model. Only `contexia-brain/` pages use it.
 
+## 11. GTM commercial rules (merged from Contexia GTM Operating Kit, 2026-09-10)
+
+Fusionado desde `CLAUDE.md.fragment.md` del kit GTM (`contexia-gtm-claude-code`, investigación
+2026-09-10) — ver `ai-specs/skills/contexia-*` para las 18 skills invocables que lo acompañan
+(`/contexia-readiness`, `/contexia-renta-campaign`, etc.). Este bloque manda sobre cualquier copy,
+propuesta, demo o recomendación de plan comercial; `.antigravity/GROUND_TRUTH.md` sigue mandando
+sobre todo lo demás si hay conflicto.
+
+### Identidad y entidades
+- "Contexia" significa por defecto **Entidad B tecnológica**. No es firma contable, no ejerce fe
+  pública y no firma estados financieros, declaraciones ni dictámenes.
+- **Entidad A** presta y factura por separado los servicios profesionales regulados. Nunca mezclar
+  entidad contratante, alcance, factura ni responsabilidad.
+- La tecnología puede preparar, organizar, señalar o asistir. Un profesional habilitado revisa,
+  decide y firma cuando la ley o el alcance lo exigen.
+
+### Precedencia de fuentes (para cualquier afirmación comercial)
+1. `.antigravity/GROUND_TRUTH.md` y reglas locales aplicables.
+2. Código y configuración de producción verificados.
+3. `apps/backend/core/pricing_catalog.py` para precios.
+4. Especificaciones aceptadas y pruebas recientes.
+5. Documentos internos fechados.
+6. Fuentes públicas primarias.
+7. Hipótesis explícitas.
+
+Una fuente inferior nunca convierte una hipótesis, roadmap o claim histórico en capacidad vigente.
+
+### Gates obligatorios antes de generar copy, propuesta, demo o recomendación de plan
+Confirmar: `offer_state` (`LIVE_VERIFIED`/`PILOT_ONLY`/`ROADMAP`/`UNKNOWN`), `claim_state`
+(`APPROVED`/`INTERNAL_DATED`/`HYPOTHESIS`/`BLOCKED`), entidad que contrata/factura/entrega/asume
+responsabilidad, precio leído de la fuente canónica vigente, prueba aprobada y permiso para
+usarla, origen del contacto/finalidad/autorización del canal, capacidad de onboarding/soporte/
+revisión humana/medición. Solo `LIVE_VERIFIED` + claims `APPROVED` entran en campañas generales;
+`PILOT_ONLY` se llama piloto; `ROADMAP`/`UNKNOWN` no se venden.
+
+### Precios
+- Nunca fijar ni inventar un valor final que deba confirmar Tatiana.
+- Nunca inventar techo para Renta Natural o Complejo.
+- Nunca inferir una banda solo por ingresos si faltan movimientos, nómina u otros drivers.
+- Nunca mezclar precio de software de Entidad B con honorario profesional de Entidad A.
+- Si no se puede leer la fuente canónica, usar `[PRECIO POR CONFIRMAR]` y bloquear el envío.
+
+### Claims prohibidos sin evidencia aprobada
+"cero multas", "inmunidad", "sin riesgo", "garantizado"; cualquier porcentaje de automatización,
+ahorro, ROI, precisión, tiempo o incremento de ingresos no medido en Contexia; "único", "ningún
+competidor", "el más", "100 %", "en tiempo real"/"instantáneo" sin prueba vigente; acceso directo/
+monitoreo/integración no demostrados; presentar roadmap de otros verticales como producto
+disponible; atribuir a Contexia estadísticas de mercado o resultados de terceros. Ver el semáforo
+completo en `ai-specs/references/CLAIMS-LEDGER.md` (o su ruta en el kit GTM original).
+
+### Privacidad y contacto
+- No recolectar ni usar datos personales para prospección sin base legítima y revisión del caso.
+- Priorizar opt-in, referidos, presentaciones cálidas, aliados, eventos y contenido.
+- No automatizar blasts por WhatsApp, SMS, correo o redes.
+- Todo mensaje externo requiere aprobación humana y un mecanismo sencillo de baja.
+- El consentimiento para preparar una declaración no equivale a consentimiento para marketing de
+  SaaS ni para transferir datos entre entidades.
+
+### Forma de trabajar
+- Distinguir siempre `HECHO`, `INFERENCIA`, `HIPÓTESIS` y `DECISIÓN PENDIENTE`.
+- Para cada cifra registrar nombre, valor, unidad, periodo, fuente y propietario.
+- No enviar, publicar, cotizar, comprometer alcance ni actualizar sistemas externos sin aprobación
+  humana explícita.
+- Cuando falte una entrada crítica, devolver `BLOCKED`, los campos faltantes y la verificación
+  siguiente; no rellenar huecos con una suposición.
+
