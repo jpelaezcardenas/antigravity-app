@@ -150,6 +150,36 @@ class TestTaxProfile:
 
         assert result["rut_status"] == "collected"
 
+    def test_update_tax_profile_inserts_when_no_row_exists_yet(self):
+        """Real bug found live 2026-09-11 (taty-document-collection-wiring task 6b): an UPDATE
+        against a lead_id with no crm_tax_profiles row affects zero rows, silently — no error, no
+        insert — so route_lead_document's status patch was lost even though the document itself
+        uploaded successfully to storage. This only didn't surface for a real customer because
+        approve_payment (the sole other writer) always inserts the row before any update reaches
+        here; any lead that reaches LISTOS_CONTADORA any other way loses this bookkeeping
+        silently. update_tax_profile must insert the row itself when the UPDATE reports zero rows,
+        the same defensive pattern approve_payment already uses at lines 641-644."""
+        client = MagicMock()
+        tax_profiles_table = MagicMock()
+        tax_profiles_table.update.return_value.eq.return_value.execute.return_value = MagicMock(
+            data=[]
+        )
+        tax_profiles_table.insert.return_value.execute.return_value = MagicMock(
+            data=[{"lead_id": "l1", "rut_status": "collected"}]
+        )
+
+        def table_side_effect(name):
+            return tax_profiles_table if name == "crm_tax_profiles" else MagicMock()
+
+        client.table.side_effect = table_side_effect
+
+        with patch("services.crm_service.get_service_supabase", return_value=client), _patched_env():
+            result = CrmService().update_tax_profile("l1", {"rut_status": "collected"})
+
+        assert result["rut_status"] == "collected"
+        insert_call = tax_profiles_table.insert.call_args[0][0]
+        assert insert_call == {"lead_id": "l1", "rut_status": "collected"}
+
 
 class TestApprovePayment:
     @pytest.mark.asyncio
