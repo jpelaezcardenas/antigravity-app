@@ -601,7 +601,12 @@ class CrmService:
         real customer because approve_payment (the only other writer) always inserts the row
         first — but nothing enforces that as the sole path to LISTOS_CONTADORA. Insert the row
         ourselves, same defensive pattern approve_payment already uses, if the UPDATE reports zero
-        rows affected."""
+        rows affected.
+
+        Second bug found live 2026-09-11, same session: the first version of this fix inserted
+        without tenant_id, which crm_tax_profiles has as NOT NULL —
+        postgrest.exceptions.APIError 23502 in production. Resolve it from the lead's own row,
+        same as approve_payment does, rather than assume the caller already has it."""
         client = get_service_supabase()
         result = (
             client.table("crm_tax_profiles").update(patch).eq("lead_id", lead_id).execute()
@@ -609,7 +614,20 @@ class CrmService:
         if result.data:
             return result.data[0]
 
-        inserted = client.table("crm_tax_profiles").insert({"lead_id": lead_id, **patch}).execute()
+        lead = (
+            client.table("crm_leads")
+            .select("tenant_id")
+            .eq("id", lead_id)
+            .single()
+            .execute()
+        )
+        tenant_id = (lead.data or {}).get("tenant_id")
+
+        inserted = (
+            client.table("crm_tax_profiles")
+            .insert({"lead_id": lead_id, "tenant_id": tenant_id, **patch})
+            .execute()
+        )
         return (inserted.data or [{}])[0]
 
     async def approve_payment(self, lead_id: str, approved_by: str) -> Dict[str, Any]:

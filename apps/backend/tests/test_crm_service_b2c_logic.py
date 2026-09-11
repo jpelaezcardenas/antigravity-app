@@ -158,8 +158,17 @@ class TestTaxProfile:
         approve_payment (the sole other writer) always inserts the row before any update reaches
         here; any lead that reaches LISTOS_CONTADORA any other way loses this bookkeeping
         silently. update_tax_profile must insert the row itself when the UPDATE reports zero rows,
-        the same defensive pattern approve_payment already uses at lines 641-644."""
+        the same defensive pattern approve_payment already uses at lines 641-644.
+
+        Second bug found live 2026-09-11, same session: the first version of this fix inserted
+        without tenant_id, which crm_tax_profiles has as NOT NULL — postgrest.exceptions.APIError
+        23502 in production. tenant_id must be resolved from the lead's own row, same as
+        approve_payment does."""
         client = MagicMock()
+        leads_table = MagicMock()
+        leads_table.select.return_value.eq.return_value.single.return_value.execute.return_value = (
+            MagicMock(data={"tenant_id": "tenant-1"})
+        )
         tax_profiles_table = MagicMock()
         tax_profiles_table.update.return_value.eq.return_value.execute.return_value = MagicMock(
             data=[]
@@ -169,7 +178,11 @@ class TestTaxProfile:
         )
 
         def table_side_effect(name):
-            return tax_profiles_table if name == "crm_tax_profiles" else MagicMock()
+            if name == "crm_tax_profiles":
+                return tax_profiles_table
+            if name == "crm_leads":
+                return leads_table
+            return MagicMock()
 
         client.table.side_effect = table_side_effect
 
@@ -178,7 +191,11 @@ class TestTaxProfile:
 
         assert result["rut_status"] == "collected"
         insert_call = tax_profiles_table.insert.call_args[0][0]
-        assert insert_call == {"lead_id": "l1", "rut_status": "collected"}
+        assert insert_call == {
+            "lead_id": "l1",
+            "tenant_id": "tenant-1",
+            "rut_status": "collected",
+        }
 
 
 class TestApprovePayment:
