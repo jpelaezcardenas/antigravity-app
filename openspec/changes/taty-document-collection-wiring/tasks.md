@@ -65,13 +65,43 @@
       rewrote `submit_whatsapp_document`'s docstring/signature — bridge suite 40/41 (1
       pre-existing unrelated failure, confirmed via earlier `git stash` comparison), backend
       71/71 green.
-- [ ] 6b2. Controlled verification — explicitly logged as a test, never a real production lead,
-      before this whole task is marked fully done. Still not run end-to-end: needs a `crm_leads`
-      test row in the `LISTOS_CONTADORA` stage and either (a) a real WhatsApp message with a
-      document sent to the production number by a session with a physical test phone, or (b) the
-      bridge running locally with a synthetic signed Meta payload posted at the backend's webhook.
-      Neither is executable from a Claude Code session with no phone and no way to run the bridge
-      process directly — needs the founder or a session on the bridge's host.
+- [x] 6b2. Controlled verification — **CONFIRMED end to end 2026-09-11**, via the founder's own
+      real WhatsApp phone against the production number, targeting a controlled test lead
+      (`crm_leads.id=6e717c21-c2df-4761-a030-78cf69496977`, temporarily moved to
+      `LISTOS_CONTADORA` with the founder's explicit authorization; a real B2B lead, not a
+      synthetic fixture — restored after this verification, see note below). Confirmed via
+      Supabase: `crm_tax_profiles` row `3663bea3-be68-413a-b698-58eb87830ca0` has
+      `rut_status="collected"`, `rut_storage_path="6e717c21.../rut.pdf"` (the actual uploaded
+      file), `extractos_status="requested"` (correctly sequenced to ask for the next document).
+      This is the real, live production path — not a mock.
+
+      **This single verification attempt surfaced and fixed 8 real, independent production bugs**,
+      none of which were caught by unit tests before this session because none of this repo's
+      tests modeled the actual dev/prod topology gap (Vercel vs. Railway) or the actual pinned
+      dependency versions (this repo's local dev venv runs materially newer `postgrest`/`supabase`/
+      `storage3` than what `requirements.txt` pins and Railway installs):
+      1. `download_chatwoot_attachment` given a `localhost` Chatwoot URL, unreachable from Railway
+         (6a — fixed by having the bridge download and forward bytes instead of a URL).
+      2. The live durable-inbox poller hardcoded `attachments=[]`, never forwarding Meta's
+         `media_id` (6b1).
+      3. `whatsapp_inbox_service.pull_pending` manipulated `postgrest`'s private internal
+         attributes for its OR filter — broke differently in prod vs. local dev venv twice in a
+         row before being rewritten to filter client-side in plain Python.
+      4. The bridge derived `/internal/*`'s URL from `CONTEXIA_API_URL`'s origin (Vercel), which
+         never exposes `/internal/*` by design — fixed with an explicit `INTERNAL_API_BASE_URL`.
+      5. `CrmService.update_tax_profile` silently no-op'd on an UPDATE against a non-existent row
+         — fixed with an insert-if-missing fallback.
+      6-7. `document_storage_service.upload_tax_document`'s `upsert` option wasn't honored by the
+         actually-pinned `storage3` version; two fix attempts before landing on the version's real
+         primitives (`remove()` + `upload()`, verified directly against the pinned wheel, not the
+         local venv).
+      8. The insert-if-missing fallback from fix 5 omitted `tenant_id` (NOT NULL), caught on the
+         very next live attempt.
+
+      **Founder action after this session**: restore `crm_leads.id=6e717c21-...` to its original
+      `stage="PROSPECTOS"` / `lead_type="business_interest"` (it was authorized as a temporary
+      change for this test only) — not done automatically here since it's the founder's own real
+      lead and the change should be visible/confirmed by him first.
 
 ## Stage 11. Deploy to Production (MANDATORY - CLOSES THE LOOP)
 
