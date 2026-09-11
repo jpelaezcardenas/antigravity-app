@@ -240,12 +240,25 @@ async def process_incoming_message(
     # answer instead of nothing when the document arrives at the wrong stage, both documents are
     # already collected, or the download itself failed.
     doc_attachments = [
-        a for a in attachments if a.get("file_type") in ("image", "file") and a.get("data_url")
+        a
+        for a in attachments
+        if a.get("file_type") in ("image", "file") and (a.get("data_url") or a.get("media_id"))
     ]
     if doc_attachments:
-        doc_result = await backend_client.submit_whatsapp_document(
-            lead_id, doc_attachments[0]["data_url"], doc_attachments[0]["file_type"]
-        )
+        attachment = doc_attachments[0]
+        if attachment.get("data_url"):
+            doc_result = await backend_client.submit_whatsapp_document(
+                lead_id, attachment["data_url"], attachment["file_type"]
+            )
+        else:
+            # Bug found 2026-09-11 (task 6b): the durable-inbox poller (the only path live in
+            # production since taty-channel-consolidation) forwards Meta's media_id, never a
+            # Chatwoot data_url — this attachment shape must be routed too, or every real inbound
+            # document is silently dropped. No bridge-side download needed: the Graph API is
+            # reachable from Railway, unlike Chatwoot's localhost-hosted data_url.
+            doc_result = await backend_client.submit_whatsapp_document(
+                lead_id, media_id=attachment["media_id"], mime_type=attachment["file_type"]
+            )
         if doc_result and doc_result.get("processed"):
             await chatwoot_client.send_reply(conversation_id, DOCUMENT_ACK_REPLY, private=True)
             return

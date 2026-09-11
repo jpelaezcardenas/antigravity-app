@@ -80,6 +80,67 @@ class TestPollOnce:
         )
 
     @pytest.mark.asyncio
+    async def test_forwards_media_id_as_a_real_attachment(self):
+        """Bug found 2026-09-11 (taty-document-collection-wiring task 6b): the poller was hardcoding
+        attachments=[] even when Meta's webhook had captured a real media_id on the event (see
+        migration 0036's media_id column and channels/whatsapp.py::normalize_whatsapp_webhook). This
+        silently dropped every real inbound RUT/extractos document on the only path that is live in
+        production today — main.py's document-collection branch never even saw the attachment."""
+        import inbox_poller
+
+        event = _event()
+        event["media_id"] = "wamid.graph-media-123"
+
+        with patch.object(
+            inbox_poller.backend_client, "pull_pending_events", new=AsyncMock(return_value=[event])
+        ), patch.object(
+            inbox_poller.backend_client, "acknowledge_events", new=AsyncMock()
+        ), patch.object(
+            inbox_poller.chatwoot_client, "find_or_create_contact", new=AsyncMock(return_value=55)
+        ), patch.object(
+            inbox_poller.chatwoot_client,
+            "find_or_create_conversation",
+            new=AsyncMock(return_value=42),
+        ), patch.object(
+            inbox_poller.chatwoot_client, "create_customer_message_note", new=AsyncMock()
+        ), patch.object(
+            inbox_poller.chatwoot_client, "get_conversation_labels", new=AsyncMock(return_value=[])
+        ), patch("main.process_incoming_message", new=AsyncMock()) as mock_process:
+            await inbox_poller.poll_once()
+
+        mock_process.assert_awaited_once_with(
+            conversation_id=42,
+            content="hola",
+            attachments=[{"file_type": "file", "media_id": "wamid.graph-media-123"}],
+            contact_id=55,
+            phone="573001234567",
+        )
+
+    @pytest.mark.asyncio
+    async def test_no_media_id_on_event_still_forwards_empty_attachments(self):
+        """A plain text event (no media_id key at all) must not be treated as having a document."""
+        import inbox_poller
+
+        with patch.object(
+            inbox_poller.backend_client, "pull_pending_events", new=AsyncMock(return_value=[_event()])
+        ), patch.object(
+            inbox_poller.backend_client, "acknowledge_events", new=AsyncMock()
+        ), patch.object(
+            inbox_poller.chatwoot_client, "find_or_create_contact", new=AsyncMock(return_value=55)
+        ), patch.object(
+            inbox_poller.chatwoot_client,
+            "find_or_create_conversation",
+            new=AsyncMock(return_value=42),
+        ), patch.object(
+            inbox_poller.chatwoot_client, "create_customer_message_note", new=AsyncMock()
+        ), patch.object(
+            inbox_poller.chatwoot_client, "get_conversation_labels", new=AsyncMock(return_value=[])
+        ), patch("main.process_incoming_message", new=AsyncMock()) as mock_process:
+            await inbox_poller.poll_once()
+
+        assert mock_process.call_args.kwargs["attachments"] == []
+
+    @pytest.mark.asyncio
     async def test_bot_off_label_skips_reply_but_still_acknowledges(self):
         """A human-paused conversation must not get an automated reply — but the event is still
         acknowledged (it was successfully delivered to a human-controlled conversation), not left

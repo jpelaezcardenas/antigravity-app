@@ -60,11 +60,12 @@ class WhatsappDocumentRequest(BaseModel):
     mime_type: str = "application/octet-stream"
     data_url: Optional[str] = None
     content_base64: Optional[str] = None
+    media_id: Optional[str] = None
 
     @model_validator(mode="after")
     def _require_one_source(self) -> "WhatsappDocumentRequest":
-        if not self.data_url and not self.content_base64:
-            raise ValueError("one of data_url or content_base64 is required")
+        if not self.data_url and not self.content_base64 and not self.media_id:
+            raise ValueError("one of data_url, content_base64, or media_id is required")
         return self
 
 
@@ -92,6 +93,7 @@ async def send_whatsapp_document_endpoint(
 
     result = await route_lead_document(
         payload.lead_id,
+        media_id=payload.media_id,
         mime_type=payload.mime_type,
         data_url=payload.data_url if content_bytes is None else None,
         content_bytes=content_bytes,

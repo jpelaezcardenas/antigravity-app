@@ -291,6 +291,29 @@ class TestDocumentCollection:
         mocks["send_reply"].assert_awaited_once_with(42, "Respuesta de Taty", private=True)
 
     @pytest.mark.asyncio
+    async def test_media_id_attachment_calls_backend_with_media_id_not_data_url(
+        self, mocked_clients
+    ):
+        """Bug found 2026-09-11 (task 6b): the durable-inbox poller forwards Meta's media_id
+        (Graph API), not a Chatwoot data_url — this attachment shape must also be recognized and
+        routed, not silently ignored just because it lacks data_url."""
+        main_module, mocks = mocked_clients
+        mocks["submit_doc"].return_value = {"processed": True}
+
+        await main_module.process_incoming_message(
+            conversation_id=42,
+            content="",
+            attachments=[{"file_type": "file", "media_id": "wamid.graph-media-123"}],
+            contact_id=7,
+            phone="+573001234567",
+        )
+        await asyncio.sleep(0)
+
+        mocks["submit_doc"].assert_awaited_once_with(
+            "lead-1", media_id="wamid.graph-media-123", mime_type="file"
+        )
+
+    @pytest.mark.asyncio
     async def test_no_attachment_never_calls_document_endpoint(self, mocked_clients):
         main_module, mocks = mocked_clients
 

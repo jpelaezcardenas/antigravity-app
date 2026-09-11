@@ -180,18 +180,32 @@ async def send_voice_note(lead_id: str, text: str, audio: bytes) -> bool:
 
 
 async def submit_whatsapp_document(
-    lead_id: str, data_url: str, mime_type: str
+    lead_id: str,
+    data_url: Optional[str] = None,
+    mime_type: str = "application/octet-stream",
+    *,
+    media_id: Optional[str] = None,
 ) -> Optional[dict[str, Any]]:
-    """Download a Chatwoot-hosted attachment (image/file) and forward its bytes to the backend's
-    document-collection endpoint (taty-document-collection-wiring, Task 4).
+    """Forward an inbound WhatsApp document/image (image/file) to the backend's document-
+    collection endpoint (taty-document-collection-wiring, Task 4).
 
-    Fixed 2026-09-11: this used to forward `data_url` as-is for the backend to re-fetch — but
-    Chatwoot's `data_url` is typically `http://localhost:<port>/...`, Chatwoot's own local
-    address, never reachable from the backend running on Railway (verified live against a real
-    attachment: the download always failed in production). This bridge runs on the same network
-    as Chatwoot, so it downloads the attachment itself and posts the raw bytes as base64 —
-    `content_base64`, not `data_url` — for `route_lead_document` to store directly, skipping any
-    re-download on the backend side.
+    Two source shapes, handled differently because only one is reachable from where each side runs:
+
+    - `data_url` (Chatwoot's own hosted copy — used when Chatwoot itself fires a message_created
+      webhook to this bridge, e.g. a human-typed test on a Channel::Api inbox). Typically
+      `http://localhost:<port>/...`, Chatwoot's own local address, never reachable from the
+      backend running on Railway (fixed 2026-09-11, verified live against a real attachment: the
+      download always failed in production). This bridge runs on the same network as Chatwoot, so
+      it downloads the attachment itself and posts the raw bytes as base64 (`content_base64`) for
+      `route_lead_document` to store directly, skipping any re-download backend-side.
+    - `media_id` (Meta's Graph API id — what the durable-inbox poller actually has, since Meta's
+      webhook lands on Railway directly now per `taty-channel-consolidation`; found missing
+      2026-09-11, task 6b: the poller used to hardcode `attachments=[]`, silently dropping every
+      real inbound document on the only path live in production). No download needed here at
+      all — Graph API is public internet, reachable from Railway, so the bridge just forwards the
+      id and the backend's existing, unchanged `download_whatsapp_media(media_id)` path handles it.
+
+    Exactly one of `data_url`/`media_id` must be given.
 
     Same `/internal/*` boundary and INTERNAL_API_KEY auth as send_voice_note above — the bridge
     never talks to services/taty_lead_router.py directly, it forwards to
@@ -212,23 +226,28 @@ async def submit_whatsapp_document(
         )
         return None
 
-    try:
-        async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:
-            download = await client.get(data_url)
-    except Exception:
-        logger.exception("submit_whatsapp_document: failed to download attachment from Chatwoot")
-        return None
-    if download.status_code != 200:
-        logger.warning(
-            "submit_whatsapp_document: Chatwoot attachment download returned %s",
-            download.status_code,
-        )
-        return None
+    if media_id:
+        payload: dict[str, Any] = {"lead_id": lead_id, "media_id": media_id, "mime_type": mime_type}
+    else:
+        try:
+            async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:
+                download = await client.get(data_url)
+        except Exception:
+            logger.exception(
+                "submit_whatsapp_document: failed to download attachment from Chatwoot"
+            )
+            return None
+        if download.status_code != 200:
+            logger.warning(
+                "submit_whatsapp_document: Chatwoot attachment download returned %s",
+                download.status_code,
+            )
+            return None
 
-    content_base64 = base64.b64encode(download.content).decode("ascii")
+        content_base64 = base64.b64encode(download.content).decode("ascii")
+        payload = {"lead_id": lead_id, "content_base64": content_base64, "mime_type": mime_type}
 
     url = f"{_internal_base_url()}/internal/whatsapp/document"
-    payload = {"lead_id": lead_id, "content_base64": content_base64, "mime_type": mime_type}
 
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS) as client:

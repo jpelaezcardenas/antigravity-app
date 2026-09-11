@@ -43,13 +43,35 @@
       separately. Full suites green: backend 71/71 (taty_lead_router + whatsapp_document_endpoint),
       bridge 107 passed / 2 pre-existing failures (confirmed via `git stash`, unrelated to this
       change — `test_chatwoot_client.py`/`test_process_message.py`, both pre-date this session).
-- [ ] 6b. Controlled verification — explicitly logged as a test, never a real production lead,
+- [x] 6b1. **Second real bug found and fixed 2026-09-11**, while designing the controlled
+      verification for 6b: the durable-inbox poller (`apps/chatwoot-bridge/inbox_poller.py`) — the
+      ONLY path live in production since `taty-channel-consolidation` moved Meta's webhook to
+      Railway — hardcoded `attachments=[]` on every call to `process_incoming_message`, regardless
+      of whether the event carried a real `media_id` (migration `0036` captures it;
+      `channels/whatsapp.py::normalize_whatsapp_webhook` sets it on the event). This meant **every
+      real inbound RUT/extractos document was silently dropped** before it could ever reach the
+      document-collection branch fixed in 6a — that fix was correct but structurally unreachable
+      from the live production path.
+
+      Fix: `inbox_poller.py` now builds `attachments=[{"file_type": "file", "media_id": ...}]`
+      when the event has a `media_id`. `main.py`'s document branch now recognizes attachments
+      keyed by `media_id` as well as `data_url`. `backend_client.submit_whatsapp_document()`
+      gained a `media_id` parameter — when given, it skips the bridge-side download entirely
+      (Graph API is reachable from Railway, unlike Chatwoot's localhost `data_url`) and forwards
+      the id directly; the backend's original, untouched `download_whatsapp_media(media_id)` path
+      (Task 1, unchanged since before this session) handles the actual Graph download.
+      `whatsapp_document_endpoints.py` accepts `media_id` as a third valid source alongside
+      `data_url`/`content_base64`. TDD throughout: 2 new poller tests, 1 new `main.py` test,
+      rewrote `submit_whatsapp_document`'s docstring/signature — bridge suite 40/41 (1
+      pre-existing unrelated failure, confirmed via earlier `git stash` comparison), backend
+      71/71 green.
+- [ ] 6b2. Controlled verification — explicitly logged as a test, never a real production lead,
       before this whole task is marked fully done. Still not run end-to-end: needs a `crm_leads`
-      test row in the `LISTOS_CONTADORA` stage and a live call to
-      `apps/chatwoot-bridge/main.py::process_incoming_message` (or `submit_whatsapp_document`
-      directly) against the real "Maria E2E Test" attachment, from a session with the bridge
-      actually running (this session has no way to execute the bridge process itself, only to
-      read/edit its code and call Chatwoot's API directly).
+      test row in the `LISTOS_CONTADORA` stage and either (a) a real WhatsApp message with a
+      document sent to the production number by a session with a physical test phone, or (b) the
+      bridge running locally with a synthetic signed Meta payload posted at the backend's webhook.
+      Neither is executable from a Claude Code session with no phone and no way to run the bridge
+      process directly — needs the founder or a session on the bridge's host.
 
 ## Stage 11. Deploy to Production (MANDATORY - CLOSES THE LOOP)
 

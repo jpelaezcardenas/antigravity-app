@@ -78,10 +78,20 @@ async def poll_once() -> None:
                     conversation_id, settings.PAUSE_LABEL, event.get("id"),
                 )
             else:
+                # Bug found 2026-09-11 (taty-document-collection-wiring task 6b): this used to
+                # hardcode attachments=[] unconditionally, silently dropping every real inbound
+                # RUT/extractos document — Meta's webhook DOES capture media_id onto the event
+                # (migration 0036, channels/whatsapp.py::normalize_whatsapp_webhook), it just never
+                # made it past this line. main.py's document-collection branch downloads via the
+                # Graph API media_id path (route_lead_document's original, untouched source),
+                # which IS reachable from Railway — no bridge-side download needed here, unlike the
+                # Chatwoot data_url case (see backend_client.submit_whatsapp_document's docstring).
+                media_id = event.get("media_id")
+                attachments = [{"file_type": "file", "media_id": media_id}] if media_id else []
                 await process_incoming_message(
                     conversation_id=conversation_id,
                     content=body,
-                    attachments=[],
+                    attachments=attachments,
                     contact_id=contact_id,
                     phone=event["account_id"],
                 )
