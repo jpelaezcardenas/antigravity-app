@@ -38,6 +38,17 @@ class Settings(BaseSettings):
     CONTEXIA_API_URL: str = ""
     CONTEXIA_JWT_SECRET: str = ""
 
+    # Origin of the backend's /internal/* surface (voice-note, whatsapp/document). Found live
+    # 2026-09-11: this must NOT be derived from CONTEXIA_API_URL's origin in production, because
+    # CONTEXIA_API_URL there is https://contexia.online/api/v1 — contexia.online is Vercel, whose
+    # vercel.json rewrites ONLY /api/v1/* to Railway; /internal/* has no rewrite rule there by
+    # design (so it's never exposed to the public internet), so a request built from
+    # CONTEXIA_API_URL's origin 404s on Vercel's own catch-all. This must point at Railway's
+    # domain directly. Empty default so a misconfigured environment fails loudly (503-shaped,
+    # matching send_voice_note/submit_whatsapp_document's existing "key not set" fail-closed
+    # posture) rather than silently 404ing against the wrong host again.
+    INTERNAL_API_BASE_URL: str = ""
+
     # HITL / conversation behavior
     PAUSE_LABEL: str = "bot_off"
     MAX_HISTORY: int = 10

@@ -23,8 +23,6 @@ import base64
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
-from urllib.parse import urlparse
-
 import httpx
 from jose import jwt
 
@@ -128,15 +126,29 @@ async def taty_reply(lead_id: str, text: str) -> Optional[dict[str, Any]]:
 
 
 def _internal_base_url() -> str:
-    """Origin of the backend's `/internal` surface, derived from CONTEXIA_API_URL.
+    """Origin of the backend's `/internal` surface — its own setting, NOT derived from
+    CONTEXIA_API_URL.
 
-    Deliberately NOT `f"{CONTEXIA_API_URL}/internal/..."`. `CONTEXIA_API_URL` ends in `/api/v1`,
-    which `vercel.json` rewrites to Railway and therefore publishes to the internet; appending
-    would produce `/api/v1/internal/...` and expose a machine-to-machine endpoint. `/internal` sits
-    outside that rewrite on purpose, so it is built from the origin only.
+    Bug found live 2026-09-11 (task 6b's end-to-end test): this used to compute
+    `urlparse(CONTEXIA_API_URL)`'s origin. In production `CONTEXIA_API_URL` is
+    `https://contexia.online/api/v1` — `contexia.online` is Vercel, whose `vercel.json` rewrites
+    ONLY `/api/v1/*` to Railway. `/internal/*` has no rewrite rule there **by design** (so it's
+    never exposed to the public internet) — meaning every request this function ever built landed
+    on Vercel's own catch-all and 404'd, silently, for as long as this helper has existed. Neither
+    `send_voice_note` (dark-launched behind `VOICE_ENABLED=false`, never exercised live) nor
+    `submit_whatsapp_document` (task 6a/6b's fixes, also never run against a real attachment until
+    now) ever caught this, and the unit tests couldn't either — their fixtures point
+    `CONTEXIA_API_URL` at the same test server the mocked `/internal` route lives on, so the origin
+    happens to be correct there by construction.
+
+    `INTERNAL_API_BASE_URL` must be Railway's own domain — set explicitly, never derived.
     """
-    parsed = urlparse(settings.CONTEXIA_API_URL)
-    return f"{parsed.scheme}://{parsed.netloc}"
+    if not settings.INTERNAL_API_BASE_URL:
+        logger.error(
+            "INTERNAL_API_BASE_URL is not set — every /internal/* call will fail. "
+            "It must be Railway's own domain, not derived from CONTEXIA_API_URL."
+        )
+    return settings.INTERNAL_API_BASE_URL
 
 
 async def send_voice_note(lead_id: str, text: str, audio: bytes) -> bool:

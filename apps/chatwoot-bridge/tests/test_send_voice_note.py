@@ -35,6 +35,7 @@ KEY = "test-internal-key"
 @pytest.fixture(autouse=True)
 def _configure(monkeypatch):
     monkeypatch.setattr(settings, "CONTEXIA_API_URL", API_URL)
+    monkeypatch.setattr(settings, "INTERNAL_API_BASE_URL", "http://127.0.0.1:8080")
     monkeypatch.setattr(settings, "INTERNAL_API_KEY", KEY)
 
 

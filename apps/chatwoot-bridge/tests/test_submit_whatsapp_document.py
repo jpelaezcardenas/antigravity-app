@@ -29,7 +29,49 @@ KEY = "test-internal-key"
 @pytest.fixture(autouse=True)
 def _configure(monkeypatch):
     monkeypatch.setattr(settings, "CONTEXIA_API_URL", API_URL)
+    monkeypatch.setattr(settings, "INTERNAL_API_BASE_URL", "http://127.0.0.1:8080")
     monkeypatch.setattr(settings, "INTERNAL_API_KEY", KEY)
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_internal_url_uses_railway_domain_not_the_vercel_api_domain(monkeypatch):
+    """Real bug found live 2026-09-11 (task 6b): CONTEXIA_API_URL in production is
+    https://contexia.online/api/v1 -- contexia.online is Vercel, and vercel.json rewrites ONLY
+    /api/v1/* to Railway. /internal/* was previously derived from CONTEXIA_API_URL's own origin,
+    so every real call 404'd against Vercel's catch-all, silently, in production -- while every
+    unit test passed, because their fixtures happened to point both URLs at the same test server.
+    This asserts the two are independent: a Vercel-shaped CONTEXIA_API_URL must never leak into
+    the /internal request's host."""
+    monkeypatch.setattr(settings, "CONTEXIA_API_URL", "https://contexia.online/api/v1")
+    monkeypatch.setattr(
+        settings,
+        "INTERNAL_API_BASE_URL",
+        "https://antigravity-app-production-175a.up.railway.app",
+    )
+
+    railway_url = (
+        "https://antigravity-app-production-175a.up.railway.app/internal/whatsapp/document"
+    )
+    vercel_url = "https://contexia.online/internal/whatsapp/document"
+
+    respx.get(CHATWOOT_ATTACHMENT_URL).mock(
+        return_value=Response(200, content=b"fake-pdf-bytes")
+    )
+    vercel_route = respx.post(vercel_url).mock(return_value=Response(404))
+    railway_route = respx.post(railway_url).mock(
+        return_value=Response(200, json={"processed": True})
+    )
+
+    import backend_client
+
+    result = await backend_client.submit_whatsapp_document(
+        "lead-1", CHATWOOT_ATTACHMENT_URL, "file"
+    )
+
+    assert result == {"processed": True}
+    assert railway_route.called
+    assert not vercel_route.called
 
 
 @respx.mock
