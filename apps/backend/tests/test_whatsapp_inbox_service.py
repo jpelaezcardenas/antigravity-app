@@ -98,11 +98,17 @@ class TestStoreInboundEvents:
 
 
 class TestPullPendingQueryConstruction:
-    """A MagicMock happily answers `.or_()` whether or not the installed client actually has it —
-    that is exactly how a real bug (postgrest-py 0.13.2 has no `.or_()` helper; it was added in a
-    later release) shipped through 8 passing tests undetected until a live end-to-end run hit a
-    500. These tests build the query against the REAL installed postgrest client class (no
-    network — .execute() is never called), so a missing/renamed method fails here again."""
+    """Real incident, twice over (2026-09-11): the query used to splice an "or=(...)" param
+    directly into the postgrest builder's private internal attributes (`query.params`, then
+    `query.request.params`). Both versions passed every local test and both raised a live
+    AttributeError in production, because this repo's local dev venv (postgrest 2.31.0) and the
+    version actually pinned for production (`supabase==2.0.3` in requirements.txt, which Railway
+    installs) expose that internal state completely differently. Fixed by never touching those
+    attributes at all: the query only uses the builder's public, stable `.select()`/`.is_()`/
+    `.order()` methods, and the claimed_at-null-or-expired OR logic is applied in plain Python
+    after `.execute()` returns. These tests build the query against the REAL installed postgrest
+    client class (no network — `.execute()` is monkeypatched) specifically so a future
+    reintroduction of a private-attribute hack would fail here again, on any interpreter."""
 
     def test_query_builds_against_the_real_client_without_raising(self, fake_supabase) -> None:
         import postgrest
@@ -116,35 +122,47 @@ class TestPullPendingQueryConstruction:
             .is_("processed_at", "null")
         )
         fake_supabase.table.return_value.select.return_value.is_.return_value = real_query
+        real_query.order = MagicMock(return_value=real_query)
         real_query.execute = lambda: MagicMock(data=[])
 
-        pull_pending(limit=5)  # would raise AttributeError on a missing .or_()-style call
+        pull_pending(limit=5)  # would raise on any private-attribute access removed by this fix
 
-    def test_or_filter_targets_claimed_at_null_or_expired(self, fake_supabase) -> None:
-        import postgrest
+    def test_events_with_no_claim_or_an_expired_claim_are_returned(self, fake_supabase) -> None:
+        from datetime import datetime, timedelta, timezone
 
         from services.whatsapp_inbox_service import pull_pending
 
-        real_query = (
-            postgrest.SyncPostgrestClient(base_url="http://localhost/rest/v1")
-            .from_("whatsapp_inbound_events")
-            .select("*")
-            .is_("processed_at", "null")
+        now = datetime.now(timezone.utc)
+        expired = (now - timedelta(seconds=600)).isoformat()
+        fresh = (now - timedelta(seconds=5)).isoformat()
+        rows = [
+            {"id": "1", "claimed_at": None},
+            {"id": "2", "claimed_at": expired},
+            {"id": "3", "claimed_at": fresh},
+        ]
+        query = MagicMock()
+        query.execute.return_value = MagicMock(data=rows)
+        fake_supabase.table.return_value.select.return_value.is_.return_value.order.return_value = (
+            query
         )
-        fake_supabase.table.return_value.select.return_value.is_.return_value = real_query
-        captured = {}
 
-        def _execute():
-            captured["params"] = list(real_query.request.params.multi_items())
-            return MagicMock(data=[])
+        events = pull_pending(limit=50, claim_ttl_seconds=300)
 
-        real_query.execute = _execute
+        assert {e["id"] for e in events} == {"1", "2"}
 
-        pull_pending(limit=5, claim_ttl_seconds=300)
+    def test_limit_is_applied_after_client_side_filtering(self, fake_supabase) -> None:
+        from services.whatsapp_inbox_service import pull_pending
 
-        or_values = [v for k, v in captured["params"] if k == "or"]
-        assert len(or_values) == 1
-        assert or_values[0].startswith("(claimed_at.is.null,claimed_at.lt.")
+        rows = [{"id": str(i), "claimed_at": None} for i in range(10)]
+        query = MagicMock()
+        query.execute.return_value = MagicMock(data=rows)
+        fake_supabase.table.return_value.select.return_value.is_.return_value.order.return_value = (
+            query
+        )
+
+        events = pull_pending(limit=3)
+
+        assert len(events) == 3
 
 
 class TestInboxHealth:

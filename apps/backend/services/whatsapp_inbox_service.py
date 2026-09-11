@@ -19,6 +19,15 @@ from core.supabase_client import get_service_supabase
 
 logger = logging.getLogger(__name__)
 
+
+def _parse_timestamp(value: str) -> datetime:
+    """Parse a Postgres/PostgREST timestamptz string into an aware datetime. Supabase returns
+    ISO 8601 with an explicit offset (e.g. "+00:00") or, on some rows, a trailing "Z" — normalize
+    the latter since Python's fromisoformat only accepts "Z" from 3.11 onward and this repo's
+    prod/dev interpreters have drifted on other dependencies already (see pull_pending's docstring
+    above), so don't assume the newer behavior here either."""
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
 _TABLE = "whatsapp_inbound_events"
 
 # How long a pulled-but-unacknowledged event stays claimed before it is offered again. If the
@@ -90,19 +99,30 @@ def pull_pending(
     """
     client = get_service_supabase()
     now = datetime.now(timezone.utc)
-    claim_cutoff = (now - timedelta(seconds=claim_ttl_seconds)).isoformat()
+    claim_cutoff = now - timedelta(seconds=claim_ttl_seconds)
 
-    query = client.table(_TABLE).select("*").is_("processed_at", "null")
-    # The installed postgrest-py (0.13.2) has no .or_() helper — it was added in a later
-    # release. Add the raw "or" query param the same way .filter() does internally
-    # (self.request.params = self.request.params.add(key, val) — the params live on the
-    # builder's wrapped `request`, not on the builder itself), producing PostgREST's documented
-    # `or=(cond1,cond2)` syntax, ANDed with the .is_() filter above.
-    query.request.params = query.request.params.add(
-        "or", f"(claimed_at.is.null,claimed_at.lt.{claim_cutoff})"
+    # Deliberately NOT built with a raw "or=(...)" param spliced into the builder's internal
+    # attributes (query.params / query.request.params): found live 2026-09-11 that this repo's
+    # local dev venv (postgrest 2.31.0) and the version actually pinned for production
+    # (supabase==2.0.3 in requirements.txt, which Railway installs) expose that internal state
+    # completely differently — a fix that passed every local test still raised AttributeError in
+    # production (`'SyncSelectRequestBuilder' object has no attribute 'request'`). Filtering
+    # client-side in Python only touches the builder's public, stable `.select()`/`.is_()`/
+    # `.order()` methods, so it can't drift again just because a dependency version differs
+    # between environments.
+    result = (
+        client.table(_TABLE)
+        .select("*")
+        .is_("processed_at", "null")
+        .order("created_at")
+        .execute()
     )
-    result = query.order("created_at").limit(limit).execute()
-    events = result.data or []
+    all_unprocessed = result.data or []
+    events = [
+        e
+        for e in all_unprocessed
+        if not e.get("claimed_at") or _parse_timestamp(e["claimed_at"]) < claim_cutoff
+    ][:limit]
     if not events:
         return []
 
