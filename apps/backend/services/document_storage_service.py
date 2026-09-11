@@ -45,18 +45,24 @@ def upload_tax_document(
     try:
         bucket.upload(path, file_bytes, {"content-type": mime_type, "upsert": "true"})
     except StorageException as exc:
-        # Real bug found live 2026-09-11 (task 6b): file_options={"upsert": "true"} is only
-        # honored by some storage3 versions (confirmed: the one this repo's requirements.txt
-        # actually pins, supabase==2.0.3, does NOT honor it — a retry against a path that already
-        # has a file from an earlier attempt raised 'KeyAlreadyExists' in production despite this
-        # option being set). Rather than guess the right upsert-string format for whichever
-        # version is actually installed, fall back to the unconditional PUT (update()), which
-        # every storage3 version supports as a real distinct HTTP verb — not an option string that
-        # can silently stop being honored across a dependency upgrade.
+        # Real bug found live 2026-09-11 (task 6b), twice over. First: file_options=
+        # {"upsert": "true"} is not honored at all by the storage3 version this repo's
+        # requirements.txt actually pins (storage3>=0.5.3,<0.7.0, transitively via
+        # supabase==2.0.3, confirmed by downloading and reading that exact wheel — this repo's
+        # local dev venv has storage3 2.31.0 installed, a completely different, much newer major
+        # version, which is why this looked fine locally). Second attempted fix used
+        # bucket.update(), which doesn't exist as a method at all in the pinned version either —
+        # same dev/prod drift trap, different method. The pinned version's file_api.py has exactly
+        # two relevant primitives: upload() (plain POST, no upsert semantics) and remove() (bulk
+        # DELETE by path list, present in effectively every storage3 version as a basic
+        # operation). So: on a duplicate-key error, remove the existing object first, then upload
+        # again — never assume any convenience method (update/upsert) exists without having read
+        # the actual pinned source.
         error_payload = exc.args[0] if exc.args and isinstance(exc.args[0], dict) else {}
         if error_payload.get("code") != "KeyAlreadyExists":
             raise
-        bucket.update(path, file_bytes, {"content-type": mime_type})
+        bucket.remove([path])
+        bucket.upload(path, file_bytes, {"content-type": mime_type})
     return path
 
 
