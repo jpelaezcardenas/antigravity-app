@@ -294,7 +294,11 @@ Frase de límite:
 
 ### “Quiero Radar Predictivo”
 
-> En el último informe aportado, Radar todavía era una pantalla con datos de ejemplo. Debemos verificar si eso cambió. Si no existe evidencia actual, no lo incluiremos en oferta ni contrato.
+> **Actualizado 2026-09-11** — su proyección de caja a 13 semanas ya es real, no una pantalla de
+> ejemplo: lee tu Shadow GL y proyecta hacia adelante. Con un límite honesto que decimos siempre:
+> la confianza nunca es "alta" y no calcula impuesto futuro, porque el modelo de datos no tiene
+> cuentas por cobrar/pagar con vencimiento todavía. Si tu negocio tiene menos de 4 semanas de
+> historial, te lo decimos en vez de inventar una proyección.
 
 ## 8. Propuesta
 
