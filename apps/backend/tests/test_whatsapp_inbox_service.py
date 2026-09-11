@@ -135,7 +135,7 @@ class TestPullPendingQueryConstruction:
         captured = {}
 
         def _execute():
-            captured["params"] = list(real_query.params.multi_items())
+            captured["params"] = list(real_query.request.params.multi_items())
             return MagicMock(data=[])
 
         real_query.execute = _execute

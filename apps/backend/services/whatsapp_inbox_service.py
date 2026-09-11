@@ -95,9 +95,10 @@ def pull_pending(
     query = client.table(_TABLE).select("*").is_("processed_at", "null")
     # The installed postgrest-py (0.13.2) has no .or_() helper — it was added in a later
     # release. Add the raw "or" query param the same way .filter() does internally
-    # (self.params = self.params.add(key, val)), producing PostgREST's documented
+    # (self.request.params = self.request.params.add(key, val) — the params live on the
+    # builder's wrapped `request`, not on the builder itself), producing PostgREST's documented
     # `or=(cond1,cond2)` syntax, ANDed with the .is_() filter above.
-    query.params = query.params.add(
+    query.request.params = query.request.params.add(
         "or", f"(claimed_at.is.null,claimed_at.lt.{claim_cutoff})"
     )
     result = query.order("created_at").limit(limit).execute()

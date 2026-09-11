@@ -12,13 +12,23 @@
     ]
   },
   "active": [
-    "taty-document-collection-wiring"
+    "renta-natural-first-sale"
   ],
   "pending_implementation": [
     "metrics-dashboard-phase9",
     "voicebox-local-voice-adoption",
     "taty-voice-outbound-calls"
   ],
+  "absorbed_by_active": {
+    "note": "renta-natural-first-sale (opened 2026-09-10) absorbs the remaining unimplemented tasks of taty-channel-consolidation and whatsapp-durable-inbox under one closing criterion (one real end-to-end sale, not just green deploys). Their own directories/tasks.md are left untouched as historical record per the founder's explicit 'absorb, don't merge directories' decision (design.md Decision 1). taty-wompi-entidad-a-remittance is NOT actively absorbed as of 2026-09-10 evening -- founder decision: Wompi/Entidad A remittance deferred, first sale closes on cash/QR paid to Tatiana in person (design.md Decision 3b). Its tasks stay frozen, unresolved, for a possible future change.",
+    "changes": [
+      "taty-channel-consolidation",
+      "whatsapp-durable-inbox"
+    ],
+    "deferred": [
+      "taty-wompi-entidad-a-remittance"
+    ]
+  },
   "features": [
     {
       "id": "taty-wompi-link-hitl-gate",
@@ -142,8 +152,13 @@
     },
     {
       "id": "taty-document-collection-wiring",
-      "status": "pending",
-      "summary": "Created 2026-09-09 (proposal/design/tasks). Founder priority-1 decision: close the gap found by taty-voice-outbound-calls-adjacent investigation this session -- route_lead_document() (taty_lead_router.py) has real gating/storage/tests but ZERO production callers (confirmed via full apps/ grep, only reference outside its own def is its own test file). Root cause found: its hardcoded download_whatsapp_media(media_id) assumes a Graph API media_id that Chatwoot's webhook payload never exposes (ChatwootAttachment only has file_type/data_url). Design: new download_chatwoot_attachment(data_url) path (no WHATSAPP_TOKEN), route_lead_document branches on source instead of hardcoding Graph media_id, new POST /internal/whatsapp/document (INTERNAL_API_KEY fail-closed, same family as Siigo/Gmail/voice-note endpoints), new branch in chatwoot-bridge main.py::process_incoming_message. Not started -- next tick dispatches implementer for Task 1 (TDD). No live-lead exercise until explicitly logged as controlled test."
+      "status": "done",
+      "summary": "Deployed to production 2026-09-10 (Stage 11 closed, see openspec/changes/taty-document-collection-wiring/reports/2026-09-10-deployment.md; Railway f9f84819 SUCCESS, /internal/whatsapp/document present in live openapi.json). Only remaining task (6 -- controlled synthetic-document verification, explicitly never a real live-lead exercise) is now tracked as a pre-flight reference check under renta-natural-first-sale task 4.1, not reopened here."
+    },
+    {
+      "id": "renta-natural-first-sale",
+      "status": "in_progress",
+      "summary": "Opened 2026-09-10. Closes the first real end-to-end Renta Natural sale before the DIAN cohort window shuts 2026-10-26. Founder decision 2026-09-10 evening: the Wompi/Entidad A remittance rail (originally absorbed from taty-wompi-entidad-a-remittance) is DEFERRED -- first sale closes on cash or a direct transfer (key/QR) Tatiana receives in person, not a Wompi flow. Bloqueo 2 (Wompi support confirmation) no longer blocks this change; design.md Decision 3b records this explicitly, taty-wompi-entidad-a-remittance's tasks stay frozen for a possible future change. Active scope is now just Sections 1-2 (channel consolidation + durable inbox) plus a cash-based Section 4 closing verification. Section 1: Bloqueo 1 resolved by the founder in a parallel Antigravity session (Meta App Secret + phone_number_id=1296858506837233 canonical, Railway env vars set); verified live the production webhook rejects an unsigned payload with 403. Remaining: 1.3b (founder must update Verify Token in Meta Dashboard), 1.5 (local E2E needs the founder's laptop). Section 2: found already fully implemented from an earlier session (tasks.md was stale); fixed a real bug in whatsapp_inbox_service.py::pull_pending (postgrest-py 0.13.2 exposes params on .request.params not .params -- was failing 2 tests, zero regressions after fix, 33F/1257P full suite all pre-existing). Verified LIVE via Supabase MCP that migration 0036 was already applied (2026-07-30) and whatsapp_inbound_events has 64/64 rows processed, 0 backlog, newest event minutes old -- the poller is draining real production traffic right now. Only remaining Section 2 gaps: 2.7 (dedicated Taty Bot Chatwoot user, manual admin action) and 2.12/2.13 (durability/duplicate drills, deliberately not run against the live channel with real customer traffic -- 2.13's guarantee already holds at the DB level via meta_message_id UNIQUE). Section 3 (Wompi): only the generic tracking migration 0053 was written (NOT applied, harmless to leave); no payout service/endpoint code was written, consistent with the deferral decision."
     },
     {
       "id": "b2c-social-lead-capture",
