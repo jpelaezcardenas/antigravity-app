@@ -18,8 +18,20 @@
       verified — see `progress/impl_taty_doc_collection_task5.md`: backend 35 failed/1255
       passed/120 skipped (3 known pre-existing collection errors excluded), bridge 2 failed/106
       passed, all failures pre-existing and unrelated to this change's files.
-- [ ] 6. Controlled verification only — explicitly logged as a test, never a real
-      production lead, before this is marked done.
+- [~] 6. Controlled verification only — explicitly logged as a test, never a real
+      production lead, before this is marked done. **Partially verified 2026-09-11, NOT fully
+      closed**: confirmed live in production that `POST /internal/whatsapp/document` is mounted
+      (present in `openapi.json`) and fails closed correctly (401 without a valid
+      `X-Internal-Api-Key`; an initial 502 on the very first request was a transient blip —
+      `/api/v1/health` was 200 throughout and an immediate retry returned the correct 401, so this
+      was not a repeat of the traffic-cutover incident in `renta-natural-first-sale`). **Could not
+      verify the actual download+processing leg**: this needs a real Chatwoot-hosted `data_url`
+      from an actual test conversation attachment, and the Chatwoot MCP for this session was
+      `CONNECTION_CLOSED` — fabricating a fake `data_url` would only prove the auth gate (already
+      shown above), not the real behavior, so no synthetic call was made. To finish this task:
+      re-run with the Chatwoot MCP connected (or from a session with direct Chatwoot access),
+      upload a test PDF/image to one of the existing test conversations (e.g. "Maria E2E Test"),
+      and post its real `data_url` against a `crm_leads` test row in the `LISTOS_CONTADORA` stage.
 
 ## Stage 11. Deploy to Production (MANDATORY - CLOSES THE LOOP)
 
