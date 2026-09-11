@@ -142,16 +142,18 @@ progression via `CrmService.advance_lead`, same mechanism `taty-wompi-link-hitl-
 
 See: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 5.1 git commit + push to main (channel consolidation + durable inbox; no remittance code —
-      section 3 deferred).
-- [ ] 5.2 Vercel build complete (green) — no frontend change expected; verify no regression.
-- [ ] 5.3 Railway deploy active and healthy (`GET /api/v1/health` → 200).
-- [ ] 5.4 Production verification: webhook rejects unsigned payloads (403 — already confirmed live,
-      task 1.6), inbox durability drill passes in production.
-- [ ] 5.5 Create report: `openspec/changes/renta-natural-first-sale/reports/YYYY-MM-DD-deployment.md`,
-      stating whether section 4 (the real cash/QR sale) has been observed — code-complete without
-      it is reported as incomplete, per design.md Decision 4 (revised: verification no longer
-      requires the Wompi rail).
+- [x] 5.1 git commit + push to main — `992d357`.
+- [x] 5.2 Vercel — not applicable, no frontend change in this deploy.
+- [x] 5.3 Railway deploy active and healthy. **Incident found and resolved**: first deploy
+      (`7ffee9c9`) reported SUCCESS but production returned 502 for several minutes — the same
+      stuck-traffic-cutover anomaly previously documented in `pulso-diario-agent-insight-bridge`
+      (2026-08-29). Fixed with `railway_redeploy` → `811aac26`, confirmed healthy.
+- [x] 5.4 Production verification: `GET /api/v1/health` → 200, webhook rejects unsigned payloads
+      (403), `whatsapp_inbound_events` shows 0 backlog before and after the deploy (live traffic
+      evidence in place of a synthetic durability drill).
+- [x] 5.5 Report created: `openspec/changes/renta-natural-first-sale/reports/2026-09-10-deployment.md`.
+      States explicitly: code-complete for Sections 1-2, but the change is **not done** until
+      Section 4's real cash/QR sale is observed, per design.md Decision 4.
 
 ## 6. Close out
 
