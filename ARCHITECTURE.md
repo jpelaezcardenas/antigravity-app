@@ -55,7 +55,9 @@ flowchart TB
 | **Wizard** | Captación de leads | Next.js | Vercel (`contexia-wizard.vercel.app`) |
 | **Backend API** | Shadow GL + endpoints `/api/v1/*` (financials, agents, approval queue, websocket, metrics, health) | FastAPI / Python 3.11 | Railway (`antigravity-app-production-175a`) |
 | **Datos** | Auth + Postgres + pgvector; tablas Shadow GL | Supabase (`kpynymwghfwshvcvevxq`) | Supabase cloud |
-| **Hermes** | Orquestador/scheduler de agentes + memoria aplicada | Nous Research native | **Local / WSL** (soberanía de datos) |
+| **Hermes (core)** | Orquestador/scheduler de agentes + memoria aplicada. **Verificado en vivo 2026-09-10**: instalación real en `/home/contexia/.hermes/` (git, `hermes-agent/`, no un paquete npm/pip empaquetado). 10 perfiles reales en `.hermes/profiles/` (`approval-queue`, `auditoria`, `centinela`, `contexia`, `kb`, `orchestrator`, `pulso`, `radar`, `social-ops`, `taty` — mapean casi 1:1 a los 9 agentes de `AGENTES.md`, con `contexia` como perfil general/orquestador). Solo el perfil `contexia` corre gateway activo (`gateway.pid`); los otros 9 no tienen gateway propio — un solo gateway orquesta el resto. 8 Scheduled Jobs reales en el dashboard nativo de Hermes (Pulso Diario, Conciliación Shadow GL, Pulso Diario Insight Bridge, Radar Predictivo, Centinela Fiscal, Auditoría Sombra, Social Ops, Metrics Snapshot) — el cron nativo de Hermes SÍ está en uso en producción (corrige una nota de `docs/integrations/HERMES-SELF-CONFIG.md` que lo daba por vacío). `/home/contexia/hermes-workspace/` es un **repo distinto**: el código fuente de Hermes Agent (Electron, `src/`, `swarm.yaml`), remoto real `outsourc-e/hermes-workspace.git` — no config de runtime, y no es lo mismo que `jpelaezcardenas/hermes-workspace` (ese otro repo existe pero es un remoto distinto, no el que usa este clon). `~/.hermes/agents.yaml` contiene 3 definiciones de rol reales (`centinela-monitor`, `auditoria-runner`, `resolucion-executor`) pero **sin evidencia de estar conectadas al runtime activo** — `swarm` no es un subcomando válido del CLI; tratar como config huérfana, no como orquestación en producción. | Nous Research native (Hermes Agent, instalación `git`) | **Local / WSL** (Ubuntu, soberanía de datos) |
+| **Hermes Desktop** | App de escritorio **Electron nativa de Windows** (distinta del core WSL) — la interfaz que usa el fundador día a día. Conecta al backend de Contexia **vía el gateway** (`antigravity-app-production-175a.up.railway.app/api/v1/*`), **nunca directo a Supabase**. Confirmado directamente por el fundador (2026-09-10); no documentado previamente en este archivo. | Electron (Windows nativo) | **Local / Windows** — habla con Railway a través del gateway, mismo backend canónico que la PWA (Decisión #9) |
+| **Bridge MCP Hermes→Claude Code** | Cierra el gap documentado en `docs/integrations/HERMES-SELF-CONFIG.md` §6 ("no existe canal directo bidireccional"). `antigravity-app/.mcp.json` (project-scoped, no global) registra Hermes como servidor MCP vía `hermes mcp serve` (subcomando real, verificado). **Alcance explícito: solo orquestación de desarrollo** (canales, cron, memoria de Hermes) — nunca datos de tenant/Shadow GL, que ya fluyen en sentido inverso (Claude Code → backend) vía los 4 MCP tools de `contexia_agents/server.py`. Ver `openspec/changes/hermes-mcp-bridge-claude-code/`. | `hermes mcp serve` (stdio) invocado vía `wsl.exe -d Ubuntu`, perfil `contexia` | **Local** — Claude Code en Windows invoca el bridge en WSL; solo activo en sesiones de este repo |
 | **GBrain** | Segundo cerebro: hybrid search (vector+keyword+expansión) + grafo de conocimiento auto-wired sobre `contexia-brain`; MCP server para Claude Code/Codex/Hermes | TypeScript/Bun (github.com/jpelaezcardenas/garrytan-gbrain), `gbrain-autopilot.service` (systemd) | **Local / WSL** (mismo host que Hermes) — proceso local, almacenamiento en esquema dedicado `gbrain` en el mismo proyecto Supabase (`kpynymwghfwshvcvevxq`) |
 | **Hermes-HubSpot poller** | Sync unidireccional Supabase → HubSpot (free tier): `crm_leads` → Contacts + Deals en el único pipeline gratis (funnel Renta Natural B2C); `b2b_clients` → Companies solo lectura, nunca Deals. Ver `openspec/changes/hubspot-sync-renta-natural/` | `apps/hermes-hubspot-poller/` (Python/httpx), scheduled task cada 5 min | **Local / laptop** (mismo host que Hermes) — el Private App Access Token de HubSpot y la service-role key de Supabase nunca llegan a Railway/Vercel |
 | **Hermes-Siigo poller** | Sync unidireccional **de solo lectura** Siigo → Shadow GL: cada noche a las 2 AM pide journals + invoices de la API REST de Siigo por cada tenant con credenciales y los ingesta vía `POST /internal/siigo-sync/run`. Nunca escribe de vuelta al Siigo del cliente. Ver `openspec/changes/real-data-ingestion-mvp/` | `apps/hermes-siigo-poller/` (Python/httpx), scheduled task diaria | **Local / laptop** (mismo host que Hermes) — `INTERNAL_API_KEY` y la lista de tenants viven en su `.env` local; las credenciales Siigo por tenant viven **solo** en env vars de Railway (`SIIGO_USERNAME_<tenant>`/`SIIGO_ACCESS_KEY_<tenant>`), nunca en git ni en Supabase |
@@ -481,6 +483,40 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
     rechazando; `LOCAL_WHISPER_URL` sigue siendo un placeholder documentado y sin usar), el
     micrófono del Búnker (`hermes-jarvis-contexia` Fase 2), voz en Telegram, y cualquier proveedor
     TTS de nube.
+
+27. **Topología real de Hermes verificada en vivo, tras un bug de producción real**
+    (`hermes-claude-code-mcp-bridge`, 2026-09-10) — este change nació de investigar cómo cerrar el
+    gap "no existe canal MCP Hermes↔Claude Code" (§6 de `docs/integrations/HERMES-SELF-CONFIG.md`),
+    y en el camino encontró y corrigió dos problemas reales de infraestructura antes de tocar nada
+    del bridge:
+
+    **Bug de gateway (resuelto).** El job Social Ops fallaba con `SESSION_NOT_OWNED` (lease
+    huérfano) y un aviso de "mixed sys.modules" — una `hermes update` anterior había quedado
+    **interrumpida a medias** (marcadores `.hermes-update-in-progress`/`fleet_restart_pending`
+    apuntando a un proceso ya muerto, instalación 99 commits atrás). Se resolvió con
+    `wsl --shutdown` (limpió el interop de WSL, que también estaba en mal estado) +
+    `hermes gateway restart` + `hermes update` completo (manejó un "orphan divergence" de git de
+    forma segura, con respaldo automático). Verificado: `hermes --version` → "Up to date", sin
+    warnings, marcadores eliminados.
+
+    **Documentación corregida, en dos direcciones distintas (no una sola purga).** La primera
+    hipótesis de este change — que `docs/integrations/hermes-autoconfig-instruction-2026-08-29.md`
+    citaba 3 roles fabricados (`centinela-monitor`, `auditoria-runner`, `resolucion-executor`) sin
+    ninguna fuente real — resultó **parcialmente equivocada**: esos 3 roles sí existen como
+    definiciones YAML reales y detalladas en `~/.hermes/agents.yaml`. Lo que sí se confirmó como
+    falso es que estén conectados al runtime activo (`grep` sobre el código fuente del CLI no
+    encuentra ninguna referencia a `agents.yaml`, y `swarm` no es un subcomando válido — el único
+    "swarm" real en el código es `kanban_swarm.py`, una feature de Kanban sin relación). La doc se
+    corrigió sin borrar el contenido real, aclarando que no hay evidencia de que esos roles operen
+    hoy, y redirigiendo a los mecanismos sí confirmados: los 10 perfiles reales y los 8 Scheduled
+    Jobs documentados arriba en la fila "Hermes (core)".
+
+    **Lección operativa, aplicable a cualquier sesión futura que sospeche de documentación
+    fabricada:** verificar el archivo en disco ANTES de asumir que algo no tiene fuente real. La
+    ausencia de un match obvio (ej. "estos roles no aparecen en la lista de perfiles") no prueba
+    que el contenido citado no exista en ningún lado — puede existir en otro archivo (como aquí,
+    `agents.yaml` en vez de `profiles/`) sin estar conectado al sistema activo. Corregir la
+    interpretación es distinto de purgar el contenido.
 
 ## Enlaces canónicos
 

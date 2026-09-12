@@ -13,12 +13,24 @@
 - NO tienes autoridad para modificar código del backend (`antigravity-app` es un repo aparte,
   gobernado por Claude Code/OpenSpec). Tu rol es orquestar tus propios crons/roles/subagentes
   y hablar con el backend solo a través de los puentes ya construidos (abajo).
-- NO inventes un "modo swarm" de 10 roles genéricos. Ya se investigó: ese modo es
-  documentación aspiracional de `HERMES_WORKSPACE_CONTEXT.md` que nunca se desplegó de verdad
-  — cero carpetas de perfil, cero sesiones tmux. Los roles reales que existen hoy en
-  `~/.hermes/agents.yaml` son exactamente 3: `centinela-monitor`, `auditoria-runner`,
-  `resolucion-executor`. Si necesitas más roles, créalos con nombres que mapeen a productos
-  reales de Contexia (ver §3), no a una plantilla genérica de agencia de IA.
+- NO inventes un "modo swarm" de 10 roles genéricos. **Corrección 2026-09-10, verificada
+  directamente contra la máquina real** (la afirmación anterior de este párrafo tenía un dato
+  falso): `~/.hermes/agents.yaml` sí existe y sí contiene 3 definiciones de rol completas
+  (`centinela-monitor`, `auditoria-runner`, `resolucion-executor`, cada una con `system_prompt`
+  y `tools`) — no es contenido inventado. Pero **no hay evidencia de que el runtime activo de
+  Hermes cargue ese archivo**: `grep -rl "agents.yaml" hermes_cli/*.py` no arroja ningún
+  resultado, y `swarm` **no es un subcomando válido** del CLI (`hermes: error: argument command:
+  invalid choice: 'swarm'`) — el único hit de "swarm" en el código fuente es `kanban_swarm.py`,
+  una feature de ejecución paralela de tarjetas Kanban sin relación con roles con nombre. La
+  afirmación "cero carpetas de perfil" de la versión anterior de este párrafo también era falsa:
+  sí existen 10 carpetas de perfil reales (`approval-queue`, `auditoria`, `centinela`, `contexia`,
+  `kb`, `orchestrator`, `pulso`, `radar`, `social-ops`, `taty`), y de ahí sale la orquestación real
+  — no de `agents.yaml`. Conclusión verificada: `agents.yaml` parece ser configuración huérfana
+  (posible copia adaptada del patrón de `swarm.yaml` del repo de código fuente
+  `hermes-workspace/`), no un sistema en producción. No construyas nada sobre esos 3 roles
+  asumiendo que están activos — si quieres formalizarlos, primero confirma con el fundador si
+  vale la pena conectarlos a algo real, o si el mecanismo vigente (los 8 Scheduled Jobs +
+  Skills por perfil) ya cubre lo que se necesita.
 - NO inventes precios, tarifas ni promesas de SLA en ninguna conversación con un cliente — el
   pricing real está en §2, cópialo tal cual, no lo parafrasees hacia arriba o abajo.
 - NUNCA escribas un valor de secreto/token/contraseña en un archivo, log, o mensaje que quede
@@ -56,11 +68,13 @@ ganar resiliencia (self-healing, memoria que mejora sola, paralelización real).
 2. **Sistema de Skills auto-mejorables (compatible con el estándar abierto `agentskills.io`)**
    — Hermes crea skills automáticamente después de tareas complejas y las mejora solo con el
    uso ("Autonomous skill creation after complex tasks. Skills self-improve during use").
-   Los 3 roles reales de Contexia (`centinela-monitor`, `auditoria-runner`,
-   `resolucion-executor`) hoy son entradas estáticas en `agents.yaml`, escritas a mano una vez.
-   **Acción**: evalúa formalizarlos como Skills reales de Hermes (no solo roles de config) para
-   que entren al loop de auto-mejora — en vez de que tú los reescribas a mano cada vez que algo
-   cambia en Contexia.
+   **Corrección 2026-09-10**: los 3 roles de `agents.yaml` (`centinela-monitor`,
+   `auditoria-runner`, `resolucion-executor`) no están confirmados como conectados al runtime
+   (ver corrección de §0) — no son el punto de partida correcto para esto. Lo que sí es real y
+   verificable son las Skills ya activas por perfil en `~/.hermes/profiles/<perfil>/skills/`
+   (ver catálogo en `HERMES-SELF-CONFIG.md` §8). **Acción**: si quieres aprovechar el loop de
+   auto-mejora de Skills, parte de esas Skills reales, no de los roles huérfanos de
+   `agents.yaml`.
 
 3. **Subagentes paralelos reales (`Spawn isolated subagents for parallel workstreams`)** —
    Hermes puede lanzar subagentes aislados que trabajan en paralelo, y scripts Python que llaman
@@ -142,10 +156,10 @@ según tu caso — sin sorpresas, te lo decimos antes de cobrarte un peso."*
 | Producto | Estado del backend | Qué necesita de Hermes |
 |---|---|---|
 | **Pulso Diario** | Shadow GL real (`GET /financials`) ya calcula `caja_real`/`ventas_ayer`/`gastos_ayer` por tenant. Para un tenant freemium SIN Shadow GL (lead nuevo), el backend ya tiene un fallback: `POST /api/v1/agents/pulso-diario/insights` (bearer token = `HERMES_BRIDGE_TOKEN`) acepta que tú empujes un insight calculado, y `/financials` lo sirve automáticamente cuando Shadow GL está vacío. | **Esto es lo que NADIE ha configurado todavía — es tu tarea #1.** Crea un cron/rol tuyo que, para cada tenant freemium sin datos, calcule algo razonable (aunque sea una estimación conservadora basada en lo que el cliente declaró en el alta) y lo empuje a ese endpoint. Sin este cron, el endpoint existe pero nunca se usa. |
-| **Centinela Fiscal** | Rol `centinela-monitor` ya existe en tu `agents.yaml`, con actividad real hasta 2026-08-25. El puente MCP `centinela_alerts` ya apunta al backend correcto. | Verificar que el cron de este rol sigue corriendo con la cadencia esperada (ex-ante, antes de que venza una obligación, no después). Si no hay cron activo, configúralo. |
+| **Centinela Fiscal** | **Corrección 2026-09-10**: el rol `centinela-monitor` de `agents.yaml` no tiene actividad confirmada en el runtime (ver corrección de §0) — la afirmación anterior de "actividad real hasta 2026-08-25" no está verificada contra el código fuente. El mecanismo real y confirmado es el Scheduled Job "Centinela Fiscal — 12:00 PM COT" del dashboard. El puente MCP `centinela_alerts` ya apunta al backend correcto. | Verificar que el Scheduled Job real (no `agents.yaml`) sigue corriendo con la cadencia esperada (ex-ante, antes de que venza una obligación, no después). |
 | **Taty** | Un solo cerebro (`TatyAgentService`) para Telegram + PWA + WhatsApp (vía Chatwoot). Ya resuelve el perfil del tenant dinámicamente — no requiere provisioning por cliente. | Nada nuevo de tu lado — solo asegúrate de que `ContexiaChatwootBridge` (Scheduled Task) sigue corriendo (watchdog de 1 min). |
 | **Radar Predictivo / Patrimonio** | 100% mock en la PWA hoy — no hay backend real detrás. | Fuera de tu alcance actual — no construyas nada aquí todavía, es deuda de producto pendiente, no una tarea de Hermes. |
-| **Auditoría Sombra** | Rol `auditoria-runner` ya existe. El wizard (`contexia-wizard`) ya persiste el lead en Supabase (`leads`) + email interno — confirmado, no hay que rehacer esto. | Verificar que el rol sigue produciendo reportes con la cadencia esperada. |
+| **Auditoría Sombra** | **Corrección 2026-09-10**: el rol `auditoria-runner` de `agents.yaml` no tiene actividad confirmada en el runtime (ver corrección de §0). El mecanismo real y confirmado es el Scheduled Job "Auditoría Sombra — 2:00 AM COT" del dashboard. El wizard (`contexia-wizard`) ya persiste el lead en Supabase (`leads`) + email interno — confirmado, no hay que rehacer esto. | Verificar que el Scheduled Job real (no `agents.yaml`) sigue produciendo reportes con la cadencia esperada. |
 
 ## 4. Fase 0 — Estado real de los bloqueadores (verificado en vivo, 2026-08-29)
 

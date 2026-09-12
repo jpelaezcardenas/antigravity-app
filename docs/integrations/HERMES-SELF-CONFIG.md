@@ -253,7 +253,11 @@ Hermes Desktop ──────────► Chatwoot bridge (bot-chat deliv
 Hermes Desktop ──────────► Railway (via CLI instalado)
 ```
 
-**Gap confirmado:** No existe un canal directo bidireccional Hermes ↔ Claude Code. La coordinación hoy es:
+**Gap cerrado (2026-09-11, `hermes-mcp-bridge-claude-code`):** ya existe un canal directo
+Claude Code → Hermes vía `antigravity-app/.mcp.json` (project-scoped), que registra
+`hermes mcp serve` como servidor MCP. Alcance explícito: solo orquestación de desarrollo
+(canales, cron, memoria) — nunca datos de negocio. La coordinación de contenido/decisiones
+sigue siendo, en paralelo:
 - Hermes escribe en GBrain → Claude Code lee GBrain
 - Claude Code escribe en GBrain → Hermes lee GBrain
 - Canal de coordinación manual: `COORDINATION-LOG.md` en WSL

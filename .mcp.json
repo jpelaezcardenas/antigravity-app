@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "hermes": {
+      "command": "wsl.exe",
+      "args": ["-d", "Ubuntu", "/home/contexia/.hermes/hermes-agent/venv/bin/hermes", "--profile", "contexia", "mcp", "serve"]
+    }
+  }
+}
