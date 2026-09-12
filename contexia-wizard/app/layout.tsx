@@ -6,6 +6,15 @@ export const metadata: Metadata = {
   title: "Shadow Audit Gratuito — Contexia",
   description:
     "Analiza tu empresa en 5 minutos. Descubre cuánto pagarías en Régimen Simple vs Ordinario, tus riesgos DIAN y tu plan de acción 30-60-90 días.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico?v=2026091201", sizes: "any" },
+      { url: "/favicon-32x32.png?v=2026091201", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png?v=2026091201", sizes: "16x16", type: "image/png" },
+    ],
+    apple: { url: "/apple-touch-icon.png?v=2026091201", sizes: "180x180", type: "image/png" },
+  },
+  manifest: "/manifest.webmanifest",
   openGraph: {
     title: "Shadow Audit Gratuito — Contexia",
     description:
@@ -26,7 +35,11 @@ export default function RootLayout({
   return (
     <html lang="es" style={{ backgroundColor: "#020617" }}>
       <head>
-        <link rel="icon" href="https://www.contexia.online/assets/img/logo_official.png" />
+        <link rel="icon" href="/favicon.ico?v=2026091201" sizes="any" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2026091201" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2026091201" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2026091201" />
+        <link rel="manifest" href="/manifest.webmanifest" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
         {/* Google Analytics GA4 */}
         <Script
