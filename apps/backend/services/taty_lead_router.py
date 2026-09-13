@@ -34,7 +34,7 @@ from core.constants import UMBRAL_RENTA_COP
 from core.supabase_client import get_service_supabase
 from core.tenant_context import resolve_cliente_cero_tenant_id
 from core.pricing_catalog import RENTA_NATURAL_PRICING
-from services.crm_service import get_crm_service
+from services.crm_service import _normalize_whatsapp_phone, get_crm_service
 from services.document_storage_service import upload_tax_document
 from services.taty_service import get_taty_service
 from services.wompi_signature import compute_integrity_signature
@@ -166,6 +166,57 @@ def get_lead_phone(lead_id: str) -> Optional[str]:
         client.table("crm_leads").select("whatsapp_phone").eq("id", lead_id).single().execute()
     )
     return (result.data or {}).get("whatsapp_phone")
+
+
+def resolve_b2b_tenant_for_whatsapp_phone(whatsapp_phone: str) -> Optional[Tuple[str, str]]:
+    """Look up whether `whatsapp_phone` belongs to an onboarded B2B client (hermes-jarvis-contexia,
+    D2), so the caller can decide to proxy to Hermes instead of the B2C Renta Natural lead flow.
+
+    Every WhatsApp lead in this router resolves to Cliente Cero -- there was previously no
+    concept of "the tenant of a WhatsApp lead" anywhere here. This bridges
+    crm_leads.whatsapp_phone (always digits-only, `_normalize_whatsapp_phone`) to
+    b2b_clients.phone, which is free-text typed by an operator in the Bunker alta form
+    (`crm_service.py::create_b2b_client`) and may contain spaces/+/dashes. Both sides are
+    normalized with the SAME function before comparing -- a raw `.eq()` would silently never
+    match most real rows, making this feature a permanent no-op without ever erroring.
+
+    Returns (tenant_id, plan_tier) for the first b2b_clients row whose normalized phone matches,
+    or None if there is no match, the matched row has no linked tenant, that tenant has no
+    plan_tier, or the lookup itself fails for any reason -- always fails open to the existing
+    Taty flow, never blocks a WhatsApp reply because of this lookup.
+    """
+    normalized = _normalize_whatsapp_phone(whatsapp_phone) if whatsapp_phone else ""
+    if not normalized:
+        return None
+
+    try:
+        client = get_service_supabase()
+        rows = client.table("b2b_clients").select("phone, client_tenant_id").execute().data or []
+
+        tenant_id = None
+        for row in rows:
+            phone = row.get("phone")
+            candidate_tenant_id = row.get("client_tenant_id")
+            if phone and candidate_tenant_id and _normalize_whatsapp_phone(phone) == normalized:
+                tenant_id = candidate_tenant_id
+                break
+
+        if not tenant_id:
+            return None
+
+        tenant_row = (
+            client.table("tenants").select("plan_tier").eq("id", tenant_id).single().execute()
+        )
+        plan_tier = (tenant_row.data or {}).get("plan_tier")
+        if not plan_tier:
+            return None
+
+        return (tenant_id, plan_tier)
+    except Exception:
+        logger.warning(
+            "taty_lead_router: b2b tenant lookup failed for a whatsapp phone", exc_info=True
+        )
+        return None
 
 
 def _record_inbound_and_reset_cadence(lead_id: str) -> None:

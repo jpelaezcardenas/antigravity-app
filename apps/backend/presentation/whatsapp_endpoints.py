@@ -20,8 +20,11 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import logging
+import os
 from typing import Any, Dict, List
 
+import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
@@ -29,7 +32,14 @@ from pydantic import BaseModel
 from channels.whatsapp import normalize_whatsapp_webhook, sanitize_for_whatsapp, send_whatsapp_message
 from config import settings
 from core.deps import get_current_user
-from services.taty_lead_router import get_lead_phone, lead_exists, route_lead_message
+from core.hermes_gateway import resolve_hermes_gateway_url
+from core.plan_features import has_feature
+from services.taty_lead_router import (
+    get_lead_phone,
+    lead_exists,
+    resolve_b2b_tenant_for_whatsapp_phone,
+    route_lead_message,
+)
 from services.voice_safety import should_speak
 from services.whatsapp_inbox_service import (
     DEFAULT_PULL_LIMIT,
@@ -39,7 +49,35 @@ from services.whatsapp_inbox_service import (
     store_inbound_events,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=["whatsapp"])
+
+# D2 (hermes-jarvis-contexia, 2026-09-13): a Growth/Enterprise B2B client writing on this same
+# WhatsApp number gets Hermes instead of the B2C Renta Natural lead flow ("deeper brain for
+# whoever pays for it"). Mirrors telegram_endpoints.py's D1 _route_to_jarvis pattern, but async
+# (this router's handler already is), not via the sync taty_lead_router.py surface.
+_HERMES_BRIDGE_TOKEN = os.getenv("HERMES_BRIDGE_TOKEN", "")
+_HERMES_CALL_TIMEOUT = 55  # seconds
+
+_JARVIS_B2B_SYSTEM_PROMPT = (
+    "You are Jarvis, the Contexia AI assistant for a Growth/Enterprise client writing over "
+    "WhatsApp. Answer in the same language as the user's message. Be concise and helpful."
+)
+
+
+async def _call_hermes_for_whatsapp(message: str) -> str:
+    """Proxy one WhatsApp message to Hermes's /api/run and return its reply text."""
+    gateway_url = await resolve_hermes_gateway_url()
+    headers = {"Content-Type": "application/json"}
+    if _HERMES_BRIDGE_TOKEN:
+        headers["Authorization"] = f"Bearer {_HERMES_BRIDGE_TOKEN}"
+    payload = {"message": message, "system_prompt": _JARVIS_B2B_SYSTEM_PROMPT, "stream": False}
+    async with httpx.AsyncClient(timeout=_HERMES_CALL_TIMEOUT) as client:
+        resp = await client.post(f"{gateway_url}/api/run", json=payload, headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
+        return data.get("response") or data.get("text") or str(data)
 
 
 class HistoryTurn(BaseModel):
@@ -162,8 +200,35 @@ async def taty_lead_reply(
     if not lead_exists(lead_id):
         raise HTTPException(status_code=404, detail="Lead not found")
 
-    history = [turn.model_dump() for turn in payload.history] if payload.history else None
-    result = route_lead_message(lead_id, payload.text, history=history)
+    phone = get_lead_phone(lead_id)
+
+    # D2 (hermes-jarvis-contexia): a Growth/Enterprise B2B client on this same WhatsApp number
+    # gets Hermes instead of the B2C Renta Natural lead flow. Falls through to the unmodified
+    # Taty flow below for: no phone on file, no b2b_clients phone match, a freemium/starter B2B
+    # client (has_feature gate), or a Hermes call failure.
+    result: Dict[str, Any] | None = None
+    b2b_match = resolve_b2b_tenant_for_whatsapp_phone(phone) if phone else None
+    if b2b_match and has_feature(b2b_match[1], "jarvis_chat"):
+        try:
+            hermes_reply = await _call_hermes_for_whatsapp(payload.text)
+            result = {
+                "intent": "jarvis_b2b_client",
+                "confidence": 1.0,
+                "reply": hermes_reply,
+                "persona_fields": {},
+                "stage": None,
+            }
+        except Exception:
+            logger.warning(
+                "Jarvis B2B WhatsApp proxy failed for tenant %s, falling back to Taty",
+                b2b_match[0],
+                exc_info=True,
+            )
+            result = None
+
+    if result is None:
+        history = [turn.model_dump() for turn in payload.history] if payload.history else None
+        result = route_lead_message(lead_id, payload.text, history=history)
 
     # Safety net: strip any Markdown/HTML artifacts (tables, headers, <br>, **bold**, "Fuentes:"
     # footer) a real WhatsApp client can't render, regardless of how "reply" was generated. Applied
@@ -189,9 +254,7 @@ async def taty_lead_reply(
         result.get("reply"), settings.VOICE_MAX_CHARS
     )
 
-    if payload.deliver:
-        phone = get_lead_phone(lead_id)
-        if phone:
-            await send_whatsapp_message(phone, result["reply"])
+    if payload.deliver and phone:
+        await send_whatsapp_message(phone, result["reply"])
 
     return result

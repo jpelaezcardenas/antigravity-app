@@ -112,13 +112,45 @@
 
 ## Fase D — Jarvis para clientes B2B vía WhatsApp (D2, generaliza la Fase D original)
 
-- [ ] 16. En la ruta de respuesta de WhatsApp (`taty_lead_router.py` / `whatsapp_endpoints.py`):
-      si el tenant del lead tiene `plan_tier ∈ {growth, enterprise}` → proxy a Hermes (contexto
-      del tenant, vía el mismo mecanismo que `/jarvis/chat`); si no → Taty básica sin cambios
-- [ ] 17. Test: un lead `plan_tier=freemium/starter` no cambia de comportamiento (contrato
-      aditivo, byte-idéntico); un lead `growth/enterprise` recibe respuesta vía Hermes
-- [ ] 18. Gate por `has_feature(plan_tier, "jarvis_chat")` (mismo helper de Fase B/C, sin
-      duplicar lógica de gating)
+> **Hallazgo real antes de implementar:** `taty_lead_router.py` no tenía NINGÚN concepto de
+> "tenant de un lead de WhatsApp" — todo lead resuelve siempre a Cliente Cero.
+> `taty_intent_router.py` (que sí era tenant-scoped, para clientes ya onboardeados) fue
+> eliminado como código muerto en `taty-per-tenant-profiles` (Decisión #16 de `ARCHITECTURE.md`).
+> Es decir: no existía ningún canal de WhatsApp para un cliente B2B ya onboardeado. Se preguntó
+> al fundador cómo resolverlo antes de escribir código sobre una superficie multi-tenant —
+> decisión: nuevo lookup por teléfono contra `b2b_clients` (abajo).
+
+- [x] 16. **`services/taty_lead_router.py::resolve_b2b_tenant_for_whatsapp_phone()`** (nuevo,
+      función pura de lookup, sin tocar la firma de `route_lead_message` — evita romper su
+      superficie sync ya probada). Normaliza AMBOS lados con `_normalize_whatsapp_phone`
+      (reusada de `crm_service.py`, mismo patrón de import ya usado en
+      `social_capture_endpoints.py`) antes de comparar — `b2b_clients.phone` es texto libre
+      tecleado por un operador en el alta del Búnker (puede traer espacios/+/guiones),
+      mientras `crm_leads.whatsapp_phone` siempre es solo-dígitos; un `.eq()` crudo habría
+      fallado en silencio para casi todas las filas reales. Fail-open: cualquier error de
+      lookup devuelve `None`, nunca bloquea la respuesta.
+      **`presentation/whatsapp_endpoints.py::taty_lead_reply`**: antes de llamar a
+      `route_lead_message`, resuelve el teléfono del lead una sola vez (se reusa también para
+      la entrega más abajo, en vez de la doble consulta que había antes) y, si hay match B2B con
+      `has_feature(plan_tier, "jarvis_chat")`, llama a `_call_hermes_for_whatsapp()` (nuevo,
+      async, mismo patrón `/api/run` que `telegram_endpoints.py::_call_hermes_api` de la Fase 1
+      pero nativo async — `route_lead_message` es sync y no puede llamar al
+      `resolve_hermes_gateway_url()` async sin arriesgar un `asyncio.run()` dentro de un event
+      loop ya corriendo, así que el corte se hace en el endpoint, no en el router sync).
+- [x] 17. 6 tests nuevos en `tests/test_whatsapp_jarvis_b2b_routing.py`: growth/enterprise →
+      Hermes, `route_lead_message` NUNCA llamado; starter (match B2B sin `jarvis_chat`) → Taty
+      sin cambios; sin match B2B → Taty sin cambios; sin teléfono → ni siquiera se intenta el
+      lookup; fallo de Hermes → cae a Taty con gracia (nunca 500, nunca dos respuestas). Más 7
+      tests en `tests/test_taty_lead_router_b2b_phone_lookup.py` para el lookup en aislamiento
+      (formato de teléfono distinto, sin match, tabla vacía, tenant sin `plan_tier`, error de
+      lookup). **Corrección necesaria en 5 tests EXISTENTES** de `test_whatsapp_endpoints.py`
+      (los que ya mockeaban `get_lead_phone` con un teléfono real): sin mockear también
+      `resolve_b2b_tenant_for_whatsapp_phone`, esos tests golpeaban Supabase real sin querer
+      (pasaban, pero lentos e indeterministas) — se les agregó `return_value=None` explícito.
+- [x] 18. Gate por `has_feature(plan_tier, "jarvis_chat")` (mismo helper de Fase B/C, sin
+      duplicar lógica de gating) — probado explícitamente con el caso `starter` (tarea 17).
+      Suite completa verificada sin regresiones: 33 fallos preexistentes (shadow_gl/wizard, sin
+      relación), ninguno en los módulos tocados.
 
 ---
 

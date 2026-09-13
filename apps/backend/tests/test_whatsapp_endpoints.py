@@ -338,6 +338,9 @@ class TestInternalTatyReplyEndpoint:
             ) as mock_route, patch(
                 "presentation.whatsapp_endpoints.get_lead_phone", return_value="573001234567"
             ), patch(
+                "presentation.whatsapp_endpoints.resolve_b2b_tenant_for_whatsapp_phone",
+                return_value=None,
+            ), patch(
                 "presentation.whatsapp_endpoints.send_whatsapp_message",
                 new=AsyncMock(return_value=True),
             ):
@@ -436,6 +439,9 @@ class TestReplyIsDeliveredToTheRealWhatsAppCustomer:
             ), patch(
                 "presentation.whatsapp_endpoints.get_lead_phone", return_value="573001234567"
             ), patch(
+                "presentation.whatsapp_endpoints.resolve_b2b_tenant_for_whatsapp_phone",
+                return_value=None,
+            ), patch(
                 "presentation.whatsapp_endpoints.send_whatsapp_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send:
@@ -484,6 +490,9 @@ class TestReplyIsDeliveredToTheRealWhatsAppCustomer:
             ), patch(
                 "presentation.whatsapp_endpoints.get_lead_phone", return_value="573001234567"
             ), patch(
+                "presentation.whatsapp_endpoints.resolve_b2b_tenant_for_whatsapp_phone",
+                return_value=None,
+            ), patch(
                 "presentation.whatsapp_endpoints.send_whatsapp_message",
                 new=AsyncMock(return_value=False),
             ):
@@ -522,6 +531,9 @@ class TestReplyIsDeliveredToTheRealWhatsAppCustomer:
             ), patch(
                 "presentation.whatsapp_endpoints.get_lead_phone", return_value="573001234567"
             ), patch(
+                "presentation.whatsapp_endpoints.resolve_b2b_tenant_for_whatsapp_phone",
+                return_value=None,
+            ), patch(
                 "presentation.whatsapp_endpoints.send_whatsapp_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send:
@@ -546,6 +558,9 @@ class TestReplyIsDeliveredToTheRealWhatsAppCustomer:
                 return_value={"intent": "unknown", "confidence": 0.0, "reply": "Hola!"},
             ), patch(
                 "presentation.whatsapp_endpoints.get_lead_phone", return_value="573001234567"
+            ), patch(
+                "presentation.whatsapp_endpoints.resolve_b2b_tenant_for_whatsapp_phone",
+                return_value=None,
             ), patch(
                 "presentation.whatsapp_endpoints.send_whatsapp_message",
                 new=AsyncMock(return_value=True),
