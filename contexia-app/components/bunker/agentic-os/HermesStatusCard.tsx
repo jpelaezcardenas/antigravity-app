@@ -17,7 +17,7 @@ export function HermesStatusCard() {
       .then((res) => {
         if (cancelled) return;
         setData(res);
-        setState(res.online ? "online" : "offline");
+        setState(res.status === "ok" ? "online" : "offline");
       })
       .catch(() => {
         if (cancelled) return;
@@ -43,11 +43,12 @@ export function HermesStatusCard() {
         ? "Hermes · En línea"
         : "Hermes · Sin conexión";
 
+  const uptimeSeconds = data?.hermes?.uptime_seconds;
   const sub =
-    state === "online" && data?.uptime_seconds
-      ? `Uptime ${Math.floor(data.uptime_seconds / 60)} min`
-      : state === "online" && data?.url
-        ? data.url.replace("https://", "").slice(0, 30)
+    state === "online" && typeof uptimeSeconds === "number"
+      ? `Uptime ${Math.floor(uptimeSeconds / 60)} min`
+      : state === "online" && data?.gateway_url
+        ? data.gateway_url.replace("https://", "").slice(0, 30)
         : state === "error" || state === "offline"
           ? "Gateway no alcanzable"
           : "";

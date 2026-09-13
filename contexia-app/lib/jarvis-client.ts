@@ -1,31 +1,22 @@
 import { authenticatedFetch } from "./authenticated-fetch";
 import { config } from "./config";
 
-export interface JarvisChatResponse {
-  message: string;
-  timestamp?: string;
-}
-
 export interface HermesStatusResponse {
-  online: boolean;
-  url: string;
-  uptime_seconds?: number;
+  // Matches the real backend contract (apps/backend/presentation/jarvis_endpoints.py::jarvis_status):
+  // {"status": "ok", "gateway_url": ..., "hermes": {...}} on success,
+  // {"status": "unreachable", "gateway_url"?: ..., "detail": ...} on failure.
+  status: "ok" | "unreachable";
+  gateway_url?: string;
+  hermes?: { uptime_seconds?: number; [key: string]: unknown };
+  detail?: string;
 }
 
 class JarvisClient {
-  async chat(message: string): Promise<JarvisChatResponse> {
-    const response = await authenticatedFetch(config.JARVIS_CHAT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Chat error: ${response.statusText}`);
-    }
-
-    return response.json();
-  }
+  // No chat() method here: POST /api/v1/jarvis/chat is SSE-only (StreamingResponse,
+  // never a single JSON body) — JarvisChatInterface.tsx reads the stream directly
+  // with fetch()/getReader() instead of going through this client. A `chat()` that
+  // called `.json()` on that response would always throw; removed rather than left
+  // as a trap (config.JARVIS_CHAT_URL is unused for the same reason).
 
   async status(): Promise<HermesStatusResponse> {
     const response = await authenticatedFetch(config.JARVIS_STATUS_URL, {

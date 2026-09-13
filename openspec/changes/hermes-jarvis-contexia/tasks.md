@@ -73,12 +73,26 @@
 
 ## Fase B — Búnker Agentic OS (D6: mismo `jarvis-client.ts` que la burbuja PWA)
 
-- [ ] 9. Crear componentes `contexia-app/components/bunker/agentic-os/` (HermesStatusCard,
-      CronJobsMonitor, chat de pantalla completa — 5 archivos)
-- [ ] 10. Crear `contexia-app/lib/jarvis-client.ts` (compartido con la burbuja del PWA, Fase D)
-- [ ] 11. Actualizar `contexia-app/lib/config.ts` — agregar endpoints JARVIS_CHAT y JARVIS_STATUS
-- [ ] 12. Modificar `contexia-app/app/app/bunker/page.tsx` — quitar "agentic-os" de
-      PLACEHOLDER_SECTIONS
+> **Reconciliación 2026-09-13:** esta fase ya estaba COMPLETA en `main` (commit `4933f0a`,
+> 2026-09-02) — el HANDOFF.md de este hilo decía "no construida", desactualizado. Verificado en
+> disco antes de re-implementar nada.
+
+- [x] 9. `contexia-app/components/bunker/agentic-os/` — 5 archivos: `AgenticOsSection.tsx`
+      (feature-gating por plan_tier/rol admin, JWT), `HermesStatusCard.tsx`, `JarvisChatInterface.tsx`
+      (SSE streaming), `VoiceToggle.tsx` (Web Speech API), `CronJobsMonitor.tsx` (admin-only)
+      — commit `4933f0a`
+- [x] 10. `contexia-app/lib/jarvis-client.ts` — commit `4933f0a`. **Bug real encontrado y
+      corregido 2026-09-13** (este hilo): `HermesStatusResponse` esperaba
+      `{online, url, uptime_seconds}` pero el backend (`jarvis_endpoints.py::jarvis_status`)
+      siempre devuelve `{status, gateway_url, hermes}` — `HermesStatusCard` mostraba "Sin
+      conexión" incluso con Hermes sano, porque `res.online` era `undefined`. Corregido el tipo
+      y el mapeo en `HermesStatusCard.tsx`. También se eliminó `chat()` (dead code: `/jarvis/chat`
+      es SSE-only, `.json()` sobre ese stream siempre habría lanzado — `JarvisChatInterface`
+      hace su propio `fetch()`/`getReader()`, nunca llamó a este método)
+- [x] 11. `contexia-app/lib/config.ts` ya tenía `jarvisChat`/`jarvisStatus`/`JARVIS_CHAT_URL`/
+      `JARVIS_STATUS_URL` — commit `4933f0a`
+- [x] 12. `contexia-app/app/app/bunker/page.tsx` ya tenía `AgenticOsSection` importado y
+      `"agentic-os"` fuera de `PLACEHOLDER_SECTIONS` — commit `4933f0a`
 
 ---
 
