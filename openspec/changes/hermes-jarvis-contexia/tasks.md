@@ -124,12 +124,27 @@
 
 ## Fase E — Burbuja Jarvis en el PWA (D4/D5, nuevo — no existía en el proposal original)
 
-- [ ] 19. Burbuja flotante en `contexia-app/app/app/(shell)/layout.tsx` (un solo punto que
-      envuelve overview/fiscal/flujo-detalle/patrimonio/radar) — **no** un quinto ícono en
-      `BottomNav.tsx`
-- [ ] 20. Mini-visualizer con estados `escuchando / pensando / respondiendo` (D5 — NO la versión
-      de pantalla completa)
-- [ ] 21. Reusa `jarvis-client.ts` (mismo cliente de la Fase B) y el gate `jarvis_chat`/`jarvis_voice`
+- [x] 19. `components/jarvis/JarvisBubble.tsx` + montada en
+      `contexia-app/app/app/(shell)/layout.tsx` (un solo punto que envuelve
+      overview/fiscal/flujo-detalle/patrimonio/radar/config) — **no** un quinto ícono en
+      `BottomNav.tsx`. **Bug real encontrado y corregido en vivo durante la verificación**:
+      la posición inicial (`bottom-24 right-4` en mobile) colisionaba exactamente con el pill
+      fijo de "Salir" que `overview/page.tsx` y `config/page.tsx` ya renderizan en esa misma
+      esquina (`bottom-24 right-4 z-50 md:hidden`) — un click en la burbuja de Jarvis caía
+      sobre "Salir" y navegaba a `/logout` (confirmado con un click real en el navegador antes
+      de corregir). Reposicionada a `bottom-40`/panel `bottom-56` en mobile para despejarlo.
+      Verificado en el navegador con un JWT admin simulado: la burbuja aparece, abre el panel
+      sin colisión, el input+mic+send funcionan, y el error 404 (esperado en dev local sin el
+      rewrite de Vercel a Railway) se muestra de forma honesta en el chat.
+- [x] 20. Mini-visualizer con estados `pensando` / `respondiendo` en el punto de la burbuja y el
+      header del panel (D5 — NO la versión de pantalla completa). `escuchando` lo representa el
+      propio botón de `VoiceToggle` (pulso rojo mientras graba) — no se dupitó ese estado en la
+      burbuja para no tener dos indicadores de lo mismo
+- [x] 21. Gate `hasJarvisChat`/`hasVoice` idéntico al de `AgenticOsSection` (admin o
+      growth/enterprise para chat; admin o enterprise para voz). Reusa
+      `components/bunker/agentic-os/VoiceToggle.tsx` directamente (sin mover el archivo).
+      El cuerpo SSE de `sendMessage()` duplica deliberadamente el de `JarvisChatInterface.tsx`
+      en vez de compartir un hook — ver comentario en el archivo para el porqué
 
 ---
 
