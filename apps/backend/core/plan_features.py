@@ -13,12 +13,23 @@ from __future__ import annotations
 
 from typing import Optional
 
-_ALL_FEATURES = frozenset({"pulso_diario", "centinela_alerts", "liquidity_bridge"})
+_ALL_FEATURES = frozenset({
+    "pulso_diario",
+    "centinela_alerts",
+    "liquidity_bridge",
+    "jarvis_chat",
+    "jarvis_voice",
+})
 
 PLAN_FEATURES: dict[str, frozenset[str]] = {
     "freemium": frozenset({"pulso_diario"}),
-    "starter": _ALL_FEATURES,
-    "growth": _ALL_FEATURES,
+    "starter": frozenset({"pulso_diario", "centinela_alerts", "liquidity_bridge"}),
+    "growth": frozenset({
+        "pulso_diario",
+        "centinela_alerts",
+        "liquidity_bridge",
+        "jarvis_chat",
+    }),
     "enterprise": _ALL_FEATURES,
 }
 

@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { fetchTenantMe, type TenantMeSnapshot } from "@/lib/api-client";
 
 const PLAN_TIER_LABEL: Record<string, string> = {
-  freemium: "Plan Freemium",
-  starter: "Plan Starter",
-  growth: "Plan Growth",
-  enterprise: "Plan Enterprise",
+  freemium: "Pulso",
+  starter: "GPS",
+  growth: "Contexia Pro",
+  enterprise: "Contexia Total",
 };
 
 function toPlanLabel(planTier: string | null): string {
