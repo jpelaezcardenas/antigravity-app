@@ -16,10 +16,52 @@ import httpx
 from services.taty_service import get_taty_service
 from core.supabase_client import get_service_supabase, get_supabase
 from services.social_ops_service import get_social_ops_service
+from core.hermes_gateway import resolve_hermes_gateway_url
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["telegram"])  # prefix handled by router.py include_router()
+
+# ---------------------------------------------------------------------------
+# Jarvis routing (D1, hermes-jarvis-contexia re-scope 2026-09-13): the founder's
+# personal Jarvis assistant shares this SAME bot/webhook — no second Telegram
+# bot/token. A message from TELEGRAM_JUAN_DAVID_CHAT_ID is proxied to Hermes
+# instead of Taty; every other chat_id is completely unaffected.
+# ---------------------------------------------------------------------------
+TELEGRAM_JUAN_DAVID_CHAT_ID = os.getenv("TELEGRAM_JUAN_DAVID_CHAT_ID", "")
+HERMES_BRIDGE_TOKEN = os.getenv("HERMES_BRIDGE_TOKEN", "")
+HERMES_CALL_TIMEOUT = 55  # seconds — leaves 5s buffer before Telegram's 60s webhook timeout
+
+JARVIS_SYSTEM_PROMPT = (
+    "You are Jarvis, the personal AI assistant of Juan David, founder of Contexia. "
+    "You have full admin context over all tenants and operations. "
+    "Be concise, direct, and in the same language as the user's message."
+)
+
+
+async def _call_hermes_api(user_text: str) -> str:
+    """Proxy one message to Hermes's /api/run and return its reply text."""
+    gateway_url = await resolve_hermes_gateway_url()
+    headers = {"Content-Type": "application/json"}
+    if HERMES_BRIDGE_TOKEN:
+        headers["Authorization"] = f"Bearer {HERMES_BRIDGE_TOKEN}"
+    payload = {"message": user_text, "system_prompt": JARVIS_SYSTEM_PROMPT, "stream": False}
+    async with httpx.AsyncClient(timeout=HERMES_CALL_TIMEOUT) as client:
+        resp = await client.post(f"{gateway_url}/api/run", json=payload, headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
+        return data.get("response") or data.get("text") or str(data)
+
+
+async def _route_to_jarvis(chat_id: int, user_text: str) -> None:
+    """Reply to the founder's personal chat via Hermes instead of Taty."""
+    try:
+        reply = await _call_hermes_api(user_text)
+    except Exception as exc:
+        logger.error(f"❌ Jarvis: Hermes call failed: {exc}")
+        await send_telegram_message(chat_id, "❌ Error al contactar a Hermes.")
+        return
+    await send_telegram_message(chat_id, reply)
 
 
 @router.post("/health")
@@ -120,6 +162,14 @@ async def telegram_webhook(request: Request):
         user_id = str(update.message.from_user.id) if update.message.from_user else None
 
         logger.info(f"📱 Telegram: chat_id={chat_id}, pregunta={user_text[:50]}")
+
+        # D1 (hermes-jarvis-contexia, 2026-09-13): the founder's own chat_id is Jarvis,
+        # not Taty. Short-circuits before Social Ops / telegram_chat_mappings / Taty —
+        # this is the only bot, so this check must come first.
+        if TELEGRAM_JUAN_DAVID_CHAT_ID and str(chat_id) == TELEGRAM_JUAN_DAVID_CHAT_ID:
+            logger.info(f"🧠 Jarvis: routing chat_id={chat_id} to Hermes (founder admin channel)")
+            await _route_to_jarvis(chat_id, user_text)
+            return {"ok": True, "jarvis": True}
 
         # Social Content Ops uses Telegram as the Zero-UI command channel.
         # Only explicit ops commands are routed here so Taty keeps handling fiscal Q&A.

@@ -97,15 +97,13 @@ class Settings(BaseSettings):
     # design.md D5/D7). Activation requires coordinating the Hermes-side poller first.
     HERMES_BRIDGE_TOKEN: Optional[str] = None
 
-    # Jarvis personal bot (change hermes-jarvis-contexia, Fase A).
-    # TELEGRAM_BOT_TOKEN_JARVIS: token for the founder's personal Jarvis bot (separate from Taty).
-    # TELEGRAM_WEBHOOK_SECRET_JARVIS: X-Telegram-Bot-Api-Secret-Token value set via setWebhook.
-    # TELEGRAM_JUAN_DAVID_CHAT_ID: founder's personal chat_id — messages from other chat_ids are
-    #   silently ignored (200 OK, no action) so unknown users cannot query Hermes via the bot.
-    # All fail-open (empty string): the webhook handler logs a warning and skips auth rather than
-    #   crashing, letting Railway deploy succeed even before the Telegram bot exists.
-    TELEGRAM_BOT_TOKEN_JARVIS: str = ""
-    TELEGRAM_WEBHOOK_SECRET_JARVIS: str = ""
+    # Jarvis personal assistant (change hermes-jarvis-contexia). D1 re-scope (2026-09-13):
+    # ONE Telegram bot — Taty's existing TELEGRAM_BOT_TOKEN/TELEGRAM_WEBHOOK_SECRET, no
+    # separate Jarvis bot/token. TELEGRAM_JUAN_DAVID_CHAT_ID is the founder's personal
+    # chat_id: a message from this chat_id is routed to Hermes instead of Taty
+    # (presentation/telegram_endpoints.py::_route_to_jarvis). Empty by default (fail-open —
+    # routing is simply skipped, all chats go to Taty) so Railway deploys succeed before
+    # the founder has captured their own chat_id.
     TELEGRAM_JUAN_DAVID_CHAT_ID: str = ""
 
     # WHATSAPP_CANONICAL was retired by taty-channel-consolidation. The flag guarded a public
