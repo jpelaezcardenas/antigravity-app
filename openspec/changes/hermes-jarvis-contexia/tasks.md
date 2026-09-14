@@ -184,9 +184,19 @@
 
 Ver: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
-- [ ] 11.1 git commit + push to main (requiere confirmación explícita del fundador)
-- [ ] 11.2 Vercel build completo (verde ✅)
-- [ ] 11.3 Railway deploy activo (backend cambió)
-- [ ] 11.4 URLs de producción: Jarvis responde en Telegram (bot único de Taty) + Agentic OS
-      visible en el Búnker + burbuja visible en el PWA (gated por plan)
-- [ ] 11.5 Crear reporte: `openspec/changes/hermes-jarvis-contexia/reports/YYYY-MM-DD-deployment.md`
+- [x] 11.1 git commit + push to main — 7 commits, cada push confirmado explícitamente por el
+      fundador en el chat (666495b, f0da981, 4bd8940, 884acb4, 18d5ba4, 8db9152, 320dbb5)
+- [x] 11.2 Vercel build completo (verde ✅) — `dpl_8TFZZJDpcWy4WVqirzp22edsgHBZ` READY
+      (commit `320dbb5`, el sync real; los dos intentos previos de bump de `sw.js` también
+      quedaron READY pero no eran el artefacto correcto — ver hallazgo en el reporte)
+- [x] 11.3 Railway deploy activo — `d2a6c47b` SUCCESS; verificado en vivo `/api/v1/health`
+      sano, webhook del segundo bot eliminado (404), `/jarvis/status` montado (401)
+- [x] 11.4 URLs de producción verificadas: `contexia.online/sw.js` sirve `CACHE_VERSION
+      v22-2026-09-13`; el chunk con `JarvisBubble` (`03chtzq6m-11k.js`) carga 200 en
+      `/app/overview`; Agentic OS visible en `/app/bunker`. **Parcial**: no se pudo confirmar
+      Jarvis respondiendo en Telegram (falta 0.2/1.7, `TELEGRAM_JUAN_DAVID_CHAT_ID` — acción del
+      fundador) ni la burbuja/Agentic OS realmente destrabados para un admin real (ver hallazgo
+      de `readRoleFromJwt` en el reporte — pre-existente, no introducido hoy)
+- [x] 11.5 Reporte creado: `openspec/changes/hermes-jarvis-contexia/reports/2026-09-13-deployment.md`
+      — incluye el hallazgo de las 3 copias divergentes de `sw.js` como lección para
+      `DEPLOYMENT_STAGE/checklist-vercel.md`
