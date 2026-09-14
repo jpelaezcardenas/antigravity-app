@@ -223,4 +223,68 @@ promueva a esta sección.
 
 ---
 
+## Re-scope 2026-09-14 — "Jarvis-Hermes" como proyecto propio, dos Jarvis distintos
+
+Conversación en vivo con el fundador, disparada por investigar por qué `setWebhook` se
+limpiaba solo (ver hallazgo abajo). Cambia el marco de las Fases 1/D/E de arriba —
+**no las revierte, las re-encuadra dentro de un proyecto más grande** que el fundador quiere
+nombrar "Jarvis-Hermes", combinando "lo mejor de los dos mundos" (Hermes + el framework Jarvis)
+para dar un servicio hiperpersonalizado, distinto de un chat de WhatsApp genérico, coherente con
+el posicionamiento de Contexia como "forma contable automatizada con un asistente de esta
+calidad".
+
+**D14 (confirmado):** son **dos Jarvis distintos**, no uno solo con contexto variable:
+- **Jarvis admin** (el fundador, Juan David) — Telegram, acceso completo a todos los tenants y
+  operaciones. Es el que D1/D3 ya describen arriba.
+- **Jarvis cliente** — PWA, scoped estrictamente al tenant del cliente que pregunta. Comparte
+  infraestructura Hermes/framework Jarvis con el admin, pero nunca comparte contexto ni acceso
+  cross-tenant. Esto es una extensión del alcance de D2 (hoy D2 solo cubre WhatsApp para
+  growth/enterprise) — el fundador quiere que la **PWA** sea la superficie principal de esto
+  para "clientes ya ganados", reemplazando el acceso directo a WhatsApp en el header.
+
+**Hallazgo real que disparó esta conversación — CONFIRMADO, no resuelto:** el bot de Telegram
+que este repo llama "Taty" (`TELEGRAM_BOT_TOKEN`) es el **mismo bot que Hermes ya usa** para su
+propio canal de Telegram, activo por *long-polling* (`getUpdates`) desde 2026-09-09 (verificado:
+`gateway_state.json` → `"telegram":{"state":"connected", "updated_at":"2026-09-09T05:48:22"}`;
+el token en `hermes/profiles/contexia/.env::TELEGRAM_BOT_TOKEN` coincide byte a byte con el de
+Railway). Telegram solo permite un modo de entrega por bot (webhook o polling, nunca ambos) — un
+`setWebhook` hecho por esta sesión hacia el endpoint de Railway se limpiaba solo en minutos,
+consistente con que Hermes lo resetea al reconectar para garantizar su propio polling.
+
+**Implicación no resuelta, más allá de Jarvis:** si Hermes lleva desde el 9 de septiembre
+compitiendo por este bot, es posible que mensajes reales de clientes onboardeados que le
+escriben a "Taty" por Telegram (Decisión #16 de `ARCHITECTURE.md`, per-tenant profiles) hayan
+sido drenados por el polling de Hermes antes de que el webhook de `telegram_endpoints.py` los
+viera. **No investigado ni cuantificado todavía** — el fundador decidió explícitamente dejar el
+polling de Hermes como está por ahora (no tocar) mientras se define el diseño completo de
+Jarvis-Hermes, en vez de arreglar el conflicto de inmediato.
+
+**Consecuencia directa para Fase 1 (D1) de este change:** el código ya escrito
+(`telegram_endpoints.py::_route_to_jarvis`, commit `f0da981`) es correcto pero **no puede
+verificarse en vivo mientras el webhook siga siendo limpiado por Hermes** — el smoke test
+(tarea 8) queda bloqueado hasta que el diseño de Jarvis-Hermes resuelva qué proceso posee el
+bot. No revertir ese código; es la base correcta para cuando el conflicto se resuelva.
+
+**Pendiente de decisión del fundador (no inventar mientras tanto):**
+- Nombre/alcance formal del "proyecto Jarvis-Hermes" — ¿es un change de OpenSpec nuevo, o una
+  ampliación de este mismo (`hermes-jarvis-contexia`)?
+- Mecanismo técnico para el Jarvis-cliente en la PWA con "todos los agentes de Hermes" —
+  acceso a agentes específicos de Hermes desde un cliente externo es una superficie nueva,
+  no cubierta por el `/api/v1/jarvis/chat` actual (que ya es tenant-scoped pero no expone
+  "agentes" plural, solo un chat proxy a Hermes).
+- ~~Cambio de header del PWA~~ — **hecho 2026-09-14**. El fundador mandó la captura de
+  referencia (header desktop: nav · logo · tarjeta Taty · Cerrar Sesión). Implementado en
+  `ClientTopBar.tsx`: la tarjeta de Taty (WhatsApp, desktop Y mobile) y el botón hamburguesa
+  (☰, mobile, nunca tuvo `onClick`) se reemplazaron por `<JarvisBubble variant="desktop|mobile" />`
+  — mismo componente de Fase E, ahora con dos instancias (una por breakpoint, seleccionadas vía
+  clases responsive, igual que la tarjeta de Taty que reemplazan) en vez de una burbuja flotante
+  separada. La burbuja flotante standalone se quitó de `(shell)/layout.tsx`. El panel de chat
+  ahora se ancla debajo del header (`top-[112px]`/`top-[92px]`) en vez de la esquina inferior.
+  Para un tenant freemium/starter (`hasJarvisChat=false`) el slot queda vacío — sin Taty, sin
+  Jarvis — mismo comportamiento honesto que el resto de gating por plan de este repo, pero es
+  una regresión real de acceso a soporte para esos clientes que el fundador no abordó
+  explícitamente; anotado para que decida si necesitan otro canal. Verificado en el navegador
+  (desktop 1280px + mobile 375px): el círculo aparece solo para admin/growth/enterprise, abre
+  el panel sin colisión con "Cerrar Sesión" ni con el BottomNav, y el toggle open/close funciona.
+
 ## Próximo: Spec (detalla qué código escribir por tarea)

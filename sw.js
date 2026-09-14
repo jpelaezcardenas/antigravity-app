@@ -1,7 +1,7 @@
 // Service Worker para Contexia PWA
 // Estrategia: Network-first para HTML, Cache-first para assets
 
-const CACHE_VERSION = "v22-2026-09-13";
+const CACHE_VERSION = "v24-2026-09-14";
 const CACHE_NAME = `contexia-${CACHE_VERSION}`;
 
 // Assets estáticos que cachear al instalar

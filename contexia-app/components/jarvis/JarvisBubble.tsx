@@ -4,11 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { fetchTenantMe, type TenantMeSnapshot } from "@/lib/api-client";
 import { VoiceToggle } from "@/components/bunker/agentic-os/VoiceToggle";
 
-// D4/D5 (hermes-jarvis-contexia, HANDOFF §2): a single floating bubble across the PWA
-// shell (overview/fiscal/flujo-detalle/patrimonio/radar/config), gated the same way as
-// the Búnker's AgenticOsSection (jarvis_chat: admin or growth/enterprise; jarvis_voice:
-// admin or enterprise). NOT the full-screen "circuit board" visualizer — just a small
-// state dot (D5).
+// D4/D5 (hermes-jarvis-contexia, re-scoped 2026-09-14 per founder request): the single
+// Jarvis entry point for already-won clients lives IN the header — replacing the old
+// "Taty" WhatsApp card and the (unwired) hamburger menu, not floating separately. Gated
+// the same way as the Búnker's AgenticOsSection (jarvis_chat: admin or growth/enterprise;
+// jarvis_voice: admin or enterprise). NOT the full-screen "circuit board" visualizer —
+// just a small state dot (D5).
+//
+// Two instances are rendered by ClientTopBar (desktop + mobile), matching the pre-existing
+// pattern for the Taty card it replaces — each has independent state; only the visible one
+// (via responsive classes) can ever be opened.
 //
 // Note: the SSE-parsing body of sendMessage() below intentionally mirrors
 // components/bunker/agentic-os/JarvisChatInterface.tsx rather than sharing a hook —
@@ -20,6 +25,12 @@ type VisualizerState = "idle" | "pensando" | "respondiendo";
 interface Message {
   role: "user" | "assistant";
   text: string;
+}
+
+interface JarvisBubbleProps {
+  /** Controls trigger sizing/placement — desktop sits inline in the header's right
+   * cluster; mobile is centered like the Taty card it replaces. */
+  variant: "desktop" | "mobile";
 }
 
 function readRoleFromJwt(): string {
@@ -55,7 +66,7 @@ const VISUALIZER_LABEL: Record<VisualizerState, string> = {
   respondiendo: "respondiendo...",
 };
 
-export function JarvisBubble() {
+export function JarvisBubble({ variant }: JarvisBubbleProps) {
   const [loaded, setLoaded] = useState(false);
   const [tenant, setTenant] = useState<TenantMeSnapshot | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -166,26 +177,42 @@ export function JarvisBubble() {
 
   if (!loaded || !hasJarvisChat) return null;
 
+  // The button shows the official Contexia mark (assets/img/jarvis_mark.png, cropped from
+  // logo_official.png) — a dark/glass background so the mark's own gradient is what reads,
+  // not a flat teal fill fighting it.
+  const triggerClassName =
+    variant === "desktop"
+      ? "relative w-14 h-14 rounded-full bg-black/40 backdrop-blur-xl border border-primary/40 shadow-[0_4px_20px_rgba(45,212,191,0.35)] flex items-center justify-center hover:border-primary/70 transition-colors flex-shrink-0"
+      : "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-14 h-14 rounded-full bg-black/40 backdrop-blur-xl border border-primary/40 shadow-[0_0_20px_rgba(45,212,191,0.35)] flex items-center justify-center hover:border-primary/70 transition-colors";
+
+  const panelClassName =
+    "fixed top-[112px] right-4 md:top-[92px] md:right-8 z-40 w-[calc(100vw-2rem)] max-w-sm h-[420px] bg-surface-elevated rounded-2xl border border-outline-variant/20 shadow-2xl flex flex-col overflow-hidden";
+
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Cerrar Jarvis" : "Abrir Jarvis"}
-        // bottom-40 on mobile: overview/config each render their own fixed "Salir" logout
-        // pill at bottom-24 right-4 z-50 (md:hidden) — this must clear it, not stack on it.
-        className="fixed bottom-40 right-4 md:bottom-8 md:right-8 z-40 w-14 h-14 rounded-full bg-primary/90 backdrop-blur-xl border border-primary/40 shadow-[0_4px_20px_rgba(45,212,191,0.4)] flex items-center justify-center hover:bg-primary transition-colors"
+        className={triggerClassName}
       >
         <span
-          className={`absolute w-3 h-3 rounded-full -top-0.5 -right-0.5 border-2 border-bg-obsidian ${VISUALIZER_DOT[visualizer]}`}
+          className={`absolute w-3 h-3 rounded-full -top-0.5 -right-0.5 border-2 border-bg-obsidian z-10 ${VISUALIZER_DOT[visualizer]}`}
         />
-        <span className="material-symbols-outlined text-white text-[26px]">
-          {open ? "close" : "smart_toy"}
-        </span>
+        {open ? (
+          <span className="material-symbols-outlined text-white text-[26px]">close</span>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="/assets/img/jarvis_mark.png"
+            alt="Jarvis"
+            className="w-full h-full object-contain p-1.5"
+          />
+        )}
       </button>
 
       {open && (
-        <div className="fixed bottom-56 right-4 md:bottom-24 md:right-8 z-40 w-[calc(100vw-2rem)] max-w-sm h-[420px] bg-surface-elevated rounded-2xl border border-outline-variant/20 shadow-2xl flex flex-col overflow-hidden">
+        <div className={panelClassName}>
           <div className="px-4 py-3 border-b border-outline-variant/20 flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${VISUALIZER_DOT[visualizer]}`} />
             <p className="text-sm font-semibold text-white flex-1">Jarvis</p>
