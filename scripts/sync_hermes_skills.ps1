@@ -46,7 +46,8 @@ $ErrorActionPreference = 'Stop'
 # Skills this repo owns and deploys into Hermes. Hermes has many other skills that are NOT managed
 # here; this script must never touch them.
 $CanonicalSkills = @(
-    'contexia-voice-tts'
+    'contexia-voice-tts',
+    'jarvis-personal'
 )
 
 $RepoRoot     = Split-Path -Parent $PSScriptRoot

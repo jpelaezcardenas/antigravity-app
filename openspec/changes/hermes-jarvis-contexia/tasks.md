@@ -53,10 +53,11 @@
       `X-Telegram-Bot-Api-Secret-Token` usando `TELEGRAM_WEBHOOK_SECRET` (patrón ya escrito en
       `jarvis_endpoints.py::_verify_jarvis_webhook_secret`). Test: secreto incorrecto → 200 sin
       acción (Telegram reintenta en 4xx, nunca en 200)
-- [ ] 1.6 Skill Hermes `jarvis-personal.md` en
-      `C:\Users\contexia\AppData\Local\hermes\profiles\contexia\skills\` (canónica en
-      `ai-specs/skills/`, desplegada vía `scripts/sync_hermes_skills.ps1` — añadir a
-      `$CanonicalSkills`)
+- [x] 1.6 Skill Hermes `jarvis-personal` — canónica en `ai-specs/skills/jarvis-personal/SKILL.md`,
+      agregada a `$CanonicalSkills` en `scripts/sync_hermes_skills.ps1` y desplegada
+      (`[synced] jarvis-personal -> ...profiles\contexia\skills\jarvis-personal`, confirmado
+      sin drift vía `-Check`). Nota: `-Check` reveló `contexia-voice-tts` con drift preexistente,
+      no relacionado con este change — no tocado.
 - [ ] 1.7 Founder: obtener `TELEGRAM_JUAN_DAVID_CHAT_ID` y setearlo en Railway (mismo que 0.2)
 - [ ] 7. Crear cron Hermes `jarvis-morning-brief.sh` + registrar en `jobs.json` (9:00 AM COT):
   - [ ] 7a. Confirmar Stage 0.4 completado (HubSpot activado en Manus, Gmail/Meta listos)
