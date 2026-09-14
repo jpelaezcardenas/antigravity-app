@@ -141,6 +141,17 @@ Centinela Fiscal · Pulso Diario · Radar Predictivo · Auditoría Sombra · Tat
 
 18. **Mapa canónico de superficies y login único** (`surface-and-routing-standardization`, 2026-07-28) — `/login.html` es el **ÚNICO login válido** de Contexia; la auth inline que existía en `app-admin/index.html` (legacy Vite SPA) fue eliminada permanentemente — **ningún agente debe recrearla**. Mapa de superficies: (1) `/app/overview`, `/app/fiscal`, `/app/radar`, `/app/patrimonio`, `/app/config`, `/app/flujo-detalle` = PWA end-user (mobile-first, TopBar + BottomNav, per-tenant); (2) `/app/bunker` = superficie compartida admin+cliente, con secciones filtradas por rol client-side (`ADMIN_ONLY_SECTIONS` en `BunkerSidebar.tsx` — admin ve las 7, cliente ve Dashboard + Agentic OS + Configuración); (3) `/app` exacto → 302 a `/app/bunker`; `/app/<desconocido>` → 302 al default por rol (admin→bunker, cliente→overview); (4) `/app-admin/*` requiere rol admin en `middleware.ts`. El catch-all `"/app/:path*"` en `vercel.json` apunta a `/404.html` (defensa en profundidad — middleware redirige antes). Se eliminaron: `app/index.html` (orphaned), `app-admin/index.html` (legacy login rogue), `app-admin/dashboard-assets/index-DblwMcm3.js` (no-auth bundle). La estética visual del legacy Vite SPA (clases `card-premium`, `glow-teal-soft`, `text-gradient`, gradientes atmosféricos) fue migrada al Bunker Next.js. Config page (`/app/config`) fue reconstruida como componente React (`contexia-app/app/app/(shell)/config/page.tsx`). Ver `openspec/changes/surface-and-routing-standardization/` y `docs/auth-routing.md`.
 
+    **Corrección 2026-09-13 (hallazgo real, riesgo aceptado por el fundador):** `middleware.ts`
+    está inerte en producción — `vercel.json` (`outputDirectory: "."`) sirve este repo como
+    archivos estáticos, y el `package.json` de la raíz no define ninguna app Next.js que Vercel
+    pueda ejecutar como Edge Middleware, así que nunca corre. Verificado en vivo: `/app/bunker`,
+    `/app/overview` y `/app/config` devuelven 200 completos sin ninguna cookie de sesión — el
+    "requiere rol admin en `middleware.ts`" de arriba no se cumple del lado servidor hoy. Mitiga
+    parcialmente que las pantallas data-bound siguen exigiendo su propio bearer token contra el
+    backend (401 sin token, confirmado) — no hay fuga directa de datos de un tenant real, pero el
+    filtrado por rol de `BunkerSidebar.tsx` es puramente client-side/cosmético en este estado. Ver
+    `contexia-app/CLAUDE.md` (sección de fetch autenticado) para el detalle completo.
+
 19. **WhatsApp es un canal de Taty, no un segundo agente** (`taty-whatsapp-renta-sales-capability`,
     2026-08-11) — antes, `taty_lead_router.py` generaba sus propias respuestas para mensajes de
     WhatsApp vía dos llamadas LLM crudas (`_classify_fiscal_question`/`_synthesize_kb_reply`,

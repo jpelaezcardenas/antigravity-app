@@ -264,20 +264,31 @@ un puente hacia el MVP data-driven; mocks aplican para todo lo demás.
 El login real de la PWA/Búnker **ya existía antes de este change** y no vive en `contexia-app`:
 `login.html` (raíz del repo) autentica contra **Supabase Auth**
 (`client.auth.signInWithPassword`), guarda el access token en `localStorage["token"]` y una cookie
-`sb-access-token`, y `middleware.ts` (Vercel Edge, raíz del repo) ya protege cada navegación a
-`/app/*`/`/app-admin/*` verificando esa cookie server-side — incluyendo el gate por rol
-(`/app/bunker` requiere `app_metadata.role=admin`). Ninguno de los dos se toca desde
-`contexia-app`.
+`sb-access-token`. `middleware.ts` (raíz del repo) **existe pero está inerte en producción** —
+corrección 2026-09-13, ver hallazgo abajo. Ninguno de los dos se toca desde `contexia-app`.
+
+**Corrección 2026-09-13 (hallazgo real, riesgo aceptado por el fundador — no arreglar sin pedido
+explícito):** `middleware.ts` NUNCA se ejecuta en producción. `vercel.json` tiene
+`"outputDirectory": "."` y el `package.json` de la raíz del repo es `"build": "echo 'No build
+needed'"` — no hay ninguna app Next.js en la raíz que Vercel pueda correr como Edge Middleware;
+Vercel solo sirve archivos estáticos. Verificado en vivo: `fetch('/app/bunker', {cache:
+'no-store'})` sin ninguna cookie devuelve **200** con el Búnker completo (igual `/app/overview`,
+`/app/config`) — el gate por rol que este documento afirmaba (`/app/bunker` requiere
+`app_metadata.role=admin`) no existe del lado servidor. Mitigación parcial ya vigente: las
+pantallas data-bound siguen exigiendo su propio bearer token contra el backend en Railway
+(confirmado 401 sin token), así que no hay fuga directa de datos reales de un tenant — el riesgo
+es la UI/HTML/JS siendo navegable sin login y la falsa sensación de que `middleware.ts` protege
+algo. La propia UI del Búnker ya lo señala como pendiente ("Fase 6 del roadmap").
 
 Lo que sí faltaba (al momento de `bunker-pwa-auth-enforcement`): las pantallas data-bound llaman
-al backend en Railway **directamente** (bypaseando el dominio de Vercel y por lo tanto
-`middleware.ts`), sin adjuntar nunca ese token. `lib/authenticated-fetch.ts` cierra ese hueco —
-adjunta `Authorization: Bearer` leyendo el mismo `localStorage["token"]` que `login.html` ya
-llena, usado internamente por todos los clientes tipados de arriba (`api-client.ts`,
-`social-ops-api.ts`, `crm-api.ts`, `sell-machine-api.ts` — sus firmas exportadas no cambian
-cuando se agregan nuevas funciones). Es deliberadamente mínimo: no redirige ni limpia sesión en
-un 401 — eso ya lo hace `middleware.ts` del lado servidor, más robusto que cualquier cosa que
-este helper pudiera duplicar del lado cliente.
+al backend en Railway **directamente** (bypaseando el dominio de Vercel), sin adjuntar nunca ese
+token. `lib/authenticated-fetch.ts` cierra ese hueco — adjunta `Authorization: Bearer` leyendo el
+mismo `localStorage["token"]` que `login.html` ya llena, usado internamente por todos los
+clientes tipados de arriba (`api-client.ts`, `social-ops-api.ts`, `crm-api.ts`,
+`sell-machine-api.ts` — sus firmas exportadas no cambian cuando se agregan nuevas funciones). Es
+deliberadamente mínimo: no redirige ni limpia sesión en un 401 — **a diferencia de lo que este
+documento afirmaba antes de la corrección de arriba, `middleware.ts` no hace ese trabajo del
+lado servidor hoy**; el 401 del backend es la única defensa real contra datos de un tenant.
 
 ## Reglas de interactividad (mock-first, pero viva)
 
