@@ -47,10 +47,9 @@ export default function AcercaPage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h3
-          className="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest px-1"
-          style={{ fontFamily: "Rajdhani, sans-serif" }}
-        >
+        {/* 2026-09-16: dropped the inline Rajdhani override — see config/page.tsx's Avisos
+            header for the same fix and its rationale. */}
+        <h3 className="font-label-caps text-label-caps text-on-surface-variant font-bold uppercase px-1">
           Lo que hace por ti
         </h3>
         <div className="flex flex-col gap-2">

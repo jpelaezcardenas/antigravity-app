@@ -67,10 +67,9 @@ export function TenantInfoCard() {
             <p className="font-title-md text-title-md text-white truncate">
               {legalName}
             </p>
-            <p
-              className="text-[10px] text-primary font-bold uppercase tracking-widest"
-              style={{ fontFamily: "Rajdhani, sans-serif" }}
-            >
+            {/* 2026-09-16: dropped the inline Rajdhani override — see config/page.tsx's Avisos
+                header for the same fix and its rationale. */}
+            <p className="font-label-caps text-label-caps text-primary font-bold uppercase">
               {planLabel} · Activo
             </p>
           </>

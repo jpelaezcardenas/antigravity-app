@@ -101,9 +101,10 @@ export function JarvisBubble({ size, panelAnchor = "header" }: JarvisBubbleProps
   const busy = visualizer !== "idle";
 
   // Company label: each client sees their own name (e.g. "FEREZ", "CODIGO520") instead of the
-  // generic "CONTEXIA" — per the handoff, this is a separate label below the badge, never
-  // text baked into the core. Full name always available via the native `title` tooltip.
-  const fullLabel = tenant?.legal_name?.trim() || "CONTEXIA";
+  // generic fallback — per the handoff, this is a separate label below the badge, never text
+  // baked into the core. Full name always available via the native `title` tooltip.
+  // 2026-09-16 (founder request): fallback reads "CONTEXIA.ONLINE" (the domain), not "CONTEXIA".
+  const fullLabel = tenant?.legal_name?.trim() || "Contexia.online";
   const displayLabel = fullLabel.toUpperCase();
 
   async function sendMessage(text: string) {
@@ -199,15 +200,22 @@ export function JarvisBubble({ size, panelAnchor = "header" }: JarvisBubbleProps
           "group relative flex-shrink-0 rounded-full transition-transform duration-150",
           "hover:scale-105 active:scale-[0.94]",
           "focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_#0F172A,0_0_0_6px_#fff]",
-          !hasJarvisChat ? "[filter:grayscale(1)_brightness(.75)]" : "",
         ].join(" ")}
         style={{ width: px, height: px }}
       >
         {/* Harmonic wrapper — constant, slow scale+float motion so the badge always reads as
             "alive" (sinking on press is a separate, additional cue via the button's own
             active:scale above, not the only motion). Runs on its own element so it never
-            fights the button's hover/press transform — nested transforms compose cleanly. */}
-        <div className="absolute inset-0 motion-safe:[animation:jarvis-harmonic_5.2s_ease-in-out_infinite]">
+            fights the button's hover/press transform — nested transforms compose cleanly.
+            "No disponible" grayscale now lives HERE (rings/halo only) instead of on the whole
+            button — founder feedback 2026-09-16: the Contexia mark must stay at full original
+            color on every plan (freemium/starter included), only the rings gray out. */}
+        <div
+          className={[
+            "absolute inset-0 motion-safe:[animation:jarvis-harmonic_5.2s_ease-in-out_infinite]",
+            !hasJarvisChat ? "[filter:grayscale(1)_brightness(.75)]" : "",
+          ].join(" ")}
+        >
           {/* Halo — the only glowing layer, always breathing at idle, tenser on hover */}
           <span
             className="absolute rounded-full pointer-events-none motion-safe:[animation:jarvis-breathe_4s_ease-in-out_infinite] group-hover:opacity-50 group-hover:[animation:none] transition-opacity duration-150"
@@ -358,11 +366,10 @@ export function JarvisBubble({ size, panelAnchor = "header" }: JarvisBubbleProps
             <img
               src="/assets/img/jarvis_mark.png"
               alt="Jarvis"
-              className="object-contain transition-opacity"
+              className="object-contain"
               style={{
                 width: "45%",
                 height: "45%",
-                opacity: hasJarvisChat ? 1 : 0.4,
               }}
             />
           )}
@@ -370,13 +377,16 @@ export function JarvisBubble({ size, panelAnchor = "header" }: JarvisBubbleProps
 
       </button>
 
-      {/* Company label — separate element, outside the ring/halo bounds, never inside the core */}
+      {/* Company label — separate element, outside the ring/halo bounds, never inside the core.
+          2026-09-16 (founder request): font normalized to `font-label-caps` (Inter) — same
+          token DesktopSidebar's nav labels use, right above this in the sidebar. The handoff's
+          original spec called for Rajdhani here specifically, but the founder's later,
+          explicit, repeated feedback ("no cambies de estilo de letra... normaliza estas letras
+          como el resto de la app") overrides that for this element. */}
       <p
         title={fullLabel}
-        className="text-on-surface font-semibold uppercase truncate text-center"
+        className="font-label-caps text-label-caps text-on-surface font-semibold uppercase truncate text-center"
         style={{
-          fontFamily: "Rajdhani, sans-serif",
-          fontSize: "13px",
           letterSpacing: "0.05em",
           maxWidth: labelMaxWidth,
         }}

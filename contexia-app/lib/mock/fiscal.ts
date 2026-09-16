@@ -34,8 +34,4 @@ export const fiscalMock: FiscalData = {
       unit: "UVT",
     },
   ],
-  taty: {
-    title: "Pregúntale a Taty",
-    subtitle: "Tu amiga contadora — te explica fácil, sin enredos",
-  },
 };

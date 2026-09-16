@@ -60,10 +60,11 @@ export default function ConfigPage() {
       <TenantInfoCard />
 
       <section className="flex flex-col gap-3">
-        <h3
-          className="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest px-1"
-          style={{ fontFamily: "Rajdhani, sans-serif" }}
-        >
+        {/* 2026-09-16 (founder request): dropped the inline Rajdhani override — every other
+            small-caps label in the app (DesktopSidebar's nav items, etc.) is Inter via the
+            `font-label-caps` token. This one-off was part of why the app felt like it used
+            "too many fonts". */}
+        <h3 className="font-label-caps text-label-caps text-on-surface-variant font-bold uppercase px-1">
           Avisos
         </h3>
         <div className="flex flex-col gap-2">
@@ -98,33 +99,11 @@ export default function ConfigPage() {
         </div>
       </section>
 
+      {/* "Ayuda" section header removed 2026-09-16 (founder request) along with "Hablar con
+          Taty" (WhatsApp) itself — clients now have JARVIS instead of a generic pointer to
+          Taty, and a lone remaining link didn't need its own section label. */}
       <section className="flex flex-col gap-3">
-        <h3
-          className="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest px-1"
-          style={{ fontFamily: "Rajdhani, sans-serif" }}
-        >
-          Ayuda
-        </h3>
         <div className="flex flex-col gap-2">
-          <a
-            href="https://wa.me/573106229289?text=Hola%20Taty%2C%20necesito%20ayuda%20con%20la%20app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-surface-elevated rounded-xl border border-white/10 p-4 flex items-center gap-3 hover:border-primary/30 transition-all"
-          >
-            <span className="material-symbols-outlined text-primary">chat</span>
-            <div className="flex-1">
-              <p className="font-body-md text-body-md text-white font-semibold">
-                Hablar con Taty
-              </p>
-              <p className="font-body-md text-[12px] text-on-surface-variant">
-                Tu amiga contadora por WhatsApp · 24/7
-              </p>
-            </div>
-            <span className="material-symbols-outlined text-on-surface-variant">
-              chevron_right
-            </span>
-          </a>
           <a
             href="/app/acerca"
             className="bg-surface-elevated rounded-xl border border-white/10 p-4 flex items-center gap-3 hover:border-primary/30 transition-all"

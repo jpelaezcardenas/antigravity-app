@@ -75,18 +75,11 @@ export interface UvtThreshold {
   unit: string; // "UVT"
 }
 
-export interface TatyEscalation {
-  title: string;
-  subtitle: string;
-  href?: string;
-}
-
 export interface FiscalData {
   risk: FiscalRiskStatus;
   exAnte: ExAnteDetection;
   shadowAudit: ShadowAuditMatch;
   thresholds: UvtThreshold[];
-  taty: TatyEscalation;
 }
 
 // === Compartido ===
