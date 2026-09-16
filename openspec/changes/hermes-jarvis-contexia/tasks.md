@@ -237,11 +237,20 @@ Ver: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 
 ### Deploy 2026-09-15 (Fase F)
 
-- [ ] 11.6 `cd contexia-app && npm run build` limpio + `CACHE_VERSION` de `public/sw.js`
-      bumpeado (assets/CSS/HTML cambiaron)
-- [ ] 11.7 Sync `contexia-app/out/` → `app/` (repo root) + `sw.js` a la raíz
-- [ ] 11.8 git commit + push a main — confirmado explícitamente por el fundador ("ya")
-- [ ] 11.9 Vercel build verde + verificado en vivo en `contexia.online` (badge JARVIS a color
-      para un usuario con acceso real, sidebar de escritorio, `BottomNav` con Patrimonio,
-      `/app/acerca` sin 404)
-- [ ] 11.10 Reporte creado: `openspec/changes/hermes-jarvis-contexia/reports/2026-09-15-deployment.md`
+- [x] 11.6 `cd contexia-app && npm run build` limpio + `CACHE_VERSION` v24→v25-2026-09-15 en
+      `public/sw.js`
+- [x] 11.7 Sync `contexia-app/out/` → `app/` (repo root) + `sw.js`/`_next/`/HTML raíz — commit
+      `e9265cc`
+- [x] 11.8 git commit + push a main — confirmado explícitamente por el fundador ("ya")
+- [x] 11.9 Vercel build verde (`dpl_2upGHfPoiwYQXUpQ9AmtVHSEGhfH` READY) + verificado en vivo en
+      `contexia.online`: sidebar de escritorio con las 5 opciones + badge, `BottomNav` con
+      Patrimonio en mobile. **Hallazgo real durante la verificación**: `/app/acerca` daba 404 en
+      producción — `vercel.json` no tenía rewrite para esa ruta nueva (cada `/app/<nombre>`
+      necesita una entrada explícita, no hay resolución de clean-URL). Fix + redeploy en el
+      mismo tick: commit `5febc01`, `dpl_5XiLo1vNnbBM3c8bwLFeLa2ZFjzB` READY, `/app/acerca`
+      confirmado 200 con el contenido real. **Parcial, no bloqueante**: el estado "a color" del
+      badge (vs. el "no disponible" gris) no se verificó con una sesión real logueada en
+      producción — solo se confirmó el estado gris (esperado, sin sesión) y, por separado, el
+      estado a color en el preview local simulando `isAdmin=true` vía cookie (nunca una
+      credencial real). Queda para cuando el fundador entre con su propia sesión.
+- [x] 11.10 Reporte creado: `openspec/changes/hermes-jarvis-contexia/reports/2026-09-15-deployment.md`
