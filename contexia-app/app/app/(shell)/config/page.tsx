@@ -126,7 +126,7 @@ export default function ConfigPage() {
             </span>
           </a>
           <a
-            href="/landing.html"
+            href="/app/acerca"
             className="bg-surface-elevated rounded-xl border border-white/10 p-4 flex items-center gap-3 hover:border-primary/30 transition-all"
           >
             <span className="material-symbols-outlined text-[#8B5CF6]">
@@ -147,16 +147,10 @@ export default function ConfigPage() {
         </div>
       </section>
 
+      {/* Own "Cerrar sesión" button removed 2026-09-15 — duplicated the shared SignOutFooter
+          that the (shell) layout now renders at the bottom of every screen, including this
+          one. Version footer text kept, it's unrelated to logout. */}
       <section className="flex flex-col gap-3 mt-2">
-        <a
-          href="/logout"
-          className="bg-status-critical/10 hover:bg-status-critical/20 border border-status-critical/30 rounded-xl p-4 flex items-center justify-center gap-2 transition-all"
-        >
-          <span className="material-symbols-outlined text-status-critical">
-            logout
-          </span>
-          <span className="text-status-critical font-bold">Cerrar sesión</span>
-        </a>
         <p className="text-center text-[10px] text-on-surface-variant/60 mt-2">
           Contexia · GPS Financiero · v1.0
         </p>

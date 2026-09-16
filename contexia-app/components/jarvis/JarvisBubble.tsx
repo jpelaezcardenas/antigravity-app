@@ -4,23 +4,24 @@ import { useEffect, useRef, useState } from "react";
 import { fetchTenantMe, type TenantMeSnapshot } from "@/lib/api-client";
 import { VoiceToggle } from "@/components/bunker/agentic-os/VoiceToggle";
 
-// D4/D5 (hermes-jarvis-contexia, re-scoped 2026-09-14 per founder request): the single
-// Jarvis entry point for already-won clients lives IN the header — replacing the old
-// "Taty" WhatsApp card and the (unwired) hamburger menu, not floating separately. Gated
-// the same way as the Búnker's AgenticOsSection (jarvis_chat: admin or growth/enterprise;
-// jarvis_voice: admin or enterprise). NOT the full-screen "circuit board" visualizer —
-// just a small state dot (D5).
+// JARVIS header badge — implemented from the design handoff
+// (design_handoff_jarvos_header_circle/README.md, 2026-09-14, high-fidelity). Colors, stroke
+// widths and animation timings below are the handoff's FINAL values, not placeholders — do not
+// re-tune them without a new handoff. Geometry is defined once at viewBox 0 0 88 88 and scaled
+// via the container's CSS size (72px mobile / 88px desktop), which scales every stroke/halo
+// proportionally for free — this is why there is only one size-dependent number below (the
+// container's own width/height), not a full per-breakpoint config table.
 //
-// Two instances are rendered by ClientTopBar (desktop + mobile), matching the pre-existing
-// pattern for the Taty card it replaces — each has independent state; only the visible one
-// (via responsive classes) can ever be opened.
+// Three-layer anatomy: (1) outer segmented ring ("contorno", #2DD4BF, the only layer that
+// glows), (2) fine radial-tick ring ("anillo intermedio", #8B5CF6), (3) flat dark core
+// (#111D2E) holding only the Contexia mark. A separate text label (company name) sits below
+// the badge, outside the ring/halo bounds — never inside the core per the handoff.
 //
 // Note: the SSE-parsing body of sendMessage() below intentionally mirrors
-// components/bunker/agentic-os/JarvisChatInterface.tsx rather than sharing a hook —
-// that component already shipped to production (commit 4933f0a) and this task didn't
-// need to touch it. If a third chat surface appears, extract a shared hook then.
+// components/bunker/agentic-os/JarvisChatInterface.tsx rather than sharing a hook — see that
+// component's history (commit 4933f0a). If a third chat surface appears, extract a shared hook.
 
-type VisualizerState = "idle" | "pensando" | "respondiendo";
+type Visualizer = "idle" | "pensando" | "respondiendo";
 
 interface Message {
   role: "user" | "assistant";
@@ -28,9 +29,17 @@ interface Message {
 }
 
 interface JarvisBubbleProps {
-  /** Controls trigger sizing/placement — desktop sits inline in the header's right
-   * cluster; mobile is centered like the Taty card it replaces. */
-  variant: "desktop" | "mobile";
+  /** Only controls the badge's rendered diameter — positioning is the parent's job.
+   * 128 (mobile header) / 156 (desktop header, bumped twice 2026-09-15 for more header
+   * presence: handoff's original 72/88 → 96/120 → 128/156) / 96 (2026-09-15 round 3 — the
+   * desktop header instance moved into DesktopSidebar.tsx, below its nav items, at this
+   * smaller size to fit the sidebar's own width instead of the header's). */
+  size: 96 | 128 | 156;
+  /** Where the chat panel opens relative to on desktop (`md:`) — mobile positioning is
+   * identical either way. "header" (default) centers it under a header-hosted badge, used by
+   * ClientTopBar in both places that still render one there. "sidebar" opens it beside
+   * DesktopSidebar instead, for the instance that lives there now. */
+  panelAnchor?: "header" | "sidebar";
 }
 
 function readRoleFromJwt(): string {
@@ -54,26 +63,14 @@ function readRoleFromJwt(): string {
   }
 }
 
-const VISUALIZER_DOT: Record<VisualizerState, string> = {
-  idle: "bg-white/30",
-  pensando: "bg-amber-400 animate-pulse",
-  respondiendo: "bg-primary animate-pulse",
-};
-
-const VISUALIZER_LABEL: Record<VisualizerState, string> = {
-  idle: "",
-  pensando: "pensando...",
-  respondiendo: "respondiendo...",
-};
-
-export function JarvisBubble({ variant }: JarvisBubbleProps) {
+export function JarvisBubble({ size, panelAnchor = "header" }: JarvisBubbleProps) {
   const [loaded, setLoaded] = useState(false);
   const [tenant, setTenant] = useState<TenantMeSnapshot | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [visualizer, setVisualizer] = useState<VisualizerState>("idle");
+  const [visualizer, setVisualizer] = useState<Visualizer>("idle");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -87,8 +84,8 @@ export function JarvisBubble({ variant }: JarvisBubbleProps) {
         setTenant(snapshot);
       })
       .catch(() => {
-        // Fail silent — same "never alarm for identity" idiom as TenantInfoCard.
-        // The bubble simply stays hidden (see `loaded && hasJarvisChat` gate below).
+        // Fail silent — same "never alarm for identity" idiom as TenantInfoCard. The badge
+        // still renders (2026-09-14: it's never hidden), just falls back to "CONTEXIA"/locked.
       })
       .finally(() => {
         if (!cancelled) setLoaded(true);
@@ -102,6 +99,12 @@ export function JarvisBubble({ variant }: JarvisBubbleProps) {
   const hasJarvisChat = isAdmin || tier === "growth" || tier === "enterprise";
   const hasVoice = isAdmin || tier === "enterprise";
   const busy = visualizer !== "idle";
+
+  // Company label: each client sees their own name (e.g. "FEREZ", "CODIGO520") instead of the
+  // generic "CONTEXIA" — per the handoff, this is a separate label below the badge, never
+  // text baked into the core. Full name always available via the native `title` tooltip.
+  const fullLabel = tenant?.legal_name?.trim() || "CONTEXIA";
+  const displayLabel = fullLabel.toUpperCase();
 
   async function sendMessage(text: string) {
     if (!text.trim() || busy) return;
@@ -175,103 +178,319 @@ export function JarvisBubble({ variant }: JarvisBubbleProps) {
     }
   }
 
-  if (!loaded || !hasJarvisChat) return null;
+  if (!loaded) return null;
 
-  // The button shows the official Contexia mark (assets/img/jarvis_mark.png, cropped from
-  // logo_official.png) — a dark/glass background so the mark's own gradient is what reads,
-  // not a flat teal fill fighting it.
-  const triggerClassName =
-    variant === "desktop"
-      ? "relative w-14 h-14 rounded-full bg-black/40 backdrop-blur-xl border border-primary/40 shadow-[0_4px_20px_rgba(45,212,191,0.35)] flex items-center justify-center hover:border-primary/70 transition-colors flex-shrink-0"
-      : "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-14 h-14 rounded-full bg-black/40 backdrop-blur-xl border border-primary/40 shadow-[0_0_20px_rgba(45,212,191,0.35)] flex items-center justify-center hover:border-primary/70 transition-colors";
-
-  const panelClassName =
-    "fixed top-[112px] right-4 md:top-[92px] md:right-8 z-40 w-[calc(100vw-2rem)] max-w-sm h-[420px] bg-surface-elevated rounded-2xl border border-outline-variant/20 shadow-2xl flex flex-col overflow-hidden";
+  const px = `${size}px`;
+  // Formula-based (was a hardcoded per-size ternary) so a third size (96, sidebar) didn't need
+  // its own branch — ratio matches the original handoff's 96px/120px → 160px/220px pairing.
+  const labelMaxWidth = `${Math.round(size * 1.8)}px`;
 
   return (
-    <>
+    // gap bumped 2026-09-15 (from 1.5) — the outer decorative rings (r up to 58 of the 88
+    // viewBox) extend ~25px past the button's own box on every side via overflow-visible, so a
+    // tight gap let the ring's bottom arc visually collide with the company label below it.
+    <div className="flex flex-col items-center gap-8">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Cerrar Jarvis" : "Abrir Jarvis"}
-        className={triggerClassName}
+        aria-label={open ? "Cerrar JARVIS" : "Abrir JARVIS"}
+        title={!hasJarvisChat ? "JARVIS no disponible" : undefined}
+        className={[
+          "group relative flex-shrink-0 rounded-full transition-transform duration-150",
+          "hover:scale-105 active:scale-[0.94]",
+          "focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_#0F172A,0_0_0_6px_#fff]",
+          !hasJarvisChat ? "[filter:grayscale(1)_brightness(.75)]" : "",
+        ].join(" ")}
+        style={{ width: px, height: px }}
       >
-        <span
-          className={`absolute w-3 h-3 rounded-full -top-0.5 -right-0.5 border-2 border-bg-obsidian z-10 ${VISUALIZER_DOT[visualizer]}`}
-        />
-        {open ? (
-          <span className="material-symbols-outlined text-white text-[26px]">close</span>
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src="/assets/img/jarvis_mark.png"
-            alt="Jarvis"
-            className="w-full h-full object-contain p-1.5"
+        {/* Harmonic wrapper — constant, slow scale+float motion so the badge always reads as
+            "alive" (sinking on press is a separate, additional cue via the button's own
+            active:scale above, not the only motion). Runs on its own element so it never
+            fights the button's hover/press transform — nested transforms compose cleanly. */}
+        <div className="absolute inset-0 motion-safe:[animation:jarvis-harmonic_5.2s_ease-in-out_infinite]">
+          {/* Halo — the only glowing layer, always breathing at idle, tenser on hover */}
+          <span
+            className="absolute rounded-full pointer-events-none motion-safe:[animation:jarvis-breathe_4s_ease-in-out_infinite] group-hover:opacity-50 group-hover:[animation:none] transition-opacity duration-150"
+            style={{
+              // Formula-based for the same reason as labelMaxWidth above (ratio ~0.18 matches
+              // the prior 22/128 and 28/156 hardcoded values).
+              inset: `-${Math.round(size * 0.18)}px`,
+              background: "radial-gradient(circle, rgba(45,212,191,.45), transparent 70%)",
+              filter: "blur(8px)",
+            }}
           />
-        )}
+
+        <svg viewBox="0 0 88 88" className="absolute inset-0 w-full h-full overflow-visible">
+          <defs>
+            {/* Real bloom (feGaussianBlur, not just a CSS-blurred backdrop span) for the two
+                teal rings — this is what makes them read as incandescent/glowing rather than
+                flat strokes. `id` is size-suffixed so the mobile/desktop instances (both
+                mounted at once, toggled by Tailwind breakpoint classes) never collide. */}
+            <filter id={`jarvis-glow-${size}`} x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="1.6" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Outermost — faint depth ring, barely-there context (matches the far/background
+              ring in the J.A.R.V.I.S. reference), never competing with anything inside it. */}
+          <circle
+            cx="44"
+            cy="44"
+            r="58"
+            fill="none"
+            stroke="#2DD4BF"
+            strokeOpacity="0.15"
+            strokeWidth="1"
+            strokeDasharray="1 8"
+            style={{ transformOrigin: "44px 44px" }}
+            className="motion-safe:[animation:jarvis-slow-spin_34s_linear_infinite]"
+          />
+
+          {/* Thick incandescent segmented ring (founder request, 2026-09-14/15 — "anillo mas
+              grueso por segmentos de tono mas incandescente sobresaliente" from the J.A.R.V.I.S.
+              reference). Lives strictly OUTSIDE the handoff's own contorno (r=41) so it never
+              touches the three spec layers below — added presence, zero interference. Brighter
+              and thicker than the spec ring on purpose: this is the "sobresaliente" layer. */}
+          <circle
+            cx="44"
+            cy="44"
+            r="52"
+            fill="none"
+            stroke="#99F6E4"
+            strokeOpacity="0.9"
+            strokeWidth="5"
+            strokeDasharray="13 5"
+            transform="rotate(-90 44 44)"
+            filter={`url(#jarvis-glow-${size})`}
+            style={{ transformOrigin: "44px 44px" }}
+            className="motion-safe:[animation:jarvis-slow-spin-reverse_24s_linear_infinite]"
+          />
+
+          {/* Thin accent ring in the gap between the incandescent ring and the spec contorno —
+              adds one more layer of depth without ever sitting inside the handoff's own
+              anatomy (that gap, between r=33 and r=41, is deliberate per the design — nothing
+              goes there). */}
+          <circle
+            cx="44"
+            cy="44"
+            r="45.5"
+            fill="none"
+            stroke="#5CE8D8"
+            strokeOpacity="0.45"
+            strokeWidth="1"
+            strokeDasharray="1 5"
+            style={{ transformOrigin: "44px 44px" }}
+            className="motion-safe:[animation:jarvis-slow-spin_22s_linear_infinite]"
+          />
+
+          {/* Middle ring — fine radial ticks, secondary color, never competes with the outer
+              ring. EXACT handoff spec (r=33, #8B5CF6, width 1.5, opacity .4, dasharray "1.5
+              12") — only addition is its own slow rotation (29s, shares no short common period
+              with the 34s/24s/22s rings above) so nothing ever visually phase-locks. */}
+          <circle
+            cx="44"
+            cy="44"
+            r="33"
+            fill="none"
+            stroke="#8B5CF6"
+            strokeOpacity="0.4"
+            strokeWidth="1.5"
+            strokeDasharray="1.5 12"
+            style={{ transformOrigin: "44px 44px" }}
+            className="motion-safe:[animation:jarvis-slow-spin_29s_linear_infinite]"
+          />
+
+          {/* Outer ring ("contorno") — EXACT handoff spec (r=41, width 3.5, dasharray "11 4",
+              #2DD4BF). Rotated -90deg so the pattern starts at 12 o'clock. Color/opacity swap
+              for hover/procesando states; now also carries the real glow filter. */}
+          <circle
+            cx="44"
+            cy="44"
+            r="41"
+            fill="none"
+            strokeWidth="3.5"
+            strokeDasharray="11 4"
+            transform="rotate(-90 44 44)"
+            filter={`url(#jarvis-glow-${size})`}
+            className={`transition-colors duration-150 ${
+              busy ? "stroke-[#F59E0B]/30" : "stroke-[#2DD4BF] group-hover:stroke-[#5CE8D8]"
+            }`}
+          />
+          {busy && (
+            <circle
+              cx="44"
+              cy="44"
+              r="41"
+              fill="none"
+              stroke="#F59E0B"
+              strokeWidth="3.5"
+              strokeDasharray={`${(34 / 360) * (2 * Math.PI * 41)} ${2 * Math.PI * 41}`}
+              transform="rotate(-90 44 44)"
+              className="motion-safe:[animation:jarvis-process_1.6s_linear_infinite] motion-reduce:opacity-70"
+            />
+          )}
+
+          {/* Core — EXACT handoff spec: flat dark surface (r=28, #111D2E), only the Contexia
+              mark lives inside. */}
+          {/* Fill matches the page/header background exactly (#0F172A, `bg-bg-obsidian`) —
+              was the handoff's own #111D2E, a close-but-different navy that read as a visibly
+              blacker "hole" against the rest of the UI, especially once the "no disponible"
+              grayscale/dim filter (see the button's className above) desaturated both
+              differently. Founder feedback 2026-09-15: "debe ser igual al resto". */}
+          <circle cx="44" cy="44" r="28" fill="#0F172A" stroke="rgba(255,255,255,.08)" />
+        </svg>
+        </div>
+        {/* /jarvis-harmonic wrapper — mark + status dot stay outside it, perfectly still, so the
+            ID mark and status color read is never in motion, only the rings/halo around it. */}
+
+        <div
+          className="absolute rounded-full overflow-hidden flex items-center justify-center"
+          style={{ inset: "16px" }}
+        >
+          {open ? (
+            <span className="material-symbols-outlined text-white text-[24px]">close</span>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src="/assets/img/jarvis_mark.png"
+              alt="Jarvis"
+              className="object-contain transition-opacity"
+              style={{
+                width: "45%",
+                height: "45%",
+                opacity: hasJarvisChat ? 1 : 0.4,
+              }}
+            />
+          )}
+        </div>
+
+        <span
+          className="absolute rounded-full"
+          style={{
+            width: "11px",
+            height: "11px",
+            top: "6%",
+            right: "6%",
+            border: "2px solid #0F172A",
+            backgroundColor: !hasJarvisChat
+              ? "#6B7680"
+              : visualizer !== "idle"
+                ? "#F59E0B"
+                : "#2DD4BF",
+          }}
+        />
       </button>
 
+      {/* Company label — separate element, outside the ring/halo bounds, never inside the core */}
+      <p
+        title={fullLabel}
+        className="text-on-surface font-semibold uppercase truncate text-center"
+        style={{
+          fontFamily: "Rajdhani, sans-serif",
+          fontSize: "13px",
+          letterSpacing: "0.05em",
+          maxWidth: labelMaxWidth,
+        }}
+      >
+        {displayLabel}
+      </p>
+
       {open && (
-        <div className={panelClassName}>
+        <div
+          className={[
+            "fixed z-40 bg-surface-elevated border border-outline-variant/40 rounded-2xl shadow-2xl flex flex-col overflow-hidden left-4 right-4 top-[250px] h-[420px]",
+            panelAnchor === "sidebar"
+              ? // Opens beside DesktopSidebar (w-56) rather than centered under a header —
+                // there's no badge in the header to center under on this layout anymore.
+                "md:left-60 md:right-auto md:top-24 md:bottom-6 md:h-auto md:w-80 md:translate-x-0"
+              : "md:left-1/2 md:right-auto md:-translate-x-1/2 md:top-[290px] md:w-full md:max-w-sm",
+          ].join(" ")}
+        >
           <div className="px-4 py-3 border-b border-outline-variant/20 flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${VISUALIZER_DOT[visualizer]}`} />
-            <p className="text-sm font-semibold text-white flex-1">Jarvis</p>
-            {visualizer !== "idle" && (
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{
+                backgroundColor: busy ? "#F59E0B" : "#2DD4BF",
+              }}
+            />
+            <p className="text-sm font-semibold text-white flex-1">JARVIS</p>
+            {busy && (
               <span className="text-[10px] text-on-surface-variant uppercase tracking-wide">
-                {VISUALIZER_LABEL[visualizer]}
+                {visualizer === "pensando" ? "pensando..." : "respondiendo..."}
               </span>
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-            {messages.length === 0 && (
-              <p className="text-on-surface-variant text-sm text-center mt-8">
-                Pregúntale algo a Jarvis
+          {!hasJarvisChat ? (
+            // A simple Jarvis for freemium/starter is planned but not built yet — the real
+            // backend gate (has_feature(plan_tier, "jarvis_chat") in
+            // jarvis_endpoints.py::jarvis_chat) still 403s these tenants today. "Coming soon",
+            // not "upgrade to unlock" — don't oversell a paywall for something just unbuilt.
+            <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center">
+              <span className="material-symbols-outlined text-primary text-[40px]">bolt</span>
+              <p className="text-white font-semibold text-sm">JARVIS para tu plan está en camino</p>
+              <p className="text-on-surface-variant text-xs">
+                Estamos construyendo una versión de JARVIS para tu plan. Pronto vas a poder
+                usarla desde aquí.
               </p>
-            )}
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={[
-                  "max-w-[85%] px-3 py-2 rounded-xl text-sm leading-relaxed whitespace-pre-wrap",
-                  msg.role === "user"
-                    ? "self-end bg-primary/20 text-white border border-primary/30"
-                    : "self-start bg-white/5 text-white/90 border border-outline-variant/10",
-                ].join(" ")}
-              >
-                {msg.text || (visualizer === "respondiendo" && msg.role === "assistant" ? "▋" : "")}
+            </div>
+          ) : (
+            <>
+              <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+                {messages.length === 0 && (
+                  <p className="text-on-surface-variant text-sm text-center mt-8">
+                    Pregúntale algo a JARVIS
+                  </p>
+                )}
+                {messages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={[
+                      "max-w-[85%] px-3 py-2 rounded-xl text-sm leading-relaxed whitespace-pre-wrap",
+                      msg.role === "user"
+                        ? "self-end bg-primary/20 text-white border border-primary/30"
+                        : "self-start bg-white/5 text-white/90 border border-outline-variant/10",
+                    ].join(" ")}
+                  >
+                    {msg.text || (visualizer === "respondiendo" && msg.role === "assistant" ? "▋" : "")}
+                  </div>
+                ))}
+                <div ref={bottomRef} />
               </div>
-            ))}
-            <div ref={bottomRef} />
-          </div>
 
-          <div className="border-t border-outline-variant/20 px-3 py-2 flex items-center gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage(input);
-                }
-              }}
-              placeholder="Escríbele a Jarvis..."
-              disabled={busy}
-              className="flex-1 bg-transparent text-sm text-white placeholder:text-on-surface-variant outline-none py-1"
-            />
-            {hasVoice && <VoiceToggle onTranscript={(t) => sendMessage(t)} disabled={busy} />}
-            <button
-              type="button"
-              onClick={() => sendMessage(input)}
-              disabled={!input.trim() || busy}
-              className="w-8 h-8 rounded-full bg-primary/20 border border-primary/40 text-primary flex items-center justify-center hover:bg-primary/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              <span className="material-symbols-outlined text-[16px]">send</span>
-            </button>
-          </div>
+              <div className="border-t border-outline-variant/20 px-3 py-2 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage(input);
+                    }
+                  }}
+                  placeholder="Escríbele a JARVIS..."
+                  disabled={busy}
+                  className="flex-1 bg-transparent text-sm text-white placeholder:text-on-surface-variant outline-none py-1"
+                />
+                {hasVoice && <VoiceToggle onTranscript={(t) => sendMessage(t)} disabled={busy} />}
+                <button
+                  type="button"
+                  onClick={() => sendMessage(input)}
+                  disabled={!input.trim() || busy}
+                  className="w-8 h-8 rounded-full bg-primary/20 border border-primary/40 text-primary flex items-center justify-center hover:bg-primary/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-[16px]">send</span>
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
-    </>
+    </div>
   );
 }

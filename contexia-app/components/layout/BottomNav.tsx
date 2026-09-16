@@ -9,10 +9,14 @@ type NavItem = {
   label: string;
 };
 
+// Patrimonio added 2026-09-15 — DesktopSidebar.tsx (desktop's equivalent of this nav) already
+// has 5 items; mobile only had 4, and the founder noticed the mismatch ("no vi todas las
+// opciones en la parte inferior"). Same route as the sidebar's, same icon.
 const NAV_ITEMS: NavItem[] = [
   { path: "/app/overview", icon: "monitoring", label: "Pulso" },
   { path: "/app/fiscal", icon: "account_balance", label: "Fiscal" },
   { path: "/app/radar", icon: "insights", label: "Radar" },
+  { path: "/app/patrimonio", icon: "account_balance_wallet", label: "Patrimonio" },
   { path: "/app/config", icon: "settings", label: "Config" },
 ];
 

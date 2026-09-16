@@ -287,4 +287,93 @@ bot. No revertir ese código; es la base correcta para cuando el conflicto se re
   (desktop 1280px + mobile 375px): el círculo aparece solo para admin/growth/enterprise, abre
   el panel sin colisión con "Cerrar Sesión" ni con el BottomNav, y el toggle open/close funciona.
 
+## Re-scope 2026-09-15 — badge JARVIS: rediseño visual, renombre, y arreglo de navegación desktop
+
+Sesión de iteración visual en vivo con el fundador sobre el badge de `ClientTopBar.tsx`
+(Fase E / re-scope 2026-09-14 de arriba). Cambios reales, verificados en el navegador en cada
+paso (mobile 375px y desktop ~975px):
+
+**Typo corregido — "JARVOS" nunca fue el nombre real.** Todo el componente (`aria-label`,
+título del panel, placeholder, keyframes CSS `jarvos-*`) decía "JARVOS" por un error de tipeo
+en una sesión anterior. Renombrado a **JARVIS** en `JarvisBubble.tsx` y `globals.css` — las
+únicas referencias que sobreviven a "jarvos" son al nombre literal de la carpeta externa
+`design_handoff_jarvos_header_circle/` (typo real en el nombre del directorio de diseño, fuera
+de este repo, no se renombra).
+
+**Anillos HUD, en dos rondas.** Ronda 1: se agregaron capas decorativas extra (anillo punteado
+externo, anillo "digital block") sobre las tres capas base del handoff — resultó en un look
+"gris/apagado" que no se parecía al diseño de referencia J.A.R.V.I.S. Ronda 2 (rediseño real):
+se retiró el anillo que invadía el hueco deliberado entre el anillo intermedio (r=33) y el
+contorno (r=41) del handoff, y se agregó un anillo grueso "incandescente" (r=52, stroke 5,
+`#99F6E4`, con `<filter>` de blur real vía `feGaussianBlur` — no solo un halo de CSS) fuera de
+la anatomía original del handoff, más un anillo tenue de contexto (r=58). Los tres layers
+propios del handoff (r=28/33/41) quedan **exactamente** con los valores de spec — nunca se
+retonaron. Se agregó rotación lenta a cada anillo (22s/24s/29s/34s, periodos sin múltiplo común
+corto) más una animación "harmonic" constante (`jarvis-harmonic`, 5.2s, scale+translateY) para
+que el badge respire incluso sin interacción, no solo al presionar.
+
+**Tamaño del badge, en tres rondas** (72/88 handoff → 96/120 → 128/156 header → 96 en el
+sidebar de escritorio, ver abajo) — cada ronda vino con un agrandamiento correspondiente del
+propio header (`ClientTopBar.tsx`) para darle espacio, hasta terminar reduciéndolo de nuevo
+(ver el punto del sidebar).
+
+**Mark del badge reemplazado y re-procesado.** El PNG original (`jarvis_mark.png`, recortado de
+`logo_official.png`) se reemplazó por un archivo más nuevo (`Pin.png`, aportado por el
+fundador) que traía fondo negro sólido, no transparente — se le quitó el fondo con flood-fill
+(BFS desde los bordes, tolerancia sobre canal máximo ≤34) para dejarlo con alpha real antes de
+usarlo, evitando el recuadro negro que el fondo original mostraba dentro del núcleo oscuro del
+badge.
+
+**Regresión real encontrada y corregida — navegación de escritorio.** Quitar los links de
+navegación del header (pedido del fundador, sesión 2026-09-14) asumía que `BottomNav.tsx` ya
+cubría ambos breakpoints — nunca lo hizo (`md:hidden`, siempre mobile-only). Resultado: en
+escritorio no había NINGUNA forma de llegar a Fiscal/Radar/Patrimonio/Config salvo tecleando la
+URL. Fix: `components/layout/DesktopSidebar.tsx` (nuevo) — sidebar fijo a la izquierda,
+`hidden md:flex`, con los mismos 5 destinos que `BottomNav` (Patrimonio incluido — el mobile
+tampoco lo tenía, se agregó ahí también el mismo día por el mismo motivo). `ClientTopBar`
+recibió un prop `sidebarOffset` para (a) correr su propio centrado al espacio a la derecha del
+sidebar y (b) achicar el header a una barra delgada en desktop una vez que el badge se movió
+*dentro* del sidebar (ver el siguiente punto) — `flujo-detalle/layout.tsx` no pasa este prop
+porque nunca tuvo sidebar, y conserva el badge en su propio header sin cambios.
+
+**El badge se mudó al sidebar en desktop, mismo componente, sin acceso nuevo.** Pedido explícito
+del fundador: "usa el mismo badge... no crees otro acceso". `JarvisBubble` ganó un prop
+`panelAnchor?: "header" | "sidebar"` que solo cambia dónde abre el panel de chat en desktop
+(centrado bajo el header vs. al lado del sidebar) — la lógica de gating/estados es la misma
+instancia de componente, solo un `size` más chico (96) y otra posición. En mobile el badge
+sigue en el header, sin cambios.
+
+**"Cerrar Sesión" — reubicado, sin duplicados.** Se sacó del cluster derecho del header
+(`ClientTopBar.tsx`) y se creó `components/layout/SignOutFooter.tsx`, montado al final del
+`<main>` en `(shell)/layout.tsx` y en `flujo-detalle/layout.tsx` — mismo botón en toda pantalla,
+mobile y desktop. Esto expuso dos duplicados preexistentes que nadie había notado: el botón rojo
+`Cerrar sesión` propio de `config/page.tsx`, y el botón flotante `Salir` (mobile-only) propio de
+`overview/page.tsx` — ambos existían porque, antes de esta sesión, el único logout de escritorio
+vivía en el header y esas dos pantallas se las habían arreglado por su cuenta. Ambos se
+eliminaron; `SignOutFooter` es ahora la única fuente. Color corregido en el camino: el primer
+intento de `SignOutFooter` usaba texto casi negro (`#020617`) sobre fondo teal — feedback del
+fundador ("no negras") — se re-estilizó para calzar con la convención que "Salir" ya usaba
+(texto+borde teal sobre fondo oscuro), unificando el estilo en vez de inventar uno nuevo.
+
+**Núcleo del badge — mismo color que el resto de la app.** El relleno del núcleo (`#111D2E`,
+valor del handoff) era una navy ligeramente distinta al fondo real de la app
+(`#0F172A`, `bg-bg-obsidian`) — casi idéntico en teoría, pero se notaba como un "hueco" más
+negro que el resto de la UI, sobre todo bajo el filtro `grayscale`/`brightness` del estado "no
+disponible". Se cambió a `#0F172A` exacto.
+
+**"¿Qué es Contexia?" (Config → Ayuda) apuntaba a `/landing.html`, 404 en local.** Ese archivo
+vive en la raíz del repo (fuera de `contexia-app/public/`), así que el servidor de desarrollo de
+Next no lo sirve — nunca se confirmó si funciona en producción (Vercel sí serviría ese archivo
+estático), pero de todos modos era la landing pública de marketing completa (1483 líneas, SEO/
+schema.org), no un "acerca de" liviano para un usuario ya autenticado. Se creó
+`app/app/(shell)/acerca/page.tsx` — pantalla estática breve (sin fetch, cumple la regla mock-first
+de `contexia-app/CLAUDE.md`) con copy tomado de `.antigravity/GROUND_TRUTH.md` (Pulso Diario,
+Centinela Fiscal, Radar Predictivo, Auditoría Sombra + la aclaración de que Contexia es
+tecnología, no firma contable) — el link de Config ahora apunta ahí.
+
+**Pendiente, no bloqueante:** verificar en producción real (con login real, plan pagado o rol
+admin) que el badge se ve a color — todo lo de arriba se verificó en el preview local
+simulando `isAdmin=true` vía una cookie JWT falsa (nunca una credencial real), porque el backend
+de Railway no es alcanzable desde el dev server local.
+
 ## Próximo: Spec (detalla qué código escribir por tarea)

@@ -181,9 +181,42 @@
 
 ---
 
+## Fase F — Rediseño del badge JARVIS + arreglo de navegación desktop (2026-09-15)
+
+Ver `design.md` § "Re-scope 2026-09-15" para el detalle completo de cada punto.
+
+- [x] 22. Renombre JARVOS → JARVIS (typo real) en `JarvisBubble.tsx` y `globals.css`
+      (aria-label, título del panel, placeholder, keyframes `jarvis-*`)
+- [x] 23. Anillos HUD rediseñados: se retiró el anillo que invadía el hueco deliberado del
+      handoff entre r=33 y r=41; se agregó un anillo incandescente r=52 con glow real
+      (`feGaussianBlur`) y rotación propia a cada capa (22s/24s/29s/34s) + animación
+      `jarvis-harmonic` constante (no solo al presionar)
+- [x] 24. Tamaño del badge escalado en el header (96/120 → 128/156) y luego movido a 96 en
+      `DesktopSidebar`; `jarvis_mark.png` reemplazado por un asset nuevo del fundador
+      (`Pin.png`) con el fondo negro removido vía flood-fill antes de usarlo
+- [x] 25. **Regresión real encontrada y corregida**: quitar los links de nav del header
+      (sesión 2026-09-14) dejó el desktop sin ninguna forma de navegar a Fiscal/Radar/
+      Patrimonio/Config (`BottomNav` siempre fue `md:hidden`). Fix:
+      `components/layout/DesktopSidebar.tsx` (nuevo) + prop `sidebarOffset` en `ClientTopBar`
+      + `panelAnchor` en `JarvisBubble` (el badge vive en el sidebar en desktop, mismo
+      componente, sin acceso nuevo que inventar)
+- [x] 26. `BottomNav.tsx` — agregado Patrimonio (mobile no lo tenía, mismo motivo que 25)
+- [x] 27. `components/layout/SignOutFooter.tsx` (nuevo) — "Cerrar Sesión" único en toda
+      pantalla del shell; eliminados dos duplicados preexistentes (`config/page.tsx` botón
+      rojo, `overview/page.tsx` botón flotante "Salir")
+- [x] 28. Núcleo del badge (`#111D2E` → `#0F172A`) para calzar exacto con el fondo real de la
+      app, no una navy "casi igual"
+- [x] 29. `app/app/(shell)/acerca/page.tsx` (nuevo) — el link "¿Qué es Contexia?" de Config
+      apuntaba a `/landing.html` (404 en dev local); ahora apunta a esta pantalla liviana,
+      copy tomado de `.antigravity/GROUND_TRUTH.md`
+
+---
+
 ## Stage 11. Deploy a producción (OBLIGATORIO)
 
 Ver: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
+
+### Deploy 2026-09-13 (Fase A-E)
 
 - [x] 11.1 git commit + push to main — 7 commits, cada push confirmado explícitamente por el
       fundador en el chat (666495b, f0da981, 4bd8940, 884acb4, 18d5ba4, 8db9152, 320dbb5)
@@ -201,3 +234,14 @@ Ver: `DEPLOYMENT_STAGE/DEPLOYMENT_STAGE.md`
 - [x] 11.5 Reporte creado: `openspec/changes/hermes-jarvis-contexia/reports/2026-09-13-deployment.md`
       — incluye el hallazgo de las 3 copias divergentes de `sw.js` como lección para
       `DEPLOYMENT_STAGE/checklist-vercel.md`
+
+### Deploy 2026-09-15 (Fase F)
+
+- [ ] 11.6 `cd contexia-app && npm run build` limpio + `CACHE_VERSION` de `public/sw.js`
+      bumpeado (assets/CSS/HTML cambiaron)
+- [ ] 11.7 Sync `contexia-app/out/` → `app/` (repo root) + `sw.js` a la raíz
+- [ ] 11.8 git commit + push a main — confirmado explícitamente por el fundador ("ya")
+- [ ] 11.9 Vercel build verde + verificado en vivo en `contexia.online` (badge JARVIS a color
+      para un usuario con acceso real, sidebar de escritorio, `BottomNav` con Patrimonio,
+      `/app/acerca` sin 404)
+- [ ] 11.10 Reporte creado: `openspec/changes/hermes-jarvis-contexia/reports/2026-09-15-deployment.md`
