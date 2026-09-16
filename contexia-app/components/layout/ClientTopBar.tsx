@@ -73,9 +73,10 @@ export function ClientTopBar({ sidebarOffset = false }: ClientTopBarProps) {
             )}
           </div>
 
-          {/* Right cluster: intentionally empty — "Cerrar Sesión" moved to the bottom of the
-              page (SignOutFooter, rendered by the shell layout) on 2026-09-15, founder request.
-              Kept as a grid track (not removed) for the same centering reason as the left one. */}
+          {/* Right cluster: intentionally empty — the logout affordance moved out of the header
+              entirely on 2026-09-15 (first to a text SignOutFooter, later replaced by
+              FloatingSignOutButton's power icon — see that component). Kept as a grid track
+              (not removed) for the same centering reason as the left one. */}
           <div />
         </div>
       </div>

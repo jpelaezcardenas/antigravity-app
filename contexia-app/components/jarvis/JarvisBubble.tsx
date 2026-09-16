@@ -368,21 +368,6 @@ export function JarvisBubble({ size, panelAnchor = "header" }: JarvisBubbleProps
           )}
         </div>
 
-        <span
-          className="absolute rounded-full"
-          style={{
-            width: "11px",
-            height: "11px",
-            top: "6%",
-            right: "6%",
-            border: "2px solid #0F172A",
-            backgroundColor: !hasJarvisChat
-              ? "#6B7680"
-              : visualizer !== "idle"
-                ? "#F59E0B"
-                : "#2DD4BF",
-          }}
-        />
       </button>
 
       {/* Company label — separate element, outside the ring/halo bounds, never inside the core */}

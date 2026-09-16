@@ -8,7 +8,10 @@
  *  - a localhost API base URL baked in (.env.local shadowing)
  * and verifies that:
  *  - the production API base URL is baked into the client chunks
- *  - "Cerrar Sesión" renders in the overview page HTML
+ *  - a clean "Cerrar sesión" sign-out affordance renders in the overview page HTML
+ *    (2026-09-15: the visible label was replaced by a power-icon button everywhere —
+ *    FloatingSignOutButton.tsx — so this checks the aria-label attribute instead of a
+ *    text node; the encoding-corruption check it exists for is unchanged either way)
  *
  * Usage: node scripts/check-export.mjs   (run from contexia-app/, after `npm run build`)
  */
@@ -53,7 +56,7 @@ for (const file of files) {
   if (text.includes(PROD_API_HOST)) {
     prodApiHostSeen = true;
   }
-  if (file.endsWith("overview.html") && text.includes("Cerrar Sesión")) {
+  if (file.endsWith("overview.html") && text.includes('aria-label="Cerrar sesión"')) {
     logoutLabelSeen = true;
   }
 }
@@ -62,7 +65,7 @@ if (!prodApiHostSeen) {
   errors.push(`no file in ${OUT_DIR}/ contains the production API host ${PROD_API_HOST}`);
 }
 if (!logoutLabelSeen) {
-  errors.push(`out/app/overview.html does not contain a clean "Cerrar Sesión" label`);
+  errors.push(`out/app/overview.html does not contain a clean "Cerrar sesión" sign-out button`);
 }
 
 if (errors.length > 0) {

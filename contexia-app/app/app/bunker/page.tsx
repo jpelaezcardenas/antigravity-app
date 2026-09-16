@@ -95,9 +95,11 @@ export default function BunkerPage() {
               localStorage.removeItem("cx_user");
               location.href = "/login";
             }}
-            className="px-4 py-2 text-on-surface-variant hover:text-on-surface text-sm font-medium transition-colors"
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#2DD4BF]/40 bg-[#020617]/90 text-[#2DD4BF] transition-all hover:bg-[#020617] hover:border-[#2DD4BF]/70"
           >
-            Cerrar Sesión
+            <span className="material-symbols-outlined text-[20px]">power_settings_new</span>
           </button>
         </header>
 

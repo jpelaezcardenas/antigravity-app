@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { ClientTopBar } from "@/components/layout/ClientTopBar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { DesktopSidebar } from "@/components/layout/DesktopSidebar";
-import { SignOutFooter } from "@/components/layout/SignOutFooter";
+import { FloatingSignOutButton } from "@/components/layout/FloatingSignOutButton";
 
 // Jarvis lives in the header on mobile, DesktopSidebar on desktop (2026-09-15, round 4 —
 // see DesktopSidebar.tsx) — no separate floating bubble here.
@@ -19,8 +19,8 @@ export default function AppShellLayout({ children }: { children: ReactNode }) {
           underneath it; BottomNav covers mobile, DesktopSidebar is desktop's nav. */}
       <main className="flex-1 pt-[260px] md:pt-8 pb-24 md:pb-8 md:pl-56">
         {children}
-        <SignOutFooter />
       </main>
+      <FloatingSignOutButton />
       <BottomNav />
     </div>
   );

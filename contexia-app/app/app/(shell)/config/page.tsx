@@ -147,9 +147,9 @@ export default function ConfigPage() {
         </div>
       </section>
 
-      {/* Own "Cerrar sesión" button removed 2026-09-15 — duplicated the shared SignOutFooter
-          that the (shell) layout now renders at the bottom of every screen, including this
-          one. Version footer text kept, it's unrelated to logout. */}
+      {/* Own "Cerrar sesión" button removed 2026-09-15 — logout is FloatingSignOutButton's
+          power icon everywhere now (rendered by the shell layout). Version footer text kept,
+          it's unrelated to logout. */}
       <section className="flex flex-col gap-3 mt-2">
         <p className="text-center text-[10px] text-on-surface-variant/60 mt-2">
           Contexia · GPS Financiero · v1.0

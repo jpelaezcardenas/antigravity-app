@@ -16,8 +16,8 @@ export default function OverviewPage() {
       <StructuralBreakdownCTA />
       <ActiveAlerts />
       {/* The floating mobile-only "Salir" button that used to live here (fixed bottom-24
-          right-4, md:hidden) was removed 2026-09-15 — it duplicated the shared SignOutFooter
-          the (shell) layout now renders at the bottom of every screen on both breakpoints. */}
+          right-4, md:hidden) was removed 2026-09-15 — logout is FloatingSignOutButton's
+          power icon everywhere now (rendered by the shell layout, both breakpoints). */}
     </div>
   );
 }
