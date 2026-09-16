@@ -204,6 +204,10 @@
             "destination": "/app/config.html"
         },
         {
+            "source": "/app/acerca",
+            "destination": "/app/acerca.html"
+        },
+        {
             "source": "/flujo-detalle",
             "destination": "/flujo-detalle.html"
         },
