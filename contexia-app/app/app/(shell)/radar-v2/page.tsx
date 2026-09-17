@@ -11,13 +11,16 @@ import { StrategicInsightCard } from "@/components/radar/StrategicInsightCard";
 import { UpcomingMilestonesCard } from "@/components/radar/UpcomingMilestonesCard";
 import { UpgradePlanBannerV2 } from "@/components/shared/v2/UpgradePlanBannerV2";
 import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
+import { RadarCashProjectionTiles } from "@/components/radar/v2/RadarCashProjectionTiles";
 
 /**
- * PWA V2 visual pilot (Fase 3) — reuses radarMock and all existing real/mock
- * Radar components verbatim (including the real CashProjection13wCard),
- * only adding the new "Lo que viene" hero framing above them. Order matches
- * the Stitch-approved composition: hero -> scenario selector -> real 13-week
- * projection -> mock 90-day flow/provision/insight -> real milestones.
+ * PWA V2 visual pilot (Fase 3, reconstructed 2026-09-17) — the first cut of
+ * this page kept radarMock's plain hero text ("Lo que viene") instead of the
+ * Stitch-approved metric-tile grid. This version adds RadarCashProjectionTiles
+ * — a tile summary of the SAME real fetchCashProjection13w() data the chart
+ * below already renders, nothing new fetched or invented — right under the
+ * hero, per Stitch. CashProjection13wCard (the real chart) and the mock
+ * 90-day scenario cards stay below as deeper content.
  */
 export default function RadarV2Page() {
   const [scenario, setScenario] = useState<Scenario>("base");
@@ -30,19 +33,21 @@ export default function RadarV2Page() {
     >
       <UpgradePlanBannerV2 />
 
-      <section className="flex flex-col gap-4">
-        <div>
-          <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-primary-container">
-            {radarMock.header.title}
-          </h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-            {radarMock.header.subtitle}
-          </p>
-        </div>
-        <RadarScenarioSelector value={scenario} onChange={setScenario} />
+      <section className="flex flex-col gap-1.5">
+        <p className="text-xs font-medium tracking-widest uppercase text-on-surface-variant/90">
+          Radar de caja · 13 semanas
+        </p>
+        <h1 className="font-extralight tracking-tight text-white text-[40px] sm:text-[48px] leading-tight">
+          Lo que viene
+        </h1>
+        <p className="text-sm text-on-surface-variant">{radarMock.header.subtitle}</p>
       </section>
 
       <JarvisFloatingBadgeV2 />
+
+      <RadarCashProjectionTiles />
+
+      <RadarScenarioSelector value={scenario} onChange={setScenario} />
 
       <CashProjection13wCard />
 
