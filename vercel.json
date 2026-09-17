@@ -208,12 +208,36 @@
             "destination": "/app/acerca.html"
         },
         {
+            "source": "/app/overview-v2",
+            "destination": "/app/overview-v2.html"
+        },
+        {
+            "source": "/app/fiscal-v2",
+            "destination": "/app/fiscal-v2.html"
+        },
+        {
+            "source": "/app/radar-v2",
+            "destination": "/app/radar-v2.html"
+        },
+        {
+            "source": "/app/patrimonio-v2",
+            "destination": "/app/patrimonio-v2.html"
+        },
+        {
+            "source": "/app/acerca-v2",
+            "destination": "/app/acerca-v2.html"
+        },
+        {
             "source": "/flujo-detalle",
             "destination": "/flujo-detalle.html"
         },
         {
             "source": "/app/flujo-detalle",
             "destination": "/flujo-detalle.html"
+        },
+        {
+            "source": "/flujo-detalle-v2",
+            "destination": "/flujo-detalle-v2.html"
         },
         {
             "source": "/app/bunker",
