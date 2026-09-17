@@ -9,7 +9,7 @@ import { CashProjection13wCard } from "@/components/radar/CashProjection13wCard"
 import { EstimatedTaxProvisionCard } from "@/components/radar/EstimatedTaxProvisionCard";
 import { StrategicInsightCard } from "@/components/radar/StrategicInsightCard";
 import { UpcomingMilestonesCard } from "@/components/radar/UpcomingMilestonesCard";
-import { UpgradePlanBanner } from "@/components/shared/UpgradePlanBanner";
+import { UpgradePlanBannerV2 } from "@/components/shared/v2/UpgradePlanBannerV2";
 import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 
 /**
@@ -28,7 +28,7 @@ export default function RadarV2Page() {
       data-cx-ui="v2"
       className="px-container-margin-mobile md:px-container-margin-desktop max-w-7xl mx-auto flex flex-col gap-6 w-full mt-2 pb-16"
     >
-      <UpgradePlanBanner />
+      <UpgradePlanBannerV2 />
 
       <section className="flex flex-col gap-4">
         <div>

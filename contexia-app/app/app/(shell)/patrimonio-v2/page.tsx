@@ -4,7 +4,7 @@ import { StrategicPatrimonyInsightCard } from "@/components/patrimonio/Strategic
 import { DividendShieldCard } from "@/components/patrimonio/DividendShieldCard";
 import { WithdrawalSimulatorCard } from "@/components/patrimonio/WithdrawalSimulatorCard";
 import { EquityMovementHistoryCard } from "@/components/patrimonio/EquityMovementHistoryCard";
-import { UpgradePlanBanner } from "@/components/shared/UpgradePlanBanner";
+import { UpgradePlanBannerV2 } from "@/components/shared/v2/UpgradePlanBannerV2";
 import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 
 /**
@@ -23,7 +23,7 @@ export default function PatrimonioV2Page() {
       data-cx-ui="v2"
       className="px-container-margin-mobile md:px-container-margin-desktop max-w-7xl mx-auto flex flex-col gap-6 w-full mt-2 pb-16"
     >
-      <UpgradePlanBanner />
+      <UpgradePlanBannerV2 />
 
       <section className="flex flex-col gap-4">
         <div>

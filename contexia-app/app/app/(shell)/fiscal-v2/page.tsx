@@ -2,7 +2,7 @@ import { fiscalMock } from "@/lib/mock/fiscal";
 import { ExAnteDetectionCard } from "@/components/fiscal/ExAnteDetectionCard";
 import { ShadowAuditCard } from "@/components/fiscal/ShadowAuditCard";
 import { TaxThresholdsCard } from "@/components/fiscal/TaxThresholdsCard";
-import { UpgradePlanBanner } from "@/components/shared/UpgradePlanBanner";
+import { UpgradePlanBannerV2 } from "@/components/shared/v2/UpgradePlanBannerV2";
 import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 
 /**
@@ -17,7 +17,7 @@ export default function FiscalV2Page() {
       data-cx-ui="v2"
       className="px-container-margin-mobile md:px-container-margin-desktop flex flex-col gap-gutter max-w-4xl mx-auto w-full mt-2 pb-16"
     >
-      <UpgradePlanBanner />
+      <UpgradePlanBannerV2 />
 
       <div className="flex flex-col gap-1.5">
         <p className="text-xs font-medium tracking-widest uppercase text-on-surface-variant/90">
