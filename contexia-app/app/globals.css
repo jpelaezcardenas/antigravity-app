@@ -79,17 +79,21 @@
   --radius-xl: 0.75rem;
   --radius-full: 9999px;
 
-  /* === Font families (Unified design system) === */
-  --font-data-mono: "JetBrains Mono", monospace;
+  /* === Font families (V2 — unified on Inter, PWA V2 Fase 1) ===
+     Previously Rajdhani/Orbitron/JetBrains Mono via Google Fonts (4 families loaded).
+     Repointed to Inter per DESIGN_SYSTEM.md D03 (menor riesgo de licencia, ya cargada,
+     menos peso de fuentes) without touching the ~35 files that reference these token
+     names as utility classes (font-headline-lg, font-title-md, font-orbitron, etc). */
+  --font-data-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
   --font-body-md: "Inter", sans-serif;
   --font-body-lg: "Inter", sans-serif;
-  --font-headline-xl: "Rajdhani", sans-serif;
-  --font-headline-lg: "Rajdhani", sans-serif;
-  --font-headline-lg-mobile: "Rajdhani", sans-serif;
+  --font-headline-xl: "Inter", sans-serif;
+  --font-headline-lg: "Inter", sans-serif;
+  --font-headline-lg-mobile: "Inter", sans-serif;
   --font-label-caps: "Inter", sans-serif;
-  --font-title-md: "Rajdhani", sans-serif;
-  --font-orbitron: "Orbitron", sans-serif;
-  --font-rajdhani: "Rajdhani", sans-serif;
+  --font-title-md: "Inter", sans-serif;
+  --font-orbitron: "Inter", sans-serif;
+  --font-rajdhani: "Inter", sans-serif;
 
   /* === Text sizes (paired tokens for line-height/weight/tracking) === */
   --text-data-mono: 14px;
@@ -307,4 +311,38 @@ body {
   background-color: #0a0a0a;
   -webkit-tap-highlight-color: transparent;
   min-height: max(884px, 100dvh);
+}
+
+/* === PWA V2 tokens (pwa-v2-visual-tokens, Fase 1) ===
+   Scoped contract for the V2 visual migration — applied to a subtree via
+   data-cx-ui="v2", NOT a replacement of the @theme block above (which Búnker/
+   wizard still depend on). Values per DESIGN_SYSTEM.md §4. A component opts in
+   by rendering inside an element carrying this attribute; nothing here affects
+   existing V1 screens until they're migrated in later phases. */
+[data-cx-ui="v2"] {
+  --cx-bg: #0f172a;
+  --cx-surface-solid: #1e293b;
+  --cx-surface-overlay: rgb(30 41 59 / 0.94);
+  --cx-text: #d4e4fa;
+  --cx-text-muted: #bacac5;
+  --cx-brand: #2dd4bf;
+  --cx-ai: #8b5cf6;
+  --cx-attention: #f59e0b;
+  --cx-critical: #fca5a5;
+  --cx-border: rgb(212 228 250 / 0.18);
+
+  --cx-space-1: 0.25rem;
+  --cx-space-2: 0.5rem;
+  --cx-space-3: 0.75rem;
+  --cx-space-4: 1rem;
+  --cx-space-5: 1.25rem;
+  --cx-space-6: 1.5rem;
+  --cx-space-8: 2rem;
+  --cx-space-10: 2.5rem;
+  --cx-radius-card: 1.5rem;
+  --cx-radius-control: 1rem;
+  --cx-radius-pill: 999px;
+  --cx-target: 3rem;
+  --cx-motion-fast: 140ms;
+  --cx-motion-base: 220ms;
 }
