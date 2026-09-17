@@ -20,7 +20,9 @@ export default function OverviewV2Page() {
       <PulsoHeroV2 />
       <div className="min-h-[120px]" aria-hidden />
       <ActiveAlertsV2 />
-      <DataUploadCard />
+      <div id="conectar-mis-datos" className="scroll-mt-24">
+        <DataUploadCard />
+      </div>
     </div>
   );
 }

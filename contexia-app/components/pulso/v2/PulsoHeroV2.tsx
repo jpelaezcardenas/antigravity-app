@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { formatCop } from "@/lib/format";
 import {
   fetchFinancials,
@@ -71,6 +72,27 @@ export function PulsoHeroV2() {
         className="absolute -top-10 -left-6 w-80 h-56 bg-primary/15 rounded-full blur-3xl pointer-events-none -z-0"
       />
 
+      {/* Ghost header actions (equivalente a "+" / engranaje de Weather) — ambos enlazan a
+          destinos reales que ya existen, ninguno inventado. "+" lleva a la acción real de
+          conectar datos (misma pantalla, ancla); el engranaje va a /app/config, la pantalla
+          de Ajustes real. */}
+      <div className="relative z-10 flex items-center justify-end gap-4 mb-4 text-on-surface-variant">
+        <a
+          href="#conectar-mis-datos"
+          aria-label="Conectar mis datos"
+          className="hover:text-white transition-colors p-1 flex items-center justify-center"
+        >
+          <span className="material-symbols-outlined text-[21px]">add</span>
+        </a>
+        <Link
+          href="/app/config"
+          aria-label="Configuración"
+          className="hover:text-white transition-colors p-1 flex items-center justify-center"
+        >
+          <span className="material-symbols-outlined text-[20px]">settings</span>
+        </Link>
+      </div>
+
       <div className="relative z-10 flex flex-col gap-1.5">
         <div className="text-xs font-medium tracking-wide text-on-surface-variant/90">
           {tenantLabel}
@@ -100,12 +122,18 @@ export function PulsoHeroV2() {
             <p className="text-on-surface-variant text-sm font-normal">Saldo bancario</p>
             {alertCount > 0 && (
               <div className="mt-1">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container/60 border border-outline-variant/40 backdrop-blur-md">
+                <Link
+                  href="/app/fiscal"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container/60 border border-outline-variant/40 backdrop-blur-md hover:border-warning/50 transition-colors"
+                >
                   <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse" />
                   <span className="text-xs font-normal text-on-surface-variant tracking-wide">
                     {alertCount} {alertCount === 1 ? "alerta activa" : "alertas activas"}
                   </span>
-                </div>
+                  <span className="material-symbols-outlined text-[14px] text-on-surface-variant/70">
+                    chevron_right
+                  </span>
+                </Link>
               </div>
             )}
           </>
