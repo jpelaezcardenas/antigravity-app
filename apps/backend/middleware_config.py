@@ -6,7 +6,6 @@ Apply these to your main FastAPI app for production hardening
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -32,15 +31,6 @@ logger = logging.getLogger("contexia-api")
 limiter = Limiter(key_func=get_remote_address)
 
 # ============================================================================
-# ALLOWED ORIGINS
-# ============================================================================
-
-# Load from .env or use defaults
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3001,http://localhost:3002,http://localhost:5173,http://localhost:3000").split(",")
-
-print(f"[INFO] CORS enabled for origins: {ALLOWED_ORIGINS}")
-
-# ============================================================================
 # APPLY MIDDLEWARE TO APP
 # ============================================================================
 
@@ -52,22 +42,18 @@ def apply_middleware(app: FastAPI):
         apply_middleware(app)
     """
 
-    # 1. CORS Middleware
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=ALLOWED_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-    logger.info("CORS middleware applied")
+    # CORS is applied once, in main.py, driven by settings.origins_list
+    # (ALLOWED_ORIGINS env var). A second CORSMiddleware used to be added
+    # here — two stacked CORSMiddleware instances produced duplicate
+    # Access-Control-Allow-Origin headers, which browsers reject outright.
+    # See main.py's CORS block for the incident note.
 
-    # 2. Rate Limiter
+    # 1. Rate Limiter
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
     logger.info("Rate limiter applied (30 requests/minute per IP)")
 
-    # 3. Request/Response Logging Middleware
+    # 2. Request/Response Logging Middleware
     @app.middleware("http")
     async def log_requests(request: Request, call_next):
         """Log all requests with timing"""
@@ -103,7 +89,7 @@ def apply_middleware(app: FastAPI):
 
     logger.info("Request logging middleware applied")
 
-    # 4. Global Exception Handler
+    # 3. Global Exception Handler
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
         """Standardized error responses"""

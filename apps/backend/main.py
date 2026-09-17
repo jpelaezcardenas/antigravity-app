@@ -40,22 +40,18 @@ app = FastAPI(
 
 # --- Middleware Stack (order matters: last added = first executed) ---
 
-# 1. CORS — hardcoded to ensure all local dev ports are allowed
-cors_origins = [
-    "http://localhost:3001",  # contexia-app dev server (end-user PWA)
-    "http://localhost:3002",  # Frontend dev server (Vite)
-    "http://localhost:3000",  # Alternative frontend port
-    "http://localhost:5173",  # Vite default port
-    "http://localhost:5174",  # Alternative Vite port
-    "http://localhost:5175",  # Alternative Vite port
-    "https://contexia.online",
-    "https://www.contexia.online",
-    "https://contexia-wizard.vercel.app",
-    "https://wizard.contexia.online",
-]
+# 1. CORS — single source of truth is settings.origins_list (ALLOWED_ORIGINS
+# env var, config.py). Previously this list was hardcoded here AND
+# middleware_config.py::apply_middleware() added a second CORSMiddleware
+# reading ALLOWED_ORIGINS independently — two stacked CORSMiddleware
+# instances caused duplicate/conflicting Access-Control-Allow-Origin headers,
+# which browsers reject outright (reported as "no header present" even
+# though curl/server logs show 200s). Found live 2026-09-17 verifying the
+# PWA V2 pilot in production. Fixed by keeping exactly one CORSMiddleware,
+# driven by the env var per Decision #8 (ARCHITECTURE.md).
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=settings.origins_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
