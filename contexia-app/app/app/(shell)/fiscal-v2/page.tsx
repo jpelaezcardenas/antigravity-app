@@ -3,6 +3,7 @@ import { ExAnteDetectionCard } from "@/components/fiscal/ExAnteDetectionCard";
 import { ShadowAuditCard } from "@/components/fiscal/ShadowAuditCard";
 import { TaxThresholdsCard } from "@/components/fiscal/TaxThresholdsCard";
 import { UpgradePlanBanner } from "@/components/shared/UpgradePlanBanner";
+import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 
 /**
  * PWA V2 visual pilot (Fase 3) — reuses the exact real fiscalMock content and
@@ -32,6 +33,8 @@ export default function FiscalV2Page() {
           </span>
         </div>
       </div>
+
+      <JarvisFloatingBadgeV2 />
 
       <ExAnteDetectionCard data={fiscalMock.exAnte} />
       <ShadowAuditCard data={fiscalMock.shadowAudit} />

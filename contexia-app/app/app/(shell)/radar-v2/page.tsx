@@ -10,6 +10,7 @@ import { EstimatedTaxProvisionCard } from "@/components/radar/EstimatedTaxProvis
 import { StrategicInsightCard } from "@/components/radar/StrategicInsightCard";
 import { UpcomingMilestonesCard } from "@/components/radar/UpcomingMilestonesCard";
 import { UpgradePlanBanner } from "@/components/shared/UpgradePlanBanner";
+import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 
 /**
  * PWA V2 visual pilot (Fase 3) — reuses radarMock and all existing real/mock
@@ -40,6 +41,8 @@ export default function RadarV2Page() {
         </div>
         <RadarScenarioSelector value={scenario} onChange={setScenario} />
       </section>
+
+      <JarvisFloatingBadgeV2 />
 
       <CashProjection13wCard />
 

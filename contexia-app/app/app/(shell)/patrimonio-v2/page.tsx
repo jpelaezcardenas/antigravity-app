@@ -5,6 +5,7 @@ import { DividendShieldCard } from "@/components/patrimonio/DividendShieldCard";
 import { WithdrawalSimulatorCard } from "@/components/patrimonio/WithdrawalSimulatorCard";
 import { EquityMovementHistoryCard } from "@/components/patrimonio/EquityMovementHistoryCard";
 import { UpgradePlanBanner } from "@/components/shared/UpgradePlanBanner";
+import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 
 /**
  * PWA V2 visual pilot (Fase 3) — reuses the exact real `patrimonio` mock data
@@ -34,6 +35,8 @@ export default function PatrimonioV2Page() {
           </p>
         </div>
       </section>
+
+      <JarvisFloatingBadgeV2 />
 
       <TotalEquityCard patrimonio={data.patrimonio} />
       <StrategicPatrimonyInsightCard insight={data.insight} />

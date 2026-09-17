@@ -33,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export function DesktopSidebar() {
   const pathname = usePathname();
+  const isV2Pilot = pathname?.endsWith("-v2") ?? false;
 
   return (
     <nav className="hidden md:flex fixed left-0 top-0 bottom-0 z-40 w-56 flex-col border-r border-slate-800 bg-bg-obsidian/90 backdrop-blur-xl">
@@ -63,10 +64,15 @@ export function DesktopSidebar() {
 
       {/* JARVIS — moved here from the header (round 4). Sits right below the nav items, not
           pinned to the sidebar's bottom edge (viewport height varies; anchoring to the option
-          list itself is the stable reference point the founder asked for). */}
-      <div className="flex justify-center pt-6 border-t border-slate-800/60 mx-3 mt-4">
-        <JarvisBubble size={96} panelAnchor="sidebar" />
-      </div>
+          list itself is the stable reference point the founder asked for).
+          2026-09-17: skipped on `-v2` pilot routes, which render JARVIS floating in the page
+          content instead (see JarvisFloatingBadgeV2) — avoids a second access point while both
+          coexist. */}
+      {!isV2Pilot && (
+        <div className="flex justify-center pt-6 border-t border-slate-800/60 mx-3 mt-4">
+          <JarvisBubble size={96} panelAnchor="sidebar" />
+        </div>
+      )}
     </nav>
   );
 }
