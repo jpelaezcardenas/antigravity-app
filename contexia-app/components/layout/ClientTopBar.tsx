@@ -59,7 +59,11 @@ export function ClientTopBar({ sidebarOffset = false }: ClientTopBarProps) {
         <div
           className={`grid grid-cols-[1fr_auto_1fr] items-start pt-10 pb-6 ${
             isV2Pilot ? "min-h-0 pt-4 pb-4" : "min-h-[220px]"
-          } ${sidebarOffset ? "md:pt-4 md:pb-4 md:min-h-0" : "md:pt-12 md:min-h-[260px]"}`}
+          } ${
+            isV2Pilot || sidebarOffset
+              ? "md:pt-4 md:pb-4 md:min-h-0"
+              : "md:pt-12 md:min-h-[260px]"
+          }`}
         >
           {/* Left cluster: intentionally empty — kept as a grid track (not removed) so the
               center column stays mathematically centered against the right cluster below. */}
