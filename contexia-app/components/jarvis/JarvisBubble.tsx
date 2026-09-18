@@ -40,6 +40,12 @@ interface JarvisBubbleProps {
    * ClientTopBar in both places that still render one there. "sidebar" opens it beside
    * DesktopSidebar instead, for the instance that lives there now. */
   panelAnchor?: "header" | "sidebar";
+  /** Hides the company-name label under the badge. Default false (unchanged everywhere
+   * else). Set true where that name is already shown elsewhere on the page — e.g.
+   * JarvisFloatingBadgeV2 on the -v2 pilots, where PulsoHeroV2/each page's own header
+   * already renders the tenant name, making this second label redundant (founder,
+   * 2026-09-18: "elimina esto debajo del badge de jarvis"). */
+  hideLabel?: boolean;
 }
 
 function readRoleFromJwt(): string {
@@ -63,7 +69,7 @@ function readRoleFromJwt(): string {
   }
 }
 
-export function JarvisBubble({ size, panelAnchor = "header" }: JarvisBubbleProps) {
+export function JarvisBubble({ size, panelAnchor = "header", hideLabel = false }: JarvisBubbleProps) {
   const [loaded, setLoaded] = useState(false);
   const [tenant, setTenant] = useState<TenantMeSnapshot | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -382,17 +388,20 @@ export function JarvisBubble({ size, panelAnchor = "header" }: JarvisBubbleProps
           token DesktopSidebar's nav labels use, right above this in the sidebar. The handoff's
           original spec called for Rajdhani here specifically, but the founder's later,
           explicit, repeated feedback ("no cambies de estilo de letra... normaliza estas letras
-          como el resto de la app") overrides that for this element. */}
-      <p
-        title={fullLabel}
-        className="font-label-caps text-label-caps text-on-surface font-semibold uppercase truncate text-center"
-        style={{
-          letterSpacing: "0.05em",
-          maxWidth: labelMaxWidth,
-        }}
-      >
-        {displayLabel}
-      </p>
+          como el resto de la app") overrides that for this element. Hidden via `hideLabel` where
+          the page already shows the tenant name elsewhere (see JarvisFloatingBadgeV2). */}
+      {!hideLabel && (
+        <p
+          title={fullLabel}
+          className="font-label-caps text-label-caps text-on-surface font-semibold uppercase truncate text-center"
+          style={{
+            letterSpacing: "0.05em",
+            maxWidth: labelMaxWidth,
+          }}
+        >
+          {displayLabel}
+        </p>
+      )}
 
       {open && (
         <div
