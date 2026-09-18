@@ -240,6 +240,10 @@
             "destination": "/flujo-detalle-v2.html"
         },
         {
+            "source": "/conectar-datos-v2",
+            "destination": "/conectar-datos-v2.html"
+        },
+        {
             "source": "/app/bunker",
             "destination": "/app/bunker.html"
         },
