@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { formatCop } from "@/lib/format";
+import { formatCop, formatRelativeTime } from "@/lib/format";
 import {
   fetchFinancials,
   fetchTenantMe,
@@ -17,13 +17,23 @@ type Status = "loading" | "ready" | "empty" | "error";
  * Visual pilot for PWA V2 (Fase 3) — same data contracts as CashTodayCard/
  * ActiveAlerts (fetchFinancials/fetchCentinelaAlerts/fetchTenantMe), new
  * "hero" composition (Google Weather-inspired: dominant figure, minimal
- * negative space, pill status badge). Never fabricates an insight sentence
- * or a last-updated timestamp the backend doesn't return — see the two
- * items Stitch's mockup showed that were dropped here for that reason.
+ * negative space, pill status badge).
+ *
+ * "Actualizado hace X" (2026-09-18) is real: `last_synced_at` from
+ * `GET /financials` is the most recent COMPLETED ingestion for this tenant
+ * (ingestion_batches, migration 0050) — when the underlying Shadow GL data
+ * was last synced, not when this snapshot was computed (always "now").
+ * Omitted entirely when null (never synced yet) — never a fabricated time.
+ *
+ * The mockup's AI insight sentence ("Hoy en tu negocio: ...") is still
+ * intentionally NOT rendered — no backend field generates that text; see
+ * financials_endpoints.py/pulso_diario_endpoints.py, both checked
+ * 2026-09-18, before deciding this stays out rather than being invented.
  */
 export function PulsoHeroV2() {
   const [status, setStatus] = useState<Status>("loading");
   const [cashTotal, setCashTotal] = useState<number | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [tenant, setTenant] = useState<TenantMeSnapshot | null>(null);
   const [alertCount, setAlertCount] = useState<number>(0);
 
@@ -40,6 +50,7 @@ export function PulsoHeroV2() {
             setStatus("empty");
           } else {
             setCashTotal(snapshot.caja_real / 100);
+            setLastSyncedAt(snapshot.last_synced_at);
             setStatus("ready");
           }
         } else {
@@ -123,7 +134,10 @@ export function PulsoHeroV2() {
             <div className="inline-flex items-baseline font-extralight tracking-tight text-white tabular-nums leading-none text-[56px] sm:text-[68px]">
               {formatCop(cashTotal)}
             </div>
-            <p className="text-on-surface-variant text-sm font-normal">Saldo bancario</p>
+            <p className="text-on-surface-variant text-sm font-normal">
+              Saldo bancario
+              {lastSyncedAt && ` · Actualizado ${formatRelativeTime(lastSyncedAt)}`}
+            </p>
             {alertCount > 0 && (
               <div className="mt-1">
                 <Link

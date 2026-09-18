@@ -58,6 +58,28 @@ async def _resolve_caller_tenant_id(user: dict) -> Optional[str]:
     return None
 
 
+def _resolve_last_synced_at(tenant_id: str) -> Optional[str]:
+    """Real 'last synced' timestamp for the founder's Pulso hero ("Actualizado hace
+    X"): the most recent COMPLETED ingestion (CSV/XLSX/PDF self-service upload or the
+    Siigo poller) for this tenant, from `ingestion_batches` (migration 0050) — NOT when
+    this snapshot was computed, which is always "now" since caja_real is a live
+    aggregation over Shadow GL, not a cached value. None if the tenant has never
+    completed an ingestion; callers must render nothing rather than invent a time."""
+    supabase = get_supabase()
+    result = (
+        supabase.table("ingestion_batches")
+        .select("completed_at")
+        .eq("tenant_id", tenant_id)
+        .eq("status", "completed")
+        .order("completed_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if result.data and result.data[0].get("completed_at"):
+        return result.data[0]["completed_at"]
+    return None
+
+
 async def _resolve_plan_tier(tenant_id: str) -> Optional[str]:
     """Look up `tenants.plan_tier` for a resolved tenant (migration 0043).
 
@@ -108,6 +130,7 @@ def _empty_snapshot() -> dict:
         "ventas_ayer": 0,
         "gastos_ayer": 0,
         "status": "empty",
+        "last_synced_at": None,
     }
 
 
@@ -121,6 +144,7 @@ def _not_in_plan_snapshot() -> dict:
         "ventas_ayer": 0,
         "gastos_ayer": 0,
         "status": "not_in_plan",
+        "last_synced_at": None,
     }
 
 
@@ -196,7 +220,8 @@ async def get_financials(user: dict = Depends(get_current_user)):
         if snapshot.get("status") == "empty":
             insight_snapshot = _latest_agent_insight_snapshot(tenant_id)
             if insight_snapshot is not None:
-                return insight_snapshot
+                snapshot = insight_snapshot
+        snapshot["last_synced_at"] = _resolve_last_synced_at(tenant_id)
         return snapshot
     except Exception as e:
         raise HTTPException(

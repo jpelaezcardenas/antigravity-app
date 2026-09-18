@@ -11,6 +11,11 @@ export interface FinancialsSnapshot {
   ventas_ayer: number; // COP minor units — income dated exactly yesterday
   gastos_ayer: number; // COP minor units — expenses dated exactly yesterday
   status: "healthy" | "empty" | "not_in_plan";
+  /** ISO timestamp of the most recent COMPLETED ingestion (CSV/XLSX/PDF upload or the
+   * Siigo poller) for this tenant — real data-freshness, not when this snapshot was
+   * computed (always "now", since caja_real is a live aggregation). Null if the tenant
+   * has never completed an ingestion — render nothing, never fabricate a time. */
+  last_synced_at: string | null;
 }
 
 export class ApiError extends Error {
