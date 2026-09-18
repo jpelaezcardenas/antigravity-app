@@ -36,6 +36,16 @@ type Status = "loading" | "ready" | "empty" | "error";
  * of this hero, matching the Stitch mockup's actual scroll order (cash +
  * insight bubble, THEN alerts, THEN próximos hitos), confirmed against the
  * founder's own screenshot of the full scroll (2026-09-18).
+ *
+ * "+" (2026-09-18): used to anchor-scroll to a `DataUploadCard` that was ALSO
+ * always rendered inline further down the page — two ways to reach the same
+ * thing, which the founder called a "duplicated option". A toggle-in-place
+ * attempt was tried next, but the founder clarified further: "+" should
+ * NAVIGATE to a dedicated screen to load data, not show/hide something in
+ * Pulso itself ("quiero que al pulsar mas nos dirija a cargar los datos, no
+ * que aparezca o desaparezca esta opcion de la v2") — so it's a plain Link
+ * to `/app/conectar-datos-v2` (a detail screen, same shape as
+ * flujo-detalle-v2), the only entry point either way.
  */
 export function PulsoHeroV2() {
   const [status, setStatus] = useState<Status>("loading");
@@ -109,13 +119,13 @@ export function PulsoHeroV2() {
             conectar datos (misma pantalla, ancla); el engranaje va a /app/config, la pantalla
             de Ajustes real. */}
         <div className="flex items-center gap-4 text-on-surface-variant">
-          <a
-            href="#conectar-mis-datos"
+          <Link
+            href="/conectar-datos-v2"
             aria-label="Conectar mis datos"
             className="hover:text-white transition-colors p-1 flex items-center justify-center"
           >
             <span className="material-symbols-outlined text-[21px]">add</span>
-          </a>
+          </Link>
           <Link
             href="/app/config"
             aria-label="Configuración"

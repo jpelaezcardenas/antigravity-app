@@ -1,7 +1,6 @@
 import { PulsoHeroV2 } from "@/components/pulso/v2/PulsoHeroV2";
 import { ActiveAlertsV2 } from "@/components/pulso/v2/ActiveAlertsV2";
 import { NextMilestonesV2 } from "@/components/pulso/v2/NextMilestonesV2";
-import { DataUploadCard } from "@/components/pulso/DataUploadCard";
 import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 
 /**
@@ -15,8 +14,12 @@ import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadg
  * Orden de scroll (confirmado 2026-09-18 contra la captura completa del
  * fundador): mitad superior = PulsoHeroV2 (cifra + insight IA real, rule-
  * based) + JARVIS; mitad inferior = ActiveAlertsV2 + NextMilestonesV2 (DIAN,
- * fecha real sin monto — no existe monto real por tenant en el esquema) +
- * "Conectar mis datos".
+ * fecha real sin monto — no existe monto real por tenant en el esquema).
+ *
+ * "Conectar mis datos" (2026-09-18) ya no vive en esta pantalla: el "+" del
+ * header de PulsoHeroV2 navega a `/app/conectar-datos-v2` (pantalla detalle
+ * dedicada, mismo patrón que flujo-detalle-v2) — el fundador pidió que "+"
+ * dirija ahí en vez de mostrar/ocultar la tarjeta dentro de Pulso.
  */
 export default function OverviewV2Page() {
   return (
@@ -28,9 +31,6 @@ export default function OverviewV2Page() {
       <JarvisFloatingBadgeV2 />
       <ActiveAlertsV2 />
       <NextMilestonesV2 />
-      <div id="conectar-mis-datos" className="scroll-mt-24">
-        <DataUploadCard />
-      </div>
     </div>
   );
 }
