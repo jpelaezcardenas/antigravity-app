@@ -115,9 +115,12 @@ export function JarvisBubble({
   // second copy under the badge was redundant (that's what `hideLabel` used to paper over).
   // This is more useful anyway: it tells the user whether JARVIS is actually reachable on
   // their plan, not just whose account they're in.
-  // "Inactivo", not "No disponible": the status sits inside the core (56/88 of the diameter)
-  // and the longer word clipped at the circle's edges at every size — verified 2026-09-18.
-  const statusLabel = hasJarvisChat ? "Activo" : "Inactivo";
+  // Two visual states (founder, 2026-09-18: "todos los planes hasta el freemium van a tener
+  // acceso a JARVIS... en todos es activo"): any resolved plan (or admin) is "Activo" — teal
+  // rings, blinking dot, caption. Gray "Inactivo" only when nothing resolved (no session /
+  // no tenant). What the chat panel offers per plan is a separate gate (`hasJarvisChat`).
+  const hasJarvis = isAdmin || tier !== null;
+  const statusLabel = hasJarvis ? "Activo" : "Inactivo";
 
   async function sendMessage(text: string) {
     if (!text.trim() || busy) return;
@@ -198,8 +201,9 @@ export function JarvisBubble({
   // diameter), not the full button box — otherwise the text under the pin would sit on top of
   // the rings. Everything inside scales off `size` so the 2026-09-18 layout (pin / JARVIS /
   // status, stacked) reads the same at every diameter.
-  // Core is r=38.5 of the 88 viewBox → 77/88 of the diameter (2026-09-18 composition).
-  const coreInset = Math.round((size * (1 - 77 / 88)) / 2);
+  // Core fills up to the thick dashed ring's inner edge (stroke 3 on r=38.5 → r=37; fill to
+  // r=36.5 = 73/88 of the diameter so a hairline of page shows between fill and dashes).
+  const coreInset = Math.round((size * (1 - 73 / 88)) / 2);
   // 48 = the floating-button variant on non-Pulso screens (founder: "en las demas queda...
   // tirado a la izquierda como boton flotante"): pin only, no name/status inside, no caption.
   const compact = size <= 48;
@@ -232,7 +236,7 @@ export function JarvisBubble({
             color on every plan (freemium/starter included), only the rings gray out. */}
         <div className="absolute inset-0 motion-safe:[animation:jarvis-harmonic_5.2s_ease-in-out_infinite]">
           {/* Halo — the only glowing layer, always breathing at idle, tenser on hover */}
-          {hasJarvisChat && (
+          {hasJarvis && (
           <span
             className="absolute rounded-full pointer-events-none motion-safe:[animation:jarvis-breathe_4s_ease-in-out_infinite] group-hover:opacity-50 group-hover:[animation:none] transition-opacity duration-150"
             style={{
@@ -267,22 +271,75 @@ export function JarvisBubble({
               that fills the interior right up to that ring — no empty gap between ring and
               core, and no radial-tick / segmented / purple layers. */}
 
-          {/* (1) Dotted outer belt — state-colored (founder, 2026-09-18: "el mismo patron del
-              ring intermitente... gris inactivo, y en activo un cinturon magenta adicional"):
-              gray when JARVIS isn't in the plan, the app's violet accent when it is. Slow spin
-              keeps it alive either way. */}
+          {/* Ring pattern (founder, 2026-09-18, from the reference image), outside → in:
+              (1) outermost: near-contiguous dots, slowly rotating ("los que giran, que son casi
+                  puntos seguidos") — gray only in the inactivo state, teal otherwise;
+              (2) violet dotted belt, active only, counter-rotating ("cinturon magenta
+                  adicional");
+              (3) thick dashed ring, the state carrier: gray inactive, incandescent teal (real
+                  glow) active, amber sweep while busy. */}
+
+          {/* (1) Rotating dots */}
           <circle
             cx="44"
             cy="44"
             r="43"
             fill="none"
-            stroke={hasJarvisChat ? "#8B5CF6" : "#64748B"}
-            strokeOpacity={hasJarvisChat ? 0.7 : 0.4}
+            stroke={hasJarvis ? "#2DD4BF" : "#64748B"}
+            strokeOpacity={hasJarvis ? 0.5 : 0.4}
             strokeWidth="1.2"
-            strokeDasharray="1.5 4"
+            strokeDasharray="1 2.2"
             style={{ transformOrigin: "44px 44px" }}
             className="motion-safe:[animation:jarvis-slow-spin_34s_linear_infinite]"
           />
+
+          {/* (2) Violet belt — active only */}
+          {hasJarvis && (
+            <circle
+              cx="44"
+              cy="44"
+              r="41"
+              fill="none"
+              stroke="#8B5CF6"
+              strokeOpacity="0.6"
+              strokeWidth="1"
+              strokeDasharray="1.5 4"
+              style={{ transformOrigin: "44px 44px" }}
+              className="motion-safe:[animation:jarvis-slow-spin-reverse_24s_linear_infinite]"
+            />
+          )}
+
+          {/* (3) Thick dashed ring — rotated -90 so a dash starts at 12 o'clock */}
+          <circle
+            cx="44"
+            cy="44"
+            r="38.5"
+            fill="none"
+            strokeWidth="3"
+            strokeDasharray="7 4"
+            transform="rotate(-90 44 44)"
+            filter={hasJarvis && !busy ? `url(#jarvis-glow-${size})` : undefined}
+            className={`transition-colors duration-150 ${
+              !hasJarvis
+                ? "stroke-[#64748B]/70"
+                : busy
+                  ? "stroke-[#F59E0B]/30"
+                  : "stroke-[#2DD4BF] group-hover:stroke-[#5CE8D8]"
+            }`}
+          />
+          {busy && (
+            <circle
+              cx="44"
+              cy="44"
+              r="38.5"
+              fill="none"
+              stroke="#F59E0B"
+              strokeWidth="3"
+              strokeDasharray={`${(34 / 360) * (2 * Math.PI * 38.5)} ${2 * Math.PI * 38.5}`}
+              transform="rotate(-90 44 44)"
+              className="motion-safe:[animation:jarvis-process_1.6s_linear_infinite] motion-reduce:opacity-70"
+            />
+          )}
 
           {/* (3) The core is NOT drawn here — see the content div after this wrapper. It lives
               outside the grayscale/brightness filter on purpose, so its fill stays exactly the
@@ -330,9 +387,7 @@ export function JarvisBubble({
             nothing spills onto the rings. Only the helper caption lives outside, below. */}
         <div
           className="absolute rounded-full overflow-hidden flex flex-col items-center justify-center bg-bg-obsidian"
-          // +1 viewBox unit so this fill meets the ring stroke's inner edge (stroke 2 centered on
-          // r=38.5 → inner edge r=37.5) without covering it.
-          style={{ inset: `${coreInset + Math.round(size / 88)}px` }}
+          style={{ inset: `${coreInset}px` }}
         >
           {open ? (
             <span className="material-symbols-outlined text-white text-[24px]">close</span>
@@ -355,7 +410,9 @@ export function JarvisBubble({
                   </span>
                   <span className="flex items-center gap-1 leading-none mt-1">
                     <span
-                      className={`rounded-full ${hasJarvisChat ? "bg-primary" : "bg-on-surface-variant/50"}`}
+                      className={`rounded-full ${
+                        hasJarvis ? "bg-primary motion-safe:animate-pulse" : "bg-on-surface-variant/50"
+                      }`}
                       style={{ width: statusPx * 0.7, height: statusPx * 0.7 }}
                     />
                     <span
@@ -374,9 +431,9 @@ export function JarvisBubble({
       </button>
 
       {/* Helper caption — the only text outside the ring (founder: "poner el texto abajo: toca
-          JARVIS para consultar tu liquidez"), per-page customizable via `helperText`. Hidden when
-          JARVIS isn't in the plan — inviting a tap that would only show a lock is misleading. */}
-      {hasJarvisChat && !compact && (
+          JARVIS para consultar tu liquidez"), per-page customizable via `helperText`. Shown for
+          every active plan (founder: "en todos es activo"); hidden only in the gray state. */}
+      {hasJarvis && !compact && (
         <p
           className="text-[12px] text-on-surface-variant/80 text-center"
           style={{ maxWidth: `${Math.round(size * 2.2)}px` }}
