@@ -9,9 +9,10 @@ export default function FlujoDetalleLayout({
   return (
     <div className="bg-bg-obsidian text-on-surface min-h-screen flex flex-col">
       <ClientTopBar />
-      {/* pt bumped 2026-09-15 (three times — see the shell layout's comment) to match
-          ClientTopBar's current rendered height. */}
-      <main className="flex-1 pt-[260px] md:pt-[300px]">{children}</main>
+      {/* pt shrunk 2026-09-18 — ClientTopBar no longer hosts the JARVIS badge here either
+          (moved in-flow, see the page's own JarvisFloatingBadgeV2); it's just the slim
+          tenant-name/+/gear row now, same height on both breakpoints. */}
+      <main className="flex-1 pt-20">{children}</main>
       <FloatingSignOutButton />
     </div>
   );

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { TenantInfoCard } from "@/components/config/TenantInfoCard";
 import { setV2Preview, useV2Preview } from "@/lib/v2-preview";
+import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 
 interface NotificationToggle {
   id: string;
@@ -58,6 +59,13 @@ export default function ConfigPage() {
           Ajusta cómo te avisa Taty y maneja tu acceso
         </p>
       </section>
+
+      {/* JARVIS (2026-09-18): in-flow, right after the header section — see
+          overview/page.tsx for the full rationale. Mobile-only — DesktopSidebar already
+          hosts the desktop access point on this `(shell)` layout. */}
+      <div className="md:hidden">
+        <JarvisFloatingBadgeV2 />
+      </div>
 
       <TenantInfoCard />
 

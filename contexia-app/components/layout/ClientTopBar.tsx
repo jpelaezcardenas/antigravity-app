@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { JarvisBubble } from "@/components/jarvis/JarvisBubble";
 import { fetchTenantMe, type TenantMeSnapshot } from "@/lib/api-client";
 
 // Note (superseded 2026-09-15 — see DesktopSidebar.tsx): removing the header's nav links
@@ -44,17 +43,24 @@ interface ClientTopBarProps {
  * identity mark used to be the JARVIS badge itself.
  *
  * 2026-09-15 (round 4, `sidebarOffset` layouts only): the desktop badge moved into
- * DesktopSidebar.tsx (below its nav items) — there's no more DesktopSidebar-side content to
- * center on desktop, so this header shrinks to a slim bar there (`md:pt-4 md:min-h-0`) instead
- * of the tall one still sized for the badge. flujo-detalle's layout doesn't set
- * `sidebarOffset` (it has no sidebar to move the badge into), so it keeps the original
- * badge-in-header behavior on both breakpoints, unchanged.
+ * DesktopSidebar.tsx (below its nav items).
  *
  * 2026-09-18 (founder decision: V2 pilot retired as the migration target, V1 stays the
  * definitive PWA): every V1 screen this header covers (all of `(shell)` + flujo-detalle) gets
  * the same top row the -v2 pilots had — tenant name (left) / "+" / gear (right), same
  * destinations as V2 (`/conectar-datos-v2`, `/app/config`). BottomNav drops its own "Config"
- * tab everywhere now that the gear lives here — one access point, matching V2's pattern.
+ * tab everywhere now that the gear lives here.
+ *
+ * 2026-09-18 (same day, follow-up): the JARVIS badge that used to live INSIDE this fixed
+ * header (mobile always, desktop on flujo-detalle only) is gone. Founder request, comparing
+ * V1 against the -v2 pilots' own screenshots: "primero se vea el encabezado y despues jarvis,
+ * para todas las pantallas" — V2 never put JARVIS in a sticky header at all, it's an in-flow
+ * `JarvisFloatingBadgeV2` each page renders itself, right after that page's own header/hero
+ * content, so it scrolls away with the rest of the page instead of staying pinned. V1's pages
+ * (`overview`, `fiscal`, `radar`, `patrimonio`, `config`, `flujo-detalle`) now do the exact
+ * same thing — this header is just the slim top row now, on every V1 screen, matching the
+ * -v2 pilots' `isV2Pilot` branch structurally (this file just doesn't need a separate branch
+ * for it anymore, since V1 no longer renders a badge here either).
  */
 export function ClientTopBar({ sidebarOffset = false }: ClientTopBarProps) {
   const pathname = usePathname();
@@ -89,7 +95,7 @@ export function ClientTopBar({ sidebarOffset = false }: ClientTopBarProps) {
       <div
         className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${sidebarOffset ? "md:pl-56" : ""}`}
       >
-        <div className="flex items-center justify-between pt-4 text-on-surface-variant">
+        <div className="flex items-center justify-between py-4 text-on-surface-variant">
           <span className="text-xs font-medium tracking-wide text-on-surface-variant/90">
             {tenantLabel}
           </span>
@@ -109,53 +115,6 @@ export function ClientTopBar({ sidebarOffset = false }: ClientTopBarProps) {
               <span className="material-symbols-outlined text-[20px]">settings</span>
             </Link>
           </div>
-        </div>
-
-        <div
-          className={`grid grid-cols-[1fr_auto_1fr] items-start pt-10 pb-6 ${
-            isV2Pilot ? "min-h-0 pt-4 pb-4" : "min-h-[220px]"
-          } ${
-            isV2Pilot || sidebarOffset
-              ? "md:pt-4 md:pb-4 md:min-h-0"
-              : "md:pt-12 md:min-h-[260px]"
-          }`}
-        >
-          {/* Left cluster: intentionally empty — kept as a grid track (not removed) so the
-              center column stays mathematically centered against the right cluster below. */}
-          <div />
-
-          {/* Center: the JARVIS badge on mobile always; on desktop only when this header is
-              still the badge's home (sidebarOffset false, i.e. flujo-detalle). 2026-09-15
-              (founder request, round 2): the header itself grew (152/168 → 220/260px) to give
-              the badge more room — 96/120 → 128/156. Switched from `items-center` to
-              `items-start` + explicit pt (founder feedback: centering put the badge's own
-              decorative rings — which extend ~20-25px past its box via overflow-visible —
-              right up against the header's top border). Everything below the header (main
-              content, via its own pt-*) shifts down to match; see the shell layouts that
-              render <ClientTopBar />.
-              2026-09-17: skipped entirely on `-v2` pilot routes — those render JARVIS floating
-              in the page content instead (see JarvisFloatingBadgeV2).
-              2026-09-18: `hideLabel` — this header's own top row (added the same day) already
-              shows the tenant name, so JarvisBubble's own company-name label underneath would
-              just repeat it, same reasoning as JarvisFloatingBadgeV2 on the -v2 pilots. */}
-          {!isV2Pilot && (
-            <div className="col-start-2 justify-self-center">
-              <div className="md:hidden">
-                <JarvisBubble size={128} hideLabel />
-              </div>
-              {!sidebarOffset && (
-                <div className="hidden md:block">
-                  <JarvisBubble size={156} hideLabel />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Right cluster: intentionally empty — the logout affordance moved out of the header
-              entirely on 2026-09-15 (first to a text SignOutFooter, later replaced by
-              FloatingSignOutButton's power icon — see that component). Kept as a grid track
-              (not removed) for the same centering reason as the left one. */}
-          <div />
         </div>
       </div>
     </nav>

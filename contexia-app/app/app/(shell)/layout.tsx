@@ -17,20 +17,16 @@ export default function AppShellLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex flex-col bg-bg-obsidian">
       <ClientTopBar sidebarOffset />
       <DesktopSidebar />
-      {/* Mobile pt (260px) matches ClientTopBar's tall mobile header (badge stays there, see
-          ClientTopBar's comment) — unchanged since round 3. Desktop pt (round 4, tuned twice:
-          24 then 8) matches DesktopSidebar's own pt-16 for its first nav link — founder
-          feedback: the two columns' text should start at the same height, not just "close to
-          the top". md:pl-56 — DesktopSidebar (w-56) is fixed/left, content must not render
-          underneath it; BottomNav covers mobile, DesktopSidebar is desktop's nav.
-          2026-09-18: this was hardcoded regardless of route — on `-v2` pilot routes
-          ClientTopBar now renders nothing at all (see its own comment), so main needs only
-          safe-area breathing room, not the 260px reserved for V1's tall badge header
-          (founder: "elimina ese header o espacio vacío arriba" — Stitch's mockup has the
-          hero content start right at the top of the screen). */}
+      {/* md:pl-56 — DesktopSidebar (w-56) is fixed/left, content must not render underneath
+          it; BottomNav covers mobile, DesktopSidebar is desktop's nav.
+          2026-09-18: pt shrunk from 260px/8 to 20/8 — ClientTopBar no longer hosts the JARVIS
+          badge (moved in-flow, see each page's own JarvisFloatingBadgeV2), so on V1 it's now
+          just the slim tenant-name/+/gear row, not the tall badge header. On `-v2` pilot
+          routes ClientTopBar renders nothing at all, so main needs only safe-area breathing
+          room (founder: "elimina ese header o espacio vacío arriba"). */}
       <main
         className={`flex-1 pb-24 md:pb-8 md:pl-56 ${
-          isV2Pilot ? "pt-4 md:pt-4" : "pt-[260px] md:pt-8"
+          isV2Pilot ? "pt-4 md:pt-4" : "pt-20 md:pt-8"
         }`}
       >
         {children}

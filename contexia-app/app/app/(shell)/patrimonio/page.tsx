@@ -7,6 +7,7 @@ import { DividendShieldCard } from "@/components/patrimonio/DividendShieldCard";
 import { WithdrawalSimulatorCard } from "@/components/patrimonio/WithdrawalSimulatorCard";
 import { EquityMovementHistoryCard } from "@/components/patrimonio/EquityMovementHistoryCard";
 import { UpgradePlanBanner } from "@/components/shared/UpgradePlanBanner";
+import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 
 export default function PatrimonioPage() {
   const data = patrimonio;
@@ -24,6 +25,13 @@ export default function PatrimonioPage() {
           </p>
         </div>
       </section>
+
+      {/* JARVIS (2026-09-18): in-flow, right after the header/hero section — see
+          overview/page.tsx for the full rationale. Mobile-only — DesktopSidebar already
+          hosts the desktop access point on this `(shell)` layout. */}
+      <div className="md:hidden">
+        <JarvisFloatingBadgeV2 />
+      </div>
 
       <TotalEquityCard patrimonio={data.patrimonio} />
       <StrategicPatrimonyInsightCard insight={data.insight} />

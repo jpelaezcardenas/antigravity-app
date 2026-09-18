@@ -3,6 +3,7 @@ import { StructuralInsightCard } from "@/components/flujo-detalle/StructuralInsi
 import { FlowCompositionCard } from "@/components/flujo-detalle/FlowCompositionCard";
 import { MonthlyLiquidityBridgeCard } from "@/components/flujo-detalle/MonthlyLiquidityBridgeCard";
 import { FinancialHealthStatusGrid } from "@/components/flujo-detalle/FinancialHealthStatusGrid";
+import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 
 export default function FlujoDetallePage() {
   const data = flujoDetalleMock;
@@ -18,6 +19,10 @@ export default function FlujoDetallePage() {
           {data.header.subtitle}
         </p>
       </div>
+
+      {/* JARVIS (2026-09-18): in-flow, right after the header — see overview/page.tsx (shell)
+          for the full rationale; ClientTopBar no longer hosts a badge on this layout either. */}
+      <JarvisFloatingBadgeV2 />
 
       {/* AI Insight Narrative */}
       <StructuralInsightCard insight={data.insight} />
