@@ -13,28 +13,26 @@ type NavItem = {
 // Patrimonio added 2026-09-15 — DesktopSidebar.tsx (desktop's equivalent of this nav) already
 // has 5 items; mobile only had 4, and the founder noticed the mismatch ("no vi todas las
 // opciones en la parte inferior"). Same route as the sidebar's, same icon.
+//
+// "Config" removed from this list entirely (2026-09-18): every screen's own header now shows
+// a gear -> /app/config (ClientTopBar for V1, PulsoHeroV2/V2ConfigGearHeader for -v2) — one
+// access point everywhere, not two. Founder decision the same day: V1 stays the definitive
+// PWA (the -v2 pilot migration is retired as a target), so this applies globally now, not
+// just on -v2 routes.
 const NAV_ITEMS: NavItem[] = [
   { path: "/app/overview", icon: "monitoring", label: "Pulso" },
   { path: "/app/fiscal", icon: "account_balance", label: "Fiscal" },
   { path: "/app/radar", icon: "insights", label: "Radar" },
   { path: "/app/patrimonio", icon: "account_balance_wallet", label: "Patrimonio" },
-  { path: "/app/config", icon: "settings", label: "Config" },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
   const v2Preview = useV2Preview();
 
-  // Every -v2 page now has its own header gear -> /app/config (PulsoHeroV2 for overview-v2,
-  // V2ConfigGearHeader for fiscal-v2/radar-v2/patrimonio-v2, added 2026-09-18 to close that
-  // gap) — one access point per the Stitch mock, so this bar drops its own "Config" tab on
-  // every -v2 route, not just overview-v2 (founder: "en los demas modulos aun se ve en la
-  // base configuracion... solo debe ir en header").
-  const items = pathname?.endsWith("-v2") ? NAV_ITEMS.filter((i) => i.path !== "/app/config") : NAV_ITEMS;
-
   return (
     <nav className="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container/90 backdrop-blur-md border-t border-white/5 shadow-[0_-4px_24px_rgba(0,0,0,0.5)] flex justify-around items-center h-20 pb-safe px-4">
-      {items.map((item) => {
+      {NAV_ITEMS.map((item) => {
         const href = toV2Path(item.path, v2Preview);
         const isActive = pathname === href;
         return (

@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { JarvisBubble } from "@/components/jarvis/JarvisBubble";
+import { fetchTenantMe, type TenantMeSnapshot } from "@/lib/api-client";
 
 // Note (superseded 2026-09-15 — see DesktopSidebar.tsx): removing the header's nav links
 // assumed BottomNav already covered desktop navigation; it never did (BottomNav is
@@ -46,10 +49,32 @@ interface ClientTopBarProps {
  * of the tall one still sized for the badge. flujo-detalle's layout doesn't set
  * `sidebarOffset` (it has no sidebar to move the badge into), so it keeps the original
  * badge-in-header behavior on both breakpoints, unchanged.
+ *
+ * 2026-09-18 (founder decision: V2 pilot retired as the migration target, V1 stays the
+ * definitive PWA): every V1 screen this header covers (all of `(shell)` + flujo-detalle) gets
+ * the same top row the -v2 pilots had — tenant name (left) / "+" / gear (right), same
+ * destinations as V2 (`/conectar-datos-v2`, `/app/config`). BottomNav drops its own "Config"
+ * tab everywhere now that the gear lives here — one access point, matching V2's pattern.
  */
 export function ClientTopBar({ sidebarOffset = false }: ClientTopBarProps) {
   const pathname = usePathname();
   const isV2Pilot = pathname?.endsWith("-v2") ?? false;
+  const [tenant, setTenant] = useState<TenantMeSnapshot | null>(null);
+
+  useEffect(() => {
+    if (isV2Pilot) return;
+    let cancelled = false;
+    fetchTenantMe()
+      .then((snapshot) => {
+        if (!cancelled) setTenant(snapshot);
+      })
+      .catch(() => {
+        // Fail silent — same "never alarm for identity" idiom as JarvisBubble/TenantInfoCard.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isV2Pilot]);
 
   // 2026-09-18 (founder: "elimina ese header o espacio vacío arriba" — Stitch's mockup has
   // no header bar at all on -v2, content starts right at the top). Rendering nothing here
@@ -57,11 +82,35 @@ export function ClientTopBar({ sidebarOffset = false }: ClientTopBarProps) {
   // the page's own hero (PulsoHeroV2 etc.) now owns the top of the screen entirely.
   if (isV2Pilot) return null;
 
+  const tenantLabel = tenant?.legal_name ?? "Contexia";
+
   return (
     <nav className="w-full border-b border-slate-800 bg-bg-obsidian/90 backdrop-blur-xl fixed top-0 z-50">
       <div
         className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${sidebarOffset ? "md:pl-56" : ""}`}
       >
+        <div className="flex items-center justify-between pt-4 text-on-surface-variant">
+          <span className="text-xs font-medium tracking-wide text-on-surface-variant/90">
+            {tenantLabel}
+          </span>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/conectar-datos-v2"
+              aria-label="Conectar mis datos"
+              className="hover:text-white transition-colors p-1 flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-[21px]">add</span>
+            </Link>
+            <Link
+              href="/app/config"
+              aria-label="Configuración"
+              className="hover:text-white transition-colors p-1 flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-[20px]">settings</span>
+            </Link>
+          </div>
+        </div>
+
         <div
           className={`grid grid-cols-[1fr_auto_1fr] items-start pt-10 pb-6 ${
             isV2Pilot ? "min-h-0 pt-4 pb-4" : "min-h-[220px]"
@@ -85,15 +134,18 @@ export function ClientTopBar({ sidebarOffset = false }: ClientTopBarProps) {
               content, via its own pt-*) shifts down to match; see the shell layouts that
               render <ClientTopBar />.
               2026-09-17: skipped entirely on `-v2` pilot routes — those render JARVIS floating
-              in the page content instead (see JarvisFloatingBadgeV2). */}
+              in the page content instead (see JarvisFloatingBadgeV2).
+              2026-09-18: `hideLabel` — this header's own top row (added the same day) already
+              shows the tenant name, so JarvisBubble's own company-name label underneath would
+              just repeat it, same reasoning as JarvisFloatingBadgeV2 on the -v2 pilots. */}
           {!isV2Pilot && (
             <div className="col-start-2 justify-self-center">
               <div className="md:hidden">
-                <JarvisBubble size={128} />
+                <JarvisBubble size={128} hideLabel />
               </div>
               {!sidebarOffset && (
                 <div className="hidden md:block">
-                  <JarvisBubble size={156} />
+                  <JarvisBubble size={156} hideLabel />
                 </div>
               )}
             </div>

@@ -24,12 +24,14 @@ type NavItem = {
   label: string;
 };
 
+// "Config" removed (2026-09-18) — same reasoning as BottomNav.tsx: ClientTopBar's new gear
+// covers it on every breakpoint now, this sidebar is the desktop equivalent of BottomNav so it
+// gets the same single-access-point rule, not a second desktop-only Config link.
 const NAV_ITEMS: NavItem[] = [
   { path: "/app/overview", icon: "monitoring", label: "Pulso" },
   { path: "/app/fiscal", icon: "account_balance", label: "Fiscal" },
   { path: "/app/radar", icon: "insights", label: "Radar" },
   { path: "/app/patrimonio", icon: "account_balance_wallet", label: "Patrimonio" },
-  { path: "/app/config", icon: "settings", label: "Config" },
 ];
 
 export function DesktopSidebar() {
@@ -71,9 +73,12 @@ export function DesktopSidebar() {
           2026-09-17: skipped on `-v2` pilot routes, which render JARVIS floating in the page
           content instead (see JarvisFloatingBadgeV2) — avoids a second access point while both
           coexist. */}
+      {/* hideLabel (2026-09-18): ClientTopBar's own top row already shows the tenant name on
+          this layout too (sidebarOffset), so the badge's own label underneath is redundant
+          here as well — same reasoning as the mobile/flujo-detalle instances. */}
       {!isV2Pilot && (
         <div className="flex justify-center pt-6 border-t border-slate-800/60 mx-3 mt-4">
-          <JarvisBubble size={96} panelAnchor="sidebar" />
+          <JarvisBubble size={96} panelAnchor="sidebar" hideLabel />
         </div>
       )}
     </nav>
