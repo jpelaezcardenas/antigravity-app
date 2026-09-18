@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { TenantInfoCard } from "@/components/config/TenantInfoCard";
+import { setV2Preview, useV2Preview } from "@/lib/v2-preview";
 
 interface NotificationToggle {
   id: string;
@@ -41,6 +42,7 @@ export default function ConfigPage() {
   const [toggles, setToggles] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(NOTIFICATIONS.map((n) => [n.id, n.defaultOn])),
   );
+  const v2Preview = useV2Preview();
 
   const handleToggle = (id: string) => {
     setToggles((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -58,6 +60,37 @@ export default function ConfigPage() {
       </section>
 
       <TenantInfoCard />
+
+      <section className="flex flex-col gap-3">
+        <h3 className="font-label-caps text-label-caps text-on-surface-variant font-bold uppercase px-1">
+          Vista previa
+        </h3>
+        <button
+          type="button"
+          onClick={() => setV2Preview(!v2Preview)}
+          className="bg-surface-elevated rounded-xl border border-white/10 p-4 flex items-center gap-4 hover:border-primary/30 transition-all text-left"
+        >
+          <div className="flex-1 min-w-0">
+            <p className="font-body-md text-body-md text-white font-semibold">
+              Probar la nueva versión (beta)
+            </p>
+            <p className="font-body-md text-[12px] text-on-surface-variant mt-0.5">
+              Solo en este dispositivo. Puedes desactivarla cuando quieras.
+            </p>
+          </div>
+          <div
+            className={`relative w-12 h-7 rounded-full transition-colors flex-shrink-0 ${
+              v2Preview ? "bg-primary" : "bg-white/10"
+            }`}
+          >
+            <div
+              className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${
+                v2Preview ? "translate-x-5" : "translate-x-0.5"
+              }`}
+            />
+          </div>
+        </button>
+      </section>
 
       <section className="flex flex-col gap-3">
         {/* 2026-09-16 (founder request): dropped the inline Rajdhani override — every other

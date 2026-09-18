@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { JarvisBubble } from "@/components/jarvis/JarvisBubble";
+import { toV2Path, useV2Preview } from "@/lib/v2-preview";
 
 // Desktop-only navigation (2026-09-15) — restores access to every main screen on desktop.
 // BottomNav (components/layout/BottomNav.tsx) is `md:hidden`, and the header's own nav links
@@ -34,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
 export function DesktopSidebar() {
   const pathname = usePathname();
   const isV2Pilot = pathname?.endsWith("-v2") ?? false;
+  const v2Preview = useV2Preview();
 
   return (
     <nav className="hidden md:flex fixed left-0 top-0 bottom-0 z-40 w-56 flex-col border-r border-slate-800 bg-bg-obsidian/90 backdrop-blur-xl">
@@ -42,11 +44,12 @@ export function DesktopSidebar() {
           start just below it, not underneath it. */}
       <div className="flex flex-col gap-1 pt-16 px-3">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.path;
+          const href = toV2Path(item.path, v2Preview);
+          const isActive = pathname === href;
           return (
             <Link
               key={item.path}
-              href={item.path}
+              href={href}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all ${
                 isActive
                   ? "text-primary-fixed-dim font-bold bg-primary/10"

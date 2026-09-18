@@ -159,6 +159,41 @@ exit-code 0 absoluto:
       que cualquier falla del suite completo ya existía antes de esta rama (no solo confiar en el
       exit code de `init.sh`) antes de marcar Stage 6/10 como verde.
 
+**Regla añadida (2026-09-17, migración PWA V2):** un solo día produjo 4 incidentes en
+producción por saltarse el mismo tipo de verificación — deploy manual (`Copy-Item`
++ `git add`/`commit`/`push`) sin gate, sin checklist, sin verificación live antes de
+seguir al siguiente cambio. `contexia-app/` (fuente) → `out/` (build) → raíz del repo
+(artefacto sincronizado a mano, nunca vía CI) es un patrón previamente frágil: los
+mismos dos bugs de sync ya habían ocurrido antes (`f6ac8bc`, `5febc01`) y volvieron a
+pasar 3 veces más el mismo día porque nada los atrapaba automáticamente.
+
+- [ ] **Rutas nuevas**: toda ruta nueva en `contexia-app/app/**` que use un segmento con
+      guion o cualquier nombre fuera del patrón ya cubierto necesita su propio rewrite
+      explícito en `vercel.json` (`"/app/<ruta>" → "/app/<ruta>.html"`) ANTES del deploy —
+      el catch-all `/app/:path*` cae a `/404.html`. Verificar con
+      `grep '"/app/<ruta>"' vercel.json` antes de commitear.
+- [ ] **Sync completo**: después de `npm run build`, `git status --short _next/` debe
+      mostrarse y sus archivos nuevos deben quedar en el commit — no solo `app/`. Cada
+      build de Next genera nombres de chunk con hash nuevo; "ya estaba ahí" nunca aplica.
+      Usar `scripts/deploy-pwa.ps1` (nuevo, ver más abajo) en vez de copiar a mano.
+- [ ] **CACHE_VERSION**: si el build cambió cualquier HTML o `_next/static/*` servido
+      (prácticamente cualquier build con cambios reales), `sw.js` (raíz, el artefacto
+      real que sirve Vercel — no solo `contexia-app/public/sw.js`) DEBE traer un
+      `CACHE_VERSION` distinto al del commit anterior. `scripts/deploy-pwa.ps1` lo hace
+      automático; si se sincroniza a mano, verificar con
+      `git diff HEAD~1 -- sw.js | grep CACHE_VERSION`.
+- [ ] **Verificación post-deploy con reintento**: un deploy `READY` en Vercel no implica
+      que todas las regiones del edge ya sirvan el contenido nuevo — se observó una ruta
+      con 404/CSS-404 durante ~90s después de `READY`. Correr
+      `pwsh scripts/verify-deploy.ps1 -Routes <rutas-tocadas>` (reintenta con backoff)
+      antes de declarar el deploy verificado, no un solo `curl` inmediato tras el push.
+- [ ] **Un incidente, un commit de fix, una verificación — antes de seguir.** No encadenar
+      3+ pushes seguidos sobre el mismo problema sin confirmar cada uno en vivo; cada push
+      sin verificar fue exactamente el patrón que produjo el siguiente incidente.
+
+Scripts nuevos (`scripts/deploy-pwa.ps1`, `scripts/verify-deploy.ps1`) cierran (2) y (4)
+automáticamente; (1) y (3) siguen siendo criterio humano antes de commitear.
+
 ---
 
 ## Preguntas para Auto-Revisar

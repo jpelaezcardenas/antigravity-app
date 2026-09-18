@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { toV2Path, useV2Preview } from "@/lib/v2-preview";
 
 type NavItem = {
   path: string;
@@ -22,15 +23,17 @@ const NAV_ITEMS: NavItem[] = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const v2Preview = useV2Preview();
 
   return (
     <nav className="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container/90 backdrop-blur-md border-t border-white/5 shadow-[0_-4px_24px_rgba(0,0,0,0.5)] flex justify-around items-center h-20 pb-safe px-4">
       {NAV_ITEMS.map((item) => {
-        const isActive = pathname === item.path;
+        const href = toV2Path(item.path, v2Preview);
+        const isActive = pathname === href;
         return (
           <Link
             key={item.path}
-            href={item.path}
+            href={href}
             className={`flex flex-col items-center justify-center h-full w-full rounded-xl transition-all ${
               isActive
                 ? "text-primary-fixed-dim font-bold bg-primary/10 scale-90"
