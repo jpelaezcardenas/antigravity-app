@@ -10,7 +10,7 @@ import { EstimatedTaxProvisionCard } from "@/components/radar/EstimatedTaxProvis
 import { StrategicInsightCard } from "@/components/radar/StrategicInsightCard";
 import { UpcomingMilestonesCard } from "@/components/radar/UpcomingMilestonesCard";
 import { UpgradePlanBanner } from "@/components/shared/UpgradePlanBanner";
-import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
+import { JarvisFloatingButton } from "@/components/jarvis/JarvisFloatingButton";
 
 export default function RadarPage() {
   const [scenario, setScenario] = useState<Scenario>("base");
@@ -31,12 +31,9 @@ export default function RadarPage() {
         <RadarScenarioSelector value={scenario} onChange={setScenario} />
       </section>
 
-      {/* JARVIS (2026-09-18): in-flow, right after the header/hero section — see
-          overview/page.tsx for the full rationale. Mobile-only — DesktopSidebar already
-          hosts the desktop access point on this `(shell)` layout. */}
-      <div className="md:hidden">
-        <JarvisFloatingBadgeV2 />
-      </div>
+      {/* JARVIS (2026-09-18, founder): only Pulso shows the full badge; every other screen gets
+          the small floating button at bottom-left, opposite the sign-out button. */}
+      <JarvisFloatingButton />
 
       {/* Live 13-week projection (radar-cash-projection-13w) — reads the real
           Shadow GL. The scenario-driven mock cards below are unaffected. */}

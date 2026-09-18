@@ -34,7 +34,7 @@ interface JarvisBubbleProps {
    * presence: handoff's original 72/88 → 96/120 → 128/156) / 96 (2026-09-15 round 3 — the
    * desktop header instance moved into DesktopSidebar.tsx, below its nav items, at this
    * smaller size to fit the sidebar's own width instead of the header's). */
-  size: 96 | 128 | 156;
+  size: 48 | 96 | 128 | 156;
   /** Where the chat panel opens relative to on desktop (`md:`) — mobile positioning is
    * identical either way. "header" (default) centers it under a header-hosted badge, used by
    * ClientTopBar in both places that still render one there. "sidebar" opens it beside
@@ -72,7 +72,7 @@ function readRoleFromJwt(): string {
 export function JarvisBubble({
   size,
   panelAnchor = "header",
-  helperText = "Toca a JARVIS para consultar tu negocio",
+  helperText = "Toca a JARVIS para consultar tu liquidez",
 }: JarvisBubbleProps) {
   const [loaded, setLoaded] = useState(false);
   const [tenant, setTenant] = useState<TenantMeSnapshot | null>(null);
@@ -115,7 +115,9 @@ export function JarvisBubble({
   // second copy under the badge was redundant (that's what `hideLabel` used to paper over).
   // This is more useful anyway: it tells the user whether JARVIS is actually reachable on
   // their plan, not just whose account they're in.
-  const statusLabel = hasJarvisChat ? "Activo" : "No disponible";
+  // "Inactivo", not "No disponible": the status sits inside the core (56/88 of the diameter)
+  // and the longer word clipped at the circle's edges at every size — verified 2026-09-18.
+  const statusLabel = hasJarvisChat ? "Activo" : "Inactivo";
 
   async function sendMessage(text: string) {
     if (!text.trim() || busy) return;
@@ -192,15 +194,23 @@ export function JarvisBubble({
   if (!loaded) return null;
 
   const px = `${size}px`;
-  // Formula-based (was a hardcoded per-size ternary) so a third size (96, sidebar) didn't need
-  // its own branch — ratio matches the original handoff's 96px/120px → 160px/220px pairing.
-  const labelMaxWidth = `${Math.round(size * 1.8)}px`;
+  // Inner content must stay inside the dark core (r=28 of the 88 viewBox → 56/88 of the
+  // diameter), not the full button box — otherwise the text under the pin would sit on top of
+  // the rings. Everything inside scales off `size` so the 2026-09-18 layout (pin / JARVIS /
+  // status, stacked) reads the same at every diameter.
+  // Core is r=38.5 of the 88 viewBox → 77/88 of the diameter (2026-09-18 composition).
+  const coreInset = Math.round((size * (1 - 77 / 88)) / 2);
+  // 48 = the floating-button variant on non-Pulso screens (founder: "en las demas queda...
+  // tirado a la izquierda como boton flotante"): pin only, no name/status inside, no caption.
+  const compact = size <= 48;
+  const pinPx = Math.round(size * (compact ? 0.45 : 0.24));
+  const namePx = Math.max(8, Math.round(size * 0.09));
+  const statusPx = Math.max(7, Math.round(size * 0.065));
 
   return (
-    // gap bumped 2026-09-15 (from 1.5) — the outer decorative rings (r up to 58 of the 88
-    // viewBox) extend ~25px past the button's own box on every side via overflow-visible, so a
-    // tight gap let the ring's bottom arc visually collide with the company label below it.
-    <div className="flex flex-col items-center gap-8">
+    // gap-4 (2026-09-18): the rebuilt composition keeps every ring inside the 88 viewBox
+    // (outer dotted ring r=43), so the caption no longer needs the old gap-8 clearance.
+    <div className="flex flex-col items-center gap-4">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -220,13 +230,9 @@ export function JarvisBubble({
             "No disponible" grayscale now lives HERE (rings/halo only) instead of on the whole
             button — founder feedback 2026-09-16: the Contexia mark must stay at full original
             color on every plan (freemium/starter included), only the rings gray out. */}
-        <div
-          className={[
-            "absolute inset-0 motion-safe:[animation:jarvis-harmonic_5.2s_ease-in-out_infinite]",
-            !hasJarvisChat ? "[filter:grayscale(1)_brightness(.75)]" : "",
-          ].join(" ")}
-        >
+        <div className="absolute inset-0 motion-safe:[animation:jarvis-harmonic_5.2s_ease-in-out_infinite]">
           {/* Halo — the only glowing layer, always breathing at idle, tenser on hover */}
+          {hasJarvisChat && (
           <span
             className="absolute rounded-full pointer-events-none motion-safe:[animation:jarvis-breathe_4s_ease-in-out_infinite] group-hover:opacity-50 group-hover:[animation:none] transition-opacity duration-150"
             style={{
@@ -237,6 +243,7 @@ export function JarvisBubble({
               filter: "blur(8px)",
             }}
           />
+          )}
 
         <svg viewBox="0 0 88 88" className="absolute inset-0 w-full h-full overflow-visible">
           <defs>
@@ -253,169 +260,125 @@ export function JarvisBubble({
             </filter>
           </defs>
 
-          {/* Outermost — faint depth ring, barely-there context (matches the far/background
-              ring in the J.A.R.V.I.S. reference), never competing with anything inside it. */}
+          {/* 2026-09-18 — composition rebuilt to match the founder's reference image exactly
+              ("usa exactamente el mismo circulo de esta imagen... hablo de su composicion"),
+              replacing the previous five-ring J.A.R.V.I.S. HUD stack. Three layers only:
+              (1) a faint dotted outer ring, (2) one thin solid glowing ring, (3) a dark core
+              that fills the interior right up to that ring — no empty gap between ring and
+              core, and no radial-tick / segmented / purple layers. */}
+
+          {/* (1) Dotted outer belt — state-colored (founder, 2026-09-18: "el mismo patron del
+              ring intermitente... gris inactivo, y en activo un cinturon magenta adicional"):
+              gray when JARVIS isn't in the plan, the app's violet accent when it is. Slow spin
+              keeps it alive either way. */}
           <circle
             cx="44"
             cy="44"
-            r="58"
+            r="43"
             fill="none"
-            stroke="#2DD4BF"
-            strokeOpacity="0.15"
-            strokeWidth="1"
-            strokeDasharray="1 8"
+            stroke={hasJarvisChat ? "#8B5CF6" : "#64748B"}
+            strokeOpacity={hasJarvisChat ? 0.7 : 0.4}
+            strokeWidth="1.2"
+            strokeDasharray="1.5 4"
             style={{ transformOrigin: "44px 44px" }}
             className="motion-safe:[animation:jarvis-slow-spin_34s_linear_infinite]"
           />
 
-          {/* Thick incandescent segmented ring (founder request, 2026-09-14/15 — "anillo mas
-              grueso por segmentos de tono mas incandescente sobresaliente" from the J.A.R.V.I.S.
-              reference). Lives strictly OUTSIDE the handoff's own contorno (r=41) so it never
-              touches the three spec layers below — added presence, zero interference. Brighter
-              and thicker than the spec ring on purpose: this is the "sobresaliente" layer. */}
-          <circle
-            cx="44"
-            cy="44"
-            r="52"
-            fill="none"
-            stroke="#99F6E4"
-            strokeOpacity="0.9"
-            strokeWidth="5"
-            strokeDasharray="13 5"
-            transform="rotate(-90 44 44)"
-            filter={`url(#jarvis-glow-${size})`}
-            style={{ transformOrigin: "44px 44px" }}
-            className="motion-safe:[animation:jarvis-slow-spin-reverse_24s_linear_infinite]"
-          />
+          {/* (3) The core is NOT drawn here — see the content div after this wrapper. It lives
+              outside the grayscale/brightness filter on purpose, so its fill stays exactly the
+              page background in every state (founder, 2026-09-18: "el interior del circulo
+              igual al resto, no negro"; same call as 2026-09-15 "debe ser igual al resto"). */}
 
-          {/* Thin accent ring in the gap between the incandescent ring and the spec contorno —
-              adds one more layer of depth without ever sitting inside the handoff's own
-              anatomy (that gap, between r=33 and r=41, is deliberate per the design — nothing
-              goes there). */}
+          {/* (2) The one solid ring, thin + glowing, hugging the core. Hover brightens it;
+              "procesando" swaps it for the amber sweep below. */}
           <circle
             cx="44"
             cy="44"
-            r="45.5"
+            r="38.5"
             fill="none"
-            stroke="#5CE8D8"
-            strokeOpacity="0.45"
-            strokeWidth="1"
-            strokeDasharray="1 5"
-            style={{ transformOrigin: "44px 44px" }}
-            className="motion-safe:[animation:jarvis-slow-spin_22s_linear_infinite]"
-          />
-
-          {/* Middle ring — fine radial ticks, secondary color, never competes with the outer
-              ring. EXACT handoff spec (r=33, #8B5CF6, width 1.5, opacity .4, dasharray "1.5
-              12") — only addition is its own slow rotation (29s, shares no short common period
-              with the 34s/24s/22s rings above) so nothing ever visually phase-locks. */}
-          <circle
-            cx="44"
-            cy="44"
-            r="33"
-            fill="none"
-            stroke="#8B5CF6"
-            strokeOpacity="0.4"
-            strokeWidth="1.5"
-            strokeDasharray="1.5 12"
-            style={{ transformOrigin: "44px 44px" }}
-            className="motion-safe:[animation:jarvis-slow-spin_29s_linear_infinite]"
-          />
-
-          {/* Outer ring ("contorno") — EXACT handoff spec (r=41, width 3.5, dasharray "11 4",
-              #2DD4BF). Rotated -90deg so the pattern starts at 12 o'clock. Color/opacity swap
-              for hover/procesando states; now also carries the real glow filter. */}
-          <circle
-            cx="44"
-            cy="44"
-            r="41"
-            fill="none"
-            strokeWidth="3.5"
-            strokeDasharray="11 4"
-            transform="rotate(-90 44 44)"
-            filter={`url(#jarvis-glow-${size})`}
+            strokeWidth="2"
+            filter={hasJarvisChat ? `url(#jarvis-glow-${size})` : undefined}
             className={`transition-colors duration-150 ${
-              busy ? "stroke-[#F59E0B]/30" : "stroke-[#2DD4BF] group-hover:stroke-[#5CE8D8]"
+              !hasJarvisChat
+                ? "stroke-[#64748B]/60"
+                : busy
+                  ? "stroke-[#F59E0B]/30"
+                  : "stroke-[#2DD4BF] group-hover:stroke-[#5CE8D8]"
             }`}
           />
           {busy && (
             <circle
               cx="44"
               cy="44"
-              r="41"
+              r="38.5"
               fill="none"
               stroke="#F59E0B"
-              strokeWidth="3.5"
-              strokeDasharray={`${(34 / 360) * (2 * Math.PI * 41)} ${2 * Math.PI * 41}`}
+              strokeWidth="2"
+              strokeDasharray={`${(34 / 360) * (2 * Math.PI * 38.5)} ${2 * Math.PI * 38.5}`}
               transform="rotate(-90 44 44)"
               className="motion-safe:[animation:jarvis-process_1.6s_linear_infinite] motion-reduce:opacity-70"
             />
           )}
-
-          {/* Core — EXACT handoff spec: flat dark surface (r=28, #111D2E), only the Contexia
-              mark lives inside. */}
-          {/* Fill matches the page/header background exactly (#0F172A, `bg-bg-obsidian`) —
-              was the handoff's own #111D2E, a close-but-different navy that read as a visibly
-              blacker "hole" against the rest of the UI, especially once the "no disponible"
-              grayscale/dim filter (see the button's className above) desaturated both
-              differently. Founder feedback 2026-09-15: "debe ser igual al resto". */}
-          <circle cx="44" cy="44" r="28" fill="#0F172A" stroke="rgba(255,255,255,.08)" />
         </svg>
         </div>
         {/* /jarvis-harmonic wrapper — mark + status dot stay outside it, perfectly still, so the
             ID mark and status color read is never in motion, only the rings/halo around it. */}
 
+        {/* Core content — 2026-09-18 redesign (founder-provided reference): the pin mark on
+            top, "JARVIS" under it, then the live status, ALL inside the core (founder:
+            "adentro del circulo poner Activo debajo del pin"). Bounded by `coreInset` so
+            nothing spills onto the rings. Only the helper caption lives outside, below. */}
         <div
-          className="absolute rounded-full overflow-hidden flex items-center justify-center"
-          style={{ inset: "16px" }}
+          className="absolute rounded-full overflow-hidden flex flex-col items-center justify-center bg-bg-obsidian"
+          // +1 viewBox unit so this fill meets the ring stroke's inner edge (stroke 2 centered on
+          // r=38.5 → inner edge r=37.5) without covering it.
+          style={{ inset: `${coreInset + Math.round(size / 88)}px` }}
         >
           {open ? (
             <span className="material-symbols-outlined text-white text-[24px]">close</span>
           ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src="/assets/img/jarvis_mark.png"
-              alt="Jarvis"
-              className="object-contain"
-              style={{
-                width: "45%",
-                height: "45%",
-              }}
-            />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/img/jarvis_mark.png"
+                alt="Jarvis"
+                className="object-contain"
+                style={{ width: pinPx, height: pinPx }}
+              />
+              {!compact && (
+                <>
+                  <span
+                    className="text-primary font-bold uppercase leading-none mt-1"
+                    style={{ fontSize: namePx, letterSpacing: "0.08em" }}
+                  >
+                    JARVIS
+                  </span>
+                  <span className="flex items-center gap-1 leading-none mt-1">
+                    <span
+                      className={`rounded-full ${hasJarvisChat ? "bg-primary" : "bg-on-surface-variant/50"}`}
+                      style={{ width: statusPx * 0.7, height: statusPx * 0.7 }}
+                    />
+                    <span
+                      className="text-on-surface-variant uppercase"
+                      style={{ fontSize: statusPx, letterSpacing: "0.06em" }}
+                    >
+                      {statusLabel}
+                    </span>
+                  </span>
+                </>
+              )}
+            </>
           )}
         </div>
 
       </button>
 
-      {/* Identity + status — separate element, outside the ring/halo bounds, never inside the
-          core. 2026-09-18 redesign (founder-provided): "JARVIS" (teal, bold) replaces the old
-          tenant-name label, with a live status line right under it — every page already shows
-          its own tenant name in its own header now, so JARVIS's own identity/availability is
-          more useful here than a second copy of the company name. */}
-      <div className="flex flex-col items-center gap-0.5" style={{ maxWidth: labelMaxWidth }}>
+      {/* Helper caption — the only text outside the ring (founder: "poner el texto abajo: toca
+          JARVIS para consultar tu liquidez"), per-page customizable via `helperText`. Hidden when
+          JARVIS isn't in the plan — inviting a tap that would only show a lock is misleading. */}
+      {hasJarvisChat && !compact && (
         <p
-          className="font-label-caps text-label-caps text-primary font-bold uppercase truncate text-center"
-          style={{ letterSpacing: "0.05em" }}
-        >
-          JARVIS
-        </p>
-        <div className="flex items-center gap-1.5">
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              hasJarvisChat ? "bg-primary" : "bg-on-surface-variant/50"
-            }`}
-          />
-          <span className="font-body-sm text-[11px] text-on-surface-variant">
-            {statusLabel}
-          </span>
-        </div>
-      </div>
-
-      {/* Helper caption — what to actually do with the badge, per-page customizable via
-          `helperText`. Sits below the status line, still outside the ring/halo. */}
-      {hasJarvisChat && (
-        <p
-          className="text-[12px] text-on-surface-variant/80 text-center mt-1"
+          className="text-[12px] text-on-surface-variant/80 text-center"
           style={{ maxWidth: `${Math.round(size * 2.2)}px` }}
         >
           {helperText}

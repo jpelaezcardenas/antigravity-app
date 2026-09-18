@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { TenantInfoCard } from "@/components/config/TenantInfoCard";
 import { setV2Preview, useV2Preview } from "@/lib/v2-preview";
-import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
+import { JarvisFloatingButton } from "@/components/jarvis/JarvisFloatingButton";
 
 interface NotificationToggle {
   id: string;
@@ -60,12 +60,9 @@ export default function ConfigPage() {
         </p>
       </section>
 
-      {/* JARVIS (2026-09-18): in-flow, right after the header section — see
-          overview/page.tsx for the full rationale. Mobile-only — DesktopSidebar already
-          hosts the desktop access point on this `(shell)` layout. */}
-      <div className="md:hidden">
-        <JarvisFloatingBadgeV2 />
-      </div>
+      {/* JARVIS (2026-09-18, founder): only Pulso shows the full badge; every other screen gets
+          the small floating button at bottom-left, opposite the sign-out button. */}
+      <JarvisFloatingButton />
 
       <TenantInfoCard />
 

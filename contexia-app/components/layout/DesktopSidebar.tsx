@@ -73,9 +73,14 @@ export function DesktopSidebar() {
           2026-09-17: skipped on `-v2` pilot routes, which render JARVIS floating in the page
           content instead (see JarvisFloatingBadgeV2) — avoids a second access point while both
           coexist. */}
-      {!isV2Pilot && (
+      {/* 96 → 128 (2026-09-18): the redesigned badge carries "JARVIS" + status inside its
+          core, which needs more diameter to stay legible; 128 still fits the w-56 column.
+          Pulso only (same day, founder: "solo quiero ver jarvis en el pulso") — every other
+          screen renders JarvisFloatingButton itself (bottom-left, both breakpoints), so this
+          would be a second desktop access point there. */}
+      {!isV2Pilot && pathname === "/app/overview" && (
         <div className="flex justify-center pt-6 border-t border-slate-800/60 mx-3 mt-4">
-          <JarvisBubble size={96} panelAnchor="sidebar" />
+          <JarvisBubble size={128} panelAnchor="sidebar" />
         </div>
       )}
     </nav>

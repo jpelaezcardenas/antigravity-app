@@ -9,14 +9,16 @@ import { JarvisBubble } from "@/components/jarvis/JarvisBubble";
  * JARVIS. ClientTopBar/DesktopSidebar suppress their own badge on `-v2`
  * routes (pathname check) so there is still only one access point at a time.
  *
- * 2026-09-18 redesign: JarvisBubble now always shows its own "JARVIS · Activo"
- * status under the badge (replacing the old tenant-name label, which every
- * page already duplicates in its own header) — no `hideLabel` prop needed.
+ * 2026-09-18 redesign: "JARVIS" + live status now sit INSIDE the badge's core,
+ * under the pin (founder's reference design), with only the "Toca a JARVIS..."
+ * caption below. That's why the size went 96 → 156: the core is 56/88 of the
+ * diameter, and at 96px it can't fit pin + name + status legibly — the reference
+ * mock's circle is deliberately this large.
  */
 export function JarvisFloatingBadgeV2() {
   return (
     <div className="flex items-center justify-center py-10">
-      <JarvisBubble size={96} panelAnchor="header" />
+      <JarvisBubble size={156} panelAnchor="header" />
     </div>
   );
 }
