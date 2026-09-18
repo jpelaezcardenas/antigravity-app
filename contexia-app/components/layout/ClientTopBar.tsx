@@ -51,6 +51,12 @@ export function ClientTopBar({ sidebarOffset = false }: ClientTopBarProps) {
   const pathname = usePathname();
   const isV2Pilot = pathname?.endsWith("-v2") ?? false;
 
+  // 2026-09-18 (founder: "elimina ese header o espacio vacío arriba" — Stitch's mockup has
+  // no header bar at all on -v2, content starts right at the top). Rendering nothing here
+  // (not just an empty/collapsed bar) removes the border-bottom line and its own padding —
+  // the page's own hero (PulsoHeroV2 etc.) now owns the top of the screen entirely.
+  if (isV2Pilot) return null;
+
   return (
     <nav className="w-full border-b border-slate-800 bg-bg-obsidian/90 backdrop-blur-xl fixed top-0 z-50">
       <div

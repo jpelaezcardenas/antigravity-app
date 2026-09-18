@@ -62,7 +62,11 @@ export function PulsoHeroV2() {
     };
   }, []);
 
-  const tenantLabel = tenant?.legal_name ?? "Tu negocio";
+  // Founder request (2026-09-18): show the real tenant's name once resolved
+  // (already correct via tenant.legal_name); fall back to "Contexia" — not
+  // a generic "Tu negocio" — while that fetch hasn't resolved yet or for an
+  // unresolved tenant, matching JarvisBubble's own fallback identity.
+  const tenantLabel = tenant?.legal_name ?? "Contexia";
 
   return (
     <div className="relative pt-2">
