@@ -9,14 +9,14 @@ import { JarvisBubble } from "@/components/jarvis/JarvisBubble";
  * JARVIS. ClientTopBar/DesktopSidebar suppress their own badge on `-v2`
  * routes (pathname check) so there is still only one access point at a time.
  *
- * `hideLabel` (2026-09-18, founder request): every -v2 page already shows the
- * tenant name in its own header (PulsoHeroV2 / V2ConfigGearHeader's siblings),
- * so JarvisBubble's own company-name label underneath would just repeat it.
+ * 2026-09-18 redesign: JarvisBubble now always shows its own "JARVIS · Activo"
+ * status under the badge (replacing the old tenant-name label, which every
+ * page already duplicates in its own header) — no `hideLabel` prop needed.
  */
 export function JarvisFloatingBadgeV2() {
   return (
     <div className="flex items-center justify-center py-10">
-      <JarvisBubble size={96} panelAnchor="header" hideLabel />
+      <JarvisBubble size={96} panelAnchor="header" />
     </div>
   );
 }

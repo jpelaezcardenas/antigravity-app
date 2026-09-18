@@ -40,12 +40,12 @@ interface JarvisBubbleProps {
    * ClientTopBar in both places that still render one there. "sidebar" opens it beside
    * DesktopSidebar instead, for the instance that lives there now. */
   panelAnchor?: "header" | "sidebar";
-  /** Hides the company-name label under the badge. Default false (unchanged everywhere
-   * else). Set true where that name is already shown elsewhere on the page — e.g.
-   * JarvisFloatingBadgeV2 on the -v2 pilots, where PulsoHeroV2/each page's own header
-   * already renders the tenant name, making this second label redundant (founder,
-   * 2026-09-18: "elimina esto debajo del badge de jarvis"). */
-  hideLabel?: boolean;
+  /** Caption below the "JARVIS · Activo" status line, e.g. "Toca a JARVIS para consultar tu
+   * liquidez". Founder-provided redesign (2026-09-18) — replaces the old tenant-name label
+   * (redundant once every page started showing the tenant name itself in its own header) with
+   * JARVIS's own identity + live status, plus this per-page hint about what to ask it.
+   * Defaults to a generic hint; pass a page-specific one where it adds value. */
+  helperText?: string;
 }
 
 function readRoleFromJwt(): string {
@@ -69,7 +69,11 @@ function readRoleFromJwt(): string {
   }
 }
 
-export function JarvisBubble({ size, panelAnchor = "header", hideLabel = false }: JarvisBubbleProps) {
+export function JarvisBubble({
+  size,
+  panelAnchor = "header",
+  helperText = "Toca a JARVIS para consultar tu negocio",
+}: JarvisBubbleProps) {
   const [loaded, setLoaded] = useState(false);
   const [tenant, setTenant] = useState<TenantMeSnapshot | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -106,12 +110,12 @@ export function JarvisBubble({ size, panelAnchor = "header", hideLabel = false }
   const hasVoice = isAdmin || tier === "enterprise";
   const busy = visualizer !== "idle";
 
-  // Company label: each client sees their own name (e.g. "FEREZ", "CODIGO520") instead of the
-  // generic fallback — per the handoff, this is a separate label below the badge, never text
-  // baked into the core. Full name always available via the native `title` tooltip.
-  // 2026-09-16 (founder request): fallback reads "CONTEXIA.ONLINE" (the domain), not "CONTEXIA".
-  const fullLabel = tenant?.legal_name?.trim() || "Contexia.online";
-  const displayLabel = fullLabel.toUpperCase();
+  // Status label (2026-09-18 redesign): "JARVIS" + a live status word, replacing the old
+  // tenant-name label — every page now shows its own tenant name in its own header, so a
+  // second copy under the badge was redundant (that's what `hideLabel` used to paper over).
+  // This is more useful anyway: it tells the user whether JARVIS is actually reachable on
+  // their plan, not just whose account they're in.
+  const statusLabel = hasJarvisChat ? "Activo" : "No disponible";
 
   async function sendMessage(text: string) {
     if (!text.trim() || busy) return;
@@ -383,23 +387,38 @@ export function JarvisBubble({ size, panelAnchor = "header", hideLabel = false }
 
       </button>
 
-      {/* Company label — separate element, outside the ring/halo bounds, never inside the core.
-          2026-09-16 (founder request): font normalized to `font-label-caps` (Inter) — same
-          token DesktopSidebar's nav labels use, right above this in the sidebar. The handoff's
-          original spec called for Rajdhani here specifically, but the founder's later,
-          explicit, repeated feedback ("no cambies de estilo de letra... normaliza estas letras
-          como el resto de la app") overrides that for this element. Hidden via `hideLabel` where
-          the page already shows the tenant name elsewhere (see JarvisFloatingBadgeV2). */}
-      {!hideLabel && (
+      {/* Identity + status — separate element, outside the ring/halo bounds, never inside the
+          core. 2026-09-18 redesign (founder-provided): "JARVIS" (teal, bold) replaces the old
+          tenant-name label, with a live status line right under it — every page already shows
+          its own tenant name in its own header now, so JARVIS's own identity/availability is
+          more useful here than a second copy of the company name. */}
+      <div className="flex flex-col items-center gap-0.5" style={{ maxWidth: labelMaxWidth }}>
         <p
-          title={fullLabel}
-          className="font-label-caps text-label-caps text-on-surface font-semibold uppercase truncate text-center"
-          style={{
-            letterSpacing: "0.05em",
-            maxWidth: labelMaxWidth,
-          }}
+          className="font-label-caps text-label-caps text-primary font-bold uppercase truncate text-center"
+          style={{ letterSpacing: "0.05em" }}
         >
-          {displayLabel}
+          JARVIS
+        </p>
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              hasJarvisChat ? "bg-primary" : "bg-on-surface-variant/50"
+            }`}
+          />
+          <span className="font-body-sm text-[11px] text-on-surface-variant">
+            {statusLabel}
+          </span>
+        </div>
+      </div>
+
+      {/* Helper caption — what to actually do with the badge, per-page customizable via
+          `helperText`. Sits below the status line, still outside the ring/halo. */}
+      {hasJarvisChat && (
+        <p
+          className="text-[12px] text-on-surface-variant/80 text-center mt-1"
+          style={{ maxWidth: `${Math.round(size * 2.2)}px` }}
+        >
+          {helperText}
         </p>
       )}
 

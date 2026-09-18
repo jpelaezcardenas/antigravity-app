@@ -73,12 +73,9 @@ export function DesktopSidebar() {
           2026-09-17: skipped on `-v2` pilot routes, which render JARVIS floating in the page
           content instead (see JarvisFloatingBadgeV2) — avoids a second access point while both
           coexist. */}
-      {/* hideLabel (2026-09-18): ClientTopBar's own top row already shows the tenant name on
-          this layout too (sidebarOffset), so the badge's own label underneath is redundant
-          here as well — same reasoning as the mobile/flujo-detalle instances. */}
       {!isV2Pilot && (
         <div className="flex justify-center pt-6 border-t border-slate-800/60 mx-3 mt-4">
-          <JarvisBubble size={96} panelAnchor="sidebar" hideLabel />
+          <JarvisBubble size={96} panelAnchor="sidebar" />
         </div>
       )}
     </nav>
