@@ -1,5 +1,6 @@
 import { PulsoHeroV2 } from "@/components/pulso/v2/PulsoHeroV2";
 import { ActiveAlertsV2 } from "@/components/pulso/v2/ActiveAlertsV2";
+import { NextMilestonesV2 } from "@/components/pulso/v2/NextMilestonesV2";
 import { DataUploadCard } from "@/components/pulso/DataUploadCard";
 import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 
@@ -9,8 +10,13 @@ import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadg
  * mismos contratos de datos reales (fetchFinancials/fetchCentinelaAlerts/
  * fetchTenantMe) que la pantalla de producción; solo cambia la composición
  * visual (jerarquía tipo Weather: cifra dominante + espacio negativo +
- * alertas). No incluye el insight card ni "Próximos Hitos" del mockup de
- * Stitch porque ninguno de los dos tiene respaldo en el backend hoy.
+ * alertas).
+ *
+ * Orden de scroll (confirmado 2026-09-18 contra la captura completa del
+ * fundador): mitad superior = PulsoHeroV2 (cifra + insight IA real, rule-
+ * based) + JARVIS; mitad inferior = ActiveAlertsV2 + NextMilestonesV2 (DIAN,
+ * fecha real sin monto — no existe monto real por tenant en el esquema) +
+ * "Conectar mis datos".
  */
 export default function OverviewV2Page() {
   return (
@@ -21,6 +27,7 @@ export default function OverviewV2Page() {
       <PulsoHeroV2 />
       <JarvisFloatingBadgeV2 />
       <ActiveAlertsV2 />
+      <NextMilestonesV2 />
       <div id="conectar-mis-datos" className="scroll-mt-24">
         <DataUploadCard />
       </div>

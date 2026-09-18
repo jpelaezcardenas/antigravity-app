@@ -242,3 +242,34 @@ def compute_pulso_daily_snapshot(tenant_id: str, as_of_date: date) -> Dict[str, 
         "gastos_ayer": gastos_ayer,
         "status": status,
     }
+
+
+def generate_pulso_insight(ventas_ayer: int, gastos_ayer: int, caja_real: int) -> str | None:
+    """Rule-based (NOT LLM) one-line insight for Pulso-v2's "Insight IA" tile.
+
+    Deliberately deterministic: selects among a small set of honest template
+    sentences using only real ventas_ayer/gastos_ayer/caja_real already
+    computed by compute_pulso_daily_snapshot. No LLM call — an LLM here would
+    risk hallucinating a number or claim this endpoint cannot verify (the
+    same risk documented for Taty in ARCHITECTURE.md Decision #19). Returns
+    None when yesterday had no real activity at all — silence over a
+    templated sentence with nothing to say.
+    """
+    if ventas_ayer == 0 and gastos_ayer == 0:
+        return None
+
+    neto_ayer = ventas_ayer - gastos_ayer
+
+    if ventas_ayer > 0 and gastos_ayer == 0:
+        return "Ayer solo registraste ventas, sin gastos — tu caja creció limpia."
+
+    if gastos_ayer > 0 and ventas_ayer == 0:
+        return "Ayer solo registraste gastos, sin ventas — vigila que se recupere hoy."
+
+    if neto_ayer > 0:
+        return "Ayer vendiste más de lo que gastaste — tu caja real creció."
+
+    if neto_ayer < 0:
+        return "Ayer gastaste más de lo que vendiste — tu caja real bajó."
+
+    return "Ayer tus ventas y gastos quedaron parejos — tu caja real no se movió."

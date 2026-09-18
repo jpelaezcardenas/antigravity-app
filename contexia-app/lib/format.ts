@@ -25,3 +25,15 @@ export function formatRelativeTime(isoTimestamp: string, now: Date = new Date())
   const diffDays = Math.round(diffHours / 24);
   return `hace ${diffDays} ${diffDays === 1 ? "día" : "días"}`;
 }
+
+const SHORT_MONTHS_ES = [
+  "ene", "feb", "mar", "abr", "may", "jun",
+  "jul", "ago", "sep", "oct", "nov", "dic",
+];
+
+/** "13 oct" style short date from an ISO date string, for the Próximos Hitos
+ * tiles (a real DIAN deadline date, deliberately shown without a year or amount). */
+export function formatShortDate(isoDate: string): string {
+  const [, month, day] = isoDate.split("-");
+  return `${parseInt(day, 10)} ${SHORT_MONTHS_ES[parseInt(month, 10) - 1]}`;
+}

@@ -16,6 +16,20 @@ export interface FinancialsSnapshot {
    * computed (always "now", since caja_real is a live aggregation). Null if the tenant
    * has never completed an ingestion — render nothing, never fabricate a time. */
   last_synced_at: string | null;
+  /** Rule-based (non-LLM) one-line insight over real ventas_ayer/gastos_ayer/caja_real
+   * (financials_service.py::generate_pulso_insight). Null when yesterday had no real
+   * activity at all — render nothing, never fabricate a sentence. */
+  insight_text: string | null;
+  /** Real upcoming DIAN deadlines for this tenant's real NIT (core/dian_tax_calendar.py) —
+   * date only, deliberately no peso amount (no real per-tenant amount-due data exists
+   * anywhere in the schema). Empty array when the tenant has no NIT on file. */
+  next_milestones: TaxMilestone[];
+}
+
+export interface TaxMilestone {
+  id: string;
+  label: string;
+  date: string; // ISO date, e.g. "2026-10-13"
 }
 
 export class ApiError extends Error {

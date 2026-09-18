@@ -1,11 +1,16 @@
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import date
 from typing import Optional
-from services.financials_service import compute_pulso_daily_snapshot, compute_liquidity_bridge
+from services.financials_service import (
+    compute_pulso_daily_snapshot,
+    compute_liquidity_bridge,
+    generate_pulso_insight,
+)
 from services.operator_task_service import list_completed_tasks
 from core.supabase_client import get_supabase
 from core.deps import get_current_user, _STAGING_USER
 from core.plan_features import has_feature
+from core.dian_tax_calendar import next_tax_milestones
 
 router = APIRouter()
 
@@ -80,6 +85,22 @@ def _resolve_last_synced_at(tenant_id: str) -> Optional[str]:
     return None
 
 
+def _resolve_tenant_nit(tenant_id: str) -> Optional[str]:
+    """`tenants.nit` (migration 0028) for this tenant — the real key that
+    determines its DIAN deadline dates (next_tax_milestones). None if the
+    tenant has no NIT on file; callers must omit milestones entirely rather
+    than guess a NIT digit."""
+    supabase = get_supabase()
+    result = (
+        supabase.table("tenants")
+        .select("nit")
+        .eq("id", tenant_id)
+        .maybe_single()
+        .execute()
+    )
+    return result.data["nit"] if result and result.data else None
+
+
 async def _resolve_plan_tier(tenant_id: str) -> Optional[str]:
     """Look up `tenants.plan_tier` for a resolved tenant (migration 0043).
 
@@ -131,6 +152,8 @@ def _empty_snapshot() -> dict:
         "gastos_ayer": 0,
         "status": "empty",
         "last_synced_at": None,
+        "insight_text": None,
+        "next_milestones": [],
     }
 
 
@@ -145,6 +168,8 @@ def _not_in_plan_snapshot() -> dict:
         "gastos_ayer": 0,
         "status": "not_in_plan",
         "last_synced_at": None,
+        "insight_text": None,
+        "next_milestones": [],
     }
 
 
@@ -222,6 +247,13 @@ async def get_financials(user: dict = Depends(get_current_user)):
             if insight_snapshot is not None:
                 snapshot = insight_snapshot
         snapshot["last_synced_at"] = _resolve_last_synced_at(tenant_id)
+        snapshot["insight_text"] = generate_pulso_insight(
+            snapshot.get("ventas_ayer", 0),
+            snapshot.get("gastos_ayer", 0),
+            snapshot.get("caja_real", 0),
+        )
+        tenant_nit = _resolve_tenant_nit(tenant_id)
+        snapshot["next_milestones"] = next_tax_milestones(tenant_nit, today)
         return snapshot
     except Exception as e:
         raise HTTPException(
