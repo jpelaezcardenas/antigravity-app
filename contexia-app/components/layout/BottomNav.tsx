@@ -25,13 +25,12 @@ export function BottomNav() {
   const pathname = usePathname();
   const v2Preview = useV2Preview();
 
-  // Pulso-v2's own hero already has a gear icon -> /app/config (Stitch mockup's header
-  // affordance) — founder caught the duplicate ("dos botones que llevan a lo mismo") when
-  // both it and this bar's own "Config" tab were visible at once. Only overview-v2 has that
-  // header gear (fiscal-v2/radar-v2/patrimonio-v2 don't), so this drops the tab there only —
-  // dropping it from every -v2 route would leave those three pages with no way to reach
-  // Config at all.
-  const items = pathname === "/app/overview-v2" ? NAV_ITEMS.filter((i) => i.path !== "/app/config") : NAV_ITEMS;
+  // Every -v2 page now has its own header gear -> /app/config (PulsoHeroV2 for overview-v2,
+  // V2ConfigGearHeader for fiscal-v2/radar-v2/patrimonio-v2, added 2026-09-18 to close that
+  // gap) — one access point per the Stitch mock, so this bar drops its own "Config" tab on
+  // every -v2 route, not just overview-v2 (founder: "en los demas modulos aun se ve en la
+  // base configuracion... solo debe ir en header").
+  const items = pathname?.endsWith("-v2") ? NAV_ITEMS.filter((i) => i.path !== "/app/config") : NAV_ITEMS;
 
   return (
     <nav className="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container/90 backdrop-blur-md border-t border-white/5 shadow-[0_-4px_24px_rgba(0,0,0,0.5)] flex justify-around items-center h-20 pb-safe px-4">

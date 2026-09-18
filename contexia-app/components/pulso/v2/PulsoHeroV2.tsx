@@ -96,32 +96,38 @@ export function PulsoHeroV2() {
         className="absolute -top-10 -left-6 w-80 h-56 bg-primary/15 rounded-full blur-3xl pointer-events-none -z-0"
       />
 
-      {/* Ghost header actions (equivalente a "+" / engranaje de Weather) — ambos enlazan a
-          destinos reales que ya existen, ninguno inventado. "+" lleva a la acción real de
-          conectar datos (misma pantalla, ancla); el engranaje va a /app/config, la pantalla
-          de Ajustes real. */}
-      <div className="relative z-10 flex items-center justify-end gap-4 mb-4 text-on-surface-variant">
-        <a
-          href="#conectar-mis-datos"
-          aria-label="Conectar mis datos"
-          className="hover:text-white transition-colors p-1 flex items-center justify-center"
-        >
-          <span className="material-symbols-outlined text-[21px]">add</span>
-        </a>
-        <Link
-          href="/app/config"
-          aria-label="Configuración"
-          className="hover:text-white transition-colors p-1 flex items-center justify-center"
-        >
-          <span className="material-symbols-outlined text-[20px]">settings</span>
-        </Link>
+      {/* Founder request (2026-09-18): the tenant name sat alone on its own left-aligned
+          row, leaving the space beside the +/gear icons empty. Moved into the SAME row,
+          right-aligned right above the icons, so nothing is left blank up top. */}
+      <div className="relative z-10 flex justify-end mb-4">
+        <div className="flex flex-col items-end gap-1.5 text-on-surface-variant">
+          <div className="text-xs font-medium tracking-wide text-on-surface-variant/90">
+            {tenantLabel}
+          </div>
+          {/* Ghost header actions (equivalente a "+" / engranaje de Weather) — ambos enlazan a
+              destinos reales que ya existen, ninguno inventado. "+" lleva a la acción real de
+              conectar datos (misma pantalla, ancla); el engranaje va a /app/config, la pantalla
+              de Ajustes real. */}
+          <div className="flex items-center gap-4">
+            <a
+              href="#conectar-mis-datos"
+              aria-label="Conectar mis datos"
+              className="hover:text-white transition-colors p-1 flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-[21px]">add</span>
+            </a>
+            <Link
+              href="/app/config"
+              aria-label="Configuración"
+              className="hover:text-white transition-colors p-1 flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-[20px]">settings</span>
+            </Link>
+          </div>
+        </div>
       </div>
 
       <div className="relative z-10 flex flex-col gap-1.5">
-        <div className="text-xs font-medium tracking-wide text-on-surface-variant/90">
-          {tenantLabel}
-        </div>
-
         {status === "loading" && (
           <div className="h-16 w-56 bg-white/10 rounded animate-pulse" />
         )}

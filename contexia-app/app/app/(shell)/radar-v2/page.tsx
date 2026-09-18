@@ -10,6 +10,7 @@ import { EstimatedTaxProvisionCard } from "@/components/radar/EstimatedTaxProvis
 import { StrategicInsightCard } from "@/components/radar/StrategicInsightCard";
 import { UpcomingMilestonesCard } from "@/components/radar/UpcomingMilestonesCard";
 import { UpgradePlanBannerV2 } from "@/components/shared/v2/UpgradePlanBannerV2";
+import { V2ConfigGearHeader } from "@/components/shared/v2/V2ConfigGearHeader";
 import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 import { RadarCashProjectionTiles } from "@/components/radar/v2/RadarCashProjectionTiles";
 
@@ -31,6 +32,8 @@ export default function RadarV2Page() {
       data-cx-ui="v2"
       className="px-container-margin-mobile md:px-container-margin-desktop max-w-7xl mx-auto flex flex-col gap-6 w-full mt-2 pb-16"
     >
+      <V2ConfigGearHeader />
+
       <UpgradePlanBannerV2 />
 
       <section className="flex flex-col gap-1.5">

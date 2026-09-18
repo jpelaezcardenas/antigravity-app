@@ -3,6 +3,7 @@ import { StrategicPatrimonyInsightCard } from "@/components/patrimonio/Strategic
 import { WithdrawalSimulatorCard } from "@/components/patrimonio/WithdrawalSimulatorCard";
 import { EquityMovementHistoryCard } from "@/components/patrimonio/EquityMovementHistoryCard";
 import { UpgradePlanBannerV2 } from "@/components/shared/v2/UpgradePlanBannerV2";
+import { V2ConfigGearHeader } from "@/components/shared/v2/V2ConfigGearHeader";
 import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 import { MetricTileGrid, type MetricTile } from "@/components/shared/v2/MetricTileGrid";
 import { formatCop } from "@/lib/format";
@@ -54,6 +55,8 @@ export default function PatrimonioV2Page() {
       data-cx-ui="v2"
       className="px-container-margin-mobile md:px-container-margin-desktop max-w-7xl mx-auto flex flex-col gap-6 w-full mt-2 pb-16"
     >
+      <V2ConfigGearHeader />
+
       <UpgradePlanBannerV2 />
 
       <section className="flex flex-col gap-1.5">

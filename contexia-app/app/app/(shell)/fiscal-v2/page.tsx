@@ -1,6 +1,7 @@
 import { fiscalMock } from "@/lib/mock/fiscal";
 import { TaxThresholdsCard } from "@/components/fiscal/TaxThresholdsCard";
 import { UpgradePlanBannerV2 } from "@/components/shared/v2/UpgradePlanBannerV2";
+import { V2ConfigGearHeader } from "@/components/shared/v2/V2ConfigGearHeader";
 import { JarvisFloatingBadgeV2 } from "@/components/jarvis/v2/JarvisFloatingBadgeV2";
 import { MetricTileGrid, type MetricTile } from "@/components/shared/v2/MetricTileGrid";
 
@@ -40,6 +41,8 @@ export default function FiscalV2Page() {
       data-cx-ui="v2"
       className="px-container-margin-mobile md:px-container-margin-desktop flex flex-col gap-gutter max-w-4xl mx-auto w-full mt-2 pb-16"
     >
+      <V2ConfigGearHeader />
+
       <UpgradePlanBannerV2 />
 
       <div className="flex flex-col gap-1.5">
