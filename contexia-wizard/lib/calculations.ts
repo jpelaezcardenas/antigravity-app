@@ -1,10 +1,20 @@
 // ============================================================
 // lib/calculations.ts
 // Lógica tributaria colombiana — Régimen Simple vs Ordinario
-// UVT 2026 = $49.799 (Resolución DIAN)
+// UVT 2026 = $52.374 (Resolución DIAN 000238 de 2025)
 // ============================================================
+//
+// Corrección 2026-09-20: esta constante estaba mal etiquetada -- tenía el
+// valor de la UVT 2025 ($49.799, Resolución 000193 de 2024), no la de 2026.
+// Confirmado contra el Knowledge Vault de Contexia (fuente DIAN directa:
+// normograma.dian.gov.co) durante la revisión de openspec/changes/
+// wizard-iva-ecom-express-diagnostic. Los 3 call sites que usan esta
+// constante (aquí mismo y lib/riskAnalysis.ts x2) clasifican régimen
+// tributario y puntaje de diagnóstico para el año en curso, no una
+// declaración específica del año gravable 2025 -- por eso el fix es
+// corregir el valor, no mantener dos constantes por año.
 
-export const UVT_2026 = 49799;
+export const UVT_2026 = 52374;
 
 // ─── Tarifas Régimen Simple (Art. 908 E.T.) ─────────────────
 // Grupo → CIIU → tarifa% según tramo de ingresos (en UVT)
