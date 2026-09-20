@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { RentaNaturalLandingForm } from "@/components/renta-natural/RentaNaturalLandingForm";
+import { DeclaranteMiniQuiz } from "@/components/renta-natural/DeclaranteMiniQuiz";
 
 /**
  * Public social-ad landing page (b2c-social-lead-capture, Task 4).
@@ -15,14 +16,22 @@ export default function RentaNaturalPage() {
         <span className="text-xs font-bold uppercase tracking-widest text-teal-300">
           Renta Natural 2026
         </span>
-        <h1 className="text-2xl font-extrabold text-white">
-          Declara tu renta sin complicaciones
+        <h1
+          className="text-2xl font-black leading-tight text-white"
+          style={{ fontFamily: "Orbitron, sans-serif" }}
+        >
+          Declara tu renta{" "}
+          <span className="bg-gradient-to-r from-teal-400 to-violet-500 bg-clip-text text-transparent">
+            sin complicaciones
+          </span>
         </h1>
         <p className="text-sm text-white/70">
           Deja tus datos y Taty, la asistente de Contexia, te contacta por WhatsApp para
           ayudarte con tu declaración de Renta Natural 2026.
         </p>
       </div>
+
+      <DeclaranteMiniQuiz />
 
       {/* useSearchParams (RentaNaturalLandingForm) requires a Suspense boundary
           under the App Router — this page is otherwise a Server Component. */}

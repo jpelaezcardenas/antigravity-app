@@ -1,10 +1,10 @@
-// Service Worker para Contexia PWA
+﻿// Service Worker para Contexia PWA
 // Estrategia: Network-first para HTML, Cache-first para assets
 
-const CACHE_VERSION = "v18-2026-09-04";
+const CACHE_VERSION = "v45-2026-09-20";
 const CACHE_NAME = `contexia-${CACHE_VERSION}`;
 
-// Assets estáticos que cachear al instalar
+// Assets estÃ¡ticos que cachear al instalar
 const STATIC_ASSETS = [
   "/",
   "/app",
@@ -27,7 +27,7 @@ const CACHE_FIRST_PATTERNS = [
   /\/_next\/static\//,
 ];
 
-// Instalar: cachear assets estáticos mínimos
+// Instalar: cachear assets estÃ¡ticos mÃ­nimos
 self.addEventListener("install", (event) => {
   console.log("[SW] Installing Contexia Service Worker");
   event.waitUntil(
@@ -69,7 +69,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first para assets estáticos
+  // Cache-first para assets estÃ¡ticos
   if (CACHE_FIRST_PATTERNS.some((pattern) => pattern.test(url.pathname))) {
     event.respondWith(
       caches.match(request).then((cached) => {
@@ -94,7 +94,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Network-first para HTML y rutas dinámicas
+  // Network-first para HTML y rutas dinÃ¡micas
   event.respondWith(
     fetch(request)
       .then((response) => {
@@ -118,8 +118,8 @@ self.addEventListener("fetch", (event) => {
           if (cached) {
             return cached;
           }
-          // Última opción: página de error offline simple
-          return new Response("Offline - Por favor intenta de nuevo cuando tengas conexión", {
+          // Ãšltima opciÃ³n: pÃ¡gina de error offline simple
+          return new Response("Offline - Por favor intenta de nuevo cuando tengas conexiÃ³n", {
             status: 503,
             statusText: "Service Unavailable",
             headers: new Headers({
