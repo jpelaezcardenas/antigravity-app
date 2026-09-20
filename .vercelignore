@@ -1,3 +1,14 @@
+# Diagnostic exclusion (2026-09-20): api/hermes/status.ts and middleware.ts
+# have real, longstanding TypeScript errors (missing @types/node, missing
+# next/server types) that Vercel's zero-config Function detection tries to
+# compile on every deploy regardless of the root "no build needed" script.
+# Testing whether this is why static files (e.g. renta-natural.html) stop
+# updating on some deploys -- see openspec/changes/wizard-iva-ecom-express-
+# diagnostic/ for the investigation. NOT a decision to retire these files --
+# flagged separately for the founder to decide their fate.
+api/hermes/status.ts
+middleware.ts
+
 # Backend (deploys to Railway, NOT Vercel) — 81 MB incl. .venv
 apps/
 venv_contexia/
