@@ -65,6 +65,27 @@ Given that, gating the WhatsApp CTA behind a forced email field would add fricti
 - **[Risk]** An unconditional-sounding "estás perdiendo $X en IVA" headline could read as the exact prohibited claim pattern (ROI/savings claim not measured on a real client) → **[Mitigation]** D4's disclosed-estimate wording is a hard requirement of Task 3, verified before Stage 11 deploy, not an optional nicety.
 - **[Risk]** A visitor who already went through the 8-step flow could return via an ad and hit this different 3-step flow with a different lead record (no dedup by email/phone across the two `source` tags) → **[Mitigation]** `POST /api/leads/save` already upserts by email server-side, so a repeat visitor with the same email merges into one Supabase lead row regardless of which flow captured it — no duplicate-lead risk, just two different `source`/`metadata` histories on one row over time (acceptable, matches how Feria mode already coexists with the base flow).
 
+## Correction (2026-09-20, post-deploy verification): `vercel.json` DID need a change
+
+An earlier draft of this document (and Task 3.3) claimed no `vercel.json` change was needed
+because `/wizard/:path*` already proxies every sub-path. That was wrong in a specific, real way:
+the existing rewrite never matched **trailing-slash** paths at all — confirmed by testing
+`/wizard/confirmacion/`, an existing page of the 8-step flow live for months, which also 404s
+through `contexia.online`. Since `contexia-wizard`'s `next.config.ts` sets `trailingSlash: true`,
+every single page of BOTH wizard flows redirects to add a trailing slash — meaning the entire
+wizard has been effectively broken via the public domain for every page except the bare `/wizard`
+root and the handful of paths with their own explicit redirect rule (`/wizard/login/`,
+`/wizard/dashboard/`, `/wizard/`). This was a pre-existing, unrelated bug, not introduced by this
+change, but it directly blocks this change's own purpose (the GTM campaign needs
+`contexia.online/wizard/iva-ecom` to work), so fixing it is in scope here.
+
+**Fix**: added one rewrite rule mirroring the existing wildcard pattern with a trailing slash:
+```json
+{ "source": "/wizard/:path*/", "destination": "https://contexia-wizard.vercel.app/wizard/:path*/" }
+```
+placed before the non-trailing-slash version. This is additive and minimal — no existing rule
+removed or reordered otherwise.
+
 ## Migration Plan
 
 1. Build `/wizard/iva-ecom` as new, additive files inside `contexia-wizard/` only
