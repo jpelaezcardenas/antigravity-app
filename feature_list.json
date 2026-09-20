@@ -12,10 +12,13 @@
     ]
   },
   "active": [
-    "hermes-jarvis-contexia"
+    "wizard-iva-ecom-express-diagnostic"
   ],
   "active_switch_2026-09-13": {
     "note": "Founder explicit decision 2026-09-13 (HANDOFF-JARVIS-HERMES.md Fase 0.1): active switched from renta-natural-first-sale to hermes-jarvis-contexia. Founder's stated reason: renta-natural-first-sale work is being paused because an external agency is now going to help produce content for the B2B GTM campaign, which shifts this thread's priority to shipping the B2B/Jarvis product surface instead of closing the B2C Renta Natural sale. renta-natural-first-sale (23/32) is paused in_progress with this note, not abandoned -- its DIAN cohort deadline (2026-10-26) still stands and it resumes once hermes-jarvis-contexia's Fase 0-1 scope closes."
+  },
+  "active_switch_2026-09-20": {
+    "note": "Founder explicit decision 2026-09-20, corrected same day: active first switched from hermes-jarvis-contexia to a proposed 'auditoria-sombra-public-landing' change (build a new public landing at contexia-app/app/auditoria/ for the B2B freemium funnel). That change was SCRAPPED before any code was written -- its premise was wrong. Live verification (curl + browser) showed contexia.online/wizard already exists, already works (200, not 404 as initially suspected), and is already the real Auditoria Sombra / Shadow Audit product (contexia-wizard/, 8-step flow). The founder redirected: adapt the EXISTING wizard by adding a new, separate 3-step express route (/wizard/iva-ecom) for the ecom/dropshipper persona, not build a duplicate landing. Active is now wizard-iva-ecom-express-diagnostic. hermes-jarvis-contexia remains paused in_progress from the prior switch, not abandoned. renta-natural-first-sale (23/32) remains paused underneath both switches; its DIAN deadline (2026-10-26) still stands, and this change touches only contexia-wizard/, never contexia-app/renta-natural or its lead pipeline."
   },
   "pending_implementation": [
     "metrics-dashboard-phase9",
