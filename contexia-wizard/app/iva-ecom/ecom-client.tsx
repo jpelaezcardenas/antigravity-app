@@ -57,8 +57,53 @@ export default function EcomWizardClient() {
     >
       <WizardHeader />
 
-      <main style={{ flex: 1, paddingTop: "160px" }}>
+      <main style={{ flex: 1, paddingTop: "200px" }}>
         <div style={{ maxWidth: "800px", margin: "0 auto", padding: "1.5rem 1.5rem 3rem" }}>
+          {store.pasoActual === 1 && (
+            <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  background: "rgba(45, 212, 191, 0.1)",
+                  color: "var(--ctx-teal)",
+                  fontWeight: 700,
+                  fontSize: "0.8125rem",
+                  padding: "0.375rem 1rem",
+                  borderRadius: "999px",
+                  marginBottom: "1rem",
+                  border: "1px solid rgba(45, 212, 191, 0.2)",
+                }}
+              >
+                🔍 Diagnóstico Exprés de IVA
+              </div>
+              <h1
+                className="font-orbitron"
+                style={{
+                  fontSize: "clamp(1.5rem, 4vw, 2rem)",
+                  fontWeight: 800,
+                  color: "#ffffff",
+                  lineHeight: 1.25,
+                  margin: "0 0 0.75rem",
+                }}
+              >
+                ¿Cuánto IVA podrías estar{" "}
+                <span className="gradient-text">dejando sobre la mesa?</span>
+              </h1>
+              <p
+                style={{
+                  color: "var(--ctx-text-muted)",
+                  fontSize: "0.9375rem",
+                  maxWidth: "480px",
+                  margin: "0 auto",
+                }}
+              >
+                Responde 3 preguntas rápidas sobre tu negocio digital y en 30 segundos te mostramos
+                un estimado, sin compromiso.
+              </p>
+            </div>
+          )}
           {store.pasoActual === 1 && <Step1Numeros onNext={next} />}
           {store.pasoActual === 2 && (
             <Step2Formalizacion onNext={next} onBack={back} />
