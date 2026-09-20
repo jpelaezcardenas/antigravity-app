@@ -154,3 +154,29 @@ to pay through this live flow hits a 500 right now.**
 - [x] 8.4 **Found a second pre-existing bug while verifying**: `contexia.online/wizard/iva-ecom` 404'd even after the deploy succeeded — traced to `antigravity-app/vercel.json`'s `/wizard/:path*` rewrite never matching trailing-slash paths at all. Confirmed this predates this change entirely by testing `/wizard/confirmacion/` (an existing 8-step-flow page) — it 404s too. Since `contexia-wizard`'s `trailingSlash: true` redirects every page to add a slash, this meant the ENTIRE wizard has been broken via the public domain except the bare `/wizard` root and the handful of paths with their own explicit redirect rule. Fixed with one additive rewrite rule (`/wizard/:path*/`) mirroring the existing wildcard — see design.md's "Correction" section. Founder authorized a redeploy of `antigravity-app` (`contexia-web-app` Vercel project) to pick up the fix and clear a stale edge cache from earlier failed attempts
 - [x] 8.5 Confirmed `contexia.online/wizard` (existing 8-step flow) still works unchanged — verified both before and after the `vercel.json` fix
 - [x] 8.6 Deployment report: `openspec/changes/wizard-iva-ecom-express-diagnostic/reports/2026-09-20-deployment.md`
+
+## 9. Founder-directed extension: Auditoría Sombra routing page (same day)
+
+- [x] 9.1 Created `auditoria-sombra.html` (repo root, static): two self-select cards (Persona
+      Natural / Empresa Formalizada), disabled "Continuar" button enabled only after selection,
+      redirects to `/renta-natural` or `/wizard/iva-ecom` respectively
+- [x] 9.2 Repointed both nav occurrences of the "AUDITORÍA SOMBRA" link in `landing.html`
+      (desktop + mobile menu) from `/wizard/` to `/auditoria-sombra.html`
+- [x] 9.3 Matched the wizard's own visual pattern per founder's explicit request: Orbitron
+      headline font, teal→violet gradient on the second line, emoji feature row (⚡🔒🎯)
+- [x] 9.4 Added a full header (not just the logo) with working "back" navigation — home, anchors
+      back to landing sections, Crear Empresa, FAQ, Acceso App — plus the working mobile menu
+      toggle, since a user landing here via a direct link needs a way back
+- [x] 9.5 **Found and fixed 3 rounds of silently-broken Tailwind classes**: this site's
+      `landing.min.css` is a pre-compiled, purged bundle — any class not already used elsewhere
+      on the site silently does nothing (no error, just missing style). Hit this for
+      `font-extrabold` (fixed → `font-black`, which exists), `pt-[200px]` and other arbitrary
+      values (fixed → dedicated `#main-content` rule in a `<style>` block), and every
+      color-opacity variant I introduced (`bg-teal/10`, `border-teal/30`, `hover:bg-teal/5`,
+      etc. — none exist; replaced with plain CSS classes using literal rgba() values). Verified
+      each fix via `getComputedStyle()` in the browser and by grepping the served CSS file
+      directly, not by visual inspection alone
+- [x] 9.6 Verified end-to-end locally (static file server): badge/headline render correctly below
+      the fixed nav (no overlap), selecting a card highlights it and enables "Continuar", the
+      `destino` variable resolves to the correct target for each option, mobile hamburger menu
+      opens/closes correctly with working back-navigation links

@@ -41,6 +41,18 @@ are NOT dead tables — they back `contexia-app/app/crear-empresa-wizard/`, a LI
 product ($1.200.000) whose Wompi payment flow is currently broken for every real customer. See
 `tasks.md` §5c.
 
+**Third extension (same day, founder-directed):** the founder requested an intermediate routing
+page — `contexia.online`'s "🔍 AUDITORÍA SOMBRA" header link previously pointed straight to the
+8-step flow. New file `auditoria-sombra.html` (root static site) lets a visitor self-select
+Persona Natural (→ `/renta-natural`) or Empresa Formalizada (→ `/wizard/iva-ecom`) before landing
+on the right diagnostic. `landing.html`'s two nav links (desktop + mobile) were repointed to it —
+2-line diff, no other change. Styled to match the wizard's own hero pattern (Orbitron headline,
+teal→violet gradient, emoji feature row) per the founder's explicit ask to keep visual consistency
+across every new page in this funnel. See `tasks.md` §9 for the build/verification log, including
+several Tailwind utility classes that silently don't exist in this site's pre-compiled
+`landing.min.css` (arbitrary values and color-opacity variants are purged if unused elsewhere) —
+worth remembering for any future static page in this same site.
+
 ## Impact
 
 - **New files** (all inside `contexia-wizard/`, never in `contexia-app/`):
