@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { RentaNaturalLandingForm } from "@/components/renta-natural/RentaNaturalLandingForm";
 import { DeclaranteMiniQuiz } from "@/components/renta-natural/DeclaranteMiniQuiz";
+import { RentaNaturalHeader } from "@/components/renta-natural/RentaNaturalHeader";
 
 /**
  * Public social-ad landing page (b2c-social-lead-capture, Task 4).
@@ -11,7 +12,9 @@ import { DeclaranteMiniQuiz } from "@/components/renta-natural/DeclaranteMiniQui
  */
 export default function RentaNaturalPage() {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-6 py-16">
+    <>
+      <RentaNaturalHeader />
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-6 pt-[112px] pb-16 md:pt-[144px]">
       <div className="flex flex-col gap-2 text-center">
         <span className="text-xs font-bold uppercase tracking-widest text-teal-300">
           Renta Natural 2026
@@ -38,6 +41,7 @@ export default function RentaNaturalPage() {
       <Suspense fallback={null}>
         <RentaNaturalLandingForm />
       </Suspense>
-    </main>
+      </main>
+    </>
   );
 }
