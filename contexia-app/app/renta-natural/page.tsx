@@ -14,7 +14,7 @@ export default function RentaNaturalPage() {
   return (
     <>
       <RentaNaturalHeader />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-6 pt-[112px] pb-16 md:pt-[144px]">
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-6 pt-[200px] pb-16 md:pt-[180px]">
       <div className="flex flex-col gap-2 text-center">
         <span className="text-xs font-bold uppercase tracking-widest text-teal-300">
           Renta Natural 2026
