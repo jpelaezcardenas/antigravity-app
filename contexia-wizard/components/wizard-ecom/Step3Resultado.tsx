@@ -19,8 +19,8 @@ function buildWhatsAppUrl(ivaPerdidoMensual: number, tier: 1 | 2 | 3): string {
   const monto = formatCOP(ivaPerdidoMensual);
   const mensaje =
     tier === 1
-      ? `Hola, hice el diagnóstico exprés de IVA y podría estar dejando ${monto} al mes sobre la mesa. Quiero unirme a los primeros 50 cupos de la Comunidad VIP para revisarlo con Taty.`
-      : `Hola, hice el diagnóstico exprés de IVA (estimado ${monto}/mes) y quiero saber más sobre la Comunidad VIP de Contexia.`;
+      ? `Hola, tengo mi negocio de e-commerce y hice el diagnóstico exprés de IVA: podría estar dejando ${monto} al mes sobre la mesa. Quiero unirme a los primeros 50 cupos de la Comunidad VIP para revisarlo con Taty.`
+      : `Hola, tengo mi negocio de e-commerce, hice el diagnóstico exprés de IVA (estimado ${monto}/mes) y quiero saber más sobre la Comunidad VIP de Contexia.`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(mensaje)}`;
 }
 

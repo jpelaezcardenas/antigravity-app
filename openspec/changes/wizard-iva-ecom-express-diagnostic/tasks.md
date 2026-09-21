@@ -139,7 +139,55 @@ to pay through this live flow hits a 500 right now.**
         8-step flow's own bug is out of scope here and spun off as `task_72eda2f2`.
       - Founder sign-off on the wording itself (beyond the numbers) still pending final word from
         founder/Tatiana on tone.
-- [ ] 6.2 Confirm the WhatsApp destination number/message is correct for this specific campaign (vs. the generic `TatyFloat.tsx` message)
+- [x] 6.2 Confirmed the WhatsApp destination number/message is correct for this specific
+      campaign. Number (573106229289) already matches `TatyFloat.tsx`'s production number, no
+      change needed. **Found a real bug while confirming the message**: neither of the two
+      pre-filled messages in `Step3Resultado.tsx::buildWhatsAppUrl` contained any keyword
+      `services/taty_lead_router.py::classify_lead_intent` recognizes as `business_interest`
+      ("sas", "empresa", "negocio", "sociedad", "compañía", "persona jurídica") or
+      `sales_interest` — every visitor from this landing was messaging Taty and being classified
+      `("unknown", 0.0)`, silently breaking B2B qualification for every lead this page produces.
+      Fixed by adding "tengo mi negocio de e-commerce" to both message variants (natural fit for
+      the ecom/dropshipper persona this landing targets) — verified live against
+      `classify_lead_intent()` directly (not assumed): both variants now return
+      `("business_interest", 0.8)`. No backend change; frontend-only text fix in
+      `contexia-wizard/`.
+
+## 10. Founder-directed extension: confirm `/wizard/iva-ecom` as THE landing for agency content (2026-09-21)
+
+Founder decision (2026-09-21, this session): this page is confirmed as the single landing where
+CasaLavinne's B2B content sends traffic — no separate `/auditoria` page will be built (the
+`auditoria-sombra-public-landing` premise stays scrapped per `active_switch_2026-09-20`).
+Auditoria-sombra.html's "Empresa Formalizada" card already points here.
+
+- [x] 10.1 Fixed the `business_interest` misclassification bug above (6.2) — the single highest-
+      impact fix for this page to actually function as a lead-qualifying landing.
+- [ ] 10.2 **Known, accepted limitation, not fixed here**: there is no `source`/campaign-attribution
+      tag stamped on `crm_leads` for WhatsApp-originated leads at all today. Traced the full path:
+      `apps/chatwoot-bridge/main.py:214` calls `backend_client.whatsapp_intake(phone)` with only
+      the phone number; `crm_endpoints.py::whatsapp_intake` (the endpoint the bridge hits) calls
+      `CrmService.whatsapp_intake(payload.whatsapp_phone)` with no `source` argument at all — even
+      though the service method itself accepts one (used only by the unrelated web-form path,
+      `social_capture_endpoints.py`). Threading a campaign tag through free-text WhatsApp intake
+      would mean changing the shared inbound webhook path serving ALL WhatsApp traffic (Renta
+      Natural + every other lead), not something scoped to this landing alone — deliberately not
+      done in this pass. If per-campaign attribution for WhatsApp leads becomes a real reporting
+      need, it is a separate, properly-scoped OpenSpec change touching `chatwoot-bridge` +
+      `crm_endpoints.py` + `CrmService`, not a text tweak here.
+- [x] 10.3 **Founder decision 2026-09-21**: HubSpot pipeline destination for a B2B lead from this
+      landing (H1 from `HANDOFF-GTM-B2B-2026-09-13.md`). Verified live via HubSpot MCP before
+      deciding: `accountId 51867201`, `accountType: STANDARD` (free tier), exactly one deal
+      pipeline exists (`"default"` / "Sales Pipeline", its 6 stages already fully relabeled for
+      the B2C Renta Natural funnel — Quiz Completado/Lead Calificado/Contactado/Pago Iniciado/
+      Contract Sent/Cliente Pagado). Free/Starter HubSpot allows exactly one pipeline per object;
+      a second pipeline requires Professional. Founder chose option (c): B2B leads from this
+      landing track their pipeline in the Búnker/Supabase (`CrmVentasSection.tsx` → "B2B/
+      Retainers" tab, already built, `openspec/changes/archive/*-crm-b2b-retainers-cockpit/`) —
+      no HubSpot Professional upgrade, no new code. They still sync to HubSpot as a `Company`
+      only (existing `hermes-hubspot-poller` behavior, Decision #20) so Houston's read-only lead
+      scoring keeps working; they never get a HubSpot `Deal`.
+- [ ] 10.4 Deploy `contexia-wizard` (CLI-only, no GitHub integration per task 8.2) with the 6.2
+      fix and verify live.
 
 ## 7. Update Technical Documentation (MANDATORY)
 
