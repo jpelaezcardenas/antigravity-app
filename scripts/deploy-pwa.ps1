@@ -67,8 +67,19 @@ if ($bumped -and -not $SkipBuild) {
 }
 
 Write-Host "==> Syncing contexia-app/out/* -> repo root" -ForegroundColor Cyan
-if (-not (Test-Path (Join-Path $appDir "out"))) { Fail "contexia-app/out not found -- did the build run?" }
-Copy-Item -Path (Join-Path $appDir "out\*") -Destination $repoRoot -Recurse -Force
+# Copy items from out to repoRoot. For 'app', copy its contents directly into repoRoot/app to prevent PowerShell creating app/app
+Get-ChildItem -Path (Join-Path $appDir "out") | ForEach-Object {
+    if ($_.Name -eq "app") {
+        $destApp = Join-Path $repoRoot "app"
+        if (-not (Test-Path $destApp)) { New-Item -ItemType Directory -Path $destApp | Out-Null }
+        Copy-Item -Path (Join-Path $_.FullName "*") -Destination $destApp -Recurse -Force
+    } else {
+        Copy-Item -Path $_.FullName -Destination $repoRoot -Recurse -Force
+    }
+}
+if (Test-Path (Join-Path $repoRoot "app\app")) {
+    Remove-Item -Path (Join-Path $repoRoot "app\app") -Recurse -Force
+}
 
 Push-Location $repoRoot
 

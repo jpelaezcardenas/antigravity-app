@@ -9,6 +9,7 @@
 param(
     [string[]]$Routes = @(
         "/",
+        "/app/bunker",
         "/app/overview", "/app/fiscal", "/app/radar", "/app/patrimonio", "/app/config",
         "/app/overview-v2", "/app/fiscal-v2", "/app/radar-v2", "/app/patrimonio-v2",
         "/app/acerca-v2", "/flujo-detalle-v2"
