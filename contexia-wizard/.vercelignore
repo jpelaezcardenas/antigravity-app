@@ -5,9 +5,13 @@
 # source/node_modules out of the contexia-web-app static deploy), stripping
 # this entire folder before the build even started. NEXT_NO_VERSION on every
 # deploy since that repo-root rule was added.
+#
+# Do NOT add .next/ or .vercel/ here: Vercel's own Next.js build writes its
+# output into .next/ during the build step and needs it to still be visible
+# afterward to package the deployment (routes-manifest.json lives there).
+# Ignoring .next/ made the build succeed but then fail to find its own
+# output -- confirmed live 2026-09-23.
 node_modules/
-.next/
-.vercel/
 *.log
 .env.local
 .env.*.local
