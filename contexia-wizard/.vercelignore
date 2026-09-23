@@ -1,0 +1,13 @@
+# Project-local .vercelignore for the contexia-wizard Vercel project.
+# Vercel looks for .vercelignore inside the project's Root Directory setting
+# (contexia-wizard) -- without this file it fell back to the repo-root
+# .vercelignore, which deliberately excludes contexia-wizard/ (to keep its
+# source/node_modules out of the contexia-web-app static deploy), stripping
+# this entire folder before the build even started. NEXT_NO_VERSION on every
+# deploy since that repo-root rule was added.
+node_modules/
+.next/
+.vercel/
+*.log
+.env.local
+.env.*.local
