@@ -368,7 +368,12 @@
         return null;
       }
 
+      // If ?next= is a safe /app/* path, use it as post-login destination.
+      var nextParam = new URLSearchParams(window.location.search).get("next") || "";
+      var safeNext = (nextParam.indexOf("/app/") === 0 || nextParam === "/app") ? nextParam : "";
+
       function destinationForRole(role) {
+        if (safeNext) return safeNext;
         if (role === "admin" || role === "superadmin" || role === "contexia_admin") {
           return "/app/bunker";
         }
@@ -575,6 +580,24 @@
       setRole(role);
       syncRoleVisibility();
       setMode("login");
+
+      // Auto-redirect if already authenticated (e.g. PWA start, back-navigation, auth-guard ?next=).
+      // Only runs when NOT an OAuth callback to avoid race conditions.
+      if (new URLSearchParams(window.location.search).get("oauth") !== "1") {
+        client.auth.getSession().then(function (result) {
+          var session = result && result.data && result.data.session;
+          if (session && session.user) {
+            try {
+              var resolvedRole = readRoleFromUser(session.user);
+              var dest = destinationForRole(resolvedRole);
+              storeSession(session, session.user);
+              window.location.replace(dest);
+            } catch (e) {
+              // No valid role — stay on login page, user can re-authenticate
+            }
+          }
+        }).catch(function () {});
+      }
 
       if (new URLSearchParams(window.location.search).get("oauth") === "1") {
         client.auth.getSession().then(function (result) {

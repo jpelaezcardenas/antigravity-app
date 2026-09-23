@@ -50,7 +50,7 @@
         },
         {
             "source": "/app",
-            "destination": "/app/bunker",
+            "destination": "/login.html",
             "permanent": false
         },
         {

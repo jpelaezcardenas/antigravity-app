@@ -187,7 +187,8 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes zoomIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
 
-        /* Interview Section Styles */
+        /* ===== ARCHIVED: Interview Section Styles (2026-09-22) =====
+           To re-enable, remove this comment block and the closing one below.
         .interview-card {
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(16px);
@@ -390,6 +391,7 @@
         .interview-card.open {
             padding: 2rem;
         }
+        ===== END ARCHIVED: Interview Section Styles ===== */
     </style>
 </head>
 
@@ -439,7 +441,7 @@
                             </div>
                         </a>
 
-                        <a href="/app" class="inline-flex items-center justify-center px-6 py-2 border border-transparent text-sm font-medium rounded-full text-[#020617] bg-teal hover:bg-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.3)] transition-all">
+                        <a href="/login.html" class="inline-flex items-center justify-center px-6 py-2 border border-transparent text-sm font-medium rounded-full text-[#020617] bg-teal hover:bg-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.3)] transition-all">
                             Acceso App
                         </a>
                     </div>
@@ -467,17 +469,22 @@
             </div>
             <a href="#soluciones" class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">Soluciones</a>
             <a href="#servicios" class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">Servicios</a>
+            <!-- ARCHIVED: Interview nav link (2026-09-22)
             <a href="#entrevista" class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">Entrevista</a>
+            END ARCHIVED -->
             <a href="#faq" class="block text-slate-300 hover:text-white py-2 text-sm font-semibold">FAQ</a>
             <a href="/auditoria-sombra.html" class="block text-center py-3 px-4 bg-violet/10 text-white border-2 border-violet rounded-xl text-sm font-bold tracking-wide shadow-[0_0_15px_-5px_rgba(139,92,246,0.4)]">
                 🔍 AUDITORÍA SOMBRA <span class="text-violet/80 font-medium">(Simulación con la DIAN)</span>
             </a>
-            <a href="/app"
+            <a href="/login.html"
                 class="block bg-gradient-to-r from-teal to-violet text-white text-center py-3.5 rounded-xl text-sm font-bold mt-4 shadow-lg shadow-teal/20">Acceso
                 a Plataforma</a>
         </div>
     </nav>
 
+    <!-- ===== ARCHIVED: Entrevista Rápida section (2026-09-22) =====
+         To re-enable: unwrap the <template> tag below, restoring the inner <section> directly. -->
+    <template id="archived-entrevista">
     <!-- Entrevista Rápida -->
     <section id="entrevista" class="pt-56 md:pt-64 pb-20 relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-b from-violet/5 via-transparent to-teal/5 pointer-events-none"></div>
@@ -591,6 +598,8 @@
             </div>
         </div>
     </section>
+    </template>
+    <!-- ===== END ARCHIVED: Entrevista Rápida section ===== -->
 
     <!-- Hero -->
     <section class="pt-32 pb-20 relative overflow-hidden">
@@ -1144,8 +1153,9 @@
         });
     </script>
 
-    <!-- Interview Audio Recording & Form Logic -->
-    <script>
+    <!-- ===== ARCHIVED: Interview Audio Recording & Form Logic (2026-09-22) =====
+         To re-enable: change type back to "text/javascript" (or remove the type attribute entirely). -->
+    <script type="text/archived-interview">
         // Accordion toggle
         function toggleAccordion(headerEl) {
             const card = headerEl.closest('.interview-card');
@@ -1428,6 +1438,7 @@
             success.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
     </script>
+    <!-- ===== END ARCHIVED: Interview Audio Recording & Form Logic ===== -->
 
     <!-- Logo Lightbox Modal -->
     <div id="logo-lightbox" class="logo-lightbox" onclick="closeLogoLightbox(event)">
