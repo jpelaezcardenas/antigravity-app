@@ -7,6 +7,24 @@ import { submitSocialCapture } from "@/lib/social-capture-api";
 
 type SubmitState = "idle" | "submitting" | "done" | "error";
 
+declare global {
+  interface Window {
+    fbq?: (...args: unknown[]) => void;
+  }
+}
+
+/** Fires the Meta Pixel `Lead` event as a secondary/redundant signal to the
+ * server-side Meta CAPI `Lead` event the backend already sends from
+ * `social_capture_partial` on this same successful submission
+ * (empresa-4-0-agentic-gtm-roadmap, meta-capi-attribution spec). Never
+ * throws — `window.fbq` may be absent (blocked/slow-loading script, or a
+ * test/SSR context). */
+function trackPixelLead() {
+  if (typeof window !== "undefined" && typeof window.fbq === "function") {
+    window.fbq("track", "Lead");
+  }
+}
+
 /**
  * Public lead-capture form for the `/renta-natural` landing page
  * (b2c-social-lead-capture, Task 4). Implements the Dapta Forms
@@ -58,6 +76,7 @@ export function RentaNaturalLandingForm() {
         source,
       });
       setSubmitState("done");
+      trackPixelLead();
     } catch (err) {
       setSubmitState("error");
       setErrorMsg(

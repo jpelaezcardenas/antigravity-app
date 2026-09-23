@@ -259,6 +259,237 @@ class TestSocialCaptureFirstContactTrigger:
         mock_send.assert_called_once()
 
 
+class TestSocialCaptureMetaCapiLeadEvent:
+    """empresa-4-0-agentic-gtm-roadmap, meta-capi-attribution spec: a new lead fires
+    exactly one Meta CAPI Lead event, gated identically to the first-contact WhatsApp
+    send (is_new only); CAPI failure/unavailability never affects the HTTP response."""
+
+    @pytest.mark.asyncio
+    async def test_new_capture_sends_exactly_one_capi_lead_event(
+        self, social_capture_client
+    ) -> None:
+        with patch(
+            "presentation.social_capture_endpoints.get_crm_service"
+        ) as mock_get_service, patch(
+            "presentation.social_capture_endpoints.send_whatsapp_message"
+        ) as mock_send_whatsapp, patch(
+            "presentation.social_capture_endpoints.send_lead_event"
+        ) as mock_send_lead:
+            mock_get_service.return_value.whatsapp_intake.return_value = {
+                "lead_id": "new-lead-id",
+                "is_new": True,
+                "stage": "NUEVOS",
+            }
+            mock_send_whatsapp.return_value = True
+            mock_send_lead.return_value = True
+
+            async with social_capture_client as client:
+                response = await client.post(
+                    "/crm/social-capture/partial",
+                    json={"whatsapp_phone": "+573001234567"},
+                )
+
+        assert response.status_code == 200
+        mock_send_lead.assert_called_once()
+        _, kwargs = mock_send_lead.call_args
+        assert kwargs["lead_id"] == "new-lead-id"
+        assert kwargs["normalized_phone"]
+
+    @pytest.mark.asyncio
+    async def test_existing_lead_sends_no_capi_event(self, social_capture_client) -> None:
+        with patch(
+            "presentation.social_capture_endpoints.get_crm_service"
+        ) as mock_get_service, patch(
+            "presentation.social_capture_endpoints.send_whatsapp_message"
+        ) as mock_send_whatsapp, patch(
+            "presentation.social_capture_endpoints.send_lead_event"
+        ) as mock_send_lead:
+            mock_get_service.return_value.whatsapp_intake.return_value = {
+                "lead_id": "existing-lead-id",
+                "is_new": False,
+                "stage": "PROSPECTOS",
+            }
+            mock_send_whatsapp.return_value = True
+
+            async with social_capture_client as client:
+                response = await client.post(
+                    "/crm/social-capture/partial",
+                    json={"whatsapp_phone": "+573001234567"},
+                )
+
+        assert response.status_code == 200
+        mock_send_lead.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_throttled_repeat_sends_no_capi_event(self, social_capture_client) -> None:
+        with patch(
+            "presentation.social_capture_endpoints.get_crm_service"
+        ) as mock_get_service, patch(
+            "presentation.social_capture_endpoints.send_whatsapp_message"
+        ) as mock_send_whatsapp, patch(
+            "presentation.social_capture_endpoints.send_lead_event"
+        ) as mock_send_lead:
+            mock_get_service.return_value.whatsapp_intake.return_value = {
+                "lead_id": "new-lead-id",
+                "is_new": True,
+                "stage": "NUEVOS",
+            }
+            mock_send_whatsapp.return_value = True
+            mock_send_lead.return_value = True
+
+            async with social_capture_client as client:
+                await client.post(
+                    "/crm/social-capture/partial", json={"whatsapp_phone": "+573001234567"}
+                )
+                await client.post(
+                    "/crm/social-capture/partial", json={"whatsapp_phone": "+573001234567"}
+                )
+
+        mock_send_lead.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_capi_failure_does_not_affect_response(self, social_capture_client) -> None:
+        """send_lead_event returning False (unconfigured/failed) must never change the
+        endpoint's success response — the same never-block contract as WhatsApp send."""
+        with patch(
+            "presentation.social_capture_endpoints.get_crm_service"
+        ) as mock_get_service, patch(
+            "presentation.social_capture_endpoints.send_whatsapp_message"
+        ) as mock_send_whatsapp, patch(
+            "presentation.social_capture_endpoints.send_lead_event"
+        ) as mock_send_lead:
+            mock_get_service.return_value.whatsapp_intake.return_value = {
+                "lead_id": "new-lead-id",
+                "is_new": True,
+                "stage": "NUEVOS",
+            }
+            mock_send_whatsapp.return_value = True
+            mock_send_lead.return_value = False
+
+            async with social_capture_client as client:
+                response = await client.post(
+                    "/crm/social-capture/partial",
+                    json={"whatsapp_phone": "+573001234567"},
+                )
+
+        assert response.status_code == 200
+        assert response.json() == {"lead_id": "new-lead-id", "is_new": True, "stage": "NUEVOS"}
+
+
+class TestMetaCapiClient:
+    """Unit tests for services.meta_capi_client.send_lead_event directly — the CAPI
+    client's own never-raise/fail-closed contract, independent of the endpoint wiring
+    tested above."""
+
+    @pytest.mark.asyncio
+    async def test_returns_false_and_no_network_call_when_unconfigured(self, monkeypatch) -> None:
+        from services.meta_capi_client import send_lead_event
+
+        monkeypatch.delenv("META_CAPI_ACCESS_TOKEN", raising=False)
+        monkeypatch.delenv("META_PIXEL_ID", raising=False)
+
+        with patch("services.meta_capi_client.httpx.AsyncClient") as mock_client_cls:
+            result = await send_lead_event(normalized_phone="573001234567", lead_id="lead-1")
+
+        assert result is False
+        mock_client_cls.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_hashes_phone_as_lowercase_sha256(self, monkeypatch) -> None:
+        import hashlib
+
+        from services.meta_capi_client import send_lead_event
+
+        monkeypatch.setenv("META_CAPI_ACCESS_TOKEN", "test-token")
+        monkeypatch.setenv("META_PIXEL_ID", "test-pixel-id")
+
+        captured_payload = {}
+
+        class _FakeResponse:
+            status_code = 200
+            text = "{}"
+
+        class _FakeAsyncClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                return False
+
+            async def post(self, url, json=None, params=None):
+                captured_payload.update(json or {})
+                return _FakeResponse()
+
+        with patch("services.meta_capi_client.httpx.AsyncClient", return_value=_FakeAsyncClient()):
+            result = await send_lead_event(normalized_phone="573001234567", lead_id="lead-1")
+
+        assert result is True
+        sent_hash = captured_payload["data"][0]["user_data"]["ph"][0]
+        assert sent_hash == hashlib.sha256(b"573001234567").hexdigest()
+
+    @pytest.mark.asyncio
+    async def test_returns_false_on_non_200_response(self, monkeypatch) -> None:
+        from services.meta_capi_client import send_lead_event
+
+        monkeypatch.setenv("META_CAPI_ACCESS_TOKEN", "test-token")
+        monkeypatch.setenv("META_PIXEL_ID", "test-pixel-id")
+
+        class _FakeResponse:
+            status_code = 400
+            text = "bad request"
+
+        class _FakeAsyncClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                return False
+
+            async def post(self, url, json=None, params=None):
+                return _FakeResponse()
+
+        with patch("services.meta_capi_client.httpx.AsyncClient", return_value=_FakeAsyncClient()):
+            result = await send_lead_event(normalized_phone="573001234567", lead_id="lead-1")
+
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_returns_false_and_never_raises_on_network_exception(self, monkeypatch) -> None:
+        from services.meta_capi_client import send_lead_event
+
+        monkeypatch.setenv("META_CAPI_ACCESS_TOKEN", "test-token")
+        monkeypatch.setenv("META_PIXEL_ID", "test-pixel-id")
+
+        class _RaisingAsyncClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                return False
+
+            async def post(self, *args, **kwargs):
+                raise httpx.ConnectError("boom")
+
+        with patch("services.meta_capi_client.httpx.AsyncClient", return_value=_RaisingAsyncClient()):
+            result = await send_lead_event(normalized_phone="573001234567", lead_id="lead-1")
+
+        assert result is False
+
+    def test_module_source_reads_token_from_env_not_a_literal(self) -> None:
+        """The CAPI access token must only ever come from `os.getenv` — never a hardcoded
+        literal in source (tasks.md Task 2.2: token never reaches client-served code,
+        verified here at the module-source level for the backend client itself)."""
+        import inspect
+        import re
+
+        import services.meta_capi_client as capi_module
+
+        source = inspect.getsource(capi_module)
+        assert 'os.getenv("META_CAPI_ACCESS_TOKEN")' in source
+        # No `access_token = "<literal>"`-shaped assignment anywhere in the module.
+        assert re.search(r'access_token\s*=\s*"[^"]+"', source) is None
+
+
 class TestSocialCapturePartialCrmServiceSourceStamping:
     def test_source_stamped_only_on_insert_path(self) -> None:
         """Mirrors test_crm_whatsapp_intake.py's fixture pattern: `source` is written on

@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     DEMO_ADMIN_PASSWORD: str = ""
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
-    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://localhost:3002,https://contexia.online,https://www.contexia.online"
+    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://localhost:3001,http://localhost:3002,https://contexia.online,https://www.contexia.online"
 
     # LLM Provider API Keys & Settings — free-tier cascade (2026-08-18, model names
     # verified live 2026-08-28). MiniMax M3, GLM 5.3, and MiMo were all dropped: this
@@ -165,6 +165,15 @@ class Settings(BaseSettings):
     WOMPI_INTEGRITY_SECRET: str = ""
     WOMPI_EVENTS_SECRET: str = ""
     WOMPI_BASE_URL: str = "https://sandbox.wompi.co/v1"
+
+    # Meta Conversions API (server-side lead attribution — change
+    # empresa-4-0-agentic-gtm-roadmap). No hardcoded defaults: empty values fail
+    # closed (the CAPI client no-ops and logs instead of sending malformed
+    # requests). META_CAPI_ACCESS_TOKEN is a Meta System User token generated
+    # in Meta Business Manager — never committed, Railway-only.
+    META_CAPI_ACCESS_TOKEN: str = ""
+    META_PIXEL_ID: str = ""
+    META_CAPI_API_VERSION: str = "v21.0"
 
     # Siigo REST API (change real-data-ingestion-mvp, Track 2).
     # SIIGO_PARTNER_ID is the partner identifier Siigo issues when registering an

@@ -14,6 +14,23 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/landing.min.css">
+    <!-- Meta Pixel Code -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '1754537042427579');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1754537042427579&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
 </head>
 
 <body class="bg-[#020617] text-slate-100 min-h-screen flex flex-col">
@@ -225,6 +242,14 @@
             });
             el.classList.add('selected');
             destino = el.getAttribute('data-target');
+
+            // Custom event, not 'Lead': no lead exists yet at this point, this is
+            // the qualifier split between the two funnels (empresa-4-0-agentic-gtm-
+            // roadmap). 'tipo' is 'natural' -> /renta-natural, or 'formal' ->
+            // /wizard/iva-ecom (contexia-wizard, a separate project).
+            if (typeof fbq === 'function') {
+                fbq('trackCustom', 'AuditoriaSombraBranchSelected', { branch: tipo });
+            }
 
             const btn = document.getElementById('btn-continuar');
             btn.disabled = false;
