@@ -24,6 +24,7 @@ from pydantic import BaseModel, Field
 
 from channels.whatsapp import send_whatsapp_message
 from services.crm_service import _normalize_whatsapp_phone, get_crm_service
+from services.meta_capi_client import send_lead_event
 from services.social_capture_throttle import (
     is_ip_throttled,
     is_phone_repeat,
@@ -91,5 +92,16 @@ async def social_capture_partial(payload: SocialCapturePartialRequest, request: 
                 "social_capture_partial: first-contact WhatsApp send failed for lead %s",
                 result.get("lead_id"),
             )
+
+        # Meta CAPI Lead event: only on the create path, same gate as the first-contact
+        # WhatsApp send above — a throttled repeat or an already-existing lead must never
+        # re-fire a Lead conversion event (meta-capi-attribution spec, Scenario "Duplicate
+        # lead does not fire a second Lead event"). Never awaited-blocking on failure: a
+        # False return is logged inside send_lead_event and never raises here.
+        await send_lead_event(
+            normalized_phone=normalized_phone,
+            lead_id=str(result.get("lead_id")),
+            event_source_url=request.headers.get("referer"),
+        )
 
     return result
