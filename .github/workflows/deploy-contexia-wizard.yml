@@ -36,27 +36,18 @@ jobs:
       - name: Pull Vercel project settings
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN" --cwd contexia-wizard
 
-      - name: Strip rootDirectory (avoid duplicating it with --cwd contexia-wizard)
+      # Root Directory is intentionally left empty on the Vercel project
+      # (see build-and-deployment settings) so it never combines with this
+      # workflow's own --cwd contexia-wizard and duplicates the path. Safety
+      # net below: `vercel pull --cwd contexia-wizard` has been observed
+      # writing .env.production.local inside contexia-wizard/.vercel/
+      # instead of contexia-wizard/ itself, which next build won't pick up.
+      - name: Ensure pulled env file is where next build expects it
         run: |
-          jq 'if .settings then .settings |= del(.rootDirectory) else . end' \
-            contexia-wizard/.vercel/project.json > /tmp/project.json.tmp
-          mv /tmp/project.json.tmp contexia-wizard/.vercel/project.json
-          cat contexia-wizard/.vercel/project.json
-
-      - name: Locate pulled env file and copy it next to the app if needed
-        run: |
-          echo "Looking for .env.production.local ..."
           FOUND=$(find . -maxdepth 4 -name ".env.production.local" -not -path "./node_modules/*" 2>/dev/null | head -1)
-          echo "Found at: ${FOUND:-<none>}"
           if [ -n "$FOUND" ] && [ "$FOUND" != "./contexia-wizard/.env.production.local" ]; then
             cp "$FOUND" "contexia-wizard/.env.production.local"
-            echo "Copied to contexia-wizard/.env.production.local"
           fi
-          f="contexia-wizard/.env.production.local"
-          for k in NEXT_PUBLIC_SUPABASE_URL SUPABASE_URL; do
-            line=$(grep "^${k}=" "$f" 2>/dev/null)
-            echo "$f :: $k present=$([ -n "$line" ] && echo yes || echo no) length=${#line}"
-          done
 
       - name: Build
         run: vercel build --prod --token="$VERCEL_TOKEN" --cwd contexia-wizard
