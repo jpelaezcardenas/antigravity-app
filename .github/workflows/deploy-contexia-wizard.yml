@@ -1,0 +1,43 @@
+name: Deploy contexia-wizard
+
+# Vercel's own Git integration for this project has a reproducible bug:
+# a deploy triggered from the full monorepo (git push, or "redeploy" of one)
+# fails to find routes-manifest.json even with Root Directory and Framework
+# Preset correctly saved, while `vercel deploy` run locally from inside
+# contexia-wizard/ works every time. This workflow replicates the local
+# working path instead of relying on Vercel's native Git deploys.
+# See: 2026-09-23 session notes / commit history around contexia-wizard/.vercelignore.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "contexia-wizard/**"
+      - ".github/workflows/deploy-contexia-wizard.yml"
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_Y8qqlb9oWshwU1XfUR40pQlQ
+      VERCEL_PROJECT_ID: prj_jYoWGURXtKfZSw672SAt8JbFH92o
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel project settings
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN" --cwd contexia-wizard
+
+      - name: Build
+        run: vercel build --prod --token="$VERCEL_TOKEN" --cwd contexia-wizard
+
+      - name: Deploy prebuilt output
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" --cwd contexia-wizard
