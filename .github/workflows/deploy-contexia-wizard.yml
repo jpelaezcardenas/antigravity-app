@@ -43,15 +43,19 @@ jobs:
           mv /tmp/project.json.tmp contexia-wizard/.vercel/project.json
           cat contexia-wizard/.vercel/project.json
 
-      - name: Diagnose Supabase env vars (no values printed)
+      - name: Locate pulled env file and copy it next to the app if needed
         run: |
-          set +e
-          for f in contexia-wizard/.env.production.local; do
+          echo "Looking for .env.production.local ..."
+          find . -maxdepth 3 -name ".env.production.local" -not -path "./node_modules/*" 2>/dev/null
+          if [ -f ".env.production.local" ] && [ ! -f "contexia-wizard/.env.production.local" ]; then
+            echo "Found at repo root, copying into contexia-wizard/"
+            cp ".env.production.local" "contexia-wizard/.env.production.local"
+          fi
+          for f in .env.production.local contexia-wizard/.env.production.local; do
+            [ -f "$f" ] || continue
             for k in NEXT_PUBLIC_SUPABASE_URL SUPABASE_URL; do
               line=$(grep "^${k}=" "$f")
-              len=${#line}
-              starts_https=$(grep -c "^${k}=\"\{0,1\}https" "$f")
-              echo "$k: present=$([ -n "$line" ] && echo yes || echo no) length=$len starts_with_https=$starts_https"
+              echo "$f :: $k present=$([ -n "$line" ] && echo yes || echo no) length=${#line}"
             done
           done
 
