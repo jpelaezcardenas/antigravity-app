@@ -46,17 +46,16 @@ jobs:
       - name: Locate pulled env file and copy it next to the app if needed
         run: |
           echo "Looking for .env.production.local ..."
-          find . -maxdepth 3 -name ".env.production.local" -not -path "./node_modules/*" 2>/dev/null
-          if [ -f ".env.production.local" ] && [ ! -f "contexia-wizard/.env.production.local" ]; then
-            echo "Found at repo root, copying into contexia-wizard/"
-            cp ".env.production.local" "contexia-wizard/.env.production.local"
+          FOUND=$(find . -maxdepth 4 -name ".env.production.local" -not -path "./node_modules/*" 2>/dev/null | head -1)
+          echo "Found at: ${FOUND:-<none>}"
+          if [ -n "$FOUND" ] && [ "$FOUND" != "./contexia-wizard/.env.production.local" ]; then
+            cp "$FOUND" "contexia-wizard/.env.production.local"
+            echo "Copied to contexia-wizard/.env.production.local"
           fi
-          for f in .env.production.local contexia-wizard/.env.production.local; do
-            [ -f "$f" ] || continue
-            for k in NEXT_PUBLIC_SUPABASE_URL SUPABASE_URL; do
-              line=$(grep "^${k}=" "$f")
-              echo "$f :: $k present=$([ -n "$line" ] && echo yes || echo no) length=${#line}"
-            done
+          f="contexia-wizard/.env.production.local"
+          for k in NEXT_PUBLIC_SUPABASE_URL SUPABASE_URL; do
+            line=$(grep "^${k}=" "$f" 2>/dev/null)
+            echo "$f :: $k present=$([ -n "$line" ] && echo yes || echo no) length=${#line}"
           done
 
       - name: Build
