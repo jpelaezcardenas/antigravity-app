@@ -36,6 +36,13 @@ jobs:
       - name: Pull Vercel project settings
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN" --cwd contexia-wizard
 
+      - name: Strip rootDirectory (avoid duplicating it with --cwd contexia-wizard)
+        run: |
+          jq 'if .settings then .settings |= del(.rootDirectory) else . end' \
+            contexia-wizard/.vercel/project.json > /tmp/project.json.tmp
+          mv /tmp/project.json.tmp contexia-wizard/.vercel/project.json
+          cat contexia-wizard/.vercel/project.json
+
       - name: Build
         run: vercel build --prod --token="$VERCEL_TOKEN" --cwd contexia-wizard
 
